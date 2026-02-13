@@ -90,7 +90,7 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                 <p>Customize the frontend color scheme. Enter hex color codes (e.g. <code>#5ec095</code>).</p>
             </div>
             <div class="rtg-card-body">
-                <div class="rtg-edit-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 20px;">
                     <?php
                     $color_labels = array(
                         'accent'       => 'Primary Accent',
@@ -107,13 +107,11 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                     );
                     foreach ( $color_labels as $key => $label ) :
                     ?>
-                        <div class="rtg-field-row" style="border-bottom: none; padding-bottom: 0;">
-                            <div class="rtg-field-label-row">
-                                <label class="rtg-field-label" for="rtg_color_<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></label>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span id="rtg_color_swatch_<?php echo esc_attr( $key ); ?>" style="width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--rtg-border); background-color: <?php echo esc_attr( $theme_colors[ $key ] ); ?>; flex-shrink: 0;"></span>
-                                <input type="text" id="rtg_color_<?php echo esc_attr( $key ); ?>" name="rtg_colors[<?php echo esc_attr( $key ); ?>]" value="<?php echo esc_attr( $theme_colors[ $key ] ); ?>" maxlength="7" placeholder="#000000" style="width: 90px; font-family: monospace; font-size: 14px;">
+                        <div>
+                            <label class="rtg-field-label" for="rtg_color_<?php echo esc_attr( $key ); ?>" style="display: block; margin-bottom: 4px; font-size: 13px;"><?php echo esc_html( $label ); ?></label>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span id="rtg_color_swatch_<?php echo esc_attr( $key ); ?>" style="width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--rtg-border); background-color: <?php echo esc_attr( $theme_colors[ $key ] ); ?>; flex-shrink: 0;"></span>
+                                <input type="text" id="rtg_color_<?php echo esc_attr( $key ); ?>" name="rtg_colors[<?php echo esc_attr( $key ); ?>]" value="<?php echo esc_attr( $theme_colors[ $key ] ); ?>" maxlength="7" placeholder="#000000" style="width: 84px; font-family: monospace; font-size: 13px; padding: 4px 8px;">
                             </div>
                         </div>
                     <?php endforeach; ?>
