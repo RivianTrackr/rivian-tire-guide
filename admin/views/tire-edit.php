@@ -247,20 +247,20 @@ $categories = array( 'All-Season', 'All-Terrain', 'Highway', 'Mud-Terrain', 'Per
                     </div>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">
-                            <label class="rtg-field-label" for="efficiency_score">Efficiency Score</label>
+                            <label class="rtg-field-label">Efficiency Score &amp; Grade</label>
+                            <span class="rtg-badge rtg-badge-info">Auto-calculated</span>
                         </div>
-                        <input type="number" id="efficiency_score" name="efficiency_score" value="<?php echo esc_attr( $v['efficiency_score'] ); ?>" min="0" max="100" class="rtg-input-small">
-                    </div>
-                    <div class="rtg-field-row">
-                        <div class="rtg-field-label-row">
-                            <label class="rtg-field-label" for="efficiency_grade">Efficiency Grade</label>
+                        <p class="rtg-field-description">Calculated from weight, tread, width, load range, speed rating, UTQG, category, and 3PMS.</p>
+                        <div id="rtg-efficiency-preview" style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+                            <?php
+                            $current_score = intval( $v['efficiency_score'] );
+                            $current_grade = strtoupper( $v['efficiency_grade'] );
+                            $grade_class = $current_grade ? 'rtg-grade-' . strtolower( $current_grade ) : 'rtg-grade-none';
+                            ?>
+                            <span id="rtg-eff-grade" class="rtg-grade <?php echo esc_attr( $grade_class ); ?>"><?php echo esc_html( $current_grade ?: '-' ); ?></span>
+                            <span id="rtg-eff-score" style="font-size:20px;font-weight:600;color:#1d1d1f;"><?php echo esc_html( $current_score ); ?></span>
+                            <span style="font-size:14px;color:#86868b;">/ 100</span>
                         </div>
-                        <select id="efficiency_grade" name="efficiency_grade">
-                            <option value="">Select...</option>
-                            <?php foreach ( array( 'A', 'B', 'C', 'D', 'E', 'F' ) as $g ) : ?>
-                                <option value="<?php echo esc_attr( $g ); ?>" <?php selected( strtoupper( $v['efficiency_grade'] ), $g ); ?>><?php echo esc_html( $g ); ?></option>
-                            <?php endforeach; ?>
-                        </select>
                     </div>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">
