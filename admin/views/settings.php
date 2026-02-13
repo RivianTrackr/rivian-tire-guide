@@ -17,6 +17,7 @@ $dd_sizes         = RTG_Admin::get_dropdown_options( 'sizes' );
 $dd_diameters     = RTG_Admin::get_dropdown_options( 'diameters' );
 $dd_load_ranges   = RTG_Admin::get_dropdown_options( 'load_ranges' );
 $dd_speed_ratings = RTG_Admin::get_dropdown_options( 'speed_ratings' );
+$dd_load_index_map = RTG_Admin::get_load_index_map();
 ?>
 
 <div class="rtg-wrap">
@@ -112,6 +113,19 @@ $dd_speed_ratings = RTG_Admin::get_dropdown_options( 'speed_ratings' );
                                 <label class="rtg-field-label" for="rtg_dd_speed_ratings">Speed Ratings</label>
                             </div>
                             <textarea id="rtg_dd_speed_ratings" name="rtg_dd_speed_ratings" rows="5" class="rtg-input-wide" style="max-width:100%;font-size:14px;font-family:var(--rtg-font-stack);padding:10px 12px;border:1px solid var(--rtg-border);border-radius:8px;resize:vertical;"><?php echo esc_textarea( implode( "\n", $dd_speed_ratings ) ); ?></textarea>
+                        </div>
+                        <div class="rtg-field-row">
+                            <div class="rtg-field-label-row">
+                                <label class="rtg-field-label" for="rtg_dd_load_indexes">Load Indexes</label>
+                            </div>
+                            <p class="rtg-field-description">Paired values: <code>index = max load lbs</code> per line.</p>
+                            <?php
+                            $li_lines = array();
+                            foreach ( $dd_load_index_map as $idx => $lbs ) {
+                                $li_lines[] = $idx . ' = ' . $lbs;
+                            }
+                            ?>
+                            <textarea id="rtg_dd_load_indexes" name="rtg_dd_load_indexes" rows="8" class="rtg-input-wide" style="max-width:100%;font-size:14px;font-family:var(--rtg-font-stack);padding:10px 12px;border:1px solid var(--rtg-border);border-radius:8px;resize:vertical;"><?php echo esc_textarea( implode( "\n", $li_lines ) ); ?></textarea>
                         </div>
                     </div>
                 </div>
