@@ -169,11 +169,14 @@ class RTG_Admin {
             'tags'             => sanitize_text_field( $_POST['tags'] ?? '' ),
             'link'             => esc_url_raw( $_POST['link'] ?? '' ),
             'image'            => esc_url_raw( $_POST['image'] ?? '' ),
-            'efficiency_score' => intval( $_POST['efficiency_score'] ?? 0 ),
-            'efficiency_grade' => sanitize_text_field( $_POST['efficiency_grade'] ?? '' ),
             'bundle_link'      => esc_url_raw( $_POST['bundle_link'] ?? '' ),
             'sort_order'       => intval( $_POST['sort_order'] ?? 0 ),
         );
+
+        // Auto-calculate efficiency score and grade.
+        $efficiency = RTG_Database::calculate_efficiency( $data );
+        $data['efficiency_score'] = $efficiency['efficiency_score'];
+        $data['efficiency_grade'] = $efficiency['efficiency_grade'];
 
         // Validate tire_id.
         if ( empty( $data['tire_id'] ) ) {

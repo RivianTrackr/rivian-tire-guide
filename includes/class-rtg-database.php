@@ -256,6 +256,102 @@ class RTG_Database {
         return sprintf( 'tire%03d', $next );
     }
 
+    // --- Efficiency Calculation ---
+
+    /**
+     * Calculate efficiency score and grade from tire data.
+     *
+     * Replicates the Google Sheet formula: weighted combination of
+     * width, weight, tread depth, load range, speed rating, UTQG,
+     * category, and 3PMS certification.
+     *
+     * @param array $data Tire data array.
+     * @return array ['efficiency_score' => int, 'efficiency_grade' => string]
+     */
+    public static function calculate_efficiency( $data ) {
+        // Width score: extract width from size (e.g., "275/60R20" → 275).
+        $width_val = 0;
+        $size = $data['size'] ?? '';
+        if ( ! empty( $size ) && strpos( $size, '/' ) !== false ) {
+            $width_val = floatval( substr( $size, 0, strpos( $size, '/' ) ) );
+        }
+        $width_score = $width_val > 0 ? ( 305 - $width_val ) / 30 : 0;
+
+        // Weight score.
+        $weight = floatval( $data['weight_lb'] ?? 0 );
+        $weight_score = $weight > 0 ? ( 70 - $weight ) / 40 : 0;
+
+        // Tread score: extract numerator from tread (e.g., "10/32" → 10).
+        $tread_val = 0;
+        $tread = $data['tread'] ?? '';
+        if ( ! empty( $tread ) && strpos( $tread, '/' ) !== false ) {
+            $tread_val = floatval( substr( $tread, 0, strpos( $tread, '/' ) ) );
+        }
+        $tread_score = $tread_val > 0 ? ( 20 - $tread_val ) / 11 : 0;
+
+        // Load range score.
+        $load_range = strtoupper( trim( $data['load_range'] ?? '' ) );
+        $load_scores = array( 'SL' => 1, 'HL' => 0.9, 'XL' => 0.9, 'RF' => 0.7, 'D' => 0.3, 'E' => 0, 'F' => 0 );
+        $load_score = isset( $load_scores[ $load_range ] ) ? $load_scores[ $load_range ] : 0;
+
+        // Speed rating score (first character).
+        $speed_raw = trim( $data['speed_rating'] ?? '' );
+        $speed_char = ! empty( $speed_raw ) ? strtoupper( substr( $speed_raw, 0, 1 ) ) : '';
+        $speed_scores = array( 'P' => 1, 'Q' => 0.95, 'R' => 0.9, 'S' => 0.85, 'T' => 0.8, 'H' => 0.7, 'V' => 0.6 );
+        $speed_score = ! empty( $speed_char ) && isset( $speed_scores[ $speed_char ] ) ? $speed_scores[ $speed_char ] : 0.5;
+
+        // UTQG score (first number from e.g., "620 A B").
+        $utqg_val = 0;
+        $utqg = trim( $data['utqg'] ?? '' );
+        if ( ! empty( $utqg ) ) {
+            $parts = explode( ' ', $utqg );
+            $utqg_val = intval( $parts[0] );
+        }
+        $utqg_score = $utqg_val === 0 ? 0.5 : ( $utqg_val - 420 ) / 400;
+
+        // Category score.
+        $category = $data['category'] ?? '';
+        $cat_scores = array( 'All-Season' => 1, 'Performance' => 1, 'All-Terrain' => 0.5, 'Winter' => 0 );
+        $cat_score = isset( $cat_scores[ $category ] ) ? $cat_scores[ $category ] : 0;
+
+        // 3PMS score (No = better for efficiency).
+        $pms_score = ( $data['three_pms'] ?? 'No' ) === 'No' ? 1 : 0;
+
+        // Weighted total.
+        $total = (
+            $weight_score * 0.26 +
+            $tread_score  * 0.16 +
+            $load_score   * 0.16 +
+            $speed_score  * 0.10 +
+            $utqg_score   * 0.10 +
+            $cat_score    * 0.10 +
+            $pms_score    * 0.05 +
+            $width_score  * 0.03
+        );
+
+        $score = (int) round( $total * 100 );
+
+        // Determine grade.
+        if ( $score >= 80 ) {
+            $grade = 'A';
+        } elseif ( $score >= 65 ) {
+            $grade = 'B';
+        } elseif ( $score >= 50 ) {
+            $grade = 'C';
+        } elseif ( $score >= 35 ) {
+            $grade = 'D';
+        } elseif ( $score >= 20 ) {
+            $grade = 'E';
+        } else {
+            $grade = 'F';
+        }
+
+        return array(
+            'efficiency_score' => $score,
+            'efficiency_grade' => $grade,
+        );
+    }
+
     // --- Ratings ---
 
     public static function get_tire_ratings( $tire_ids ) {

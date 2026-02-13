@@ -119,6 +119,11 @@ class RTG_CSV_Importer {
 
             $data = self::sanitize_tire_data( $data );
 
+            // Auto-calculate efficiency score and grade from tire data.
+            $efficiency = RTG_Database::calculate_efficiency( $data );
+            $data['efficiency_score'] = $efficiency['efficiency_score'];
+            $data['efficiency_grade'] = $efficiency['efficiency_grade'];
+
             // Check if tire exists.
             $existing = RTG_Database::get_tire( $data['tire_id'] );
 
