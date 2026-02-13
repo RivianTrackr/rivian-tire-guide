@@ -105,6 +105,11 @@ class RTG_Admin {
         if ( isset( $_POST['rtg_save_settings'] ) ) {
             $this->handle_settings_save();
         }
+
+        // Handle rating migration.
+        if ( isset( $_POST['rtg_migrate_ratings'] ) ) {
+            $this->handle_rating_migration();
+        }
     }
 
     // --- Dropdown Options ---
@@ -375,6 +380,28 @@ class RTG_Admin {
         update_option( 'rtg_flush_rewrite', 1 );
 
         wp_redirect( admin_url( 'admin.php?page=rtg-settings&message=saved' ) );
+        exit;
+    }
+
+    private function handle_rating_migration() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Unauthorized' );
+        }
+
+        check_admin_referer( 'rtg_migrate_ratings', 'rtg_migrate_nonce' );
+
+        $source_table = sanitize_text_field( $_POST['rtg_source_table'] ?? 'rv_tire_ratings' );
+
+        // Only allow simple table names (alphanumeric + underscores).
+        if ( ! preg_match( '/^[a-zA-Z0-9_]+$/', $source_table ) ) {
+            wp_redirect( admin_url( 'admin.php?page=rtg-settings&message=migrate_error&detail=invalid_table' ) );
+            exit;
+        }
+
+        $result = RTG_Database::migrate_ratings( $source_table );
+
+        set_transient( 'rtg_migrate_result', $result, 60 );
+        wp_redirect( admin_url( 'admin.php?page=rtg-settings&message=migrated' ) );
         exit;
     }
 }
