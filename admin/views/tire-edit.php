@@ -47,6 +47,7 @@ $dd_sizes         = RTG_Admin::get_dropdown_options( 'sizes' );
 $dd_diameters     = RTG_Admin::get_dropdown_options( 'diameters' );
 $dd_load_ranges   = RTG_Admin::get_dropdown_options( 'load_ranges' );
 $dd_speed_ratings = RTG_Admin::get_dropdown_options( 'speed_ratings' );
+$dd_load_index_map = RTG_Admin::get_load_index_map();
 ?>
 
 <div class="rtg-wrap">
@@ -170,13 +171,19 @@ $dd_speed_ratings = RTG_Admin::get_dropdown_options( 'speed_ratings' );
                         <div class="rtg-field-label-row">
                             <label class="rtg-field-label" for="load_index">Load Index</label>
                         </div>
-                        <input type="text" id="load_index" name="load_index" value="<?php echo esc_attr( $v['load_index'] ); ?>" class="rtg-input-small" placeholder="e.g. 116">
+                        <select id="load_index" name="load_index">
+                            <option value="">Select...</option>
+                            <?php foreach ( $dd_load_index_map as $idx => $lbs ) : ?>
+                                <option value="<?php echo esc_attr( $idx ); ?>" data-max-load="<?php echo esc_attr( $lbs ); ?>" <?php selected( $v['load_index'], (string) $idx ); ?>><?php echo esc_html( $idx ); ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">
                             <label class="rtg-field-label" for="max_load_lb">Max Load (lb)</label>
+                            <span class="rtg-badge rtg-badge-info">Auto-filled</span>
                         </div>
-                        <input type="number" id="max_load_lb" name="max_load_lb" value="<?php echo esc_attr( $v['max_load_lb'] ); ?>" min="0" class="rtg-input-small">
+                        <input type="text" id="max_load_lb" name="max_load_lb" value="<?php echo esc_attr( $v['max_load_lb'] ); ?>" readonly style="background:#f5f5f7;color:#86868b;">
                     </div>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">

@@ -119,6 +119,14 @@ class RTG_Admin {
         'diameters'     => array( '18"', '20"', '22"' ),
         'load_ranges'   => array( 'SL', 'HL', 'XL', 'RF', 'D', 'E', 'F' ),
         'speed_ratings' => array( 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'H', 'V', 'W', 'Y', 'Z' ),
+        'load_indexes'  => array(
+            100 => 1764, 101 => 1819, 102 => 1874, 103 => 1929, 104 => 1984,
+            105 => 2039, 106 => 2094, 107 => 2149, 108 => 2205, 109 => 2271,
+            110 => 2337, 111 => 2403, 112 => 2469, 113 => 2535, 114 => 2601,
+            115 => 2679, 116 => 2756, 117 => 2833, 118 => 2910, 119 => 2998,
+            120 => 3086, 121 => 3197, 122 => 3307, 123 => 3417, 124 => 3527,
+            125 => 3638, 126 => 3748,
+        ),
     );
 
     /**
@@ -130,6 +138,17 @@ class RTG_Admin {
             return $saved[ $field ];
         }
         return self::$default_dropdowns[ $field ] ?? array();
+    }
+
+    /**
+     * Get load index → max load map (associative: index => lbs).
+     */
+    public static function get_load_index_map() {
+        $saved = get_option( 'rtg_dropdown_options', array() );
+        if ( ! empty( $saved['load_indexes'] ) && is_array( $saved['load_indexes'] ) ) {
+            return $saved['load_indexes'];
+        }
+        return self::$default_dropdowns['load_indexes'];
     }
 
     // --- Page Renderers ---
@@ -318,6 +337,26 @@ class RTG_Admin {
                 $dropdowns[ $field ] = array_values( $lines );
             }
         }
+
+        // Save load index map (format: "119 = 2998" per line).
+        $li_raw   = wp_unslash( $_POST['rtg_dd_load_indexes'] ?? '' );
+        $li_lines = array_filter( array_map( 'trim', explode( "\n", sanitize_textarea_field( $li_raw ) ) ), 'strlen' );
+        $li_map   = array();
+        foreach ( $li_lines as $line ) {
+            if ( strpos( $line, '=' ) !== false ) {
+                list( $idx, $lbs ) = array_map( 'trim', explode( '=', $line, 2 ) );
+                $idx = intval( $idx );
+                $lbs = intval( $lbs );
+                if ( $idx > 0 && $lbs > 0 ) {
+                    $li_map[ $idx ] = $lbs;
+                }
+            }
+        }
+        if ( ! empty( $li_map ) ) {
+            ksort( $li_map );
+            $dropdowns['load_indexes'] = $li_map;
+        }
+
         update_option( 'rtg_dropdown_options', $dropdowns );
 
         // Flush rewrite rules if compare slug changed.

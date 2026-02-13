@@ -51,6 +51,13 @@
             });
         });
 
+        // --- Load index → max load auto-fill ---
+        $('#load_index').on('change', function() {
+            var selected = $(this).find('option:selected');
+            var maxLoad = selected.data('max-load') || '';
+            $('#max_load_lb').val(maxLoad);
+        });
+
         // --- Real-time efficiency calculator on the edit form ---
         if ($('#rtg-efficiency-preview').length) {
             var effFields = '#size, #weight_lb, #tread, #load_range, #speed_rating, #utqg, #category, #three_pms';
