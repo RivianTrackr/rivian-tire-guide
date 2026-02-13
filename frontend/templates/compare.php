@@ -5,17 +5,55 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RivianTrackr Tire Comparison</title>
   <?php wp_head(); ?>
+  <?php
+  // Output theme color overrides for compare page.
+  $rtg_settings = get_option( 'rtg_settings', array() );
+  $rtg_theme    = $rtg_settings['theme_colors'] ?? array();
+  $rtg_var_map  = array(
+      'accent'       => '--rtg-accent',
+      'accent_hover' => '--rtg-accent-hover',
+      'bg_primary'   => '--rtg-bg-primary',
+      'bg_card'      => '--rtg-bg-card',
+      'bg_input'     => '--rtg-bg-input',
+      'bg_deep'      => '--rtg-bg-deep',
+      'text_primary' => '--rtg-text-primary',
+      'text_light'   => '--rtg-text-light',
+      'text_muted'   => '--rtg-text-muted',
+      'text_heading' => '--rtg-text-heading',
+      'border'       => '--rtg-border',
+  );
+  $rtg_css_vars = '';
+  foreach ( $rtg_var_map as $key => $prop ) {
+      if ( ! empty( $rtg_theme[ $key ] ) ) {
+          $rtg_css_vars .= $prop . ':' . $rtg_theme[ $key ] . ';';
+      }
+  }
+  ?>
   <style>
+    :root {
+      --rtg-accent: #5ec095;
+      --rtg-accent-hover: #4ade80;
+      --rtg-bg-primary: #1e293b;
+      --rtg-bg-card: #121e2b;
+      --rtg-bg-input: #374151;
+      --rtg-bg-deep: #111827;
+      --rtg-text-primary: #e5e5e5;
+      --rtg-text-light: #f1f5f9;
+      --rtg-text-muted: #94a3b8;
+      --rtg-text-heading: #ffffff;
+      --rtg-border: #334155;
+      <?php if ( $rtg_css_vars ) echo $rtg_css_vars; ?>
+    }
     body {
       font-family: 'Inter', sans-serif;
       background-color: #0c131c;
-      color: #e5e5e5;
+      color: var(--rtg-text-primary);
       padding: 40px;
       margin: 0;
     }
 
     h1 {
-      color: #ffffff;
+      color: var(--rtg-text-heading);
       font-size: 28px;
       font-weight: 800;
       margin-bottom: 24px;
@@ -43,7 +81,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      background-color: #121e2b;
+      background-color: var(--rtg-bg-card);
       border-radius: 12px;
       overflow: hidden;
       table-layout: fixed;
@@ -54,19 +92,19 @@
       border: 1px solid #1f2937;
       text-align: left;
       vertical-align: top;
-      background-color: #121e2b;
+      background-color: var(--rtg-bg-card);
       word-wrap: break-word;
     }
 
     th {
-      background-color: #1e293b;
-      color: #f1f5f9;
+      background-color: var(--rtg-bg-primary);
+      color: var(--rtg-text-light);
       font-weight: 700;
       font-size: 15px;
     }
 
     td {
-      color: #e5e5e5;
+      color: var(--rtg-text-primary);
       font-size: 14px;
     }
 
@@ -78,7 +116,7 @@
     }
 
     a {
-      color: #5ec095;
+      color: var(--rtg-accent);
       text-decoration: none;
       font-weight: 600;
     }
@@ -97,8 +135,8 @@
     .tag-container span {
       display: inline-block;
       white-space: nowrap;
-      background: #334155;
-      color: #f1f5f9;
+      background: var(--rtg-border);
+      color: var(--rtg-text-light);
       font-size: 12px;
       padding: 4px 8px;
       border-radius: 6px;

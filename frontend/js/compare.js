@@ -89,8 +89,8 @@ function renderComparison(rows, indexes) {
               align-items: center;
             ">${grade}</span>
             <span style="
-              color: #f1f5f9;
-              background-color: #1e293b;
+              color: var(--rtg-text-light, #f1f5f9);
+              background-color: var(--rtg-bg-primary, #1e293b);
               padding: 4px 10px;
               display: flex;
               align-items: center;
@@ -160,7 +160,7 @@ function renderComparison(rows, indexes) {
           cellValue = `<a href="${cellValue}" target="_blank" rel="noopener noreferrer"
             style="
               display: inline-block;
-              background-color: #5ec095;
+              background-color: var(--rtg-accent, #5ec095);
               color: #1a1a1a;
               font-weight: 700;
               padding: 8px 16px;
@@ -170,8 +170,8 @@ function renderComparison(rows, indexes) {
               transition: background-color 0.2s ease-in-out;
               margin: 2px 0;
             "
-            onmouseover="this.style.backgroundColor='#3ebd88'"
-            onmouseout="this.style.backgroundColor='#5ec095'"
+            onmouseover="this.style.backgroundColor='var(--rtg-accent-hover, #3ebd88)'"
+            onmouseout="this.style.backgroundColor='var(--rtg-accent, #5ec095)'"
           >
             View Tire&nbsp;<i class="fa-solid fa-square-up-right"></i>
           </a>`;

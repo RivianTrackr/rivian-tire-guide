@@ -319,10 +319,21 @@ class RTG_Admin {
 
         check_admin_referer( 'rtg_save_settings', 'rtg_settings_nonce' );
 
+        // Theme colors — sanitize hex values.
+        $theme_colors = array();
+        $raw_colors = $_POST['rtg_colors'] ?? array();
+        $valid_keys = array( 'accent', 'accent_hover', 'bg_primary', 'bg_card', 'bg_input', 'bg_deep', 'text_primary', 'text_light', 'text_muted', 'text_heading', 'border' );
+        foreach ( $valid_keys as $key ) {
+            if ( isset( $raw_colors[ $key ] ) && preg_match( '/^#[0-9a-fA-F]{6}$/', $raw_colors[ $key ] ) ) {
+                $theme_colors[ $key ] = $raw_colors[ $key ];
+            }
+        }
+
         $settings = array(
             'rows_per_page' => intval( $_POST['rows_per_page'] ?? 12 ),
             'cdn_prefix'    => esc_url_raw( $_POST['cdn_prefix'] ?? '' ),
             'compare_slug'  => sanitize_title( $_POST['compare_slug'] ?? 'tire-compare' ),
+            'theme_colors'  => $theme_colors,
         );
 
         update_option( 'rtg_settings', $settings );

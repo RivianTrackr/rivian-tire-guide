@@ -1,4 +1,10 @@
 /* jshint esversion: 11 */
+
+// Theme color helper — reads CSS custom properties set by admin.
+function rtgColor(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue('--rtg-' + name).trim();
+}
+
 const ROWS_PER_PAGE = (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.rowsPerPage) ? rtgData.settings.rowsPerPage : 12;
 let filteredRows = [];
 let allRows = [];
@@ -638,7 +644,7 @@ function showSearchSuggestions(suggestions, inputElement) {
     top: 100%;
     left: 0;
     right: 0;
-    background: #1e293b;
+    background: ${rtgColor('bg-primary')};
     border: 1px solid #475569;
     border-radius: 0 0 8px 8px;
     border-top: none;
@@ -658,9 +664,9 @@ function showSearchSuggestions(suggestions, inputElement) {
       align-items: center;
       justify-content: space-between;
       transition: background-color 0.2s ease;
-      border-bottom: 1px solid #334155;
+      border-bottom: 1px solid ${rtgColor('border')};
     `;
-    
+
     if (index === suggestions.length - 1) {
       item.style.borderBottom = 'none';
     }
@@ -680,10 +686,10 @@ function showSearchSuggestions(suggestions, inputElement) {
     
     const icon = document.createElement('i');
     icon.className = getIcon(suggestion.type);
-    icon.style.cssText = 'color: #94a3b8; font-size: 14px; width: 16px;';
-    
+    icon.style.cssText = `color: ${rtgColor('text-muted')}; font-size: 14px; width: 16px;`;
+
     const text = document.createElement('div');
-    text.style.cssText = 'color: #f1f5f9; font-weight: 500;';
+    text.style.cssText = `color: ${rtgColor('text-light')}; font-weight: 500;`;
     text.textContent = suggestion.display;
     
     content.appendChild(icon);
@@ -694,7 +700,7 @@ function showSearchSuggestions(suggestions, inputElement) {
     
     const typeBadge = document.createElement('span');
     typeBadge.style.cssText = `
-      background: #374151;
+      background: ${rtgColor('bg-input')};
       color: #9ca3af;
       font-size: 11px;
       padding: 2px 6px;
@@ -715,7 +721,7 @@ function showSearchSuggestions(suggestions, inputElement) {
     item.appendChild(meta);
     
     item.addEventListener('mouseenter', () => {
-      item.style.backgroundColor = '#374151';
+      item.style.backgroundColor = rtgColor('bg-input');
     });
     
     item.addEventListener('mouseleave', () => {
@@ -864,12 +870,12 @@ function initializeSmartSearch() {
     items.forEach((item, index) => {
       if (index === activeIndex) {
         item.classList.add('active');
-        item.style.backgroundColor = '#5ec095';
+        item.style.backgroundColor = rtgColor('accent');
         item.style.color = '#1a1a1a';
       } else {
         item.classList.remove('active');
         item.style.backgroundColor = 'transparent';
-        item.style.color = '#f1f5f9';
+        item.style.color = rtgColor('text-light');
       }
     });
   });
@@ -955,12 +961,12 @@ function createInfoTooltip(label, tooltipKey) {
   `;
   
   infoButton.addEventListener('mouseenter', () => {
-    infoButton.style.color = '#5ec095';
+    infoButton.style.color = rtgColor('accent');
     infoButton.style.backgroundColor = 'rgba(94, 192, 149, 0.1)';
   });
   
   infoButton.addEventListener('mouseleave', () => {
-    infoButton.style.color = '#94a3b8';
+    infoButton.style.color = rtgColor('text-muted');
     infoButton.style.backgroundColor = 'transparent';
   });
   
@@ -998,12 +1004,12 @@ function createFilterTooltip(labelText, tooltipKey) {
   `;
   
   infoButton.addEventListener('mouseenter', () => {
-    infoButton.style.color = '#5ec095';
+    infoButton.style.color = rtgColor('accent');
     infoButton.style.backgroundColor = 'rgba(94, 192, 149, 0.1)';
   });
   
   infoButton.addEventListener('mouseleave', () => {
-    infoButton.style.color = '#94a3b8';
+    infoButton.style.color = rtgColor('text-muted');
     infoButton.style.backgroundColor = 'transparent';
   });
   
@@ -1040,12 +1046,12 @@ function showTooltipModal(tooltipKey, triggerElement) {
   const modal = document.createElement('div');
   modal.className = 'tooltip-modal';
   modal.style.cssText = `
-    background: #1e293b;
+    background: ${rtgColor('bg-primary')};
     border-radius: 12px;
     padding: 20px;
     max-width: 400px;
     width: 100%;
-    color: #f1f5f9;
+    color: ${rtgColor('text-light')};
     border: 1px solid #475569;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     animation: slideUp 0.2s ease;
@@ -1058,9 +1064,9 @@ function showTooltipModal(tooltipKey, triggerElement) {
     margin: 0 0 12px 0;
     font-size: 18px;
     font-weight: 700;
-    color: #5ec095;
+    color: ${rtgColor('accent')};
   `;
-  
+
   const content = document.createElement('p');
   content.innerHTML = tooltipData.content;
   content.style.cssText = `
@@ -1092,19 +1098,19 @@ function showTooltipModal(tooltipKey, triggerElement) {
   `;
   
   closeButton.addEventListener('mouseenter', () => {
-    closeButton.style.color = '#f1f5f9';
+    closeButton.style.color = rtgColor('text-light');
     closeButton.style.backgroundColor = 'rgba(148, 163, 184, 0.2)';
   });
   
   closeButton.addEventListener('mouseleave', () => {
-    closeButton.style.color = '#94a3b8';
+    closeButton.style.color = rtgColor('text-muted');
     closeButton.style.backgroundColor = 'transparent';
   });
   
   const gotItButton = document.createElement('button');
   gotItButton.textContent = 'Got it';
   gotItButton.style.cssText = `
-    background: #5ec095;
+    background: ${rtgColor('accent')};
     color: #1a1a1a;
     border: none;
     padding: 8px 16px;
@@ -1115,13 +1121,13 @@ function showTooltipModal(tooltipKey, triggerElement) {
     transition: background-color 0.2s ease;
     width: 100%;
   `;
-  
+
   gotItButton.addEventListener('mouseenter', () => {
-    gotItButton.style.backgroundColor = '#4ade80';
+    gotItButton.style.backgroundColor = rtgColor('accent-hover');
   });
-  
+
   gotItButton.addEventListener('mouseleave', () => {
-    gotItButton.style.backgroundColor = '#5ec095';
+    gotItButton.style.backgroundColor = rtgColor('accent');
   });
   
   const closeModal = () => closeTooltipModal();
@@ -1464,7 +1470,7 @@ function createRatingHTML(tireId, average = 0, count = 0, userRating = 0) {
     
     const loginLink = document.createElement('a');
     loginLink.href = typeof tireRatingAjax !== 'undefined' ? tireRatingAjax.login_url : '/wp-login.php';
-    loginLink.style.color = '#5ec095';
+    loginLink.style.color = rtgColor('accent');
     loginLink.textContent = 'Log in';
     
     loginPrompt.appendChild(loginLink);
@@ -1803,7 +1809,7 @@ function createSingleCard(row) {
 
   const card = document.createElement("div");
   card.className = "tire-card";
-  card.style.cssText = `background: #121e2b; border-radius: 12px; padding: 16px; color: #e5e5e5; display: flex; flex-direction: column; gap: 8px; position: relative; min-height: 560px; transition: opacity 0.3s ease, transform 0.3s ease;`;
+  card.style.cssText = `background: ${rtgColor('bg-card')}; border-radius: 12px; padding: 16px; color: ${rtgColor('text-primary')}; display: flex; flex-direction: column; gap: 8px; position: relative; min-height: 560px; transition: opacity 0.3s ease, transform 0.3s ease;`;
   card.dataset.tireId = tireId;
 
   if (safeString(tags).toLowerCase().includes("reviewed")) {
@@ -1874,7 +1880,7 @@ function createSingleCard(row) {
       gradeLabel.textContent = grade;
       
       const scoreSection = document.createElement('span');
-      scoreSection.style.cssText = `color: #f1f5f9; background-color: transparent; padding: 2px 8px; line-height: 1.2; display: flex; align-items: center; height: 22px; gap: 4px;`;
+      scoreSection.style.cssText = `color: ${rtgColor('text-light')}; background-color: transparent; padding: 2px 8px; line-height: 1.2; display: flex; align-items: center; height: 22px; gap: 4px;`;
       
       // Create the efficiency text span
       const scoreText = document.createElement('span');
@@ -1928,7 +1934,7 @@ function createSingleCard(row) {
     
     tagList.forEach(tag => {
       const tagEl = document.createElement('span');
-      tagEl.style.cssText = `display: inline-flex; align-items: center; font-size: 12px; font-weight: 600; padding: 4px 10px; background-color: #334155; color: #f1f5f9; border-radius: 6px; line-height: 1;`;
+      tagEl.style.cssText = `display: inline-flex; align-items: center; font-size: 12px; font-weight: 600; padding: 4px 10px; background-color: ${rtgColor('border')}; color: ${rtgColor('text-light')}; border-radius: 6px; line-height: 1;`;
       tagEl.textContent = safeString(tag, 30);
       tagsContainer.appendChild(tagEl);
     });
@@ -1985,7 +1991,7 @@ function createSingleCard(row) {
     viewButton.href = safeLink;
     viewButton.target = '_blank';
     viewButton.rel = 'noopener noreferrer';
-    viewButton.style.cssText = `background-color: #5ec095; color: #1a1a1a; font-weight: 600; text-align: center; padding: 10px 16px; border-radius: 8px; text-decoration: none; display: block;`;
+    viewButton.style.cssText = `background-color: ${rtgColor('accent')}; color: #1a1a1a; font-weight: 600; text-align: center; padding: 10px 16px; border-radius: 8px; text-decoration: none; display: block;`;
     viewButton.innerHTML = 'View Tire&nbsp;<i class="fa-solid fa-square-up-right"></i>';
     actionsContainer.appendChild(viewButton);
   } else {
@@ -2008,7 +2014,7 @@ function createSingleCard(row) {
 
   const compareLabel = document.createElement('label');
   compareLabel.className = 'compare-label';
-  compareLabel.style.cssText = `background: transparent; border: 2px solid #fff; color: #5ec095; font-weight: 600; text-align: center; padding: 10px 16px; border-radius: 8px; text-decoration: none; display: flex; justify-content: center; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;`;
+  compareLabel.style.cssText = `background: transparent; border: 2px solid #fff; color: ${rtgColor('accent')}; font-weight: 600; text-align: center; padding: 10px 16px; border-radius: 8px; text-decoration: none; display: flex; justify-content: center; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;`;
 
   const compareCheckbox = document.createElement('input');
   compareCheckbox.type = 'checkbox';
@@ -2019,7 +2025,7 @@ function createSingleCard(row) {
 
   const customCheckbox = document.createElement('span');
   customCheckbox.className = 'custom-checkbox';
-  customCheckbox.style.cssText = `width: 18px; height: 18px; border: 2px solid #5ec095; border-radius: 4px; background-color: transparent; position: relative; display: inline-block;`;
+  customCheckbox.style.cssText = `width: 18px; height: 18px; border: 2px solid ${rtgColor('accent')}; border-radius: 4px; background-color: transparent; position: relative; display: inline-block;`;
 
   const compareText = document.createElement('span');
   compareText.className = 'compare-text';
@@ -2112,7 +2118,7 @@ function renderPaginationControls(totalRows) {
   
   const pageInfo = document.createElement("span");
   pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-  pageInfo.style.cssText = "color: #e5e5e5; font-weight: 500; display: flex; align-items: center;";
+  pageInfo.style.cssText = `color: ${rtgColor('text-primary')}; font-weight: 500; display: flex; align-items: center;`;
   container.appendChild(pageInfo);
   
   const next = document.createElement("button");
@@ -2130,15 +2136,15 @@ function renderPaginationControls(totalRows) {
 }
 
 function styleButton(button) {
-  button.style.backgroundColor = "#1e293b";
-  button.style.color = "#e5e5e5";
+  button.style.backgroundColor = rtgColor('bg-primary');
+  button.style.color = rtgColor('text-primary');
   button.style.padding = "8px 16px";
   button.style.border = "none";
   button.style.borderRadius = "6px";
   button.style.cursor = "pointer";
   button.style.fontWeight = "600";
-  button.onmouseover = () => button.style.backgroundColor = "#5ec095";
-  button.onmouseout = () => button.style.backgroundColor = "#1e293b";
+  button.onmouseover = () => button.style.backgroundColor = rtgColor('accent');
+  button.onmouseout = () => button.style.backgroundColor = rtgColor('bg-primary');
 }
 
 function render() {
