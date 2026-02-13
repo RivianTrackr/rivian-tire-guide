@@ -54,6 +54,33 @@ class RTG_Frontend {
             RTG_VERSION
         );
 
+        // Theme color overrides — output as inline CSS custom properties.
+        $theme_colors = $settings['theme_colors'] ?? array();
+        if ( ! empty( $theme_colors ) ) {
+            $var_map = array(
+                'accent'       => '--rtg-accent',
+                'accent_hover' => '--rtg-accent-hover',
+                'bg_primary'   => '--rtg-bg-primary',
+                'bg_card'      => '--rtg-bg-card',
+                'bg_input'     => '--rtg-bg-input',
+                'bg_deep'      => '--rtg-bg-deep',
+                'text_primary' => '--rtg-text-primary',
+                'text_light'   => '--rtg-text-light',
+                'text_muted'   => '--rtg-text-muted',
+                'text_heading' => '--rtg-text-heading',
+                'border'       => '--rtg-border',
+            );
+            $css_vars = '';
+            foreach ( $var_map as $key => $prop ) {
+                if ( ! empty( $theme_colors[ $key ] ) ) {
+                    $css_vars .= $prop . ':' . $theme_colors[ $key ] . ';';
+                }
+            }
+            if ( $css_vars ) {
+                wp_add_inline_style( 'rtg-styles', ':root{' . $css_vars . '}' );
+            }
+        }
+
         // JS — no PapaParse needed.
         wp_enqueue_script(
             'rtg-tire-guide',
