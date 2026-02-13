@@ -270,29 +270,31 @@ class RTG_Database {
      */
     public static function calculate_efficiency( $data ) {
         // Width score: extract width from size (e.g., "275/60R20" → 275).
+        // Missing data defaults to 0.5 (neutral).
         $width_val = 0;
         $size = $data['size'] ?? '';
         if ( ! empty( $size ) && strpos( $size, '/' ) !== false ) {
             $width_val = floatval( substr( $size, 0, strpos( $size, '/' ) ) );
         }
-        $width_score = $width_val > 0 ? ( 305 - $width_val ) / 30 : 0;
+        $width_score = $width_val > 0 ? ( 305 - $width_val ) / 30 : 0.5;
 
-        // Weight score.
+        // Weight score. Missing data defaults to 0.5 (neutral).
         $weight = floatval( $data['weight_lb'] ?? 0 );
-        $weight_score = $weight > 0 ? ( 70 - $weight ) / 40 : 0;
+        $weight_score = $weight > 0 ? ( 70 - $weight ) / 40 : 0.5;
 
         // Tread score: extract numerator from tread (e.g., "10/32" → 10).
+        // Missing data defaults to 0.5 (neutral).
         $tread_val = 0;
         $tread = $data['tread'] ?? '';
         if ( ! empty( $tread ) && strpos( $tread, '/' ) !== false ) {
             $tread_val = floatval( substr( $tread, 0, strpos( $tread, '/' ) ) );
         }
-        $tread_score = $tread_val > 0 ? ( 20 - $tread_val ) / 11 : 0;
+        $tread_score = $tread_val > 0 ? ( 20 - $tread_val ) / 11 : 0.5;
 
         // Load range score.
         $load_range = strtoupper( trim( $data['load_range'] ?? '' ) );
         $load_scores = array( 'SL' => 1, 'HL' => 0.9, 'XL' => 0.9, 'RF' => 0.7, 'D' => 0.3, 'E' => 0, 'F' => 0 );
-        $load_score = isset( $load_scores[ $load_range ] ) ? $load_scores[ $load_range ] : 0;
+        $load_score = isset( $load_scores[ $load_range ] ) ? $load_scores[ $load_range ] : 0.5;
 
         // Speed rating score (first character).
         $speed_raw = trim( $data['speed_rating'] ?? '' );
@@ -311,13 +313,21 @@ class RTG_Database {
 
         // Category score.
         $category = $data['category'] ?? '';
-        $cat_scores = array( 'All-Season' => 1, 'Performance' => 1, 'All-Terrain' => 0.5, 'Winter' => 0 );
-        $cat_score = isset( $cat_scores[ $category ] ) ? $cat_scores[ $category ] : 0;
+        $cat_scores = array(
+            'All-Season'    => 1,
+            'Performance'   => 1,
+            'Highway'       => 1,
+            'All-Terrain'   => 0.5,
+            'Rugged Terrain' => 0.25,
+            'Mud-Terrain'   => 0,
+            'Winter'        => 0,
+        );
+        $cat_score = isset( $cat_scores[ $category ] ) ? $cat_scores[ $category ] : 0.5;
 
         // 3PMS score (No = better for efficiency).
         $pms_score = ( $data['three_pms'] ?? 'No' ) === 'No' ? 1 : 0;
 
-        // Weighted total.
+        // Weighted total (weights sum to 1.0).
         $total = (
             $weight_score * 0.26 +
             $tread_score  * 0.16 +
@@ -325,11 +335,12 @@ class RTG_Database {
             $speed_score  * 0.10 +
             $utqg_score   * 0.10 +
             $cat_score    * 0.10 +
-            $pms_score    * 0.05 +
-            $width_score  * 0.03
+            $pms_score    * 0.08 +
+            $width_score  * 0.04
         );
 
-        $score = (int) round( $total * 100 );
+        // Clamp to 0–100.
+        $score = max( 0, min( 100, (int) round( $total * 100 ) ) );
 
         // Determine grade.
         if ( $score >= 80 ) {

@@ -74,28 +74,28 @@
         var category   = $('#category').val() || '';
         var threePms   = $('#three_pms').val() || 'No';
 
-        // Width score from size (e.g., "275/60R20" → 275).
+        // Width score from size (e.g., "275/60R20" → 275). Missing = 0.5 neutral.
         var widthVal = 0;
         var slashIdx = size.indexOf('/');
         if (slashIdx > 0) {
             widthVal = parseFloat(size.substring(0, slashIdx)) || 0;
         }
-        var widthScore = widthVal > 0 ? (305 - widthVal) / 30 : 0;
+        var widthScore = widthVal > 0 ? (305 - widthVal) / 30 : 0.5;
 
-        // Weight score.
-        var weightScore = weightLb > 0 ? (70 - weightLb) / 40 : 0;
+        // Weight score. Missing = 0.5 neutral.
+        var weightScore = weightLb > 0 ? (70 - weightLb) / 40 : 0.5;
 
-        // Tread score (e.g., "10/32" → 10).
+        // Tread score (e.g., "10/32" → 10). Missing = 0.5 neutral.
         var treadVal = 0;
         var treadSlash = tread.indexOf('/');
         if (treadSlash > 0) {
             treadVal = parseFloat(tread.substring(0, treadSlash)) || 0;
         }
-        var treadScore = treadVal > 0 ? (20 - treadVal) / 11 : 0;
+        var treadScore = treadVal > 0 ? (20 - treadVal) / 11 : 0.5;
 
-        // Load range score.
+        // Load range score. Missing = 0.5 neutral.
         var loadScores = { SL: 1, HL: 0.9, XL: 0.9, RF: 0.7, D: 0.3, E: 0, F: 0 };
-        var loadScore = loadScores.hasOwnProperty(loadRange) ? loadScores[loadRange] : 0;
+        var loadScore = loadScores.hasOwnProperty(loadRange) ? loadScores[loadRange] : 0.5;
 
         // Speed rating score (first character).
         var speedChar = speedRaw.length > 0 ? speedRaw.charAt(0).toUpperCase() : '';
@@ -110,14 +110,18 @@
         }
         var utqgScore = utqgVal === 0 ? 0.5 : (utqgVal - 420) / 400;
 
-        // Category score.
-        var catScores = { 'All-Season': 1, 'Performance': 1, 'All-Terrain': 0.5, 'Winter': 0 };
-        var catScore = catScores.hasOwnProperty(category) ? catScores[category] : 0;
+        // Category score. Missing = 0.5 neutral.
+        var catScores = {
+            'All-Season': 1, 'Performance': 1, 'Highway': 1,
+            'All-Terrain': 0.5, 'Rugged Terrain': 0.25,
+            'Mud-Terrain': 0, 'Winter': 0
+        };
+        var catScore = catScores.hasOwnProperty(category) ? catScores[category] : 0.5;
 
         // 3PMS score (No = better for efficiency).
         var pmsScore = threePms === 'No' ? 1 : 0;
 
-        // Weighted total.
+        // Weighted total (weights sum to 1.0).
         var total = (
             weightScore * 0.26 +
             treadScore  * 0.16 +
@@ -125,11 +129,12 @@
             speedScore  * 0.10 +
             utqgScore   * 0.10 +
             catScore    * 0.10 +
-            pmsScore    * 0.05 +
-            widthScore  * 0.03
+            pmsScore    * 0.08 +
+            widthScore  * 0.04
         );
 
-        var score = Math.round(total * 100);
+        // Clamp to 0–100.
+        var score = Math.max(0, Math.min(100, Math.round(total * 100)));
 
         // Determine grade.
         var grade;
