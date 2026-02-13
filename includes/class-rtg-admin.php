@@ -312,7 +312,7 @@ class RTG_Admin {
         $dropdown_fields = array( 'brands', 'categories', 'sizes', 'diameters', 'load_ranges', 'speed_ratings' );
         $dropdowns = array();
         foreach ( $dropdown_fields as $field ) {
-            $raw = $_POST[ 'rtg_dd_' . $field ] ?? '';
+            $raw = wp_unslash( $_POST[ 'rtg_dd_' . $field ] ?? '' );
             $lines = array_filter( array_map( 'trim', explode( "\n", sanitize_textarea_field( $raw ) ) ), 'strlen' );
             if ( ! empty( $lines ) ) {
                 $dropdowns[ $field ] = array_values( $lines );
