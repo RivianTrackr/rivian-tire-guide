@@ -1,0 +1,289 @@
+<?php
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+class RTG_Admin {
+
+    public function __construct() {
+        add_action( 'admin_menu', array( $this, 'register_menu' ) );
+        add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+        add_action( 'admin_init', array( $this, 'handle_actions' ) );
+    }
+
+    public function register_menu() {
+        add_menu_page(
+            'Tire Guide',
+            'Tire Guide',
+            'manage_options',
+            'rtg-tires',
+            array( $this, 'render_list_page' ),
+            'dashicons-car',
+            30
+        );
+
+        add_submenu_page(
+            'rtg-tires',
+            'All Tires',
+            'All Tires',
+            'manage_options',
+            'rtg-tires',
+            array( $this, 'render_list_page' )
+        );
+
+        add_submenu_page(
+            'rtg-tires',
+            'Add New Tire',
+            'Add New',
+            'manage_options',
+            'rtg-tire-edit',
+            array( $this, 'render_edit_page' )
+        );
+
+        add_submenu_page(
+            'rtg-tires',
+            'Import CSV',
+            'Import CSV',
+            'manage_options',
+            'rtg-import',
+            array( $this, 'render_import_page' )
+        );
+
+        add_submenu_page(
+            'rtg-tires',
+            'Settings',
+            'Settings',
+            'manage_options',
+            'rtg-settings',
+            array( $this, 'render_settings_page' )
+        );
+    }
+
+    public function enqueue_assets( $hook ) {
+        if ( strpos( $hook, 'rtg-' ) === false && strpos( $hook, 'rtg_' ) === false ) {
+            return;
+        }
+
+        wp_enqueue_style(
+            'rtg-admin-styles',
+            RTG_PLUGIN_URL . 'admin/css/admin-styles.css',
+            array(),
+            RTG_VERSION
+        );
+
+        wp_enqueue_script(
+            'rtg-admin-scripts',
+            RTG_PLUGIN_URL . 'admin/js/admin-scripts.js',
+            array( 'jquery' ),
+            RTG_VERSION,
+            true
+        );
+    }
+
+    public function handle_actions() {
+        // Handle tire save.
+        if ( isset( $_POST['rtg_tire_save'] ) ) {
+            $this->handle_tire_save();
+        }
+
+        // Handle tire delete.
+        if ( isset( $_GET['action'] ) && $_GET['action'] === 'delete' && isset( $_GET['tire_id'] ) ) {
+            $this->handle_tire_delete();
+        }
+
+        // Handle bulk actions from list table.
+        if ( isset( $_POST['rtg_bulk_action'] ) && $_POST['rtg_bulk_action'] === 'delete' ) {
+            $this->handle_bulk_delete();
+        }
+
+        // Handle CSV import.
+        if ( isset( $_POST['rtg_import_csv'] ) ) {
+            $this->handle_csv_import();
+        }
+
+        // Handle settings save.
+        if ( isset( $_POST['rtg_save_settings'] ) ) {
+            $this->handle_settings_save();
+        }
+    }
+
+    // --- Page Renderers ---
+
+    public function render_list_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        require_once RTG_PLUGIN_DIR . 'admin/views/tire-list.php';
+    }
+
+    public function render_edit_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        require_once RTG_PLUGIN_DIR . 'admin/views/tire-edit.php';
+    }
+
+    public function render_import_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        require_once RTG_PLUGIN_DIR . 'admin/views/tire-import.php';
+    }
+
+    public function render_settings_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        require_once RTG_PLUGIN_DIR . 'admin/views/settings.php';
+    }
+
+    // --- Action Handlers ---
+
+    private function handle_tire_save() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Unauthorized' );
+        }
+
+        check_admin_referer( 'rtg_tire_save', 'rtg_tire_nonce' );
+
+        $editing_id = isset( $_POST['editing_id'] ) ? intval( $_POST['editing_id'] ) : 0;
+
+        $data = array(
+            'tire_id'          => sanitize_text_field( $_POST['tire_id'] ?? '' ),
+            'size'             => sanitize_text_field( $_POST['size'] ?? '' ),
+            'diameter'         => sanitize_text_field( $_POST['diameter'] ?? '' ),
+            'brand'            => sanitize_text_field( $_POST['brand'] ?? '' ),
+            'model'            => sanitize_text_field( $_POST['model'] ?? '' ),
+            'category'         => sanitize_text_field( $_POST['category'] ?? '' ),
+            'price'            => floatval( $_POST['price'] ?? 0 ),
+            'mileage_warranty' => intval( $_POST['mileage_warranty'] ?? 0 ),
+            'weight_lb'        => floatval( $_POST['weight_lb'] ?? 0 ),
+            'three_pms'        => sanitize_text_field( $_POST['three_pms'] ?? 'No' ),
+            'tread'            => sanitize_text_field( $_POST['tread'] ?? '' ),
+            'load_index'       => sanitize_text_field( $_POST['load_index'] ?? '' ),
+            'max_load_lb'      => intval( $_POST['max_load_lb'] ?? 0 ),
+            'load_range'       => sanitize_text_field( $_POST['load_range'] ?? '' ),
+            'speed_rating'     => sanitize_text_field( $_POST['speed_rating'] ?? '' ),
+            'psi'              => sanitize_text_field( $_POST['psi'] ?? '' ),
+            'utqg'             => sanitize_text_field( $_POST['utqg'] ?? '' ),
+            'tags'             => sanitize_text_field( $_POST['tags'] ?? '' ),
+            'link'             => esc_url_raw( $_POST['link'] ?? '' ),
+            'image'            => esc_url_raw( $_POST['image'] ?? '' ),
+            'efficiency_score' => intval( $_POST['efficiency_score'] ?? 0 ),
+            'efficiency_grade' => sanitize_text_field( $_POST['efficiency_grade'] ?? '' ),
+            'bundle_link'      => esc_url_raw( $_POST['bundle_link'] ?? '' ),
+            'sort_order'       => intval( $_POST['sort_order'] ?? 0 ),
+        );
+
+        // Validate tire_id.
+        if ( empty( $data['tire_id'] ) ) {
+            $data['tire_id'] = RTG_Database::get_next_tire_id();
+        }
+
+        if ( $editing_id > 0 ) {
+            // Update existing.
+            $existing = RTG_Database::get_tire_by_id( $editing_id );
+            if ( ! $existing ) {
+                wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=error' ) );
+                exit;
+            }
+            RTG_Database::update_tire( $existing['tire_id'], $data );
+            wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=updated' ) );
+        } else {
+            // Check uniqueness.
+            if ( RTG_Database::tire_id_exists( $data['tire_id'] ) ) {
+                wp_redirect( admin_url( 'admin.php?page=rtg-tire-edit&message=duplicate_id' ) );
+                exit;
+            }
+            RTG_Database::insert_tire( $data );
+            wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=added' ) );
+        }
+        exit;
+    }
+
+    private function handle_tire_delete() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Unauthorized' );
+        }
+
+        $tire_id = sanitize_text_field( $_GET['tire_id'] );
+        check_admin_referer( 'rtg_delete_' . $tire_id );
+
+        RTG_Database::delete_tire( $tire_id );
+        wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=deleted' ) );
+        exit;
+    }
+
+    private function handle_bulk_delete() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Unauthorized' );
+        }
+
+        check_admin_referer( 'rtg_bulk_action', 'rtg_bulk_nonce' );
+
+        $tire_ids = array_map( 'sanitize_text_field', $_POST['tire_ids'] ?? array() );
+        if ( ! empty( $tire_ids ) ) {
+            RTG_Database::delete_tires( $tire_ids );
+        }
+
+        wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=bulk_deleted' ) );
+        exit;
+    }
+
+    private function handle_csv_import() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Unauthorized' );
+        }
+
+        check_admin_referer( 'rtg_import_csv', 'rtg_import_nonce' );
+
+        if ( empty( $_FILES['csv_file']['tmp_name'] ) ) {
+            wp_redirect( admin_url( 'admin.php?page=rtg-import&message=no_file' ) );
+            exit;
+        }
+
+        $file = $_FILES['csv_file'];
+
+        // Validate file type.
+        $ext = strtolower( pathinfo( $file['name'], PATHINFO_EXTENSION ) );
+        if ( $ext !== 'csv' ) {
+            wp_redirect( admin_url( 'admin.php?page=rtg-import&message=invalid_type' ) );
+            exit;
+        }
+
+        // Validate file size (max 2MB).
+        if ( $file['size'] > 2 * 1024 * 1024 ) {
+            wp_redirect( admin_url( 'admin.php?page=rtg-import&message=too_large' ) );
+            exit;
+        }
+
+        $update_existing = isset( $_POST['update_existing'] );
+        $result = RTG_CSV_Importer::import( $file['tmp_name'], $update_existing );
+
+        set_transient( 'rtg_import_result', $result, 60 );
+        wp_redirect( admin_url( 'admin.php?page=rtg-import&message=imported' ) );
+        exit;
+    }
+
+    private function handle_settings_save() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Unauthorized' );
+        }
+
+        check_admin_referer( 'rtg_save_settings', 'rtg_settings_nonce' );
+
+        $settings = array(
+            'rows_per_page' => intval( $_POST['rows_per_page'] ?? 12 ),
+            'cdn_prefix'    => esc_url_raw( $_POST['cdn_prefix'] ?? '' ),
+            'compare_slug'  => sanitize_title( $_POST['compare_slug'] ?? 'tire-compare' ),
+        );
+
+        update_option( 'rtg_settings', $settings );
+
+        // Flush rewrite rules if compare slug changed.
+        update_option( 'rtg_flush_rewrite', 1 );
+
+        wp_redirect( admin_url( 'admin.php?page=rtg-settings&message=saved' ) );
+        exit;
+    }
+}
