@@ -107,6 +107,31 @@ class RTG_Admin {
         }
     }
 
+    // --- Dropdown Options ---
+
+    /**
+     * Default dropdown options for tire fields.
+     */
+    private static $default_dropdowns = array(
+        'brands'        => array( 'BFGoodrich', 'Continental', 'Cooper', 'Falken', 'Firestone', 'General', 'Goodyear', 'Hankook', 'Kumho', 'Michelin', 'Nitto', 'Pirelli', 'Toyo', 'Yokohama' ),
+        'categories'    => array( 'All-Season', 'All-Terrain', 'Highway', 'Mud-Terrain', 'Performance', 'Rugged Terrain', 'Winter' ),
+        'sizes'         => array( '275/65R18', '275/60R20', '275/55R22' ),
+        'diameters'     => array( '18"', '20"', '22"' ),
+        'load_ranges'   => array( 'SL', 'HL', 'XL', 'RF', 'D', 'E', 'F' ),
+        'speed_ratings' => array( 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'H', 'V', 'W', 'Y', 'Z' ),
+    );
+
+    /**
+     * Get dropdown options for a field, with defaults fallback.
+     */
+    public static function get_dropdown_options( $field ) {
+        $saved = get_option( 'rtg_dropdown_options', array() );
+        if ( ! empty( $saved[ $field ] ) && is_array( $saved[ $field ] ) ) {
+            return $saved[ $field ];
+        }
+        return self::$default_dropdowns[ $field ] ?? array();
+    }
+
     // --- Page Renderers ---
 
     public function render_list_page() {
@@ -282,6 +307,18 @@ class RTG_Admin {
         );
 
         update_option( 'rtg_settings', $settings );
+
+        // Save dropdown options (one value per line in textareas).
+        $dropdown_fields = array( 'brands', 'categories', 'sizes', 'diameters', 'load_ranges', 'speed_ratings' );
+        $dropdowns = array();
+        foreach ( $dropdown_fields as $field ) {
+            $raw = $_POST[ 'rtg_dd_' . $field ] ?? '';
+            $lines = array_filter( array_map( 'trim', explode( "\n", sanitize_textarea_field( $raw ) ) ), 'strlen' );
+            if ( ! empty( $lines ) ) {
+                $dropdowns[ $field ] = array_values( $lines );
+            }
+        }
+        update_option( 'rtg_dropdown_options', $dropdowns );
 
         // Flush rewrite rules if compare slug changed.
         update_option( 'rtg_flush_rewrite', 1 );
