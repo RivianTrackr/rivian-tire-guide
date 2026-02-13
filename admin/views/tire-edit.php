@@ -40,7 +40,13 @@ $v = $tire ? wp_parse_args( $tire, $defaults ) : $defaults;
 // Notices.
 $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) : '';
 
-$categories = array( 'All-Season', 'All-Terrain', 'Highway', 'Mud-Terrain', 'Performance', 'Rugged Terrain', 'Winter' );
+// Load managed dropdown options.
+$dd_brands        = RTG_Admin::get_dropdown_options( 'brands' );
+$dd_categories    = RTG_Admin::get_dropdown_options( 'categories' );
+$dd_sizes         = RTG_Admin::get_dropdown_options( 'sizes' );
+$dd_diameters     = RTG_Admin::get_dropdown_options( 'diameters' );
+$dd_load_ranges   = RTG_Admin::get_dropdown_options( 'load_ranges' );
+$dd_speed_ratings = RTG_Admin::get_dropdown_options( 'speed_ratings' );
 ?>
 
 <div class="rtg-wrap">
@@ -84,7 +90,12 @@ $categories = array( 'All-Season', 'All-Terrain', 'Highway', 'Mud-Terrain', 'Per
                         <div class="rtg-field-label-row">
                             <label class="rtg-field-label" for="brand">Brand <span class="rtg-badge-required">Required</span></label>
                         </div>
-                        <input type="text" id="brand" name="brand" value="<?php echo esc_attr( $v['brand'] ); ?>" required>
+                        <select id="brand" name="brand" required>
+                            <option value="">Select...</option>
+                            <?php foreach ( $dd_brands as $opt ) : ?>
+                                <option value="<?php echo esc_attr( $opt ); ?>" <?php selected( $v['brand'], $opt ); ?>><?php echo esc_html( $opt ); ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">
@@ -105,13 +116,23 @@ $categories = array( 'All-Season', 'All-Terrain', 'Highway', 'Mud-Terrain', 'Per
                         <div class="rtg-field-label-row">
                             <label class="rtg-field-label" for="size">Size</label>
                         </div>
-                        <input type="text" id="size" name="size" value="<?php echo esc_attr( $v['size'] ); ?>" placeholder="e.g. 275/60R20">
+                        <select id="size" name="size">
+                            <option value="">Select...</option>
+                            <?php foreach ( $dd_sizes as $opt ) : ?>
+                                <option value="<?php echo esc_attr( $opt ); ?>" <?php selected( $v['size'], $opt ); ?>><?php echo esc_html( $opt ); ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">
                             <label class="rtg-field-label" for="diameter">Diameter</label>
                         </div>
-                        <input type="text" id="diameter" name="diameter" value="<?php echo esc_attr( $v['diameter'] ); ?>" placeholder='e.g. 33"'>
+                        <select id="diameter" name="diameter">
+                            <option value="">Select...</option>
+                            <?php foreach ( $dd_diameters as $opt ) : ?>
+                                <option value="<?php echo esc_attr( $opt ); ?>" <?php selected( $v['diameter'], $opt ); ?>><?php echo esc_html( $opt ); ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">
@@ -119,8 +140,8 @@ $categories = array( 'All-Season', 'All-Terrain', 'Highway', 'Mud-Terrain', 'Per
                         </div>
                         <select id="category" name="category">
                             <option value="">Select...</option>
-                            <?php foreach ( $categories as $cat ) : ?>
-                                <option value="<?php echo esc_attr( $cat ); ?>" <?php selected( $v['category'], $cat ); ?>><?php echo esc_html( $cat ); ?></option>
+                            <?php foreach ( $dd_categories as $opt ) : ?>
+                                <option value="<?php echo esc_attr( $opt ); ?>" <?php selected( $v['category'], $opt ); ?>><?php echo esc_html( $opt ); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -161,13 +182,23 @@ $categories = array( 'All-Season', 'All-Terrain', 'Highway', 'Mud-Terrain', 'Per
                         <div class="rtg-field-label-row">
                             <label class="rtg-field-label" for="load_range">Load Range</label>
                         </div>
-                        <input type="text" id="load_range" name="load_range" value="<?php echo esc_attr( $v['load_range'] ); ?>" class="rtg-input-small" placeholder="e.g. XL">
+                        <select id="load_range" name="load_range">
+                            <option value="">Select...</option>
+                            <?php foreach ( $dd_load_ranges as $opt ) : ?>
+                                <option value="<?php echo esc_attr( $opt ); ?>" <?php selected( $v['load_range'], $opt ); ?>><?php echo esc_html( $opt ); ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">
                             <label class="rtg-field-label" for="speed_rating">Speed Rating</label>
                         </div>
-                        <input type="text" id="speed_rating" name="speed_rating" value="<?php echo esc_attr( $v['speed_rating'] ); ?>" placeholder="e.g. T (118)">
+                        <select id="speed_rating" name="speed_rating">
+                            <option value="">Select...</option>
+                            <?php foreach ( $dd_speed_ratings as $opt ) : ?>
+                                <option value="<?php echo esc_attr( $opt ); ?>" <?php selected( $v['speed_rating'], $opt ); ?>><?php echo esc_html( $opt ); ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">
