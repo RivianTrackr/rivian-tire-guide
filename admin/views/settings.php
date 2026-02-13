@@ -90,7 +90,7 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                 <p>Customize the frontend color scheme. Enter hex color codes (e.g. <code>#5ec095</code>).</p>
             </div>
             <div class="rtg-card-body">
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 20px;">
+                <div style="display: grid; grid-template-columns: repeat(4, max-content); gap: 14px 32px;">
                     <?php
                     $color_labels = array(
                         'accent'       => 'Primary Accent',
