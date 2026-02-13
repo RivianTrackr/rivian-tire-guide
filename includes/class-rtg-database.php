@@ -420,6 +420,89 @@ class RTG_Database {
         return $ratings;
     }
 
+    /**
+     * Migrate ratings from an external table into wp_rtg_ratings.
+     *
+     * Expects the source table to have at minimum: tire_id, user_id, rating.
+     * Skips rows that already exist (same user_id + tire_id) to be safe on re-run.
+     *
+     * @param string $source_table Full table name (e.g. 'rv_tire_ratings').
+     * @return array { 'migrated' => int, 'skipped' => int, 'errors' => int }
+     */
+    public static function migrate_ratings( $source_table ) {
+        global $wpdb;
+        $dest = self::ratings_table();
+
+        // Validate the source table actually exists.
+        $table_exists = $wpdb->get_var(
+            $wpdb->prepare( 'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = %s AND table_name = %s', DB_NAME, $source_table )
+        );
+
+        if ( ! $table_exists ) {
+            return array( 'migrated' => 0, 'skipped' => 0, 'errors' => 0, 'error_message' => "Source table '{$source_table}' not found." );
+        }
+
+        // Fetch all rows from source.
+        $rows = $wpdb->get_results( "SELECT * FROM `{$source_table}`", ARRAY_A );
+
+        if ( empty( $rows ) ) {
+            return array( 'migrated' => 0, 'skipped' => 0, 'errors' => 0, 'error_message' => 'Source table is empty.' );
+        }
+
+        $migrated = 0;
+        $skipped  = 0;
+        $errors   = 0;
+
+        foreach ( $rows as $row ) {
+            $tire_id = isset( $row['tire_id'] ) ? sanitize_text_field( $row['tire_id'] ) : '';
+            $user_id = isset( $row['user_id'] ) ? intval( $row['user_id'] ) : 0;
+            $rating  = isset( $row['rating'] ) ? intval( $row['rating'] ) : 0;
+
+            // Validate required fields.
+            if ( empty( $tire_id ) || $user_id <= 0 || $rating < 1 || $rating > 5 ) {
+                $errors++;
+                continue;
+            }
+
+            // Check if this user+tire combo already exists in destination.
+            $exists = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT id FROM {$dest} WHERE tire_id = %s AND user_id = %d",
+                    $tire_id,
+                    $user_id
+                )
+            );
+
+            if ( $exists ) {
+                $skipped++;
+                continue;
+            }
+
+            $insert_data = array(
+                'tire_id' => $tire_id,
+                'user_id' => $user_id,
+                'rating'  => $rating,
+            );
+
+            // Preserve original timestamps if available.
+            if ( ! empty( $row['created_at'] ) ) {
+                $insert_data['created_at'] = $row['created_at'];
+            }
+            if ( ! empty( $row['updated_at'] ) ) {
+                $insert_data['updated_at'] = $row['updated_at'];
+            }
+
+            $result = $wpdb->insert( $dest, $insert_data );
+            if ( $result !== false ) {
+                $migrated++;
+            } else {
+                $errors++;
+            }
+        }
+
+        return array( 'migrated' => $migrated, 'skipped' => $skipped, 'errors' => $errors );
+    }
+
     public static function set_rating( $tire_id, $user_id, $rating ) {
         global $wpdb;
         $table = self::ratings_table();
