@@ -134,7 +134,7 @@
 }
 
 .rtg-card-body {
-    /* No default padding — field rows handle their own */
+    padding: 20px 24px;
 }
 
 /* ==========================================================================
@@ -142,7 +142,7 @@
    ========================================================================== */
 
 .rtg-field-row {
-    padding: 20px 24px;
+    padding: 20px 0;
     border-bottom: 1px solid var(--rtg-divider);
 }
 
@@ -1004,8 +1004,12 @@
         font-size: 18px;
     }
 
-    .rtg-field-row {
+    .rtg-card-body {
         padding: 16px 18px;
+    }
+
+    .rtg-field-row {
+        padding: 16px 0;
     }
 
     .rtg-field-label {
