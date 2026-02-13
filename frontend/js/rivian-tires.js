@@ -1825,8 +1825,11 @@ function createSingleCard(row) {
 
   if (safeImage) {
     const imageContainer = document.createElement('div');
-    imageContainer.style.cssText = `position: relative; background: #fff; border-radius: 10px; overflow: hidden; padding: 0 20px; margin-bottom: 12px;`;
-    
+    imageContainer.style.cssText = `background: #fff; border-radius: 10px; overflow: hidden; padding: 0 20px; margin-bottom: 12px;`;
+
+    const imageWrapper = document.createElement('div');
+    imageWrapper.style.cssText = `position: relative;`;
+
     const img = document.createElement('img');
     img.src = safeImage;
     img.alt = `${escapeHTML(safeString(brand))} ${escapeHTML(safeString(model))}`;
@@ -1834,14 +1837,15 @@ function createSingleCard(row) {
     img.fetchpriority = 'low';
     img.style.cssText = `width: 100%; height: 160px; object-fit: cover; border-radius: 6px; cursor: zoom-in;`;
     img.onclick = () => openImageModal(safeImage, `${escapeHTML(safeString(brand))} ${escapeHTML(safeString(model))}`);
-    
+
     const expandIcon = document.createElement('i');
     expandIcon.className = 'fa-solid fa-up-right-and-down-left-from-center';
-    expandIcon.style.cssText = `position: absolute; top: 10px; right: 28px; background: rgba(0,0,0,0.6); color: #fff; padding: 6px 8px; border-radius: 6px; cursor: pointer; z-index: 3; font-size: 14px; line-height: 1;`;
+    expandIcon.style.cssText = `position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #fff; padding: 6px 8px; border-radius: 6px; cursor: pointer; z-index: 3; font-size: 14px; line-height: 1;`;
     expandIcon.onclick = () => openImageModal(safeImage, `${escapeHTML(safeString(brand))} ${escapeHTML(safeString(model))}`);
-    
-    imageContainer.appendChild(img);
-    imageContainer.appendChild(expandIcon);
+
+    imageWrapper.appendChild(img);
+    imageWrapper.appendChild(expandIcon);
+    imageContainer.appendChild(imageWrapper);
     card.appendChild(imageContainer);
   }
 
