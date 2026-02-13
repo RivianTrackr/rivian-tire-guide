@@ -43,5 +43,12 @@
                 return confirm('Delete ' + checked + ' tire(s)? This cannot be undone.');
             }
         });
+
+        // Dismiss custom notices.
+        $('.rtg-notice-dismiss').on('click', function() {
+            $(this).closest('.rtg-notice').fadeOut(200, function() {
+                $(this).remove();
+            });
+        });
     });
 })(jQuery);
