@@ -324,8 +324,9 @@ class RTG_Admin {
         $raw_colors = $_POST['rtg_colors'] ?? array();
         $valid_keys = array( 'accent', 'accent_hover', 'bg_primary', 'bg_card', 'bg_input', 'bg_deep', 'text_primary', 'text_light', 'text_muted', 'text_heading', 'border' );
         foreach ( $valid_keys as $key ) {
-            if ( isset( $raw_colors[ $key ] ) && preg_match( '/^#[0-9a-fA-F]{6}$/', $raw_colors[ $key ] ) ) {
-                $theme_colors[ $key ] = $raw_colors[ $key ];
+            $val = isset( $raw_colors[ $key ] ) ? trim( $raw_colors[ $key ] ) : '';
+            if ( preg_match( '/^#[0-9a-fA-F]{6}$/', $val ) ) {
+                $theme_colors[ $key ] = strtolower( $val );
             }
         }
 

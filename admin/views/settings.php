@@ -87,7 +87,7 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
         <div class="rtg-card">
             <div class="rtg-card-header">
                 <h2>Theme Colors</h2>
-                <p>Customize the frontend color scheme. Click any swatch to change it, or use the reset button to restore defaults.</p>
+                <p>Customize the frontend color scheme. Enter hex color codes (e.g. <code>#5ec095</code>).</p>
             </div>
             <div class="rtg-card-body">
                 <div class="rtg-edit-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">
@@ -112,36 +112,25 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                                 <label class="rtg-field-label" for="rtg_color_<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></label>
                             </div>
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <input type="color" id="rtg_color_<?php echo esc_attr( $key ); ?>" name="rtg_colors[<?php echo esc_attr( $key ); ?>]" value="<?php echo esc_attr( $theme_colors[ $key ] ); ?>" style="width: 44px; height: 36px; padding: 2px; border: 1px solid var(--rtg-border); border-radius: 6px; cursor: pointer; background: var(--rtg-surface);">
-                                <code style="font-size: 13px; color: var(--rtg-text-muted);" id="rtg_color_hex_<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $theme_colors[ $key ] ); ?></code>
+                                <span id="rtg_color_swatch_<?php echo esc_attr( $key ); ?>" style="width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--rtg-border); background-color: <?php echo esc_attr( $theme_colors[ $key ] ); ?>; flex-shrink: 0;"></span>
+                                <input type="text" id="rtg_color_<?php echo esc_attr( $key ); ?>" name="rtg_colors[<?php echo esc_attr( $key ); ?>]" value="<?php echo esc_attr( $theme_colors[ $key ] ); ?>" maxlength="7" placeholder="#000000" style="width: 90px; font-family: monospace; font-size: 14px;">
                             </div>
                         </div>
                     <?php endforeach; ?>
-                </div>
-                <div style="margin-top: 16px;">
-                    <button type="button" id="rtg-reset-colors" class="rtg-btn" style="font-size: 13px;">Reset to Defaults</button>
                 </div>
             </div>
         </div>
 
         <script>
         (function(){
-            // Update hex display when color changes.
-            document.querySelectorAll('input[type="color"][id^="rtg_color_"]').forEach(function(input) {
+            // Live swatch preview on hex input.
+            document.querySelectorAll('input[type="text"][id^="rtg_color_"]').forEach(function(input) {
                 input.addEventListener('input', function() {
-                    var hexEl = document.getElementById(input.id + '_hex');
-                    if (hexEl) hexEl.textContent = input.value;
-                });
-            });
-
-            // Reset to defaults.
-            var defaults = <?php echo wp_json_encode( $default_colors ); ?>;
-            document.getElementById('rtg-reset-colors').addEventListener('click', function() {
-                Object.keys(defaults).forEach(function(key) {
-                    var input = document.getElementById('rtg_color_' + key);
-                    var hexEl = document.getElementById('rtg_color_hex_' + key);
-                    if (input) input.value = defaults[key];
-                    if (hexEl) hexEl.textContent = defaults[key];
+                    var val = input.value.trim();
+                    if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+                        var swatch = document.getElementById(input.id.replace('rtg_color_', 'rtg_color_swatch_'));
+                        if (swatch) swatch.style.backgroundColor = val;
+                    }
                 });
             });
         })();
