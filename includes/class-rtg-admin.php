@@ -51,6 +51,15 @@ class RTG_Admin {
 
         add_submenu_page(
             'rtg-tires',
+            'Ratings',
+            'Ratings',
+            'manage_options',
+            'rtg-ratings',
+            array( $this, 'render_ratings_page' )
+        );
+
+        add_submenu_page(
+            'rtg-tires',
             'Settings',
             'Settings',
             'manage_options',
@@ -106,9 +115,9 @@ class RTG_Admin {
             $this->handle_settings_save();
         }
 
-        // Handle rating migration.
-        if ( isset( $_POST['rtg_migrate_ratings'] ) ) {
-            $this->handle_rating_migration();
+        // Handle rating delete.
+        if ( isset( $_GET['action'] ) && $_GET['action'] === 'delete_rating' && isset( $_GET['rating_id'] ) ) {
+            $this->handle_rating_delete();
         }
     }
 
@@ -177,6 +186,13 @@ class RTG_Admin {
             return;
         }
         require_once RTG_PLUGIN_DIR . 'admin/views/tire-import.php';
+    }
+
+    public function render_ratings_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        require_once RTG_PLUGIN_DIR . 'admin/views/ratings-list.php';
     }
 
     public function render_settings_page() {
@@ -383,25 +399,16 @@ class RTG_Admin {
         exit;
     }
 
-    private function handle_rating_migration() {
+    private function handle_rating_delete() {
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_die( 'Unauthorized' );
         }
 
-        check_admin_referer( 'rtg_migrate_ratings', 'rtg_migrate_nonce' );
+        $rating_id = intval( $_GET['rating_id'] );
+        check_admin_referer( 'rtg_delete_rating_' . $rating_id );
 
-        $source_table = sanitize_text_field( $_POST['rtg_source_table'] ?? 'rv_tire_ratings' );
-
-        // Only allow simple table names (alphanumeric + underscores).
-        if ( ! preg_match( '/^[a-zA-Z0-9_]+$/', $source_table ) ) {
-            wp_redirect( admin_url( 'admin.php?page=rtg-settings&message=migrate_error&detail=invalid_table' ) );
-            exit;
-        }
-
-        $result = RTG_Database::migrate_ratings( $source_table );
-
-        set_transient( 'rtg_migrate_result', $result, 60 );
-        wp_redirect( admin_url( 'admin.php?page=rtg-settings&message=migrated' ) );
+        RTG_Database::delete_rating( $rating_id );
+        wp_redirect( admin_url( 'admin.php?page=rtg-ratings&message=deleted' ) );
         exit;
     }
 }

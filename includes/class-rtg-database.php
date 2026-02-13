@@ -420,87 +420,77 @@ class RTG_Database {
         return $ratings;
     }
 
-    /**
-     * Migrate ratings from an external table into wp_rtg_ratings.
-     *
-     * Expects the source table to have at minimum: tire_id, user_id, rating.
-     * Skips rows that already exist (same user_id + tire_id) to be safe on re-run.
-     *
-     * @param string $source_table Full table name (e.g. 'rv_tire_ratings').
-     * @return array { 'migrated' => int, 'skipped' => int, 'errors' => int }
-     */
-    public static function migrate_ratings( $source_table ) {
+    public static function get_rating_count( $search = '' ) {
         global $wpdb;
-        $dest = self::ratings_table();
+        $table = self::ratings_table();
+        $tires = self::tires_table();
 
-        // Validate the source table actually exists.
-        $table_exists = $wpdb->get_var(
-            $wpdb->prepare( 'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = %s AND table_name = %s', DB_NAME, $source_table )
-        );
-
-        if ( ! $table_exists ) {
-            return array( 'migrated' => 0, 'skipped' => 0, 'errors' => 0, 'error_message' => "Source table '{$source_table}' not found." );
-        }
-
-        // Fetch all rows from source.
-        $rows = $wpdb->get_results( "SELECT * FROM `{$source_table}`", ARRAY_A );
-
-        if ( empty( $rows ) ) {
-            return array( 'migrated' => 0, 'skipped' => 0, 'errors' => 0, 'error_message' => 'Source table is empty.' );
-        }
-
-        $migrated = 0;
-        $skipped  = 0;
-        $errors   = 0;
-
-        foreach ( $rows as $row ) {
-            $tire_id = isset( $row['tire_id'] ) ? sanitize_text_field( $row['tire_id'] ) : '';
-            $user_id = isset( $row['user_id'] ) ? intval( $row['user_id'] ) : 0;
-            $rating  = isset( $row['rating'] ) ? intval( $row['rating'] ) : 0;
-
-            // Validate required fields.
-            if ( empty( $tire_id ) || $user_id <= 0 || $rating < 1 || $rating > 5 ) {
-                $errors++;
-                continue;
-            }
-
-            // Check if this user+tire combo already exists in destination.
-            $exists = $wpdb->get_var(
+        if ( ! empty( $search ) ) {
+            $like = '%' . $wpdb->esc_like( $search ) . '%';
+            return (int) $wpdb->get_var(
                 $wpdb->prepare(
-                    "SELECT id FROM {$dest} WHERE tire_id = %s AND user_id = %d",
-                    $tire_id,
-                    $user_id
+                    "SELECT COUNT(*) FROM {$table} r LEFT JOIN {$tires} t ON r.tire_id = t.tire_id WHERE r.tire_id LIKE %s OR t.brand LIKE %s OR t.model LIKE %s",
+                    $like,
+                    $like,
+                    $like
                 )
             );
-
-            if ( $exists ) {
-                $skipped++;
-                continue;
-            }
-
-            $insert_data = array(
-                'tire_id' => $tire_id,
-                'user_id' => $user_id,
-                'rating'  => $rating,
-            );
-
-            // Preserve original timestamps if available.
-            if ( ! empty( $row['created_at'] ) ) {
-                $insert_data['created_at'] = $row['created_at'];
-            }
-            if ( ! empty( $row['updated_at'] ) ) {
-                $insert_data['updated_at'] = $row['updated_at'];
-            }
-
-            $result = $wpdb->insert( $dest, $insert_data );
-            if ( $result !== false ) {
-                $migrated++;
-            } else {
-                $errors++;
-            }
         }
 
-        return array( 'migrated' => $migrated, 'skipped' => $skipped, 'errors' => $errors );
+        return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
+    }
+
+    public static function search_ratings( $search = '', $per_page = 20, $page = 1, $orderby = 'r.created_at', $order = 'DESC' ) {
+        global $wpdb;
+        $table = self::ratings_table();
+        $tires = self::tires_table();
+
+        $allowed_orderby = array( 'r.id', 'r.tire_id', 'r.rating', 'r.created_at', 't.brand', 't.model' );
+        if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
+            $orderby = 'r.created_at';
+        }
+        $order = strtoupper( $order ) === 'ASC' ? 'ASC' : 'DESC';
+        $offset = max( 0, ( $page - 1 ) * $per_page );
+
+        if ( ! empty( $search ) ) {
+            $like = '%' . $wpdb->esc_like( $search ) . '%';
+            return $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT r.*, t.brand, t.model FROM {$table} r LEFT JOIN {$tires} t ON r.tire_id = t.tire_id WHERE r.tire_id LIKE %s OR t.brand LIKE %s OR t.model LIKE %s ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d",
+                    $like,
+                    $like,
+                    $like,
+                    $per_page,
+                    $offset
+                ),
+                ARRAY_A
+            );
+        }
+
+        return $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT r.*, t.brand, t.model FROM {$table} r LEFT JOIN {$tires} t ON r.tire_id = t.tire_id ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d",
+                $per_page,
+                $offset
+            ),
+            ARRAY_A
+        );
+    }
+
+    public static function get_ratings_summary() {
+        global $wpdb;
+        $table = self::ratings_table();
+
+        return $wpdb->get_row(
+            "SELECT COUNT(*) as total, COUNT(DISTINCT tire_id) as tires_rated, COUNT(DISTINCT user_id) as unique_users, ROUND(AVG(rating), 1) as avg_rating FROM {$table}",
+            ARRAY_A
+        );
+    }
+
+    public static function delete_rating( $id ) {
+        global $wpdb;
+        $table = self::ratings_table();
+        return $wpdb->delete( $table, array( 'id' => $id ), array( '%d' ) );
     }
 
     public static function set_rating( $tire_id, $user_id, $rating ) {

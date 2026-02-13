@@ -3,11 +3,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-$message       = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) : '';
-$migrate_result = get_transient( 'rtg_migrate_result' );
-if ( $migrate_result ) {
-    delete_transient( 'rtg_migrate_result' );
-}
+$message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) : '';
 
 $settings = get_option( 'rtg_settings', array() );
 $rows_per_page = $settings['rows_per_page'] ?? 12;
@@ -45,35 +41,6 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
     <?php if ( $message === 'saved' ) : ?>
         <div class="rtg-notice rtg-notice-success">
             <span>Settings saved.</span>
-            <button type="button" class="rtg-notice-dismiss" aria-label="Dismiss">&times;</button>
-        </div>
-    <?php endif; ?>
-
-    <?php if ( $message === 'migrated' && $migrate_result ) : ?>
-        <?php if ( ! empty( $migrate_result['error_message'] ) ) : ?>
-            <div class="rtg-notice rtg-notice-error">
-                <span>Migration failed: <?php echo esc_html( $migrate_result['error_message'] ); ?></span>
-                <button type="button" class="rtg-notice-dismiss" aria-label="Dismiss">&times;</button>
-            </div>
-        <?php else : ?>
-            <div class="rtg-notice rtg-notice-success">
-                <span>
-                    Migration complete &mdash;
-                    <strong><?php echo intval( $migrate_result['migrated'] ); ?></strong> ratings imported,
-                    <strong><?php echo intval( $migrate_result['skipped'] ); ?></strong> duplicates skipped<?php
-                    if ( ! empty( $migrate_result['errors'] ) ) {
-                        echo ', <strong>' . intval( $migrate_result['errors'] ) . '</strong> rows skipped due to invalid data';
-                    }
-                    ?>.
-                </span>
-                <button type="button" class="rtg-notice-dismiss" aria-label="Dismiss">&times;</button>
-            </div>
-        <?php endif; ?>
-    <?php endif; ?>
-
-    <?php if ( $message === 'migrate_error' ) : ?>
-        <div class="rtg-notice rtg-notice-error">
-            <span>Migration failed: invalid table name.</span>
             <button type="button" class="rtg-notice-dismiss" aria-label="Dismiss">&times;</button>
         </div>
     <?php endif; ?>
@@ -252,27 +219,4 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
         </div>
     </div>
 
-    <!-- Rating Migration Tool -->
-    <div class="rtg-card">
-        <div class="rtg-card-header">
-            <h2>Migrate Ratings</h2>
-            <p>Import ratings from a separate plugin&rsquo;s database table into the built-in rating system. Duplicate ratings (same user + tire) are automatically skipped, so this is safe to run multiple times.</p>
-        </div>
-        <div class="rtg-card-body">
-            <form method="post">
-                <?php wp_nonce_field( 'rtg_migrate_ratings', 'rtg_migrate_nonce' ); ?>
-                <input type="hidden" name="rtg_migrate_ratings" value="1">
-                <div class="rtg-field-row">
-                    <div class="rtg-field-label-row">
-                        <label class="rtg-field-label" for="rtg_source_table">Source Table Name</label>
-                    </div>
-                    <p class="rtg-field-description">The exact database table name containing your existing ratings (e.g. <code>rv_tire_ratings</code>). The table must have <code>tire_id</code>, <code>user_id</code>, and <code>rating</code> columns.</p>
-                    <input type="text" id="rtg_source_table" name="rtg_source_table" value="rv_tire_ratings" class="rtg-input-wide" placeholder="rv_tire_ratings">
-                </div>
-                <div class="rtg-field-row" style="border-bottom: none;">
-                    <button type="submit" class="rtg-btn rtg-btn-primary" onclick="return confirm('This will copy ratings from the source table into the Tire Guide rating system. Existing ratings will not be overwritten. Continue?');">Migrate Ratings</button>
-                </div>
-            </form>
-        </div>
-    </div>
 </div>
