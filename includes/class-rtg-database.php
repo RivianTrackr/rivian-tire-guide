@@ -15,12 +15,29 @@ class RTG_Database {
         return $wpdb->prefix . 'rtg_ratings';
     }
 
+    private static $cache_key = 'rtg_all_tires';
+
+    /**
+     * Flush the tire data cache.
+     */
+    public static function flush_cache() {
+        delete_transient( self::$cache_key );
+    }
+
     // --- Tire CRUD ---
 
     public static function get_all_tires() {
+        $cached = get_transient( self::$cache_key );
+        if ( false !== $cached ) {
+            return $cached;
+        }
+
         global $wpdb;
         $table = self::tires_table();
-        return $wpdb->get_results( "SELECT * FROM {$table} ORDER BY sort_order ASC, id ASC", ARRAY_A );
+        $result = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY sort_order ASC, id ASC", ARRAY_A );
+
+        set_transient( self::$cache_key, $result, HOUR_IN_SECONDS );
+        return $result;
     }
 
     /**
@@ -123,7 +140,11 @@ class RTG_Database {
         );
 
         $result = $wpdb->insert( $table, $data, $formats );
-        return $result !== false ? $wpdb->insert_id : false;
+        if ( $result !== false ) {
+            self::flush_cache();
+            return $wpdb->insert_id;
+        }
+        return false;
     }
 
     public static function update_tire( $tire_id, $data ) {
@@ -152,27 +173,45 @@ class RTG_Database {
             }
         }
 
-        return $wpdb->update( $table, $data, array( 'tire_id' => $tire_id ), $formats, array( '%s' ) );
+        $result = $wpdb->update( $table, $data, array( 'tire_id' => $tire_id ), $formats, array( '%s' ) );
+        self::flush_cache();
+        return $result;
     }
 
     public static function delete_tire( $tire_id ) {
         global $wpdb;
         $table = self::tires_table();
-        return $wpdb->delete( $table, array( 'tire_id' => $tire_id ), array( '%s' ) );
+        $ratings = self::ratings_table();
+
+        // Remove associated ratings first.
+        $wpdb->delete( $ratings, array( 'tire_id' => $tire_id ), array( '%s' ) );
+
+        $result = $wpdb->delete( $table, array( 'tire_id' => $tire_id ), array( '%s' ) );
+        self::flush_cache();
+        return $result;
     }
 
     public static function delete_tires( $tire_ids ) {
         global $wpdb;
         $table = self::tires_table();
+        $ratings = self::ratings_table();
 
         if ( empty( $tire_ids ) ) {
             return 0;
         }
 
         $placeholders = implode( ', ', array_fill( 0, count( $tire_ids ), '%s' ) );
-        return $wpdb->query(
+
+        // Remove associated ratings first.
+        $wpdb->query(
+            $wpdb->prepare( "DELETE FROM {$ratings} WHERE tire_id IN ({$placeholders})", ...$tire_ids )
+        );
+
+        $result = $wpdb->query(
             $wpdb->prepare( "DELETE FROM {$table} WHERE tire_id IN ({$placeholders})", ...$tire_ids )
         );
+        self::flush_cache();
+        return $result;
     }
 
     public static function get_tire_count( $search = '' ) {
