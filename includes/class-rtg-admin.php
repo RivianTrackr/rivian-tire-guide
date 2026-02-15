@@ -42,15 +42,6 @@ class RTG_Admin {
 
         add_submenu_page(
             'rtg-tires',
-            'Import CSV',
-            'Import CSV',
-            'manage_options',
-            'rtg-import',
-            array( $this, 'render_import_page' )
-        );
-
-        add_submenu_page(
-            'rtg-tires',
             'Ratings',
             'Ratings',
             'manage_options',
@@ -103,11 +94,6 @@ class RTG_Admin {
         // Handle bulk actions from list table.
         if ( isset( $_POST['rtg_bulk_action'] ) && $_POST['rtg_bulk_action'] === 'delete' ) {
             $this->handle_bulk_delete();
-        }
-
-        // Handle CSV import.
-        if ( isset( $_POST['rtg_import_csv'] ) ) {
-            $this->handle_csv_import();
         }
 
         // Handle settings save.
@@ -179,13 +165,6 @@ class RTG_Admin {
             return;
         }
         require_once RTG_PLUGIN_DIR . 'admin/views/tire-edit.php';
-    }
-
-    public function render_import_page() {
-        if ( ! current_user_can( 'manage_options' ) ) {
-            return;
-        }
-        require_once RTG_PLUGIN_DIR . 'admin/views/tire-import.php';
     }
 
     public function render_ratings_page() {
@@ -295,41 +274,6 @@ class RTG_Admin {
         }
 
         wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=bulk_deleted' ) );
-        exit;
-    }
-
-    private function handle_csv_import() {
-        if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( 'Unauthorized' );
-        }
-
-        check_admin_referer( 'rtg_import_csv', 'rtg_import_nonce' );
-
-        if ( empty( $_FILES['csv_file']['tmp_name'] ) ) {
-            wp_redirect( admin_url( 'admin.php?page=rtg-import&message=no_file' ) );
-            exit;
-        }
-
-        $file = $_FILES['csv_file'];
-
-        // Validate file type.
-        $ext = strtolower( pathinfo( $file['name'], PATHINFO_EXTENSION ) );
-        if ( $ext !== 'csv' ) {
-            wp_redirect( admin_url( 'admin.php?page=rtg-import&message=invalid_type' ) );
-            exit;
-        }
-
-        // Validate file size (max 2MB).
-        if ( $file['size'] > 2 * 1024 * 1024 ) {
-            wp_redirect( admin_url( 'admin.php?page=rtg-import&message=too_large' ) );
-            exit;
-        }
-
-        $update_existing = isset( $_POST['update_existing'] );
-        $result = RTG_CSV_Importer::import( $file['tmp_name'], $update_existing );
-
-        set_transient( 'rtg_import_result', $result, 60 );
-        wp_redirect( admin_url( 'admin.php?page=rtg-import&message=imported' ) );
         exit;
     }
 
