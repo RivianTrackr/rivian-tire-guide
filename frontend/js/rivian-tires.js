@@ -1873,7 +1873,7 @@ function createSingleCard(row) {
     const grade = safeString(efficiencyGrade).trim().toUpperCase();
     if (['A', 'B', 'C', 'D', 'E', 'F'].includes(grade)) {
       const gradeColor = {
-        A: rtgColor('accent') || "#5ec095", B: "#a3e635", C: "#facc15",
+        A: "#5ec095", B: "#a3e635", C: "#facc15",
         D: "#f97316", E: "#ef4444", F: "#b91c1c"
       }[grade];
       
