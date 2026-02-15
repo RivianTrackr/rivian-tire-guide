@@ -23,7 +23,6 @@ define( 'RTG_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 require_once RTG_PLUGIN_DIR . 'includes/class-rtg-activator.php';
 require_once RTG_PLUGIN_DIR . 'includes/class-rtg-deactivator.php';
 require_once RTG_PLUGIN_DIR . 'includes/class-rtg-database.php';
-require_once RTG_PLUGIN_DIR . 'includes/class-rtg-csv-importer.php';
 require_once RTG_PLUGIN_DIR . 'includes/class-rtg-admin.php';
 require_once RTG_PLUGIN_DIR . 'includes/class-rtg-frontend.php';
 require_once RTG_PLUGIN_DIR . 'includes/class-rtg-ajax.php';
