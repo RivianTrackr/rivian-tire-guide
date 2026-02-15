@@ -10,4 +10,5 @@ $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}rtg_ratings" );
 
 delete_option( 'rtg_version' );
 delete_option( 'rtg_settings' );
+delete_option( 'rtg_dropdown_options' );
 delete_option( 'rtg_flush_rewrite' );

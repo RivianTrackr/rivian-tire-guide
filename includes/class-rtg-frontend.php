@@ -73,7 +73,11 @@ class RTG_Frontend {
             $css_vars = '';
             foreach ( $var_map as $key => $prop ) {
                 if ( ! empty( $theme_colors[ $key ] ) ) {
-                    $css_vars .= $prop . ':' . $theme_colors[ $key ] . ';';
+                    // Re-validate hex color at render time to prevent CSS injection.
+                    $color = sanitize_hex_color( $theme_colors[ $key ] );
+                    if ( $color ) {
+                        $css_vars .= $prop . ':' . $color . ';';
+                    }
                 }
             }
             if ( $css_vars ) {

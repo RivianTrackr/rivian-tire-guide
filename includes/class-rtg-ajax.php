@@ -5,6 +5,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class RTG_Ajax {
 
+    /**
+     * Maximum rating submissions per minute per user.
+     */
+    const RATE_LIMIT_MAX    = 10;
+    const RATE_LIMIT_WINDOW = 60; // seconds
+
     public function __construct() {
         // Rating handlers — available to both logged-in and logged-out users.
         add_action( 'wp_ajax_get_tire_ratings', array( $this, 'get_tire_ratings' ) );
@@ -17,9 +23,17 @@ class RTG_Ajax {
     /**
      * Get ratings for an array of tire IDs.
      * Available to both logged-in and logged-out users.
+     * Nonce verified for logged-in users; open for public reads.
      */
     public function get_tire_ratings() {
-        $raw_ids = isset( $_POST['tire_ids'] ) ? (array) $_POST['tire_ids'] : array();
+        // Verify nonce for logged-in users to prevent CSRF.
+        if ( is_user_logged_in() ) {
+            if ( ! check_ajax_referer( 'tire_rating_nonce', 'nonce', false ) ) {
+                wp_send_json_error( 'Security check failed.' );
+            }
+        }
+
+        $raw_ids  = isset( $_POST['tire_ids'] ) ? (array) $_POST['tire_ids'] : array();
         $tire_ids = array();
 
         foreach ( $raw_ids as $id ) {
@@ -37,7 +51,7 @@ class RTG_Ajax {
             ) );
         }
 
-        $ratings = RTG_Database::get_tire_ratings( $tire_ids );
+        $ratings      = RTG_Database::get_tire_ratings( $tire_ids );
         $user_ratings = array();
 
         if ( is_user_logged_in() ) {
@@ -53,7 +67,7 @@ class RTG_Ajax {
 
     /**
      * Submit a tire rating.
-     * Logged-in users only, with nonce verification.
+     * Logged-in users only, with nonce verification and rate limiting.
      */
     public function submit_tire_rating() {
         // Verify nonce.
@@ -63,6 +77,13 @@ class RTG_Ajax {
 
         if ( ! is_user_logged_in() ) {
             wp_send_json_error( 'You must be logged in to rate tires.' );
+        }
+
+        $user_id = get_current_user_id();
+
+        // Rate limiting: max submissions per minute per user.
+        if ( $this->is_rate_limited( $user_id ) ) {
+            wp_send_json_error( 'Too many rating submissions. Please wait a moment and try again.' );
         }
 
         $tire_id = sanitize_text_field( $_POST['tire_id'] ?? '' );
@@ -78,11 +99,20 @@ class RTG_Ajax {
             wp_send_json_error( 'Rating must be between 1 and 5.' );
         }
 
+        // Verify the tire exists before accepting a rating.
+        $tire = RTG_Database::get_tire( $tire_id );
+        if ( ! $tire ) {
+            wp_send_json_error( 'Tire not found.' );
+        }
+
+        // Record this submission for rate limiting.
+        $this->record_rate_limit( $user_id );
+
         // Save the rating.
-        RTG_Database::set_rating( $tire_id, get_current_user_id(), $rating );
+        RTG_Database::set_rating( $tire_id, $user_id, $rating );
 
         // Return updated rating data.
-        $ratings = RTG_Database::get_tire_ratings( array( $tire_id ) );
+        $ratings     = RTG_Database::get_tire_ratings( array( $tire_id ) );
         $tire_rating = $ratings[ $tire_id ] ?? array( 'average' => 0, 'count' => 0 );
 
         wp_send_json_success( array(
@@ -90,5 +120,38 @@ class RTG_Ajax {
             'rating_count'   => $tire_rating['count'],
             'user_rating'    => $rating,
         ) );
+    }
+
+    /**
+     * Check if a user has exceeded the rate limit for rating submissions.
+     *
+     * @param int $user_id WordPress user ID.
+     * @return bool True if rate-limited.
+     */
+    private function is_rate_limited( $user_id ) {
+        $transient_key = 'rtg_rate_' . $user_id;
+        $attempts      = get_transient( $transient_key );
+
+        if ( false === $attempts ) {
+            return false;
+        }
+
+        return (int) $attempts >= self::RATE_LIMIT_MAX;
+    }
+
+    /**
+     * Record a rating submission for rate limiting.
+     *
+     * @param int $user_id WordPress user ID.
+     */
+    private function record_rate_limit( $user_id ) {
+        $transient_key = 'rtg_rate_' . $user_id;
+        $attempts      = get_transient( $transient_key );
+
+        if ( false === $attempts ) {
+            set_transient( $transient_key, 1, self::RATE_LIMIT_WINDOW );
+        } else {
+            set_transient( $transient_key, (int) $attempts + 1, self::RATE_LIMIT_WINDOW );
+        }
     }
 }

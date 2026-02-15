@@ -25,7 +25,11 @@
   $rtg_css_vars = '';
   foreach ( $rtg_var_map as $key => $prop ) {
       if ( ! empty( $rtg_theme[ $key ] ) ) {
-          $rtg_css_vars .= $prop . ':' . $rtg_theme[ $key ] . ';';
+          // Re-validate hex color at render time to prevent CSS injection.
+          $safe_color = sanitize_hex_color( $rtg_theme[ $key ] );
+          if ( $safe_color ) {
+              $rtg_css_vars .= $prop . ':' . $safe_color . ';';
+          }
       }
   }
   ?>

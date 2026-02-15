@@ -39,6 +39,12 @@ class RTG_Compare {
             return;
         }
 
+        // Security headers for the standalone compare page.
+        header( 'X-Content-Type-Options: nosniff' );
+        header( 'X-Frame-Options: SAMEORIGIN' );
+        header( "Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src https://cdnjs.cloudflare.com; img-src 'self' https://riviantrackr.com https://cdn.riviantrackr.com data:;" );
+        header( 'Referrer-Policy: strict-origin-when-cross-origin' );
+
         // Enqueue assets for compare page.
         wp_enqueue_style(
             'font-awesome',

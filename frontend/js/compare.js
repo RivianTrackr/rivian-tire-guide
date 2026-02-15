@@ -12,8 +12,38 @@ function safeImageURL(url) {
     const u = new URL(trimmed);
     if (!/^https?:$/.test(u.protocol)) return "";
     if (!allowedHostnames.includes(u.hostname)) return "";
+    if (u.pathname.includes('..') || u.pathname.includes('//')) return "";
     const encoded = encodeURIComponent(trimmed);
     return `https://cdn.riviantrackr.com/spio/w_600+q_auto+ret_img+to_webp/${encoded}`;
+  } catch {
+    return "";
+  }
+}
+
+function safeLinkURL(url) {
+  if (typeof url !== "string" || !url.trim()) return "";
+  const trimmed = url.trim();
+  try {
+    const urlObj = new URL(trimmed);
+    if (urlObj.protocol !== 'https:') return "";
+    if (urlObj.pathname.includes('..')) return "";
+    const allowedDomains = [
+      'riviantrackr.com', 'tirerack.com', 'discounttire.com', 'amazon.com', 'amzn.to',
+      'costco.com', 'walmart.com', 'goodyear.com', 'bridgestonetire.com', 'michelinman.com',
+      'continental-tires.com', 'pirelli.com', 'yokohamatire.com', 'coopertire.com',
+      'bfgoodrichtires.com', 'firestone.com', 'generaltire.com', 'hankooktire.com',
+      'kumhotire.com', 'toyo.com', 'falkentire.com', 'nittotire.com', 'simpletire.com',
+      'prioritytire.com', 'evsportline.com', 'tsportline.com',
+      'anrdoezrs.net', 'dpbolvw.net', 'jdoqocy.com', 'kqzyfj.com', 'tkqlhce.com',
+      'commission-junction.com', 'cj.com', 'linksynergy.com', 'click.linksynergy.com',
+      'shareasale.com', 'avantlink.com', 'impact.com', 'partnerize.com'
+    ];
+    const hostname = urlObj.hostname.toLowerCase();
+    const isAllowed = allowedDomains.some(domain =>
+      hostname === domain || hostname.endsWith('.' + domain)
+    );
+    if (!isAllowed) return "";
+    return trimmed;
   } catch {
     return "";
   }
@@ -55,8 +85,8 @@ function renderComparison(rows, indexes) {
       let cellValue;
 
       if (label === "Efficiency") {
-        const score = r[20] || "-";
-        const grade = (r[21] || "-").toUpperCase();
+        const score = escapeHTML(r[20] || "-");
+        const grade = escapeHTML((r[21] || "-").toUpperCase());
 
         const colorMap = {
           A: "#5ec095",
@@ -133,56 +163,42 @@ function renderComparison(rows, indexes) {
           `;
         }
 
-        if (label === "Image" && cellValue !== "-" && cellValue.startsWith("http")) {
-          cellValue = `
-            <div style="
-              background: #ffffff;
-              border-radius: 10px;
-              overflow: hidden;
-              width: 100%;
-              height: 160px;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-            ">
-              <img src="${cellValue}" alt="Tire Image" style="
-                max-width: 100%;
-                max-height: 100%;
-                object-fit: contain;
-                background-color: #ffffff;
-                display: block;
-              " />
-            </div>
-          `;
+        if (label === "Image") {
+          const validUrl = safeImageURL(cellValue);
+          if (validUrl) {
+            cellValue = `
+              <div style="
+                background: #ffffff;
+                border-radius: 10px;
+                overflow: hidden;
+                width: 100%;
+                height: 160px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+              ">
+                <img src="${escapeHTML(validUrl)}" alt="Tire Image" loading="lazy" style="
+                  max-width: 100%;
+                  max-height: 100%;
+                  object-fit: contain;
+                  background-color: #ffffff;
+                  display: block;
+                " />
+              </div>
+            `;
+          } else {
+            cellValue = "-";
+          }
         }
 
-        if (label === "Link" && cellValue !== "-" && cellValue.startsWith("http")) {
-          cellValue = `<a href="${cellValue}" target="_blank" rel="noopener noreferrer"
-            style="
-              display: inline-block;
-              background-color: var(--rtg-accent, #5ec095);
-              color: #1a1a1a;
-              font-weight: 700;
-              padding: 8px 16px;
-              border-radius: 8px;
-              text-align: center;
-              text-decoration: none;
-              transition: background-color 0.2s ease-in-out;
-              margin: 2px 0;
-            "
-            onmouseover="this.style.backgroundColor='var(--rtg-accent-hover, #3ebd88)'"
-            onmouseout="this.style.backgroundColor='var(--rtg-accent, #5ec095)'"
-          >
-            View Tire&nbsp;<i class="fa-solid fa-square-up-right"></i>
-          </a>`;
-        }
-
-        if (label === "Bundle Link" && cellValue !== "-" && cellValue.startsWith("http")) {
-          cellValue = `<a href="${cellValue}" target="_blank" rel="noopener noreferrer"
+        if (label === "Link") {
+          const validUrl = safeLinkURL(cellValue);
+          if (validUrl) {
+            cellValue = `<a href="${escapeHTML(validUrl)}" target="_blank" rel="noopener noreferrer"
               style="
                 display: inline-block;
-                background-color: #2563eb;
-                color: #FFFFFF;
+                background-color: var(--rtg-accent, #5ec095);
+                color: #1a1a1a;
                 font-weight: 700;
                 padding: 8px 16px;
                 border-radius: 8px;
@@ -191,24 +207,53 @@ function renderComparison(rows, indexes) {
                 transition: background-color 0.2s ease-in-out;
                 margin: 2px 0;
               "
-              onmouseover="this.style.backgroundColor='#2563eb'"
-              onmouseout="this.style.backgroundColor='#2563eb'"
+              onmouseover="this.style.backgroundColor='var(--rtg-accent-hover, #3ebd88)'"
+              onmouseout="this.style.backgroundColor='var(--rtg-accent, #5ec095)'"
             >
-              Wheel & Tire from EV Sportline&nbsp;<i class="fa-solid fa-square-up-right"></i>
+              View Tire&nbsp;<i class="fa-solid fa-square-up-right"></i>
             </a>`;
+          } else {
+            cellValue = "-";
+          }
+        }
+
+        if (label === "Bundle Link") {
+          const validUrl = safeLinkURL(cellValue);
+          if (validUrl) {
+            cellValue = `<a href="${escapeHTML(validUrl)}" target="_blank" rel="noopener noreferrer"
+                style="
+                  display: inline-block;
+                  background-color: #2563eb;
+                  color: #FFFFFF;
+                  font-weight: 700;
+                  padding: 8px 16px;
+                  border-radius: 8px;
+                  text-align: center;
+                  text-decoration: none;
+                  transition: background-color 0.2s ease-in-out;
+                  margin: 2px 0;
+                "
+                onmouseover="this.style.backgroundColor='#1d4ed8'"
+                onmouseout="this.style.backgroundColor='#2563eb'"
+              >
+                Wheel & Tire from EV Sportline&nbsp;<i class="fa-solid fa-square-up-right"></i>
+              </a>`;
+          } else {
+            cellValue = "-";
+          }
         }
 
         if (label === "Price" && cellValue !== "-" && !isNaN(cellValue)) {
-          cellValue = `$${cellValue}`;
+          cellValue = `$${escapeHTML(cellValue)}`;
         }
         if (label === "Weight" && cellValue !== "-" && !isNaN(cellValue)) {
-          cellValue = `${cellValue} lb`;
+          cellValue = `${escapeHTML(cellValue)} lb`;
         }
         if (label === "Mileage Warranty" && cellValue !== "-" && !isNaN(cellValue)) {
           cellValue = `${Number(cellValue).toLocaleString()} miles`;
         }
         if (label === "Max Load" && cellValue !== "-" && !isNaN(cellValue)) {
-          cellValue = `${cellValue} lb`;
+          cellValue = `${escapeHTML(cellValue)} lb`;
         }
       }
 
