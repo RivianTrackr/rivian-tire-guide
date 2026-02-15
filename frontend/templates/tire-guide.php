@@ -82,7 +82,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         <input type="checkbox" id="filterStudded" aria-label="Studded Available"/>
         <span class="switch-slider" onclick="document.getElementById('filterStudded').click()"></span>
       </div>
-      <label class="switch-label reset-white" onclick="resetFilters()" role="button" tabindex="0">
+      <label class="switch-label reset-white" onclick="resetFilters()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resetFilters()}" role="button" tabindex="0">
         <span class="switch-text">
           <i class="fa-solid fa-rotate-left" style="margin-right: 6px;"></i>Clear All
         </span>
@@ -132,7 +132,7 @@ if ( ! defined( 'ABSPATH' ) ) {
   </div>
 </div>
 <div class="sort-wrapper">
-  <span id="tireCount" class="tire-count">Showing 0 tires</span>
+  <span id="tireCount" class="tire-count" aria-live="polite">Showing 0 tires</span>
   <div style="flex: 1;"></div>
   <select id="sortBy" onchange="filterAndRender()">
     <option value="alpha">Brand: A → Z</option>
@@ -153,13 +153,13 @@ if ( ! defined( 'ABSPATH' ) ) {
   No tires match your current filters.<br />Try adjusting the filters to see more options.
 </div>
 <div id="paginationControls" style="display: flex; justify-content: center; gap: 12px; margin-top: 20px;"></div>
-<div id="compareBar" class="compare-bar">
+<div id="compareBar" class="compare-bar" role="region" aria-label="Tire comparison selection">
   <span id="compareCount" class="compare-count"></span>
   <button onclick="openComparison()" style="background-color: var(--rtg-accent, #5ec095); color: #000; padding: 12px 20px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; flex: 1; min-width: 120px;">Compare</button>
   <button onclick="clearCompare()" style="background-color: #ee383a; color: #fff; padding: 12px 16px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; flex: 1; min-width: 100px;">Clear</button>
 </div>
-<div id="imageModal">
+<div id="imageModal" role="dialog" aria-label="Full size tire image" aria-modal="true">
   <div class="modal-content">
-    <img id="modalImage" src="" alt="Full Size" />
+    <img id="modalImage" src="" alt="Full size tire image" />
   </div>
 </div>

@@ -1427,14 +1427,16 @@ function createRatingHTML(tireId, average = 0, count = 0, userRating = 0) {
   const starsContainer = document.createElement('div');
   starsContainer.className = `rating-stars ${isInteractive ? 'interactive' : ''}`;
   starsContainer.dataset.tireId = tireId;
-  
+  starsContainer.setAttribute('role', isInteractive ? 'radiogroup' : 'img');
+  starsContainer.setAttribute('aria-label', displayAverage > 0 ? `Rating: ${displayAverage.toFixed(1)} out of 5 stars` : 'No ratings yet');
+
   for (let i = 1; i <= 5; i++) {
     const star = document.createElement('span');
     star.className = 'star';
     star.dataset.rating = i.toString();
     star.dataset.tireId = tireId;
     star.textContent = '★';
-    
+
     if (displayAverage > 0 && i <= Math.round(displayAverage)) {
       star.classList.add('active');
     }
@@ -1443,8 +1445,14 @@ function createRatingHTML(tireId, average = 0, count = 0, userRating = 0) {
     }
     if (isInteractive) {
       star.style.cursor = 'pointer';
+      star.setAttribute('role', 'radio');
+      star.setAttribute('aria-checked', validUserRating === i ? 'true' : 'false');
+      star.setAttribute('aria-label', `${i} star${i !== 1 ? 's' : ''}`);
+      star.setAttribute('tabindex', i === (validUserRating || 1) ? '0' : '-1');
+    } else {
+      star.setAttribute('aria-hidden', 'true');
     }
-    
+
     starsContainer.appendChild(star);
   }
   
@@ -1553,11 +1561,38 @@ function setupEventDelegation() {
   document.addEventListener('mouseleave', function(e) {
     const container = e.target.closest('.rating-stars');
     if (!container) return;
-    
+
     const stars = container.querySelectorAll('.star');
     stars.forEach(s => s.classList.remove('hover'));
   }, true);
-  
+
+  // Keyboard navigation for star ratings (arrow keys, Enter/Space).
+  document.addEventListener('keydown', function(e) {
+    const star = e.target.closest('.rating-stars.interactive .star');
+    if (!star) return;
+
+    const container = star.closest('.rating-stars');
+    const stars = Array.from(container.querySelectorAll('.star'));
+    const currentIndex = stars.indexOf(star);
+
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const next = stars[Math.min(currentIndex + 1, stars.length - 1)];
+      next.setAttribute('tabindex', '0');
+      star.setAttribute('tabindex', '-1');
+      next.focus();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const prev = stars[Math.max(currentIndex - 1, 0)];
+      prev.setAttribute('tabindex', '0');
+      star.setAttribute('tabindex', '-1');
+      prev.focus();
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      star.click();
+    }
+  });
+
   eventDelegationSetup = true;
 }
 
@@ -2027,6 +2062,7 @@ function createSingleCard(row) {
   compareCheckbox.dataset.id = tireId;
   compareCheckbox.dataset.index = allRows.indexOf(row).toString();
   compareCheckbox.style.display = 'none';
+  compareCheckbox.setAttribute('aria-label', `Compare ${escapeHTML(safeString(row[3]))} ${escapeHTML(safeString(row[4]))}`);
 
   const customCheckbox = document.createElement('span');
   customCheckbox.className = 'custom-checkbox';
@@ -2700,11 +2736,22 @@ function openImageModal(src, altText) {
 
   modal.style.display = "flex";
   document.body.style.overflow = "hidden";
-  
+
+  // Close modal on Escape key.
+  const closeOnEscape = (e) => {
+    if (e.key === 'Escape') {
+      modal.style.display = "none";
+      document.body.style.overflow = "";
+      document.removeEventListener('keydown', closeOnEscape);
+    }
+  };
+  document.addEventListener('keydown', closeOnEscape);
+
   modal.onclick = (e) => {
     if (e.target === modal) {
       modal.style.display = "none";
       document.body.style.overflow = "";
+      document.removeEventListener('keydown', closeOnEscape);
     }
   };
 }
@@ -2822,17 +2869,24 @@ document.addEventListener("DOMContentLoaded", () => {
   const toggleBtn = getDOMElement("toggleFilters");
   const filterContent = getDOMElement("mobileFilterContent");
   if (toggleBtn && filterContent) {
+    toggleBtn.setAttribute('aria-expanded', 'false');
+    toggleBtn.setAttribute('aria-controls', 'mobileFilterContent');
     toggleBtn.addEventListener("click", () => {
       const isOpen = filterContent.classList.toggle("open");
       toggleBtn.textContent = isOpen ? "Hide Filters" : "Show Filters";
+      toggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     });
   }
 
   const trigger = getDOMElement("wheelDrawerTrigger");
   const drawer = getDOMElement("wheelDrawer");
   if (trigger && drawer) {
+    trigger.setAttribute('aria-expanded', 'false');
+    trigger.setAttribute('aria-controls', 'wheelDrawer');
     trigger.addEventListener("click", () => {
-      drawer.style.display = drawer.style.display === "block" ? "none" : "block";
+      const isOpen = drawer.style.display !== "block";
+      drawer.style.display = isOpen ? "block" : "none";
+      trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     });
   }
 

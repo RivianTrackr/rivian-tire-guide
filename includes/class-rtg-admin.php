@@ -51,6 +51,15 @@ class RTG_Admin {
 
         add_submenu_page(
             'rtg-tires',
+            'Import / Export',
+            'Import / Export',
+            'manage_options',
+            'rtg-import',
+            array( $this, 'render_import_page' )
+        );
+
+        add_submenu_page(
+            'rtg-tires',
             'Settings',
             'Settings',
             'manage_options',
@@ -99,6 +108,16 @@ class RTG_Admin {
         // Handle settings save.
         if ( isset( $_POST['rtg_save_settings'] ) ) {
             $this->handle_settings_save();
+        }
+
+        // Handle CSV import.
+        if ( isset( $_POST['rtg_csv_import'] ) ) {
+            $this->handle_csv_import();
+        }
+
+        // Handle CSV export.
+        if ( isset( $_GET['rtg_export'] ) && $_GET['rtg_export'] === 'csv' ) {
+            $this->handle_csv_export();
         }
 
         // Handle rating delete.
@@ -172,6 +191,13 @@ class RTG_Admin {
             return;
         }
         require_once RTG_PLUGIN_DIR . 'admin/views/ratings-list.php';
+    }
+
+    public function render_import_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        require_once RTG_PLUGIN_DIR . 'admin/views/import-export.php';
     }
 
     public function render_settings_page() {
@@ -357,5 +383,193 @@ class RTG_Admin {
         RTG_Database::delete_rating( $rating_id );
         wp_redirect( admin_url( 'admin.php?page=rtg-ratings&message=deleted' ) );
         exit;
+    }
+
+    // --- CSV Import / Export ---
+
+    /**
+     * CSV column order — matches the database columns used for tire data.
+     */
+    private static $csv_columns = array(
+        'tire_id', 'size', 'diameter', 'brand', 'model', 'category',
+        'price', 'mileage_warranty', 'weight_lb', 'three_pms', 'tread',
+        'load_index', 'max_load_lb', 'load_range', 'speed_rating', 'psi',
+        'utqg', 'tags', 'link', 'image', 'bundle_link', 'sort_order',
+    );
+
+    private function handle_csv_export() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Unauthorized' );
+        }
+
+        check_admin_referer( 'rtg_csv_export' );
+
+        $tires = RTG_Database::get_all_tires();
+
+        header( 'Content-Type: text/csv; charset=utf-8' );
+        header( 'Content-Disposition: attachment; filename="rivian-tire-guide-' . gmdate( 'Y-m-d' ) . '.csv"' );
+        header( 'Pragma: no-cache' );
+        header( 'Expires: 0' );
+
+        $output = fopen( 'php://output', 'w' );
+
+        // Header row.
+        fputcsv( $output, self::$csv_columns );
+
+        // Data rows.
+        foreach ( $tires as $tire ) {
+            $row = array();
+            foreach ( self::$csv_columns as $col ) {
+                $row[] = isset( $tire[ $col ] ) ? $tire[ $col ] : '';
+            }
+            fputcsv( $output, $row );
+        }
+
+        fclose( $output );
+        exit;
+    }
+
+    private function handle_csv_import() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Unauthorized' );
+        }
+
+        check_admin_referer( 'rtg_csv_import', 'rtg_import_nonce' );
+
+        if ( empty( $_FILES['rtg_csv_file']['tmp_name'] ) ) {
+            wp_redirect( admin_url( 'admin.php?page=rtg-import&message=no_file' ) );
+            exit;
+        }
+
+        $file = $_FILES['rtg_csv_file'];
+
+        // Validate file type.
+        $ext = strtolower( pathinfo( $file['name'], PATHINFO_EXTENSION ) );
+        if ( $ext !== 'csv' ) {
+            wp_redirect( admin_url( 'admin.php?page=rtg-import&message=invalid_type' ) );
+            exit;
+        }
+
+        // Limit file size to 2MB.
+        if ( $file['size'] > 2 * 1024 * 1024 ) {
+            wp_redirect( admin_url( 'admin.php?page=rtg-import&message=too_large' ) );
+            exit;
+        }
+
+        $handle = fopen( $file['tmp_name'], 'r' );
+        if ( ! $handle ) {
+            wp_redirect( admin_url( 'admin.php?page=rtg-import&message=read_error' ) );
+            exit;
+        }
+
+        // Read header row.
+        $header = fgetcsv( $handle );
+        if ( ! $header ) {
+            fclose( $handle );
+            wp_redirect( admin_url( 'admin.php?page=rtg-import&message=empty_file' ) );
+            exit;
+        }
+
+        // Normalize headers.
+        $header = array_map( function ( $h ) {
+            return strtolower( trim( $h ) );
+        }, $header );
+
+        // Build column index map.
+        $col_map = array();
+        foreach ( self::$csv_columns as $col ) {
+            $index = array_search( $col, $header, true );
+            if ( false !== $index ) {
+                $col_map[ $col ] = $index;
+            }
+        }
+
+        // Must have at least brand and model columns.
+        if ( ! isset( $col_map['brand'] ) || ! isset( $col_map['model'] ) ) {
+            fclose( $handle );
+            wp_redirect( admin_url( 'admin.php?page=rtg-import&message=missing_columns' ) );
+            exit;
+        }
+
+        $imported = 0;
+        $updated  = 0;
+        $skipped  = 0;
+        $mode     = sanitize_text_field( wp_unslash( $_POST['import_mode'] ?? 'skip' ) );
+
+        while ( ( $row = fgetcsv( $handle ) ) !== false ) {
+            if ( empty( array_filter( $row ) ) ) {
+                continue; // Skip blank rows.
+            }
+
+            $data = array();
+            foreach ( self::$csv_columns as $col ) {
+                if ( isset( $col_map[ $col ] ) && isset( $row[ $col_map[ $col ] ] ) ) {
+                    $data[ $col ] = trim( $row[ $col_map[ $col ] ] );
+                } else {
+                    $data[ $col ] = '';
+                }
+            }
+
+            // Sanitize.
+            $data = $this->sanitize_tire_import( $data );
+
+            // Auto-generate tire_id if blank.
+            if ( empty( $data['tire_id'] ) ) {
+                $data['tire_id'] = RTG_Database::get_next_tire_id();
+            }
+
+            // Auto-calculate efficiency.
+            $efficiency = RTG_Database::calculate_efficiency( $data );
+            $data['efficiency_score'] = $efficiency['efficiency_score'];
+            $data['efficiency_grade'] = $efficiency['efficiency_grade'];
+
+            // Check for duplicates.
+            if ( RTG_Database::tire_id_exists( $data['tire_id'] ) ) {
+                if ( $mode === 'update' ) {
+                    RTG_Database::update_tire( $data['tire_id'], $data );
+                    $updated++;
+                } else {
+                    $skipped++;
+                }
+            } else {
+                RTG_Database::insert_tire( $data );
+                $imported++;
+            }
+        }
+
+        fclose( $handle );
+
+        $args = array(
+            'page'     => 'rtg-import',
+            'message'  => 'imported',
+            'imported' => $imported,
+            'updated'  => $updated,
+            'skipped'  => $skipped,
+        );
+        wp_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) );
+        exit;
+    }
+
+    private function sanitize_tire_import( $data ) {
+        $text_fields = array(
+            'tire_id', 'size', 'diameter', 'brand', 'model', 'category',
+            'three_pms', 'tread', 'load_index', 'load_range', 'speed_rating',
+            'psi', 'utqg', 'tags',
+        );
+        foreach ( $text_fields as $field ) {
+            $data[ $field ] = sanitize_text_field( $data[ $field ] ?? '' );
+        }
+
+        $data['price']            = floatval( $data['price'] ?? 0 );
+        $data['mileage_warranty'] = intval( $data['mileage_warranty'] ?? 0 );
+        $data['weight_lb']        = floatval( $data['weight_lb'] ?? 0 );
+        $data['max_load_lb']      = intval( $data['max_load_lb'] ?? 0 );
+        $data['sort_order']       = intval( $data['sort_order'] ?? 0 );
+
+        $data['link']        = esc_url_raw( $data['link'] ?? '' );
+        $data['image']       = esc_url_raw( $data['image'] ?? '' );
+        $data['bundle_link'] = esc_url_raw( $data['bundle_link'] ?? '' );
+
+        return $data;
     }
 }
