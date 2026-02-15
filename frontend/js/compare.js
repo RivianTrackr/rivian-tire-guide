@@ -132,7 +132,8 @@ function renderComparison(rows, indexes) {
         `;
       } else if (label === "Size & Diameter") {
         const [size, diameter] = colIndex["Size & Diameter"].map(i => r[i] || "-");
-        const display = `${escapeHTML(size)} (${escapeHTML(diameter)})`;
+        const diameterDisplay = diameter !== "-" && !diameter.includes('"') ? diameter + '"' : diameter;
+        const display = `${escapeHTML(size)} (${escapeHTML(diameterDisplay)})`;
         cellValue = `<span>${display}</span>`;
       } else {
         const i = colIndex[label];

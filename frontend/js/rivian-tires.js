@@ -1950,7 +1950,7 @@ function createSingleCard(row) {
   }
 
   const specs = [
-    ['Size', `${safeString(size)} (${safeString(diameter)})`],
+    ['Size', `${safeString(size)} (${safeString(diameter)}${safeString(diameter) && !safeString(diameter).includes('"') ? '"' : ''})`],
     ['Category', safeString(category)],
     ['Average Price', price ? `$${validateNumeric(price, NUMERIC_BOUNDS.price)}` : '-'],
     ['Mileage Warranty', warranty ? `${Number(validateNumeric(warranty, NUMERIC_BOUNDS.warranty)).toLocaleString()} miles` : '-'],
