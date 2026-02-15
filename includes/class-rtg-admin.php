@@ -192,29 +192,32 @@ class RTG_Admin {
 
         $editing_id = isset( $_POST['editing_id'] ) ? intval( $_POST['editing_id'] ) : 0;
 
+        // Strip WordPress magic quotes so characters like " are stored correctly.
+        $post = wp_unslash( $_POST );
+
         $data = array(
-            'tire_id'          => sanitize_text_field( $_POST['tire_id'] ?? '' ),
-            'size'             => sanitize_text_field( $_POST['size'] ?? '' ),
-            'diameter'         => sanitize_text_field( $_POST['diameter'] ?? '' ),
-            'brand'            => sanitize_text_field( $_POST['brand'] ?? '' ),
-            'model'            => sanitize_text_field( $_POST['model'] ?? '' ),
-            'category'         => sanitize_text_field( $_POST['category'] ?? '' ),
-            'price'            => floatval( $_POST['price'] ?? 0 ),
-            'mileage_warranty' => intval( $_POST['mileage_warranty'] ?? 0 ),
-            'weight_lb'        => floatval( $_POST['weight_lb'] ?? 0 ),
-            'three_pms'        => sanitize_text_field( $_POST['three_pms'] ?? 'No' ),
-            'tread'            => sanitize_text_field( $_POST['tread'] ?? '' ),
-            'load_index'       => sanitize_text_field( $_POST['load_index'] ?? '' ),
-            'max_load_lb'      => intval( $_POST['max_load_lb'] ?? 0 ),
-            'load_range'       => sanitize_text_field( $_POST['load_range'] ?? '' ),
-            'speed_rating'     => sanitize_text_field( $_POST['speed_rating'] ?? '' ),
-            'psi'              => sanitize_text_field( $_POST['psi'] ?? '' ),
-            'utqg'             => sanitize_text_field( $_POST['utqg'] ?? '' ),
-            'tags'             => sanitize_text_field( $_POST['tags'] ?? '' ),
-            'link'             => esc_url_raw( $_POST['link'] ?? '' ),
-            'image'            => esc_url_raw( $_POST['image'] ?? '' ),
-            'bundle_link'      => esc_url_raw( $_POST['bundle_link'] ?? '' ),
-            'sort_order'       => intval( $_POST['sort_order'] ?? 0 ),
+            'tire_id'          => sanitize_text_field( $post['tire_id'] ?? '' ),
+            'size'             => sanitize_text_field( $post['size'] ?? '' ),
+            'diameter'         => sanitize_text_field( $post['diameter'] ?? '' ),
+            'brand'            => sanitize_text_field( $post['brand'] ?? '' ),
+            'model'            => sanitize_text_field( $post['model'] ?? '' ),
+            'category'         => sanitize_text_field( $post['category'] ?? '' ),
+            'price'            => floatval( $post['price'] ?? 0 ),
+            'mileage_warranty' => intval( $post['mileage_warranty'] ?? 0 ),
+            'weight_lb'        => floatval( $post['weight_lb'] ?? 0 ),
+            'three_pms'        => sanitize_text_field( $post['three_pms'] ?? 'No' ),
+            'tread'            => sanitize_text_field( $post['tread'] ?? '' ),
+            'load_index'       => sanitize_text_field( $post['load_index'] ?? '' ),
+            'max_load_lb'      => intval( $post['max_load_lb'] ?? 0 ),
+            'load_range'       => sanitize_text_field( $post['load_range'] ?? '' ),
+            'speed_rating'     => sanitize_text_field( $post['speed_rating'] ?? '' ),
+            'psi'              => sanitize_text_field( $post['psi'] ?? '' ),
+            'utqg'             => sanitize_text_field( $post['utqg'] ?? '' ),
+            'tags'             => sanitize_text_field( $post['tags'] ?? '' ),
+            'link'             => esc_url_raw( $post['link'] ?? '' ),
+            'image'            => esc_url_raw( $post['image'] ?? '' ),
+            'bundle_link'      => esc_url_raw( $post['bundle_link'] ?? '' ),
+            'sort_order'       => intval( $post['sort_order'] ?? 0 ),
         );
 
         // Auto-calculate efficiency score and grade.

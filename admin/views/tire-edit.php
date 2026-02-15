@@ -91,9 +91,15 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                         <div class="rtg-field-label-row">
                             <label class="rtg-field-label" for="brand">Brand <span class="rtg-badge-required">Required</span></label>
                         </div>
+                        <?php
+                        $brand_options = $dd_brands;
+                        if ( ! empty( $v['brand'] ) && ! in_array( $v['brand'], $brand_options, true ) ) {
+                            $brand_options[] = $v['brand'];
+                        }
+                        ?>
                         <select id="brand" name="brand" required>
                             <option value="">Select...</option>
-                            <?php foreach ( $dd_brands as $opt ) : ?>
+                            <?php foreach ( $brand_options as $opt ) : ?>
                                 <option value="<?php echo esc_attr( $opt ); ?>" <?php selected( $v['brand'], $opt ); ?>><?php echo esc_html( $opt ); ?></option>
                             <?php endforeach; ?>
                         </select>
@@ -117,9 +123,15 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                         <div class="rtg-field-label-row">
                             <label class="rtg-field-label" for="size">Size</label>
                         </div>
+                        <?php
+                        $size_options = $dd_sizes;
+                        if ( ! empty( $v['size'] ) && ! in_array( $v['size'], $size_options, true ) ) {
+                            $size_options[] = $v['size'];
+                        }
+                        ?>
                         <select id="size" name="size">
                             <option value="">Select...</option>
-                            <?php foreach ( $dd_sizes as $opt ) : ?>
+                            <?php foreach ( $size_options as $opt ) : ?>
                                 <option value="<?php echo esc_attr( $opt ); ?>" <?php selected( $v['size'], $opt ); ?>><?php echo esc_html( $opt ); ?></option>
                             <?php endforeach; ?>
                         </select>
@@ -128,9 +140,16 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                         <div class="rtg-field-label-row">
                             <label class="rtg-field-label" for="diameter">Diameter</label>
                         </div>
+                        <?php
+                        // Ensure the current stored value is always available in the dropdown.
+                        $diameter_options = $dd_diameters;
+                        if ( ! empty( $v['diameter'] ) && ! in_array( $v['diameter'], $diameter_options, true ) ) {
+                            $diameter_options[] = $v['diameter'];
+                        }
+                        ?>
                         <select id="diameter" name="diameter">
                             <option value="">Select...</option>
-                            <?php foreach ( $dd_diameters as $opt ) : ?>
+                            <?php foreach ( $diameter_options as $opt ) : ?>
                                 <option value="<?php echo esc_attr( $opt ); ?>" <?php selected( $v['diameter'], $opt ); ?>><?php echo esc_html( $opt ); ?></option>
                             <?php endforeach; ?>
                         </select>
@@ -139,9 +158,15 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                         <div class="rtg-field-label-row">
                             <label class="rtg-field-label" for="category">Category</label>
                         </div>
+                        <?php
+                        $category_options = $dd_categories;
+                        if ( ! empty( $v['category'] ) && ! in_array( $v['category'], $category_options, true ) ) {
+                            $category_options[] = $v['category'];
+                        }
+                        ?>
                         <select id="category" name="category">
                             <option value="">Select...</option>
-                            <?php foreach ( $dd_categories as $opt ) : ?>
+                            <?php foreach ( $category_options as $opt ) : ?>
                                 <option value="<?php echo esc_attr( $opt ); ?>" <?php selected( $v['category'], $opt ); ?>><?php echo esc_html( $opt ); ?></option>
                             <?php endforeach; ?>
                         </select>
@@ -189,9 +214,15 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                         <div class="rtg-field-label-row">
                             <label class="rtg-field-label" for="load_range">Load Range</label>
                         </div>
+                        <?php
+                        $load_range_options = $dd_load_ranges;
+                        if ( ! empty( $v['load_range'] ) && ! in_array( $v['load_range'], $load_range_options, true ) ) {
+                            $load_range_options[] = $v['load_range'];
+                        }
+                        ?>
                         <select id="load_range" name="load_range">
                             <option value="">Select...</option>
-                            <?php foreach ( $dd_load_ranges as $opt ) : ?>
+                            <?php foreach ( $load_range_options as $opt ) : ?>
                                 <option value="<?php echo esc_attr( $opt ); ?>" <?php selected( $v['load_range'], $opt ); ?>><?php echo esc_html( $opt ); ?></option>
                             <?php endforeach; ?>
                         </select>
@@ -200,9 +231,15 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                         <div class="rtg-field-label-row">
                             <label class="rtg-field-label" for="speed_rating">Speed Rating</label>
                         </div>
+                        <?php
+                        $speed_rating_options = $dd_speed_ratings;
+                        if ( ! empty( $v['speed_rating'] ) && ! in_array( $v['speed_rating'], $speed_rating_options, true ) ) {
+                            $speed_rating_options[] = $v['speed_rating'];
+                        }
+                        ?>
                         <select id="speed_rating" name="speed_rating">
                             <option value="">Select...</option>
-                            <?php foreach ( $dd_speed_ratings as $opt ) : ?>
+                            <?php foreach ( $speed_rating_options as $opt ) : ?>
                                 <option value="<?php echo esc_attr( $opt ); ?>" <?php selected( $v['speed_rating'], $opt ); ?>><?php echo esc_html( $opt ); ?></option>
                             <?php endforeach; ?>
                         </select>
