@@ -75,6 +75,16 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                 </div>
                 <div class="rtg-field-row">
                     <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="server_side_pagination">Server-side Pagination</label>
+                    </div>
+                    <p class="rtg-field-description">When enabled, tire data is fetched via AJAX instead of embedding all data in the page. Recommended for catalogs with 200+ tires.</p>
+                    <label class="rtg-toggle">
+                        <input type="checkbox" id="server_side_pagination" name="server_side_pagination" value="1" <?php checked( ! empty( $settings['server_side_pagination'] ) ); ?>>
+                        <span class="rtg-toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
                         <label class="rtg-field-label" for="compare_slug">Compare Page Slug</label>
                     </div>
                     <p class="rtg-field-description">URL slug for the comparison page. Default: <code>tire-compare</code> (accessible at <code><?php echo esc_html( home_url( '/' . $compare_slug . '/' ) ); ?></code>)</p>

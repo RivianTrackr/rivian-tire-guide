@@ -10,6 +10,13 @@ class RTG_Database {
         return $wpdb->prefix . 'rtg_tires';
     }
 
+    /**
+     * Public accessor for the tires table name (for use in AJAX queries).
+     */
+    public static function tires_table_public() {
+        return self::tires_table();
+    }
+
     private static function ratings_table() {
         global $wpdb;
         return $wpdb->prefix . 'rtg_ratings';
@@ -293,6 +300,148 @@ class RTG_Database {
         $max = $wpdb->get_var( "SELECT MAX(CAST(SUBSTRING(tire_id, 5) AS UNSIGNED)) FROM {$table} WHERE tire_id LIKE 'tire%'" );
         $next = $max ? (int) $max + 1 : 1;
         return sprintf( 'tire%03d', $next );
+    }
+
+    /**
+     * Server-side filtered + paginated query for the frontend AJAX endpoint.
+     *
+     * @param array $filters {
+     *     @type string $search   Free text search.
+     *     @type string $size     Exact size match.
+     *     @type string $brand    Exact brand match.
+     *     @type string $category Exact category match.
+     *     @type bool   $three_pms Filter to 3PMS-rated only.
+     *     @type bool   $ev_rated  Filter to EV Rated tags.
+     *     @type bool   $studded   Filter to Studded Available tags.
+     *     @type float  $price_max Max price.
+     *     @type int    $warranty_min Min mileage warranty.
+     *     @type float  $weight_max  Max weight.
+     * }
+     * @param string $sort       Sort key.
+     * @param int    $page       Page number (1-based).
+     * @param int    $per_page   Results per page.
+     * @return array { 'rows' => array[], 'total' => int }
+     */
+    public static function get_filtered_tires( $filters = array(), $sort = 'efficiency_score', $page = 1, $per_page = 12 ) {
+        global $wpdb;
+        $table = self::tires_table();
+
+        $where  = array( '1=1' );
+        $values = array();
+
+        if ( ! empty( $filters['search'] ) ) {
+            $like     = '%' . $wpdb->esc_like( $filters['search'] ) . '%';
+            $where[]  = '( brand LIKE %s OR model LIKE %s OR tire_id LIKE %s OR tags LIKE %s )';
+            $values[] = $like;
+            $values[] = $like;
+            $values[] = $like;
+            $values[] = $like;
+        }
+
+        if ( ! empty( $filters['size'] ) ) {
+            $where[]  = 'size = %s';
+            $values[] = $filters['size'];
+        }
+
+        if ( ! empty( $filters['brand'] ) ) {
+            $where[]  = 'brand = %s';
+            $values[] = $filters['brand'];
+        }
+
+        if ( ! empty( $filters['category'] ) ) {
+            $where[]  = 'category = %s';
+            $values[] = $filters['category'];
+        }
+
+        if ( ! empty( $filters['three_pms'] ) ) {
+            $where[] = "LOWER(three_pms) = 'yes'";
+        }
+
+        if ( ! empty( $filters['ev_rated'] ) ) {
+            $where[] = "LOWER(tags) LIKE '%ev rated%'";
+        }
+
+        if ( ! empty( $filters['studded'] ) ) {
+            $where[] = "LOWER(tags) LIKE '%studded available%'";
+        }
+
+        if ( isset( $filters['price_max'] ) && $filters['price_max'] < 600 ) {
+            $where[]  = 'price <= %f';
+            $values[] = floatval( $filters['price_max'] );
+        }
+
+        if ( isset( $filters['warranty_min'] ) && $filters['warranty_min'] > 0 ) {
+            $where[]  = 'mileage_warranty >= %d';
+            $values[] = intval( $filters['warranty_min'] );
+        }
+
+        if ( isset( $filters['weight_max'] ) && $filters['weight_max'] < 70 ) {
+            $where[]  = 'weight_lb <= %f';
+            $values[] = floatval( $filters['weight_max'] );
+        }
+
+        $where_sql = implode( ' AND ', $where );
+
+        // Determine ORDER BY.
+        $sort_map = array(
+            'efficiency_score' => 'efficiency_score DESC',
+            'price-asc'        => 'price ASC',
+            'price-desc'       => 'price DESC',
+            'warranty-desc'    => 'mileage_warranty DESC',
+            'weight-asc'       => 'weight_lb ASC',
+            'weight-desc'      => 'weight_lb DESC',
+            'alpha'            => 'brand ASC, model ASC',
+            'alpha-desc'       => 'brand DESC, model DESC',
+        );
+        $order_sql = isset( $sort_map[ $sort ] ) ? $sort_map[ $sort ] : 'efficiency_score DESC';
+
+        // Count.
+        $count_sql = "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}";
+        if ( ! empty( $values ) ) {
+            $count_sql = $wpdb->prepare( $count_sql, ...$values );
+        }
+        $total = (int) $wpdb->get_var( $count_sql );
+
+        // Data.
+        $offset   = max( 0, ( $page - 1 ) * $per_page );
+        $data_sql = "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY {$order_sql} LIMIT %d OFFSET %d";
+        $all_vals = array_merge( $values, array( $per_page, $offset ) );
+        $rows     = $wpdb->get_results( $wpdb->prepare( $data_sql, ...$all_vals ), ARRAY_A );
+
+        // Convert to frontend array format.
+        $result = array();
+        foreach ( $rows as $tire ) {
+            $result[] = array(
+                (string) $tire['tire_id'],
+                (string) $tire['size'],
+                (string) $tire['diameter'],
+                (string) $tire['brand'],
+                (string) $tire['model'],
+                (string) $tire['category'],
+                (string) $tire['price'],
+                (string) $tire['mileage_warranty'],
+                (string) $tire['weight_lb'],
+                (string) $tire['three_pms'],
+                (string) $tire['tread'],
+                (string) $tire['load_index'],
+                (string) $tire['max_load_lb'],
+                (string) $tire['load_range'],
+                (string) $tire['speed_rating'],
+                (string) $tire['psi'],
+                (string) $tire['utqg'],
+                (string) $tire['tags'],
+                (string) $tire['link'],
+                (string) $tire['image'],
+                (string) $tire['efficiency_score'],
+                (string) $tire['efficiency_grade'],
+                (string) $tire['bundle_link'],
+            );
+        }
+
+        return array(
+            'rows'  => $result,
+            'total' => $total,
+        );
     }
 
     // --- Efficiency Calculation ---

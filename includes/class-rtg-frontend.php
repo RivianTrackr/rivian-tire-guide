@@ -31,6 +31,19 @@ class RTG_Frontend {
         }
     }
 
+    /**
+     * Return '.min' when minified assets exist and SCRIPT_DEBUG is off.
+     */
+    private static function asset_suffix() {
+        if ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) {
+            return '';
+        }
+        if ( file_exists( RTG_PLUGIN_DIR . 'frontend/js/rivian-tires.min.js' ) ) {
+            return '.min';
+        }
+        return '';
+    }
+
     private function enqueue_assets() {
         if ( wp_script_is( 'rtg-tire-guide', 'enqueued' ) ) {
             return;
@@ -47,9 +60,11 @@ class RTG_Frontend {
             '6.5.0'
         );
 
+        $suffix = self::asset_suffix();
+
         wp_enqueue_style(
             'rtg-styles',
-            RTG_PLUGIN_URL . 'frontend/css/rivian-tires.css',
+            RTG_PLUGIN_URL . 'frontend/css/rivian-tires' . $suffix . '.css',
             array(),
             RTG_VERSION
         );
@@ -88,20 +103,31 @@ class RTG_Frontend {
         // JS — no PapaParse needed.
         wp_enqueue_script(
             'rtg-tire-guide',
-            RTG_PLUGIN_URL . 'frontend/js/rivian-tires.js',
+            RTG_PLUGIN_URL . 'frontend/js/rivian-tires' . $suffix . '.js',
             array(),
             RTG_VERSION,
             true
         );
 
+        $server_side = ! empty( $settings['server_side_pagination'] );
+
         // Localize tire data.
-        wp_localize_script( 'rtg-tire-guide', 'rtgData', array(
-            'tires'    => RTG_Database::get_tires_as_array(),
+        $localized = array(
             'settings' => array(
-                'rowsPerPage' => intval( $settings['rows_per_page'] ?? 12 ),
-                'compareUrl'  => home_url( '/' . $compare_slug . '/' ),
+                'rowsPerPage'  => intval( $settings['rows_per_page'] ?? 12 ),
+                'compareUrl'   => home_url( '/' . $compare_slug . '/' ),
+                'serverSide'   => $server_side,
+                'ajaxurl'      => admin_url( 'admin-ajax.php' ),
+                'tireNonce'    => wp_create_nonce( 'rtg_tire_nonce' ),
             ),
-        ) );
+        );
+
+        // Only embed full tire array when client-side mode is active.
+        if ( ! $server_side ) {
+            $localized['tires'] = RTG_Database::get_tires_as_array();
+        }
+
+        wp_localize_script( 'rtg-tire-guide', 'rtgData', $localized );
 
         // Rating system localization.
         wp_localize_script( 'rtg-tire-guide', 'tireRatingAjax', array(
