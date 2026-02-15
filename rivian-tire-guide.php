@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Rivian Tire Guide
  * Description: Interactive tire guide for Rivian vehicles with filtering, comparison, and ratings.
- * Version: 1.0.5
+ * Version: 1.1.0
  * Author: RivianTrackr
  * Text Domain: rivian-tire-guide
  * Requires at least: 5.8
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'RTG_VERSION', '1.0.5' );
+define( 'RTG_VERSION', '1.1.0' );
 define( 'RTG_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'RTG_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'RTG_PLUGIN_FILE', __FILE__ );
@@ -27,6 +27,7 @@ require_once RTG_PLUGIN_DIR . 'includes/class-rtg-admin.php';
 require_once RTG_PLUGIN_DIR . 'includes/class-rtg-frontend.php';
 require_once RTG_PLUGIN_DIR . 'includes/class-rtg-ajax.php';
 require_once RTG_PLUGIN_DIR . 'includes/class-rtg-compare.php';
+require_once RTG_PLUGIN_DIR . 'includes/class-rtg-schema.php';
 
 // Activation / Deactivation hooks.
 register_activation_hook( __FILE__, array( 'RTG_Activator', 'activate' ) );
@@ -49,4 +50,7 @@ function rtg_init() {
 
     // Compare page rewrite rules.
     new RTG_Compare();
+
+    // Schema.org structured data.
+    new RTG_Schema();
 }
