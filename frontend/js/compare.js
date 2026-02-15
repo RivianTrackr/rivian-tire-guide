@@ -1,3 +1,7 @@
+function rtgColor(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue('--rtg-' + name).trim();
+}
+
 function escapeHTML(str) {
   return String(str).replace(/[&<>"']/g, c =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c])
@@ -88,7 +92,7 @@ function renderComparison(rows, indexes) {
         const grade = escapeHTML((r[21] || "-").toUpperCase());
 
         const colorMap = {
-          A: "#5ec095",
+          A: rtgColor('accent') || "#5ec095",
           B: "#a3e635",
           C: "#facc15",
           D: "#f97316",
