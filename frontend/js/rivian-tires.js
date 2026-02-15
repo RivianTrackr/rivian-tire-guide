@@ -1316,7 +1316,12 @@ function loadTireRatings(tireIds) {
       
       const formData = new FormData();
       formData.append('action', 'get_tire_ratings');
-      
+
+      // Include nonce for logged-in users (required for CSRF protection).
+      if (tireRatingAjax.nonce) {
+        formData.append('nonce', tireRatingAjax.nonce);
+      }
+
       uniqueIds.forEach(tireId => {
         formData.append('tire_ids[]', tireId);
       });

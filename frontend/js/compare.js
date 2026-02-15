@@ -13,8 +13,7 @@ function safeImageURL(url) {
     if (!/^https?:$/.test(u.protocol)) return "";
     if (!allowedHostnames.includes(u.hostname)) return "";
     if (u.pathname.includes('..') || u.pathname.includes('//')) return "";
-    const encoded = encodeURIComponent(trimmed);
-    return `https://cdn.riviantrackr.com/spio/w_600+q_auto+ret_img+to_webp/${encoded}`;
+    return trimmed;
   } catch {
     return "";
   }
