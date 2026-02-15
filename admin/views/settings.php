@@ -80,7 +80,8 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                     <p class="rtg-field-description">When enabled, tire data is fetched via AJAX instead of embedding all data in the page. Recommended for catalogs with 200+ tires.</p>
                     <label class="rtg-toggle">
                         <input type="checkbox" id="server_side_pagination" name="server_side_pagination" value="1" <?php checked( ! empty( $settings['server_side_pagination'] ) ); ?>>
-                        <span class="rtg-toggle-slider"></span>
+                        <span class="rtg-toggle-track"></span>
+                        <span class="rtg-toggle-label">Enable server-side loading</span>
                     </label>
                 </div>
                 <div class="rtg-field-row">
