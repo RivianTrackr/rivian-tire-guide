@@ -5,17 +5,38 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class RTG_Activator {
 
+    /**
+     * Current database schema version.
+     * Increment this whenever a migration is added.
+     */
+    const DB_VERSION = 2;
+
     public static function activate() {
         self::create_tables();
+        self::run_migrations();
         update_option( 'rtg_version', RTG_VERSION );
         update_option( 'rtg_flush_rewrite', 1 );
     }
 
+    /**
+     * Run on plugins_loaded to apply pending migrations on update.
+     */
+    public static function maybe_upgrade() {
+        $installed_db = (int) get_option( 'rtg_db_version', 0 );
+        if ( $installed_db < self::DB_VERSION ) {
+            self::create_tables();
+            self::run_migrations();
+        }
+    }
+
+    /**
+     * Create or update tables via dbDelta (idempotent).
+     */
     private static function create_tables() {
         global $wpdb;
         $charset_collate = $wpdb->get_charset_collate();
 
-        $tires_table = $wpdb->prefix . 'rtg_tires';
+        $tires_table   = $wpdb->prefix . 'rtg_tires';
         $ratings_table = $wpdb->prefix . 'rtg_ratings';
 
         $sql = "CREATE TABLE {$tires_table} (
@@ -71,5 +92,49 @@ class RTG_Activator {
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta( $sql );
+    }
+
+    /**
+     * Run numbered migrations sequentially.
+     * Each migration only runs once — the current version is stored in rtg_db_version.
+     */
+    private static function run_migrations() {
+        $installed_db = (int) get_option( 'rtg_db_version', 0 );
+
+        $migrations = array(
+            1 => 'migrate_1_initial_schema',
+            2 => 'migrate_2_add_tags_index',
+        );
+
+        foreach ( $migrations as $version => $method ) {
+            if ( $installed_db < $version && method_exists( __CLASS__, $method ) ) {
+                call_user_func( array( __CLASS__, $method ) );
+                update_option( 'rtg_db_version', $version );
+            }
+        }
+    }
+
+    // --- Individual migrations ---
+
+    /**
+     * Migration 1: Initial schema.
+     * No-op since dbDelta handles table creation, but marks the baseline.
+     */
+    private static function migrate_1_initial_schema() {
+        // Baseline — tables created by dbDelta above.
+    }
+
+    /**
+     * Migration 2: Add index on tags column for server-side tag filtering.
+     */
+    private static function migrate_2_add_tags_index() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'rtg_tires';
+
+        // Only add if not already present.
+        $indexes = $wpdb->get_results( "SHOW INDEX FROM {$table} WHERE Key_name = 'idx_tags'" );
+        if ( empty( $indexes ) ) {
+            $wpdb->query( "ALTER TABLE {$table} ADD KEY idx_tags (tags(100))" );
+        }
     }
 }

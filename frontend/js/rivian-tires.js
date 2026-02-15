@@ -2648,22 +2648,28 @@ function clearCompare() {
 }
 
 function initializeUI() {
-  VALID_SIZES = [...new Set(allRows.map(r => safeString(r[1]).trim()))].filter(Boolean);
-  VALID_BRANDS = [...new Set(allRows.map(r => safeString(r[3]).trim()))].filter(Boolean);
-  VALID_CATEGORIES = [...new Set(allRows.map(r => safeString(r[5]).trim()))].filter(Boolean);
-  
-  populateSizeDropdownGrouped("filterSize", allRows);
-  populateDropdown("filterBrand", allRows.map(r => r[3]));
-  populateDropdown("filterCategory", allRows.map(r => r[5]));
+  const ssMode = isServerSide();
+  const filterFn = ssMode ? serverSideFilterAndRender : filterAndRender;
+  const debouncedFilterFn = ssMode ? debounce(serverSideFilterAndRender, 500) : debounce(filterAndRender, 500);
+
+  if (!ssMode) {
+    VALID_SIZES = [...new Set(allRows.map(r => safeString(r[1]).trim()))].filter(Boolean);
+    VALID_BRANDS = [...new Set(allRows.map(r => safeString(r[3]).trim()))].filter(Boolean);
+    VALID_CATEGORIES = [...new Set(allRows.map(r => safeString(r[5]).trim()))].filter(Boolean);
+
+    populateSizeDropdownGrouped("filterSize", allRows);
+    populateDropdown("filterBrand", allRows.map(r => r[3]));
+    populateDropdown("filterCategory", allRows.map(r => r[5]));
+  }
 
   const inputsToWatch = [
-    { id: "searchInput", listener: debounce(filterAndRender, 500) },
-    { id: "filterSize", listener: filterAndRender },
-    { id: "filterBrand", listener: filterAndRender },
-    { id: "filterCategory", listener: filterAndRender },
-    { id: "filter3pms", listener: filterAndRender },
-    { id: "filterEVRated", listener: filterAndRender },
-    { id: "filterStudded", listener: filterAndRender },
+    { id: "searchInput", listener: debouncedFilterFn },
+    { id: "filterSize", listener: filterFn },
+    { id: "filterBrand", listener: filterFn },
+    { id: "filterCategory", listener: filterFn },
+    { id: "filter3pms", listener: filterFn },
+    { id: "filterEVRated", listener: filterFn },
+    { id: "filterStudded", listener: filterFn },
   ];
 
   inputsToWatch.forEach(({ id, listener }) => {
@@ -2676,19 +2682,224 @@ function initializeUI() {
   applyFiltersFromURL();
   applyCompareFromURL();
   setupSliderHandlers();
-  buildFilterIndexes();
   setupEventDelegation();
   initializeSmartSearch();
-  filterAndRender();
 
-  const countDisplay = getDOMElement("tireCount");
-  if (countDisplay) {
-    countDisplay.textContent = `Showing ${filteredRows.length} tire${filteredRows.length !== 1 ? "s" : ""}`;
+  if (ssMode) {
+    // In server-side mode, override slider debounce to use server fetch.
+    const sliderIds = ["priceMax", "warrantyMax", "weightMax"];
+    sliderIds.forEach(id => {
+      const input = getDOMElement(id);
+      if (input) input.addEventListener("input", debounce(serverSideFilterAndRender, 500));
+    });
+
+    // Populate dropdowns from server then fetch first page.
+    fetchDropdownOptions().then(() => {
+      fetchTiresFromServer(currentPage);
+    });
+  } else {
+    buildFilterIndexes();
+    filterAndRender();
+
+    const countDisplay = getDOMElement("tireCount");
+    if (countDisplay) {
+      countDisplay.textContent = `Showing ${filteredRows.length} tire${filteredRows.length !== 1 ? "s" : ""}`;
+    }
   }
 }
 
-// Load tire data from WordPress localized script (replaces PapaParse CSV fetch).
-if (typeof rtgData !== 'undefined' && rtgData.tires && Array.isArray(rtgData.tires)) {
+// --- Server-side pagination mode ---
+let serverSideMode = false;
+let serverSideTotal = 0;
+let serverSideFetchController = null;
+
+function isServerSide() {
+  return serverSideMode && typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.ajaxurl;
+}
+
+function fetchTiresFromServer(page) {
+  if (serverSideFetchController) serverSideFetchController.abort();
+  serverSideFetchController = new AbortController();
+
+  const searchInput = document.querySelector('#searchInput');
+  const body = new FormData();
+  body.append('action', 'rtg_get_tires');
+  body.append('nonce', rtgData.settings.tireNonce);
+  body.append('page', page || currentPage);
+  body.append('search', searchInput ? searchInput.value : '');
+  body.append('size', getDOMElement("filterSize")?.value || '');
+  body.append('brand', getDOMElement("filterBrand")?.value || '');
+  body.append('category', getDOMElement("filterCategory")?.value || '');
+  body.append('three_pms', getDOMElement("filter3pms")?.checked ? '1' : '');
+  body.append('ev_rated', getDOMElement("filterEVRated")?.checked ? '1' : '');
+  body.append('studded', getDOMElement("filterStudded")?.checked ? '1' : '');
+  body.append('price_max', getDOMElement("priceMax")?.value || '600');
+  body.append('weight_max', getDOMElement("weightMax")?.value || '70');
+
+  const warrantyMax = getDOMElement("warrantyMax");
+  const warVal = warrantyMax ? parseInt(warrantyMax.value) : 80000;
+  body.append('warranty_min', warVal < 80000 ? (80000 - warVal).toString() : '0');
+
+  const sortBy = getDOMElement("sortBy");
+  const sortVal = sortBy?.value || 'efficiency_score';
+  const sortMap = { efficiencyGrade: 'efficiency_score' };
+  body.append('sort', sortMap[sortVal] || sortVal);
+
+  const tireCountEl = getDOMElement("tireCount");
+  if (tireCountEl) tireCountEl.textContent = 'Loading...';
+
+  return fetch(rtgData.settings.ajaxurl, {
+    method: 'POST',
+    body: body,
+    signal: serverSideFetchController.signal,
+  })
+  .then(res => res.json())
+  .then(json => {
+    if (!json.success) {
+      console.error('Server tire fetch failed:', json);
+      return;
+    }
+    const rows = (json.data.rows || [])
+      .map(validateAndSanitizeCSVRow)
+      .filter(row => row && row.length && row[0]);
+
+    filteredRows = rows;
+    serverSideTotal = json.data.total || 0;
+    currentPage = json.data.page || 1;
+
+    if (tireCountEl) {
+      tireCountEl.textContent = `Showing ${serverSideTotal} tire${serverSideTotal === 1 ? '' : 's'}`;
+    }
+
+    renderCards(filteredRows);
+    renderServerPagination(serverSideTotal, json.data.per_page || ROWS_PER_PAGE, currentPage);
+    updateURLFromFilters();
+
+    const noResults = getDOMElement("noResults");
+    const tireCards = getDOMElement("tireCards");
+    if (filteredRows.length === 0) {
+      if (noResults) noResults.style.display = "block";
+      if (tireCards) tireCards.style.display = "none";
+    } else {
+      if (noResults) noResults.style.display = "none";
+      if (tireCards) tireCards.style.display = "grid";
+    }
+
+    // Load ratings for visible tires.
+    const tireIds = filteredRows.map(row => row[0]).filter(Boolean);
+    loadTireRatings(tireIds);
+  })
+  .catch(err => {
+    if (err.name !== 'AbortError') console.error('Fetch error:', err);
+  });
+}
+
+function renderServerPagination(total, perPage, page) {
+  const container = getDOMElement("paginationControls");
+  if (!container) return;
+  container.innerHTML = "";
+  const totalPages = Math.ceil(total / perPage);
+  if (totalPages <= 1) return;
+
+  const prev = document.createElement("button");
+  prev.textContent = "Previous";
+  prev.disabled = page <= 1;
+  styleButton(prev);
+  prev.onclick = () => { currentPage = page - 1; fetchTiresFromServer(currentPage); scrollToTop(); };
+  container.appendChild(prev);
+
+  const pageInfo = document.createElement("span");
+  pageInfo.textContent = `Page ${page} of ${totalPages}`;
+  pageInfo.style.cssText = `color: ${rtgColor('text-primary')}; font-weight: 500; display: flex; align-items: center;`;
+  container.appendChild(pageInfo);
+
+  const next = document.createElement("button");
+  next.textContent = "Next";
+  next.disabled = page >= totalPages;
+  styleButton(next);
+  next.onclick = () => { currentPage = page + 1; fetchTiresFromServer(currentPage); scrollToTop(); };
+  container.appendChild(next);
+}
+
+function scrollToTop() {
+  const filterTop = getDOMElement("filterTop");
+  if (filterTop) filterTop.scrollIntoView({ behavior: "smooth" });
+}
+
+function fetchDropdownOptions() {
+  const body = new FormData();
+  body.append('action', 'rtg_get_filter_options');
+  body.append('nonce', rtgData.settings.tireNonce);
+
+  return fetch(rtgData.settings.ajaxurl, { method: 'POST', body })
+    .then(res => res.json())
+    .then(json => {
+      if (!json.success) return;
+      const d = json.data;
+
+      VALID_SIZES = d.sizes || [];
+      VALID_BRANDS = d.brands || [];
+      VALID_CATEGORIES = d.categories || [];
+
+      // Populate size dropdown grouped by rim diameter.
+      const sizeSelect = getDOMElement("filterSize");
+      if (sizeSelect) {
+        sizeSelect.innerHTML = '';
+        const defaultOpt = document.createElement("option");
+        defaultOpt.value = '';
+        defaultOpt.textContent = 'All Sizes';
+        sizeSelect.appendChild(defaultOpt);
+
+        const groups = {};
+        VALID_SIZES.forEach(size => {
+          const match = size.match(/R(\d{2})/i);
+          const rim = match ? match[1] : "Other";
+          if (!groups[rim]) groups[rim] = [];
+          groups[rim].push(size);
+        });
+        Object.keys(groups).sort((a, b) => a === "Other" ? 1 : b === "Other" ? -1 : parseInt(a) - parseInt(b)).forEach(rim => {
+          const optgroup = document.createElement("optgroup");
+          optgroup.label = `${rim}" Wheels`;
+          groups[rim].sort().forEach(size => {
+            const opt = document.createElement("option");
+            opt.value = size;
+            opt.textContent = size;
+            optgroup.appendChild(opt);
+          });
+          sizeSelect.appendChild(optgroup);
+        });
+      }
+
+      populateDropdown("filterBrand", VALID_BRANDS);
+      populateDropdown("filterCategory", VALID_CATEGORIES);
+
+      // Re-apply URL params to newly populated dropdowns.
+      applyFiltersFromURL();
+    })
+    .catch(err => console.error('Failed to fetch filter options:', err));
+}
+
+function serverSideFilterAndRender() {
+  currentPage = 1;
+  lastFilterState = null;
+  fetchTiresFromServer(1);
+}
+
+// Load tire data from WordPress localized script.
+if (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.serverSide) {
+  // Server-side pagination mode — no embedded tire data.
+  serverSideMode = true;
+
+  if (typeof tireRatingAjax !== 'undefined') {
+    isLoggedIn = tireRatingAjax.is_logged_in === true || tireRatingAjax.is_logged_in === '1' || tireRatingAjax.is_logged_in === 1;
+  }
+
+  // We still need dropdown values — fetch first page to populate them.
+  // Initialize UI with empty rows, then fetch data.
+  allRows = [];
+  filteredRows = [];
+  initializeUI();
+} else if (typeof rtgData !== 'undefined' && rtgData.tires && Array.isArray(rtgData.tires)) {
   allRows = rtgData.tires
     .map(validateAndSanitizeCSVRow)
     .filter(row => row && row.length && row[0]);

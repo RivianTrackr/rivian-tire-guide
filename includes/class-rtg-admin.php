@@ -73,9 +73,13 @@ class RTG_Admin {
             return;
         }
 
+        $suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : (
+            file_exists( RTG_PLUGIN_DIR . 'admin/css/admin-styles.min.css' ) ? '.min' : ''
+        );
+
         wp_enqueue_style(
             'rtg-admin-styles',
-            RTG_PLUGIN_URL . 'admin/css/admin-styles.css',
+            RTG_PLUGIN_URL . 'admin/css/admin-styles' . $suffix . '.css',
             array(),
             RTG_VERSION
         );
@@ -325,10 +329,11 @@ class RTG_Admin {
         }
 
         $settings = array(
-            'rows_per_page' => intval( $_POST['rows_per_page'] ?? 12 ),
-            'cdn_prefix'    => esc_url_raw( $_POST['cdn_prefix'] ?? '' ),
-            'compare_slug'  => sanitize_title( $_POST['compare_slug'] ?? 'tire-compare' ),
-            'theme_colors'  => $theme_colors,
+            'rows_per_page'          => intval( $_POST['rows_per_page'] ?? 12 ),
+            'cdn_prefix'             => esc_url_raw( $_POST['cdn_prefix'] ?? '' ),
+            'compare_slug'           => sanitize_title( $_POST['compare_slug'] ?? 'tire-compare' ),
+            'server_side_pagination' => ! empty( $_POST['server_side_pagination'] ),
+            'theme_colors'           => $theme_colors,
         );
 
         update_option( 'rtg_settings', $settings );

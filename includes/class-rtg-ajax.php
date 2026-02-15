@@ -18,6 +18,14 @@ class RTG_Ajax {
 
         // Submit rating — logged-in users only.
         add_action( 'wp_ajax_submit_tire_rating', array( $this, 'submit_tire_rating' ) );
+
+        // Server-side filtered tire listing — public.
+        add_action( 'wp_ajax_rtg_get_tires', array( $this, 'get_tires' ) );
+        add_action( 'wp_ajax_nopriv_rtg_get_tires', array( $this, 'get_tires' ) );
+
+        // Filter dropdown options — public.
+        add_action( 'wp_ajax_rtg_get_filter_options', array( $this, 'get_filter_options' ) );
+        add_action( 'wp_ajax_nopriv_rtg_get_filter_options', array( $this, 'get_filter_options' ) );
     }
 
     /**
@@ -153,5 +161,84 @@ class RTG_Ajax {
         } else {
             set_transient( $transient_key, (int) $attempts + 1, self::RATE_LIMIT_WINDOW );
         }
+    }
+
+    /**
+     * Server-side filtered + paginated tire listing.
+     * Used when the 'server_side_pagination' setting is enabled.
+     */
+    public function get_tires() {
+        check_ajax_referer( 'rtg_tire_nonce', 'nonce' );
+
+        $settings = get_option( 'rtg_settings', array() );
+        $per_page = intval( $settings['rows_per_page'] ?? 12 );
+
+        $filters = array(
+            'search'       => sanitize_text_field( wp_unslash( $_POST['search'] ?? '' ) ),
+            'size'         => sanitize_text_field( $_POST['size'] ?? '' ),
+            'brand'        => sanitize_text_field( $_POST['brand'] ?? '' ),
+            'category'     => sanitize_text_field( $_POST['category'] ?? '' ),
+            'three_pms'    => ! empty( $_POST['three_pms'] ),
+            'ev_rated'     => ! empty( $_POST['ev_rated'] ),
+            'studded'      => ! empty( $_POST['studded'] ),
+        );
+
+        $price_max = isset( $_POST['price_max'] ) ? floatval( $_POST['price_max'] ) : 600;
+        if ( $price_max >= 0 && $price_max <= 2000 ) {
+            $filters['price_max'] = $price_max;
+        }
+
+        $warranty_min = isset( $_POST['warranty_min'] ) ? intval( $_POST['warranty_min'] ) : 0;
+        if ( $warranty_min >= 0 && $warranty_min <= 100000 ) {
+            $filters['warranty_min'] = $warranty_min;
+        }
+
+        $weight_max = isset( $_POST['weight_max'] ) ? floatval( $_POST['weight_max'] ) : 70;
+        if ( $weight_max >= 0 && $weight_max <= 200 ) {
+            $filters['weight_max'] = $weight_max;
+        }
+
+        $allowed_sorts = array(
+            'efficiency_score', 'price-asc', 'price-desc',
+            'warranty-desc', 'weight-asc', 'weight-desc',
+            'alpha', 'alpha-desc',
+        );
+        $sort = sanitize_text_field( $_POST['sort'] ?? 'efficiency_score' );
+        if ( ! in_array( $sort, $allowed_sorts, true ) ) {
+            $sort = 'efficiency_score';
+        }
+
+        $page = max( 1, intval( $_POST['page'] ?? 1 ) );
+
+        $result = RTG_Database::get_filtered_tires( $filters, $sort, $page, $per_page );
+
+        wp_send_json_success( array(
+            'rows'       => $result['rows'],
+            'total'      => $result['total'],
+            'page'       => $page,
+            'per_page'   => $per_page,
+            'total_pages' => ceil( $result['total'] / $per_page ),
+        ) );
+    }
+
+    /**
+     * Return distinct filter dropdown values (sizes, brands, categories).
+     * Lightweight endpoint used only in server-side pagination mode.
+     */
+    public function get_filter_options() {
+        check_ajax_referer( 'rtg_tire_nonce', 'nonce' );
+
+        global $wpdb;
+        $table = RTG_Database::tires_table_public();
+
+        $sizes      = $wpdb->get_col( "SELECT DISTINCT size FROM {$table} WHERE size != '' ORDER BY size ASC" );
+        $brands     = $wpdb->get_col( "SELECT DISTINCT brand FROM {$table} WHERE brand != '' ORDER BY brand ASC" );
+        $categories = $wpdb->get_col( "SELECT DISTINCT category FROM {$table} WHERE category != '' ORDER BY category ASC" );
+
+        wp_send_json_success( array(
+            'sizes'      => array_map( 'sanitize_text_field', $sizes ),
+            'brands'     => array_map( 'sanitize_text_field', $brands ),
+            'categories' => array_map( 'sanitize_text_field', $categories ),
+        ) );
     }
 }
