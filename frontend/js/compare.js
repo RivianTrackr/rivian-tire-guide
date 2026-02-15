@@ -92,7 +92,7 @@ function renderComparison(rows, indexes) {
         const grade = escapeHTML((r[21] || "-").toUpperCase());
 
         const colorMap = {
-          A: rtgColor('accent') || "#5ec095",
+          A: "#5ec095",
           B: "#a3e635",
           C: "#facc15",
           D: "#f97316",
