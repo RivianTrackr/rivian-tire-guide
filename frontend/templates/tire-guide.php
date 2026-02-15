@@ -50,7 +50,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         <span class="switch-text">
           <div style="display: flex; align-items: center; gap: 6px;">
             <span>3PMS Rated</span>
-            <button class="info-tooltip-trigger" data-tooltip-key="3PMS Filter" style="background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onmouseenter="this.style.color='#5ec095'; this.style.backgroundColor='rgba(94, 192, 149, 0.1)'" onmouseleave="this.style.color='#94a3b8'; this.style.backgroundColor='transparent'">
+            <button class="info-tooltip-trigger" data-tooltip-key="3PMS Filter" style="background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onmouseenter="this.style.color='var(--rtg-accent, #5ec095)'; this.style.backgroundColor='color-mix(in srgb, var(--rtg-accent, #5ec095) 10%, transparent)'" onmouseleave="this.style.color='#94a3b8'; this.style.backgroundColor='transparent'">
               <i class="fa-solid fa-circle-info"></i>
             </button>
           </div>
@@ -62,7 +62,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         <span class="switch-text">
           <div style="display: flex; align-items: center; gap: 6px;">
             <span>EV Rated</span>
-            <button class="info-tooltip-trigger" data-tooltip-key="EV Rated Filter" style="background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onmouseenter="this.style.color='#5ec095'; this.style.backgroundColor='rgba(94, 192, 149, 0.1)'" onmouseleave="this.style.color='#94a3b8'; this.style.backgroundColor='transparent'">
+            <button class="info-tooltip-trigger" data-tooltip-key="EV Rated Filter" style="background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onmouseenter="this.style.color='var(--rtg-accent, #5ec095)'; this.style.backgroundColor='color-mix(in srgb, var(--rtg-accent, #5ec095) 10%, transparent)'" onmouseleave="this.style.color='#94a3b8'; this.style.backgroundColor='transparent'">
               <i class="fa-solid fa-circle-info"></i>
             </button>
           </div>
@@ -74,7 +74,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         <span class="switch-text">
           <div style="display: flex; align-items: center; gap: 6px;">
             <span>Studded Available</span>
-            <button class="info-tooltip-trigger" data-tooltip-key="Studded Available Filter" style="background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onmouseenter="this.style.color='#5ec095'; this.style.backgroundColor='rgba(94, 192, 149, 0.1)'" onmouseleave="this.style.color='#94a3b8'; this.style.backgroundColor='transparent'">
+            <button class="info-tooltip-trigger" data-tooltip-key="Studded Available Filter" style="background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onmouseenter="this.style.color='var(--rtg-accent, #5ec095)'; this.style.backgroundColor='color-mix(in srgb, var(--rtg-accent, #5ec095) 10%, transparent)'" onmouseleave="this.style.color='#94a3b8'; this.style.backgroundColor='transparent'">
               <i class="fa-solid fa-circle-info"></i>
             </button>
           </div>
@@ -155,7 +155,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 <div id="paginationControls" style="display: flex; justify-content: center; gap: 12px; margin-top: 20px;"></div>
 <div id="compareBar" class="compare-bar">
   <span id="compareCount" class="compare-count"></span>
-  <button onclick="openComparison()" style="background-color: #5ec095; color: #000; padding: 12px 20px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; flex: 1; min-width: 120px;">Compare</button>
+  <button onclick="openComparison()" style="background-color: var(--rtg-accent, #5ec095); color: #000; padding: 12px 20px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; flex: 1; min-width: 120px;">Compare</button>
   <button onclick="clearCompare()" style="background-color: #ee383a; color: #fff; padding: 12px 16px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; flex: 1; min-width: 100px;">Clear</button>
 </div>
 <div id="imageModal">

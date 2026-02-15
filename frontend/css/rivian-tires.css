@@ -723,7 +723,7 @@ body.modal-open {
 
 .rating-stars .star.user-rated {
   color: var(--rtg-accent);
-  filter: drop-shadow(0 2px 4px rgba(94, 192, 149, 0.4));
+  filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--rtg-accent) 40%, transparent));
 }
 
 .rating-stars.interactive .star {

@@ -962,7 +962,7 @@ function createInfoTooltip(label, tooltipKey) {
   
   infoButton.addEventListener('mouseenter', () => {
     infoButton.style.color = rtgColor('accent');
-    infoButton.style.backgroundColor = 'rgba(94, 192, 149, 0.1)';
+    infoButton.style.backgroundColor = `color-mix(in srgb, ${rtgColor('accent')} 10%, transparent)`;
   });
   
   infoButton.addEventListener('mouseleave', () => {
@@ -1005,7 +1005,7 @@ function createFilterTooltip(labelText, tooltipKey) {
   
   infoButton.addEventListener('mouseenter', () => {
     infoButton.style.color = rtgColor('accent');
-    infoButton.style.backgroundColor = 'rgba(94, 192, 149, 0.1)';
+    infoButton.style.backgroundColor = `color-mix(in srgb, ${rtgColor('accent')} 10%, transparent)`;
   });
   
   infoButton.addEventListener('mouseleave', () => {
@@ -1873,7 +1873,7 @@ function createSingleCard(row) {
     const grade = safeString(efficiencyGrade).trim().toUpperCase();
     if (['A', 'B', 'C', 'D', 'E', 'F'].includes(grade)) {
       const gradeColor = {
-        A: "#5ec095", B: "#a3e635", C: "#facc15",
+        A: rtgColor('accent') || "#5ec095", B: "#a3e635", C: "#facc15",
         D: "#f97316", E: "#ef4444", F: "#b91c1c"
       }[grade];
       
@@ -1914,8 +1914,8 @@ function createSingleCard(row) {
       
       // Hover effects - identical to other tooltips
       infoButton.addEventListener('mouseenter', () => {
-        infoButton.style.color = '#5ec095';
-        infoButton.style.backgroundColor = 'rgba(94, 192, 149, 0.1)';
+        infoButton.style.color = rtgColor('accent');
+        infoButton.style.backgroundColor = `color-mix(in srgb, ${rtgColor('accent')} 10%, transparent)`;
       });
       
       infoButton.addEventListener('mouseleave', () => {
@@ -1950,7 +1950,7 @@ function createSingleCard(row) {
   }
 
   const specs = [
-    ['Size', `${safeString(size)} (${safeString(diameter)})`],
+    ['Size', `${safeString(size)} (${safeString(diameter)}${safeString(diameter) && !safeString(diameter).includes('"') ? '"' : ''})`],
     ['Category', safeString(category)],
     ['Average Price', price ? `$${validateNumeric(price, NUMERIC_BOUNDS.price)}` : '-'],
     ['Mileage Warranty', warranty ? `${Number(validateNumeric(warranty, NUMERIC_BOUNDS.warranty)).toLocaleString()} miles` : '-'],
