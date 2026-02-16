@@ -723,6 +723,56 @@ body.modal-open {
   position: absolute;
 }
 
+/* Share link button overlay */
+.tire-card-share-btn {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  z-index: 10;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.15s ease;
+}
+.tire-card:hover .tire-card-share-btn,
+.tire-card-share-btn:focus-visible {
+  opacity: 1;
+}
+.tire-card-share-btn:hover {
+  border-color: var(--rtg-accent);
+  background: rgba(15, 23, 42, 0.75);
+  color: var(--rtg-accent);
+}
+.tire-card-share-btn.copied {
+  opacity: 1;
+  background: var(--rtg-accent);
+  border-color: var(--rtg-accent);
+  color: #0f172a;
+}
+/* When card has no image, position relative to card */
+.tire-card > .tire-card-share-btn {
+  position: absolute;
+}
+
+/* Deep-link highlight animation */
+.tire-card-highlight {
+  animation: tireHighlight 3s ease;
+}
+@keyframes tireHighlight {
+  0%, 15% { border-color: var(--rtg-accent); box-shadow: 0 0 20px rgba(94, 192, 149, 0.4); }
+  100% { border-color: var(--rtg-border); box-shadow: none; }
+}
+
 /* === No Results State === */
 #noResults {
   text-align: center;
@@ -1331,7 +1381,7 @@ body.modal-open {
   .tire-card-model { color: #1a1a1a; }
   .tire-card-spec-label { color: #666; }
   .tire-card-spec-value { color: #1a1a1a; }
-  .tire-card-actions { display: none; }
+  .tire-card-actions, .tire-card-share-btn { display: none; }
   .tire-card-image { background: #f5f5f5; }
 }
 
@@ -1351,5 +1401,9 @@ body.modal-open {
   }
   .filter-chip {
     animation: none;
+  }
+  .tire-card-highlight {
+    animation: none;
+    border-color: var(--rtg-accent);
   }
 }
