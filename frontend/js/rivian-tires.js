@@ -1699,6 +1699,57 @@ function applyCompareFromURL() {
   updateCompareBar();
 }
 
+function applyTireDeepLink() {
+  const params = new URLSearchParams(window.location.search);
+  const tireParam = params.get("tire");
+  if (!tireParam || !VALIDATION_PATTERNS.tireId.test(tireParam)) return;
+
+  // Find the tire's index in the filtered results.
+  const index = filteredRows.findIndex(row => row[0] === tireParam);
+  if (index === -1) {
+    // Tire may be hidden by filters — clear filters and search all rows.
+    const allIndex = allRows.findIndex(row => row[0] === tireParam);
+    if (allIndex === -1) return;
+
+    // Reset all filters so the tire is visible.
+    document.getElementById("searchInput").value = "";
+    document.getElementById("filterSize").value = "";
+    document.getElementById("filterBrand").value = "";
+    document.getElementById("filterCategory").value = "";
+    document.getElementById("filter3pms").checked = false;
+    document.getElementById("filterEVRated").checked = false;
+    document.getElementById("filterStudded").checked = false;
+
+    const priceEl = document.getElementById("priceMax");
+    if (priceEl) priceEl.value = priceEl.max || 600;
+    const warrantyEl = document.getElementById("warrantyMax");
+    if (warrantyEl) warrantyEl.value = warrantyEl.max || 80000;
+    const weightEl = document.getElementById("weightMax");
+    if (weightEl) weightEl.value = weightEl.max || 70;
+
+    filterAndRender();
+    applyTireDeepLink();
+    return;
+  }
+
+  // Navigate to the correct page.
+  const targetPage = Math.floor(index / ROWS_PER_PAGE) + 1;
+  if (targetPage !== currentPage) {
+    currentPage = targetPage;
+    render();
+  }
+
+  // Scroll to and highlight the card after render.
+  requestAnimationFrame(() => {
+    const card = document.querySelector(`[data-tire-id="${CSS.escape(tireParam)}"]`);
+    if (card) {
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
+      card.classList.add("tire-card-highlight");
+      setTimeout(() => card.classList.remove("tire-card-highlight"), 3000);
+    }
+  });
+}
+
 function renderCards(rows) {
   if (!cardContainer) {
     cardContainer = getDOMElement("tireCards");
@@ -1884,6 +1935,26 @@ function createSingleCard(row) {
   compareOverlay.appendChild(compareCheckbox);
   compareOverlay.appendChild(compareIcon);
 
+  // Share button overlay
+  const shareBtn = document.createElement('button');
+  shareBtn.className = 'tire-card-share-btn';
+  shareBtn.setAttribute('aria-label', `Share ${escapeHTML(safeString(brand))} ${escapeHTML(safeString(model))}`);
+  shareBtn.innerHTML = '<i class="fa-solid fa-link"></i>';
+  shareBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const url = new URL(window.location.href);
+    url.search = '';
+    url.searchParams.set('tire', tireId);
+    navigator.clipboard.writeText(url.toString()).then(() => {
+      shareBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
+      shareBtn.classList.add('copied');
+      setTimeout(() => {
+        shareBtn.innerHTML = '<i class="fa-solid fa-link"></i>';
+        shareBtn.classList.remove('copied');
+      }, 2000);
+    });
+  });
+
   if (safeImage) {
     const imageContainer = document.createElement('div');
     imageContainer.className = 'tire-card-image';
@@ -1897,9 +1968,11 @@ function createSingleCard(row) {
 
     imageContainer.appendChild(img);
     imageContainer.appendChild(compareOverlay);
+    imageContainer.appendChild(shareBtn);
     card.appendChild(imageContainer);
   } else {
     card.appendChild(compareOverlay);
+    card.appendChild(shareBtn);
   }
 
   const bodyEl = document.createElement('div');
@@ -2787,6 +2860,7 @@ function initializeUI() {
   } else {
     buildFilterIndexes();
     filterAndRender();
+    applyTireDeepLink();
 
     const countDisplay = getDOMElement("tireCount");
     if (countDisplay) {
