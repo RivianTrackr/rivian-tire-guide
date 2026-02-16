@@ -1704,52 +1704,40 @@ function applyTireDeepLink() {
   const tireParam = params.get("tire");
   if (!tireParam || !VALIDATION_PATTERNS.tireId.test(tireParam)) return;
 
-  // Verify tire exists in the dataset.
-  const allIndex = allRows.findIndex(row => row[0] === tireParam);
-  if (allIndex === -1) return;
+  // Find the tire row in the full dataset.
+  const tireRow = allRows.find(row => row[0] === tireParam);
+  if (!tireRow) return;
 
-  // If tire is hidden by current filters, clear them.
-  const filteredIndex = filteredRows.findIndex(row => row[0] === tireParam);
-  if (filteredIndex === -1) {
-    document.getElementById("searchInput").value = "";
-    document.getElementById("filterSize").value = "";
-    document.getElementById("filterBrand").value = "";
-    document.getElementById("filterCategory").value = "";
-    document.getElementById("filter3pms").checked = false;
-    document.getElementById("filterEVRated").checked = false;
-    document.getElementById("filterStudded").checked = false;
+  // Override filteredRows to show only this tire.
+  filteredRows = [tireRow];
+  currentPage = 1;
 
-    const priceEl = document.getElementById("priceMax");
-    if (priceEl) priceEl.value = priceEl.max || 600;
-    const warrantyEl = document.getElementById("warrantyMax");
-    if (warrantyEl) warrantyEl.value = warrantyEl.max || 80000;
-    const weightEl = document.getElementById("weightMax");
-    if (weightEl) weightEl.value = weightEl.max || 70;
+  // Hide filters, sort bar, active filters, and pagination.
+  const filterWrapper = document.querySelector(".filter-wrapper");
+  const sortWrapper = document.querySelector(".sort-wrapper");
+  const activeFilters = getDOMElement("activeFilters");
+  const paginationControls = getDOMElement("paginationControls");
+  const toggleBtn = document.querySelector(".toggle-filters-btn");
+  if (filterWrapper) filterWrapper.style.display = "none";
+  if (sortWrapper) sortWrapper.style.display = "none";
+  if (activeFilters) activeFilters.style.display = "none";
+  if (paginationControls) paginationControls.style.display = "none";
+  if (toggleBtn) toggleBtn.style.display = "none";
 
-    lastFilterState = "";
-    filterAndRender();
+  // Add a "View all tires" bar above the card.
+  const tireSection = getDOMElement("tireSection");
+  if (tireSection) {
+    const backBar = document.createElement("div");
+    backBar.className = "tire-deeplink-bar";
+
+    const backBtn = document.createElement("a");
+    backBtn.href = window.location.pathname;
+    backBtn.className = "tire-deeplink-back";
+    backBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i> View all tires';
+
+    backBar.appendChild(backBtn);
+    tireSection.parentNode.insertBefore(backBar, tireSection);
   }
-
-  // Navigate to the correct page — set before the async render fires.
-  const idx = filteredRows.findIndex(row => row[0] === tireParam);
-  if (idx !== -1) {
-    currentPage = Math.floor(idx / ROWS_PER_PAGE) + 1;
-  }
-
-  // Poll for the card to appear in the DOM (render is async).
-  let attempts = 0;
-  const waitForCard = setInterval(() => {
-    attempts++;
-    const card = document.querySelector(`[data-tire-id="${CSS.escape(tireParam)}"]`);
-    if (card) {
-      clearInterval(waitForCard);
-      card.scrollIntoView({ behavior: "smooth", block: "center" });
-      card.classList.add("tire-card-highlight");
-      setTimeout(() => card.classList.remove("tire-card-highlight"), 3000);
-    } else if (attempts > 50) {
-      clearInterval(waitForCard);
-    }
-  }, 100);
 }
 
 function renderCards(rows) {

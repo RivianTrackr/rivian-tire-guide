@@ -764,13 +764,23 @@ body.modal-open {
   position: absolute;
 }
 
-/* Deep-link highlight animation */
-.tire-card-highlight {
-  animation: tireHighlight 3s ease;
+/* Deep-link single tire view */
+.tire-deeplink-bar {
+  margin-bottom: 16px;
 }
-@keyframes tireHighlight {
-  0%, 15% { border-color: var(--rtg-accent); box-shadow: 0 0 20px rgba(94, 192, 149, 0.4); }
-  100% { border-color: var(--rtg-border); box-shadow: none; }
+.tire-deeplink-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--rtg-accent);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 0;
+  transition: opacity 0.15s ease;
+}
+.tire-deeplink-back:hover {
+  opacity: 0.8;
 }
 
 /* === No Results State === */
@@ -1401,9 +1411,5 @@ body.modal-open {
   }
   .filter-chip {
     animation: none;
-  }
-  .tire-card-highlight {
-    animation: none;
-    border-color: var(--rtg-accent);
   }
 }
