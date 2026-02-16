@@ -1704,14 +1704,13 @@ function applyTireDeepLink() {
   const tireParam = params.get("tire");
   if (!tireParam || !VALIDATION_PATTERNS.tireId.test(tireParam)) return;
 
-  // Find the tire's index in the filtered results.
-  const index = filteredRows.findIndex(row => row[0] === tireParam);
-  if (index === -1) {
-    // Tire may be hidden by filters — clear filters and search all rows.
-    const allIndex = allRows.findIndex(row => row[0] === tireParam);
-    if (allIndex === -1) return;
+  // Verify tire exists in the dataset.
+  const allIndex = allRows.findIndex(row => row[0] === tireParam);
+  if (allIndex === -1) return;
 
-    // Reset all filters so the tire is visible.
+  // If tire is hidden by current filters, clear them.
+  const filteredIndex = filteredRows.findIndex(row => row[0] === tireParam);
+  if (filteredIndex === -1) {
     document.getElementById("searchInput").value = "";
     document.getElementById("filterSize").value = "";
     document.getElementById("filterBrand").value = "";
@@ -1727,27 +1726,30 @@ function applyTireDeepLink() {
     const weightEl = document.getElementById("weightMax");
     if (weightEl) weightEl.value = weightEl.max || 70;
 
+    lastFilterState = "";
     filterAndRender();
-    applyTireDeepLink();
-    return;
   }
 
-  // Navigate to the correct page.
-  const targetPage = Math.floor(index / ROWS_PER_PAGE) + 1;
-  if (targetPage !== currentPage) {
-    currentPage = targetPage;
-    render();
+  // Navigate to the correct page — set before the async render fires.
+  const idx = filteredRows.findIndex(row => row[0] === tireParam);
+  if (idx !== -1) {
+    currentPage = Math.floor(idx / ROWS_PER_PAGE) + 1;
   }
 
-  // Scroll to and highlight the card after render.
-  requestAnimationFrame(() => {
+  // Poll for the card to appear in the DOM (render is async).
+  let attempts = 0;
+  const waitForCard = setInterval(() => {
+    attempts++;
     const card = document.querySelector(`[data-tire-id="${CSS.escape(tireParam)}"]`);
     if (card) {
+      clearInterval(waitForCard);
       card.scrollIntoView({ behavior: "smooth", block: "center" });
       card.classList.add("tire-card-highlight");
       setTimeout(() => card.classList.remove("tire-card-highlight"), 3000);
+    } else if (attempts > 50) {
+      clearInterval(waitForCard);
     }
-  });
+  }, 100);
 }
 
 function renderCards(rows) {
