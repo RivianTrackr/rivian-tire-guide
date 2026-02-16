@@ -1929,20 +1929,29 @@ function createSingleCard(row) {
   const shareBtn = document.createElement('button');
   shareBtn.className = 'tire-card-share-btn';
   shareBtn.setAttribute('aria-label', `Share ${escapeHTML(safeString(brand))} ${escapeHTML(safeString(model))}`);
-  shareBtn.innerHTML = '<i class="fa-solid fa-link"></i>';
+  shareBtn.innerHTML = '<i class="fa-solid fa-share-nodes"></i>';
   shareBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     const url = new URL(window.location.href);
     url.search = '';
     url.searchParams.set('tire', tireId);
-    navigator.clipboard.writeText(url.toString()).then(() => {
+    const shareUrl = url.toString();
+    const shareTitle = `${safeString(brand)} ${safeString(model)}`;
+
+    function showCopied() {
       shareBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
       shareBtn.classList.add('copied');
       setTimeout(() => {
-        shareBtn.innerHTML = '<i class="fa-solid fa-link"></i>';
+        shareBtn.innerHTML = '<i class="fa-solid fa-share-nodes"></i>';
         shareBtn.classList.remove('copied');
       }, 2000);
-    });
+    }
+
+    if (navigator.share) {
+      navigator.share({ title: shareTitle, url: shareUrl }).catch(() => {});
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareUrl).then(showCopied);
+    }
   });
 
   if (safeImage) {
