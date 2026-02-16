@@ -2694,32 +2694,6 @@ function renderActiveFilterChips() {
   });
 }
 
-/* === Back to Top Button === */
-function initBackToTop() {
-  const btn = document.getElementById("backToTop");
-  if (!btn) return;
-
-  const filterTop = getDOMElement("filterTop");
-
-  const observer = new IntersectionObserver(
-    ([entry]) => {
-      btn.classList.toggle("visible", !entry.isIntersecting);
-    },
-    { threshold: 0 }
-  );
-
-  if (filterTop) {
-    observer.observe(filterTop);
-  }
-
-  btn.addEventListener("click", () => {
-    if (filterTop) {
-      filterTop.scrollIntoView({ behavior: "smooth" });
-    } else {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  });
-}
 
 function updateCompareBar() {
   const bar = getDOMElement("compareBar");
@@ -2796,7 +2770,7 @@ function initializeUI() {
   setupSliderHandlers();
   setupEventDelegation();
   initializeSmartSearch();
-  initBackToTop();
+
 
   if (ssMode) {
     // In server-side mode, override slider debounce to use server fetch.
