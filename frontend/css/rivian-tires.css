@@ -27,7 +27,6 @@ body.modal-open {
 /* === Mobile Filter Toggle === */
 .toggle-filters-btn {
   display: none;
-  width: 100%;
   background: var(--rtg-bg-card);
   color: var(--rtg-text-heading);
   font-weight: 600;
@@ -35,8 +34,7 @@ body.modal-open {
   padding: 14px 16px;
   border: 1px solid var(--rtg-border);
   border-radius: 10px;
-  max-width: 1000px;
-  margin: 0 auto 12px;
+  margin: 0 0 12px;
   cursor: pointer;
   transition: all .15s;
 }
@@ -688,6 +686,7 @@ body.modal-open {
   font-size: 13px;
   cursor: pointer;
   transition: all .15s;
+  white-space: nowrap;
 }
 .tire-card-compare:hover {
   border-color: var(--rtg-accent);
