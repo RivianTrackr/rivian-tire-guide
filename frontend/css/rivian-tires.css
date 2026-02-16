@@ -671,90 +671,56 @@ body.modal-open {
   border: 1px solid var(--rtg-border);
 }
 
-/* Compare label on card */
-.tire-card-compare {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  border-radius: 8px;
-  border: 1px solid var(--rtg-border);
-  background: transparent;
-  color: var(--rtg-text-primary);
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all .15s;
-  white-space: nowrap;
-}
-.tire-card-compare:hover {
-  border-color: var(--rtg-accent);
-  color: var(--rtg-accent);
-}
-
-/* Compare checkbox styling */
-.floating-checkbox {
-  position: static;
-  top: 12px;
-  right: 12px;
-  background: rgba(30, 41, 59, 0.85);
-  padding: 6px 10px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  z-index: 10;
-  color: var(--rtg-text-primary);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1;
-  white-space: nowrap;
-}
-.floating-checkbox .custom-checkbox {
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--rtg-accent);
-  border-radius: 4px;
-  background-color: transparent;
-  position: relative;
-  flex-shrink: 0;
-}
-.floating-checkbox input[type="checkbox"] {
-  opacity: 0;
+/* Compare checkbox overlay — top-right corner of card image */
+.tire-card-compare-overlay {
   position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tire-card-compare-overlay .compare-checkbox {
+  position: absolute;
+  opacity: 0;
   width: 0;
   height: 0;
+  pointer-events: none;
 }
-.floating-checkbox input[type="checkbox"]:checked + .custom-checkbox {
-  background-color: var(--rtg-accent);
+.compare-overlay-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s;
 }
-.floating-checkbox input[type="checkbox"]:checked + .custom-checkbox::after {
+.tire-card-compare-overlay:hover .compare-overlay-icon {
+  border-color: var(--rtg-accent);
+  background: rgba(15, 23, 42, 0.75);
+}
+/* Checkmark when selected */
+.compare-checkbox:checked + .compare-overlay-icon {
+  background: var(--rtg-accent);
+  border-color: var(--rtg-accent);
+}
+.compare-checkbox:checked + .compare-overlay-icon::after {
   content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
   width: 6px;
   height: 12px;
-  border: solid #1a1a1a;
-  border-width: 0 2px 2px 0;
-  transform: translate(-50%, -50%) rotate(45deg);
-  pointer-events: none;
+  border: solid #0f172a;
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(45deg) translate(-1px, -1px);
 }
-.compare-text {
-  user-select: none;
-  pointer-events: none;
-}
-.compare-checkbox:checked + .custom-checkbox::after {
-  content: '';
+/* When card has no image, position relative to card */
+.tire-card > .tire-card-compare-overlay {
   position: absolute;
-  top: 2px;
-  left: 5px;
-  width: 4px;
-  height: 10px;
-  border: solid var(--rtg-accent);
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
 }
 
 /* === No Results State === */
