@@ -809,8 +809,7 @@ body.modal-open {
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  flex: 1;
-  min-width: 100px;
+  white-space: nowrap;
   transition: all .15s;
 }
 .compare-bar-btn-go {
