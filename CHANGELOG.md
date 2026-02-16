@@ -4,6 +4,32 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.4.5] - 2026-02-16
+
+### Removed
+- **Back-to-top button** — Removed the fixed-position scroll button as it interfered with page interactions.
+
+## [1.4.4] - 2026-02-16
+
+### Added
+- **Active filter chips** — Selected filters now display as dismissible chips below the filter bar for quick visibility and one-click removal.
+
+## [1.4.3] - 2026-02-16
+
+### Changed
+- **Compare checkbox repositioned** — Moved the compare checkbox to the top-right corner of the tire card image for easier access.
+
+## [1.4.2] - 2026-02-16
+
+### Fixed
+- **Compare bar button text wrapping** — Fixed compare bar buttons wrapping their text on desktop viewports.
+
+## [1.4.1] - 2026-02-16
+
+### Fixed
+- **Mobile filter button width** — Fixed the mobile filter toggle button stretching too wide.
+- **Compare text wrapping** — Fixed text overflow in compare bar on smaller screens.
+
 ## [1.4.0] - 2026-02-16
 
 ### Changed
