@@ -2472,6 +2472,7 @@ function finishFilterAndRender() {
   currentPage = 1;
   throttledRender();
   updateURLFromFilters();
+  renderActiveFilterChips();
 }
 
 function populateDropdown(id, values) {
@@ -2608,6 +2609,118 @@ function resetFilters() {
   history.replaceState(null, "", location.pathname);
 }
 
+/* === Active Filter Chips === */
+function renderActiveFilterChips() {
+  const container = getDOMElement("activeFilters");
+  if (!container) return;
+
+  const chips = [];
+
+  const searchVal = getDOMElement("searchInput")?.value?.trim();
+  if (searchVal) {
+    chips.push({ label: "Search", value: searchVal, clear: () => { const el = getDOMElement("searchInput"); if (el) el.value = ""; delete domCache["searchInput"]; } });
+  }
+
+  const sizeEl = getDOMElement("filterSize");
+  if (sizeEl?.value) {
+    chips.push({ label: "Size", value: sizeEl.value, clear: () => { sizeEl.value = ""; } });
+  }
+
+  const brandEl = getDOMElement("filterBrand");
+  if (brandEl?.value) {
+    chips.push({ label: "Brand", value: brandEl.value, clear: () => { brandEl.value = ""; } });
+  }
+
+  const categoryEl = getDOMElement("filterCategory");
+  if (categoryEl?.value) {
+    chips.push({ label: "Category", value: categoryEl.value, clear: () => { categoryEl.value = ""; } });
+  }
+
+  const priceEl = getDOMElement("priceMax");
+  const priceVal = priceEl ? parseInt(priceEl.value) : 600;
+  if (priceVal < 600) {
+    chips.push({ label: "Price", value: "≤ $" + priceVal, clear: () => { priceEl.value = 600; const lbl = getDOMElement("priceVal"); if (lbl) lbl.textContent = "$600"; updateSliderBackground(priceEl); } });
+  }
+
+  const warrantyEl = getDOMElement("warrantyMax");
+  const warrantyVal = warrantyEl ? parseInt(warrantyEl.value) : 80000;
+  if (warrantyVal < 80000) {
+    chips.push({ label: "Warranty", value: "≤ " + Number(warrantyVal).toLocaleString() + " mi", clear: () => { warrantyEl.value = 80000; const lbl = getDOMElement("warrantyVal"); if (lbl) lbl.textContent = "80,000 miles"; updateSliderBackground(warrantyEl); } });
+  }
+
+  const weightEl = getDOMElement("weightMax");
+  const weightVal = weightEl ? parseInt(weightEl.value) : 70;
+  if (weightVal < 70) {
+    chips.push({ label: "Weight", value: "≤ " + weightVal + " lb", clear: () => { weightEl.value = 70; const lbl = getDOMElement("weightVal"); if (lbl) lbl.textContent = "70 lb"; updateSliderBackground(weightEl); } });
+  }
+
+  if (getDOMElement("filter3pms")?.checked) {
+    chips.push({ label: "3PMS", value: "Yes", clear: () => { getDOMElement("filter3pms").checked = false; } });
+  }
+  if (getDOMElement("filterEVRated")?.checked) {
+    chips.push({ label: "EV Rated", value: "Yes", clear: () => { getDOMElement("filterEVRated").checked = false; } });
+  }
+  if (getDOMElement("filterStudded")?.checked) {
+    chips.push({ label: "Studded", value: "Yes", clear: () => { getDOMElement("filterStudded").checked = false; } });
+  }
+
+  container.innerHTML = "";
+
+  chips.forEach(chip => {
+    const el = document.createElement("span");
+    el.className = "filter-chip";
+
+    const label = document.createElement("span");
+    label.className = "filter-chip-label";
+    label.textContent = chip.label + ":";
+
+    const value = document.createElement("span");
+    value.textContent = chip.value;
+
+    const dismiss = document.createElement("button");
+    dismiss.className = "filter-chip-dismiss";
+    dismiss.setAttribute("aria-label", "Remove " + chip.label + " filter");
+    dismiss.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+    dismiss.addEventListener("click", () => {
+      chip.clear();
+      lastFilterState = null;
+      filterAndRender();
+    });
+
+    el.appendChild(label);
+    el.appendChild(value);
+    el.appendChild(dismiss);
+    container.appendChild(el);
+  });
+}
+
+/* === Back to Top Button === */
+function initBackToTop() {
+  const btn = document.getElementById("backToTop");
+  if (!btn) return;
+
+  const filterTop = getDOMElement("filterTop");
+
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      btn.classList.toggle("visible", !entry.isIntersecting);
+    },
+    { threshold: 0 }
+  );
+
+  if (filterTop) {
+    observer.observe(filterTop);
+  }
+
+  btn.addEventListener("click", () => {
+    if (filterTop) {
+      filterTop.scrollIntoView({ behavior: "smooth" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  });
+}
+
 function updateCompareBar() {
   const bar = getDOMElement("compareBar");
   const count = getDOMElement("compareCount");
@@ -2683,6 +2796,7 @@ function initializeUI() {
   setupSliderHandlers();
   setupEventDelegation();
   initializeSmartSearch();
+  initBackToTop();
 
   if (ssMode) {
     // In server-side mode, override slider debounce to use server fetch.
@@ -2882,6 +2996,7 @@ function serverSideFilterAndRender() {
   currentPage = 1;
   lastFilterState = null;
   fetchTiresFromServer(1);
+  renderActiveFilterChips();
 }
 
 // Load tire data from WordPress localized script.
