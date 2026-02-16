@@ -1425,7 +1425,7 @@ function createRatingHTML(tireId, average = 0, count = 0, userRating = 0) {
   ratingDisplay.className = 'rating-display';
   
   const starsContainer = document.createElement('div');
-  starsContainer.className = `rating-stars ${isInteractive ? 'interactive' : ''}`;
+  starsContainer.className = `rating-stars ${isInteractive ? 'interactive' : ''} ${validUserRating > 0 ? 'has-user-rating' : ''}`;
   starsContainer.dataset.tireId = tireId;
   starsContainer.setAttribute('role', isInteractive ? 'radiogroup' : 'img');
   starsContainer.setAttribute('aria-label', displayAverage > 0 ? `Rating: ${displayAverage.toFixed(1)} out of 5 stars` : 'No ratings yet');
