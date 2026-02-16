@@ -445,8 +445,8 @@
     </div>
     <div class="cmp-topbar-actions">
       <button type="button" class="cmp-btn" id="shareBtn">
-        <i class="fa-solid fa-link"></i>
-        <span>Copy Link</span>
+        <i class="fa-solid fa-share-nodes"></i>
+        <span>Share</span>
       </button>
       <button type="button" class="cmp-btn" onclick="window.print()">
         <i class="fa-solid fa-print"></i>

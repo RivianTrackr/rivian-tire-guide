@@ -292,20 +292,25 @@ function initShareButton() {
   if (!btn) return;
   btn.addEventListener("click", () => {
     const url = window.location.href;
-    navigator.clipboard.writeText(url)
-      .then(() => {
-        const icon = btn.querySelector("i");
-        const spanEl = btn.querySelector("span");
-        const origIcon = icon.className;
-        const origText = spanEl ? spanEl.textContent : "";
-        icon.className = "fa-solid fa-check";
-        if (spanEl) spanEl.textContent = "Copied!";
-        setTimeout(() => {
-          icon.className = origIcon;
-          if (spanEl) spanEl.textContent = origText;
-        }, 2000);
-      })
-      .catch(err => alert("Failed to copy link: " + err));
+
+    function showCopied() {
+      const icon = btn.querySelector("i");
+      const spanEl = btn.querySelector("span");
+      const origIcon = icon.className;
+      const origText = spanEl ? spanEl.textContent : "";
+      icon.className = "fa-solid fa-check";
+      if (spanEl) spanEl.textContent = "Copied!";
+      setTimeout(() => {
+        icon.className = origIcon;
+        if (spanEl) spanEl.textContent = origText;
+      }, 2000);
+    }
+
+    if (navigator.share) {
+      navigator.share({ title: "Rivian Tire Comparison", url }).catch(() => {});
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(showCopied);
+    }
   });
 }
 
