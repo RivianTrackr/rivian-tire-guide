@@ -741,12 +741,7 @@ body.modal-open {
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
   transition: all 0.15s ease;
-}
-.tire-card:hover .tire-card-share-btn,
-.tire-card-share-btn:focus-visible {
-  opacity: 1;
 }
 .tire-card-share-btn:hover {
   border-color: var(--rtg-accent);
@@ -754,7 +749,6 @@ body.modal-open {
   color: var(--rtg-accent);
 }
 .tire-card-share-btn.copied {
-  opacity: 1;
   background: var(--rtg-accent);
   border-color: var(--rtg-accent);
   color: #0f172a;
