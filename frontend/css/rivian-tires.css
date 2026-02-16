@@ -1321,51 +1321,11 @@ body.modal-open {
   to { opacity: 1; transform: scale(1); }
 }
 
-/* === Back to Top Button === */
-.back-to-top {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 1px solid var(--rtg-border);
-  background: var(--rtg-bg-card);
-  color: var(--rtg-text-muted);
-  font-size: 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(8px);
-  transition: all 0.2s ease;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(12px);
-  z-index: 999;
-}
-.back-to-top.visible {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-.back-to-top:hover {
-  background: var(--rtg-accent);
-  color: #0f172a;
-  border-color: var(--rtg-accent);
-}
-@media (max-width: 600px) {
-  .back-to-top {
-    bottom: 80px;
-    right: 16px;
-  }
-}
 
 /* === Print Styles === */
 @media print {
   body { background: #fff; color: #1a1a1a; }
-  .filter-wrapper, .sort-wrapper, .compare-bar, .toggle-filters-btn, .active-filters, .back-to-top { display: none !important; }
+  .filter-wrapper, .sort-wrapper, .compare-bar, .toggle-filters-btn, .active-filters { display: none !important; }
   .tire-card { border-color: #ddd; break-inside: avoid; }
   .tire-card-brand { color: #333; }
   .tire-card-model { color: #1a1a1a; }
@@ -1391,8 +1351,5 @@ body.modal-open {
   }
   .filter-chip {
     animation: none;
-  }
-  .back-to-top {
-    transition: none;
   }
 }

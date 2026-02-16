@@ -166,9 +166,6 @@ if ( ! defined( 'ABSPATH' ) ) {
   <button class="compare-bar-btn compare-bar-btn-go" onclick="openComparison()">Compare</button>
   <button class="compare-bar-btn compare-bar-btn-clear" onclick="clearCompare()">Clear</button>
 </div>
-<button id="backToTop" class="back-to-top" aria-label="Back to top">
-  <i class="fa-solid fa-arrow-up"></i>
-</button>
 <div id="imageModal" role="dialog" aria-label="Full size tire image" aria-modal="true">
   <div class="modal-content">
     <img id="modalImage" src="" alt="Full size tire image" />
