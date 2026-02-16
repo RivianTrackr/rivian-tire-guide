@@ -1867,6 +1867,23 @@ function createSingleCard(row) {
     card.appendChild(badge);
   }
 
+  // Compare checkbox overlay
+  const compareOverlay = document.createElement('label');
+  compareOverlay.className = 'tire-card-compare-overlay';
+  compareOverlay.setAttribute('aria-label', `Compare ${escapeHTML(safeString(brand))} ${escapeHTML(safeString(model))}`);
+
+  const compareCheckbox = document.createElement('input');
+  compareCheckbox.type = 'checkbox';
+  compareCheckbox.className = 'compare-checkbox';
+  compareCheckbox.dataset.id = tireId;
+  compareCheckbox.dataset.index = allRows.indexOf(row).toString();
+
+  const compareIcon = document.createElement('span');
+  compareIcon.className = 'compare-overlay-icon';
+
+  compareOverlay.appendChild(compareCheckbox);
+  compareOverlay.appendChild(compareIcon);
+
   if (safeImage) {
     const imageContainer = document.createElement('div');
     imageContainer.className = 'tire-card-image';
@@ -1879,7 +1896,10 @@ function createSingleCard(row) {
     img.onclick = () => openImageModal(safeImage, `${escapeHTML(safeString(brand))} ${escapeHTML(safeString(model))}`);
 
     imageContainer.appendChild(img);
+    imageContainer.appendChild(compareOverlay);
     card.appendChild(imageContainer);
+  } else {
+    card.appendChild(compareOverlay);
   }
 
   const bodyEl = document.createElement('div');
@@ -2055,29 +2075,6 @@ function createSingleCard(row) {
     actionsContainer.appendChild(bundleButton);
   }
 
-  const compareLabel = document.createElement('label');
-  compareLabel.className = 'tire-card-compare';
-
-  const compareCheckbox = document.createElement('input');
-  compareCheckbox.type = 'checkbox';
-  compareCheckbox.className = 'compare-checkbox';
-  compareCheckbox.dataset.id = tireId;
-  compareCheckbox.dataset.index = allRows.indexOf(row).toString();
-  compareCheckbox.style.display = 'none';
-  compareCheckbox.setAttribute('aria-label', `Compare ${escapeHTML(safeString(row[3]))} ${escapeHTML(safeString(row[4]))}`);
-
-  const customCheckbox = document.createElement('span');
-  customCheckbox.className = 'custom-checkbox';
-  customCheckbox.style.cssText = `width: 18px; height: 18px; border: 2px solid ${rtgColor('accent')}; border-radius: 4px; background-color: transparent; position: relative; display: inline-block;`;
-
-  const compareText = document.createElement('span');
-  compareText.className = 'compare-text';
-  compareText.textContent = 'Compare';
-
-  compareLabel.appendChild(compareCheckbox);
-  compareLabel.appendChild(customCheckbox);
-  compareLabel.appendChild(compareText);
-  actionsContainer.appendChild(compareLabel);
 
   card.appendChild(actionsContainer);
 
