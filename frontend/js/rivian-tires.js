@@ -935,10 +935,10 @@ function isPreciseMatch(text, query) {
 function createInfoTooltip(label, tooltipKey) {
   const container = document.createElement('div');
   container.style.cssText = `display: flex; align-items: center; gap: 6px;`;
-  
+
   const labelText = document.createElement('span');
+  labelText.className = 'tire-card-spec-label';
   labelText.textContent = label;
-  labelText.style.cssText = `font-weight: 700; font-size: 15px;`;
   
   const infoButton = document.createElement('button');
   infoButton.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
@@ -1849,20 +1849,18 @@ function createSingleCard(row) {
 
   const card = document.createElement("div");
   card.className = "tire-card";
-  card.style.cssText = `background: ${rtgColor('bg-card')}; border-radius: 12px; padding: 16px; color: ${rtgColor('text-primary')}; display: flex; flex-direction: column; gap: 8px; position: relative; min-height: 560px; transition: opacity 0.3s ease, transform 0.3s ease;`;
   card.dataset.tireId = tireId;
 
   if (safeString(tags).toLowerCase().includes("reviewed")) {
     const badge = document.createElement('div');
-    badge.style.cssText = `position: absolute; top: 12px; left: 12px; z-index: 10; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 2.5px; border-radius: 10px; background: linear-gradient(135deg, #fba919, #d2de24, #86c440, #5ec095, #34c5ec, #2b96d2, #3571b8, #534da0, #d11d55, #ef3d6c, #ed1a36, #ee383a);`;
-    
+    badge.className = 'tire-card-badge';
+
     const badgeInner = document.createElement('div');
-    badgeInner.style.cssText = `background: #ffffff; color: #1a1a1a; font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;`;
-    
+    badgeInner.className = 'tire-card-badge-inner';
+
     const icon = document.createElement('i');
     icon.className = 'fa-solid fa-circle-check';
-    icon.style.color = '#ed1a36';
-    
+
     badgeInner.appendChild(icon);
     badgeInner.appendChild(document.createTextNode('Reviewed'));
     badge.appendChild(badgeInner);
@@ -1871,39 +1869,41 @@ function createSingleCard(row) {
 
   if (safeImage) {
     const imageContainer = document.createElement('div');
-    imageContainer.style.cssText = `position: relative; background: #fff; border-radius: 10px; padding: 0 20px; margin-bottom: 12px;`;
+    imageContainer.className = 'tire-card-image';
 
     const img = document.createElement('img');
     img.src = safeImage;
     img.alt = `${escapeHTML(safeString(brand))} ${escapeHTML(safeString(model))}`;
     img.loading = 'lazy';
     img.fetchpriority = 'low';
-    img.style.cssText = `display: block; width: 100%; height: 160px; object-fit: cover; border-radius: 6px; cursor: zoom-in;`;
     img.onclick = () => openImageModal(safeImage, `${escapeHTML(safeString(brand))} ${escapeHTML(safeString(model))}`);
 
     imageContainer.appendChild(img);
     card.appendChild(imageContainer);
   }
 
+  const bodyEl = document.createElement('div');
+  bodyEl.className = 'tire-card-body';
+
   const brandEl = document.createElement('div');
-  brandEl.style.cssText = `font-size: 14px; font-weight: 600; color: #cbd5e1; line-height: 1.1; margin-bottom: 2px;`;
+  brandEl.className = 'tire-card-brand';
   brandEl.textContent = safeString(brand);
-  card.appendChild(brandEl);
+  bodyEl.appendChild(brandEl);
 
   const modelEl = document.createElement('div');
-  modelEl.style.cssText = `font-size: 22px; font-weight: 800; color: #ffffff; line-height: 1.2;`;
+  modelEl.className = 'tire-card-model';
   modelEl.textContent = safeString(model);
-  card.appendChild(modelEl);
+  bodyEl.appendChild(modelEl);
 
   const ratingDiv = document.createElement('div');
   ratingDiv.innerHTML = ratingHTML;
-  card.appendChild(ratingDiv);
+  bodyEl.appendChild(ratingDiv);
 
-// Tags (efficiency grade and others) - UPDATED WITH EFFICIENCY TOOLTIP
+// Tags (efficiency grade and others)
   const tagsContainer = document.createElement('div');
-  tagsContainer.style.cssText = `display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;`;
-  
-  // Efficiency grade tag WITH TOOLTIP
+  tagsContainer.className = 'tire-card-tags';
+
+  // Efficiency grade badge — matches compare page pattern
   if (efficiencyGrade) {
     const grade = safeString(efficiencyGrade).trim().toUpperCase();
     if (['A', 'B', 'C', 'D', 'E', 'F'].includes(grade)) {
@@ -1911,22 +1911,21 @@ function createSingleCard(row) {
         A: "#5ec095", B: "#a3e635", C: "#facc15",
         D: "#f97316", E: "#ef4444", F: "#b91c1c"
       }[grade];
-      
+
       const gradeTag = document.createElement('span');
-      gradeTag.style.cssText = `display: inline-flex; align-items: center; font-size: 12px; border: 1px solid ${gradeColor}; border-radius: 6px; overflow: hidden; font-weight: 600; line-height: 1;`;
-      
+      gradeTag.className = 'tire-card-eff';
+
       const gradeLabel = document.createElement('span');
-      gradeLabel.style.cssText = `background-color: ${gradeColor}; color: #1a1a1a; padding: 2px 8px; font-weight: 800; font-size: 12px; line-height: 1.2; display: flex; align-items: center; height: 22px;`;
+      gradeLabel.className = 'tire-card-eff-grade';
+      gradeLabel.style.backgroundColor = gradeColor;
       gradeLabel.textContent = grade;
-      
+
       const scoreSection = document.createElement('span');
-      scoreSection.style.cssText = `color: ${rtgColor('text-light')}; background-color: transparent; padding: 2px 8px; line-height: 1.2; display: flex; align-items: center; height: 22px; gap: 4px;`;
-      
-      // Create the efficiency text span
+      scoreSection.className = 'tire-card-eff-score';
+
       const scoreText = document.createElement('span');
       scoreText.textContent = `Efficiency (${escapeHTML(safeString(efficiencyScore))}/100)`;
-      
-      // Create the info icon button with same styling as other tooltips
+
       const infoButton = document.createElement('button');
       infoButton.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
       infoButton.className = 'info-tooltip-trigger';
@@ -1946,22 +1945,20 @@ function createSingleCard(row) {
         justify-content: center;
         transition: all 0.2s ease;
       `;
-      
-      // Hover effects - identical to other tooltips
+
       infoButton.addEventListener('mouseenter', () => {
         infoButton.style.color = rtgColor('accent');
         infoButton.style.backgroundColor = `color-mix(in srgb, ${rtgColor('accent')} 10%, transparent)`;
       });
-      
+
       infoButton.addEventListener('mouseleave', () => {
         infoButton.style.color = '#94a3b8';
         infoButton.style.backgroundColor = 'transparent';
       });
-      
-      // Append text and icon to score section
+
       scoreSection.appendChild(scoreText);
       scoreSection.appendChild(infoButton);
-      
+
       gradeTag.appendChild(gradeLabel);
       gradeTag.appendChild(scoreSection);
       tagsContainer.appendChild(gradeTag);
@@ -1971,18 +1968,21 @@ function createSingleCard(row) {
   // Other tags
   if (tags && safeString(tags).trim()) {
     const tagList = safeString(tags).split(/[,|]/).map(tag => tag.trim()).filter(tag => tag && tag.toLowerCase() !== 'reviewed');
-    
+
     tagList.forEach(tag => {
       const tagEl = document.createElement('span');
-      tagEl.style.cssText = `display: inline-flex; align-items: center; font-size: 12px; font-weight: 600; padding: 4px 10px; background-color: ${rtgColor('border')}; color: ${rtgColor('text-light')}; border-radius: 6px; line-height: 1;`;
+      tagEl.className = 'tire-card-tag';
       tagEl.textContent = safeString(tag, 30);
       tagsContainer.appendChild(tagEl);
     });
   }
-  
+
   if (tagsContainer.children.length > 0) {
-    card.appendChild(tagsContainer);
+    bodyEl.appendChild(tagsContainer);
   }
+
+  const specsContainer = document.createElement('div');
+  specsContainer.className = 'tire-card-specs';
 
   const specs = [
     ['Size', `${safeString(size)} (${safeString(diameter)}${safeString(diameter) && !safeString(diameter).includes('"') ? '"' : ''})`],
@@ -2002,41 +2002,45 @@ function createSingleCard(row) {
 
   specs.forEach(([label, value]) => {
     const specRow = document.createElement('div');
-    specRow.style.cssText = `display: flex; justify-content: space-between; gap: 12px; align-items: center;`;
-    
+    specRow.className = 'tire-card-spec';
+
     const hasTooltip = TOOLTIP_DATA.hasOwnProperty(label);
-    
+
     let labelEl;
     if (hasTooltip) {
       labelEl = createInfoTooltip(label, label);
     } else {
       labelEl = document.createElement('span');
-      labelEl.style.cssText = `font-weight: 700; font-size: 15px;`;
+      labelEl.className = 'tire-card-spec-label';
       labelEl.textContent = label;
     }
-    
+
     const valueEl = document.createElement('span');
+    valueEl.className = 'tire-card-spec-value';
     valueEl.textContent = value || '-';
-    
+
     specRow.appendChild(labelEl);
     specRow.appendChild(valueEl);
-    card.appendChild(specRow);
+    specsContainer.appendChild(specRow);
   });
 
+  bodyEl.appendChild(specsContainer);
+  card.appendChild(bodyEl);
+
   const actionsContainer = document.createElement('div');
-  actionsContainer.style.cssText = `margin-top: auto; display: flex; flex-direction: column; gap: 8px;`;
+  actionsContainer.className = 'tire-card-actions';
 
   if (safeLink) {
     const viewButton = document.createElement('a');
     viewButton.href = safeLink;
     viewButton.target = '_blank';
     viewButton.rel = 'noopener noreferrer';
-    viewButton.style.cssText = `background-color: ${rtgColor('accent')}; color: #1a1a1a; font-weight: 600; text-align: center; padding: 10px 16px; border-radius: 8px; text-decoration: none; display: block;`;
+    viewButton.className = 'tire-card-cta tire-card-cta-primary';
     viewButton.innerHTML = 'View Tire&nbsp;<i class="fa-solid fa-square-up-right"></i>';
     actionsContainer.appendChild(viewButton);
   } else {
     const comingSoon = document.createElement('span');
-    comingSoon.style.cssText = `background-color: #334155; color: #cbd5e1; font-weight: 600; text-align: center; padding: 10px 16px; border-radius: 8px; display: block; cursor: default;`;
+    comingSoon.className = 'tire-card-cta tire-card-cta-disabled';
     comingSoon.textContent = 'Coming Soon';
     actionsContainer.appendChild(comingSoon);
   }
@@ -2046,15 +2050,13 @@ function createSingleCard(row) {
     bundleButton.href = safeBundleLink;
     bundleButton.target = '_blank';
     bundleButton.rel = 'noopener noreferrer';
-    bundleButton.style.cssText = `background-color: #2563eb; color: #ffffff; font-weight: 600; text-align: center; padding: 10px 16px; border-radius: 8px; text-decoration: none; display: block;`;
+    bundleButton.className = 'tire-card-cta tire-card-cta-bundle';
     bundleButton.innerHTML = 'Wheel & Tire from EV Sportline&nbsp;<i class="fa-solid fa-square-up-right"></i>';
-    
     actionsContainer.appendChild(bundleButton);
   }
 
   const compareLabel = document.createElement('label');
-  compareLabel.className = 'compare-label';
-  compareLabel.style.cssText = `background: transparent; border: 2px solid #fff; color: ${rtgColor('accent')}; font-weight: 600; text-align: center; padding: 10px 16px; border-radius: 8px; text-decoration: none; display: flex; justify-content: center; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;`;
+  compareLabel.className = 'tire-card-compare';
 
   const compareCheckbox = document.createElement('input');
   compareCheckbox.type = 'checkbox';
