@@ -1014,6 +1014,14 @@ body.modal-open {
   transform: scale(1.15);
   filter: drop-shadow(0 3px 6px rgba(251, 191, 36, 0.5));
 }
+.rating-stars.has-user-rating .star.hover {
+  color: var(--rtg-accent-hover) !important;
+  filter: drop-shadow(0 3px 6px color-mix(in srgb, var(--rtg-accent-hover) 50%, transparent));
+}
+.rating-stars.has-user-rating.interactive .star:hover {
+  color: var(--rtg-accent-hover);
+  filter: drop-shadow(0 3px 6px color-mix(in srgb, var(--rtg-accent-hover) 50%, transparent));
+}
 .rating-info {
   display: flex;
   align-items: center;
