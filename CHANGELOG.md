@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.7.0] - 2026-02-17
+
+### Added
+- **User text reviews** — Users can now write optional text reviews alongside star ratings. Clicking a star or the "Write a Review" button opens a review modal with star selector, optional title (200 char limit), and review body (5,000 char limit). Existing reviews can be edited from the same modal.
+- **Reviews drawer** — Each tire card shows a review count link (e.g. "3 reviews") that opens a slide-in drawer displaying all written reviews with author name, star rating, relative date, title, and body text. Paginated at 10 reviews per page.
+- **Review AJAX endpoints** — New `get_tire_reviews` public endpoint for fetching paginated reviews. Extended `submit_tire_rating` to accept `review_title` and `review_text` fields with length validation and sanitization.
+- **Schema.org Review markup** — Individual `Review` objects (up to 5 per tire) are now included in the JSON-LD structured data alongside `AggregateRating` for rich snippet eligibility.
+- **Admin review column** — The Ratings & Reviews admin table now displays review title and truncated review text with hover tooltip for each entry.
+- **Database migration 5** — Adds `review_title` (VARCHAR 200) and `review_text` (TEXT) columns to the ratings table for existing installations.
+
 ## [1.6.1] - 2026-02-17
 
 ### Changed

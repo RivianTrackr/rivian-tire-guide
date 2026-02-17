@@ -19,6 +19,10 @@ class RTG_Ajax {
         // Submit rating — logged-in users only.
         add_action( 'wp_ajax_submit_tire_rating', array( $this, 'submit_tire_rating' ) );
 
+        // Get reviews for a tire — public.
+        add_action( 'wp_ajax_get_tire_reviews', array( $this, 'get_tire_reviews' ) );
+        add_action( 'wp_ajax_nopriv_get_tire_reviews', array( $this, 'get_tire_reviews' ) );
+
         // Server-side filtered tire listing — public.
         add_action( 'wp_ajax_rtg_get_tires', array( $this, 'get_tires' ) );
         add_action( 'wp_ajax_nopriv_rtg_get_tires', array( $this, 'get_tires' ) );
@@ -63,12 +67,18 @@ class RTG_Ajax {
         $user_ratings = array();
 
         if ( is_user_logged_in() ) {
-            $user_ratings = RTG_Database::get_user_ratings( $tire_ids, get_current_user_id() );
+            $user_data = RTG_Database::get_user_ratings( $tire_ids, get_current_user_id() );
+            // Extract just the rating number for backward compatibility,
+            // and include full user review data separately.
+            foreach ( $user_data as $tid => $data ) {
+                $user_ratings[ $tid ] = $data['rating'];
+            }
         }
 
         wp_send_json_success( array(
             'ratings'      => $ratings,
             'user_ratings' => $user_ratings,
+            'user_reviews' => $user_data ?? array(),
             'is_logged_in' => is_user_logged_in(),
         ) );
     }
@@ -94,8 +104,10 @@ class RTG_Ajax {
             wp_send_json_error( 'Too many rating submissions. Please wait a moment and try again.' );
         }
 
-        $tire_id = sanitize_text_field( $_POST['tire_id'] ?? '' );
-        $rating  = intval( $_POST['rating'] ?? 0 );
+        $tire_id      = sanitize_text_field( $_POST['tire_id'] ?? '' );
+        $rating       = intval( $_POST['rating'] ?? 0 );
+        $review_title = sanitize_text_field( $_POST['review_title'] ?? '' );
+        $review_text  = sanitize_textarea_field( $_POST['review_text'] ?? '' );
 
         // Validate tire_id format.
         if ( ! preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) || strlen( $tire_id ) > 50 ) {
@@ -107,6 +119,15 @@ class RTG_Ajax {
             wp_send_json_error( 'Rating must be between 1 and 5.' );
         }
 
+        // Validate review field lengths.
+        if ( mb_strlen( $review_title ) > 200 ) {
+            wp_send_json_error( 'Review title must be 200 characters or less.' );
+        }
+
+        if ( mb_strlen( $review_text ) > 5000 ) {
+            wp_send_json_error( 'Review text must be 5,000 characters or less.' );
+        }
+
         // Verify the tire exists before accepting a rating.
         $tire = RTG_Database::get_tire( $tire_id );
         if ( ! $tire ) {
@@ -116,17 +137,45 @@ class RTG_Ajax {
         // Record this submission for rate limiting.
         $this->record_rate_limit( $user_id );
 
-        // Save the rating.
-        RTG_Database::set_rating( $tire_id, $user_id, $rating );
+        // Save the rating with optional review.
+        RTG_Database::set_rating( $tire_id, $user_id, $rating, $review_title, $review_text );
 
         // Return updated rating data.
         $ratings     = RTG_Database::get_tire_ratings( array( $tire_id ) );
-        $tire_rating = $ratings[ $tire_id ] ?? array( 'average' => 0, 'count' => 0 );
+        $tire_rating = $ratings[ $tire_id ] ?? array( 'average' => 0, 'count' => 0, 'review_count' => 0 );
 
         wp_send_json_success( array(
             'average_rating' => $tire_rating['average'],
             'rating_count'   => $tire_rating['count'],
+            'review_count'   => $tire_rating['review_count'],
             'user_rating'    => $rating,
+            'user_review'    => $review_text,
+        ) );
+    }
+
+    /**
+     * Get reviews for a specific tire.
+     * Available to both logged-in and logged-out users.
+     */
+    public function get_tire_reviews() {
+        $tire_id = sanitize_text_field( $_POST['tire_id'] ?? '' );
+
+        if ( ! preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) || strlen( $tire_id ) > 50 ) {
+            wp_send_json_error( 'Invalid tire ID.' );
+        }
+
+        $page    = max( 1, intval( $_POST['page'] ?? 1 ) );
+        $per_page = 10;
+        $offset  = ( $page - 1 ) * $per_page;
+
+        $reviews = RTG_Database::get_tire_reviews( $tire_id, $per_page, $offset );
+        $total   = RTG_Database::get_tire_review_count( $tire_id );
+
+        wp_send_json_success( array(
+            'reviews'     => $reviews,
+            'total'       => $total,
+            'page'        => $page,
+            'total_pages' => ceil( $total / $per_page ),
         ) );
     }
 

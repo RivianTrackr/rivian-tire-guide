@@ -7,6 +7,7 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
 $notices = array(
     'deleted' => array( 'success', 'Rating deleted successfully.' ),
     'error'   => array( 'error', 'An error occurred.' ),
+    'updated' => array( 'success', 'Review updated successfully.' ),
 );
 
 // Search & pagination.
@@ -63,7 +64,7 @@ $render_stars = function ( $rating ) {
     <?php endif; ?>
 
     <div class="rtg-page-header">
-        <h1 class="rtg-page-title">Ratings</h1>
+        <h1 class="rtg-page-title">Ratings &amp; Reviews</h1>
     </div>
 
     <!-- Stats -->
@@ -134,6 +135,7 @@ $render_stars = function ( $rating ) {
                         <th class="sortable <?php echo $orderby === 'r.rating' ? 'sorted' : ''; ?>">
                             <a href="<?php echo esc_url( $sort_url( 'r.rating' ) ); ?>">Rating<?php echo $sort_indicator( 'r.rating' ); ?></a>
                         </th>
+                        <th>Review</th>
                         <th class="sortable <?php echo $orderby === 'r.created_at' ? 'sorted' : ''; ?>">
                             <a href="<?php echo esc_url( $sort_url( 'r.created_at' ) ); ?>">Date<?php echo $sort_indicator( 'r.created_at' ); ?></a>
                         </th>
@@ -143,11 +145,11 @@ $render_stars = function ( $rating ) {
                 <tbody>
                     <?php if ( empty( $ratings ) ) : ?>
                         <tr>
-                            <td colspan="7">
+                            <td colspan="8">
                                 <div class="rtg-empty-state">
                                     <span class="dashicons dashicons-star-half"></span>
                                     <h3>No ratings yet</h3>
-                                    <p>Ratings will appear here once users start rating tires on the frontend.</p>
+                                    <p>Ratings and reviews will appear here once users start rating tires on the frontend.</p>
                                 </div>
                             </td>
                         </tr>
@@ -163,6 +165,16 @@ $render_stars = function ( $rating ) {
                                 <td><?php echo esc_html( $r['model'] ?? '—' ); ?></td>
                                 <td><?php echo esc_html( $user_map[ $r['user_id'] ] ?? 'User #' . $r['user_id'] ); ?></td>
                                 <td style="white-space: nowrap;"><?php echo $render_stars( intval( $r['rating'] ) ); ?></td>
+                                <td style="max-width: 280px;">
+                                    <?php if ( ! empty( $r['review_title'] ) ) : ?>
+                                        <strong style="display: block; margin-bottom: 2px; color: var(--rtg-text-primary, #e2e8f0);"><?php echo esc_html( $r['review_title'] ); ?></strong>
+                                    <?php endif; ?>
+                                    <?php if ( ! empty( $r['review_text'] ) ) : ?>
+                                        <span style="color: var(--rtg-text-secondary, #94a3b8); font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="<?php echo esc_attr( $r['review_text'] ); ?>"><?php echo esc_html( $r['review_text'] ); ?></span>
+                                    <?php else : ?>
+                                        <span style="color: var(--rtg-text-muted, #64748b); font-style: italic; font-size: 13px;">&mdash;</span>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?php echo esc_html( date( 'M j, Y', strtotime( $r['created_at'] ) ) ); ?></td>
                                 <td>
                                     <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=rtg-ratings&action=delete_rating&rating_id=' . $r['id'] ), 'rtg_delete_rating_' . $r['id'] ) ); ?>" class="submitdelete" style="color: var(--rtg-error); text-decoration: none; font-size: 13px;" onclick="return confirm('Delete this rating?');">Delete</a>

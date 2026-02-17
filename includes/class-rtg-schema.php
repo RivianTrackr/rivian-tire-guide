@@ -129,6 +129,36 @@ class RTG_Schema {
                     'worstRating' => 1,
                     'ratingCount' => $ratings[ $tire_id ]['count'],
                 );
+
+                // Include individual text reviews for rich snippet eligibility.
+                if ( $ratings[ $tire_id ]['review_count'] > 0 ) {
+                    $reviews = RTG_Database::get_tire_reviews( $tire_id, 5 );
+                    if ( ! empty( $reviews ) ) {
+                        $item['review'] = array();
+                        foreach ( $reviews as $review ) {
+                            $item['review'][] = array(
+                                '@type'        => 'Review',
+                                'author'       => array(
+                                    '@type' => 'Person',
+                                    'name'  => $review['display_name'],
+                                ),
+                                'datePublished' => date( 'Y-m-d', strtotime( $review['created_at'] ) ),
+                                'reviewRating'  => array(
+                                    '@type'      => 'Rating',
+                                    'ratingValue' => (int) $review['rating'],
+                                    'bestRating'  => 5,
+                                    'worstRating' => 1,
+                                ),
+                                'name'         => ! empty( $review['review_title'] ) ? $review['review_title'] : null,
+                                'reviewBody'   => $review['review_text'],
+                            );
+                        }
+                        // Filter out null name fields.
+                        foreach ( $item['review'] as &$r ) {
+                            $r = array_filter( $r, function( $v ) { return $v !== null; } );
+                        }
+                    }
+                }
             }
 
             $items[] = $item;
