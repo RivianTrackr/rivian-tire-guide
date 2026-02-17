@@ -4,6 +4,32 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.8.2] - 2026-02-17
+
+### Fixed
+- **Server-side pagination: Clear All filters** — The "Clear All" button and individual filter chip dismiss actions now correctly fetch fresh data from the server when server-side pagination is enabled. Previously they called the client-side render path, which operates on an empty dataset in server-side mode, resulting in no tires being displayed.
+
+## [1.8.1] - 2026-02-17
+
+### Changed
+- **Grade scale simplified** — Removed the "E" grade from the efficiency scale. Grades now use A / B / C / D / F only, across the PHP calculation engine, admin preview calculator, frontend tire cards, and comparison page.
+
+## [1.8.0] - 2026-02-17
+
+### Added
+- **Tire duplication** — "Duplicate" action on each tire row in the admin list. Creates a copy with a new auto-generated tire ID and opens the edit form immediately.
+- **Recalculate Grades button** — One-click bulk recalculation of efficiency scores for all tires from the admin tire list header. Useful after algorithm changes or CSV imports.
+- **Admin list filters** — Brand, Size, and Category dropdown filters alongside the existing search bar on the All Tires page.
+- **Load Index column** — Sortable Load Index column added to the admin tire list table.
+- **Tag suggestions** — Previously-used tags appear as clickable chips on the tire edit form for quick reuse. Clicking toggles the tag in or out of the comma-separated tags field.
+- **Size-to-diameter mapping** — New "Size → Tire Diameter" setting in the Dropdown Options section. Maps each tire size to its overall diameter (e.g. `275/65R20 = 34.1"`). Selecting a size on the tire edit form auto-fills the diameter field.
+- **Image URL prefix** — The CDN Image Prefix from settings is now shown as a static label before the image filename input on the tire edit form. Only the filename portion needs to be entered; the full URL is assembled on save.
+- **UTQG "None" fallback** — Tires with no UTQG value now display "None" on frontend cards and the comparison page instead of a blank or dash.
+
+### Changed
+- **Sort order field hidden** — The sort order input on the tire edit form is now a hidden field (preserving its value) to reduce form clutter.
+- **Search matches tags** — Admin tire search now also matches against the tags field.
+
 ## [1.7.8] - 2026-02-17
 
 ### Added
