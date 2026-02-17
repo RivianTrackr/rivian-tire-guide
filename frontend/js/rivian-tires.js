@@ -2770,7 +2770,7 @@ function createSingleCard(row) {
     reviewButton.className = 'tire-card-cta tire-card-cta-review';
     const isVideo = safeReviewLink.includes('youtube.com') || safeReviewLink.includes('youtu.be') || safeReviewLink.includes('tiktok.com');
     const icon = isVideo ? 'fa-circle-play' : 'fa-newspaper';
-    const label = isVideo ? 'Watch Review' : 'Read Review';
+    const label = isVideo ? 'Watch Official Review' : 'Read Official Review';
     reviewButton.innerHTML = `${label}&nbsp;<i class="fa-solid ${icon}"></i>`;
     actionsContainer.appendChild(reviewButton);
   }
