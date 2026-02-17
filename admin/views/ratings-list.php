@@ -165,18 +165,9 @@ $render_stars = function ( $rating ) {
                                 <td><?php echo esc_html( $r['model'] ?? '—' ); ?></td>
                                 <td><?php echo esc_html( $user_map[ $r['user_id'] ] ?? 'User #' . $r['user_id'] ); ?></td>
                                 <td style="white-space: nowrap;"><?php echo $render_stars( intval( $r['rating'] ) ); ?></td>
-                                <td style="max-width: 280px;">
+                                <td>
                                     <?php if ( ! empty( $r['review_text'] ) || ! empty( $r['review_title'] ) ) : ?>
-                                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-reviews&s=' . urlencode( $r['tire_id'] ) ) ); ?>" style="color: var(--rtg-action-primary); text-decoration: none; font-size: 13px;">
-                                            <?php if ( ! empty( $r['review_title'] ) ) : ?>
-                                                <strong style="display: block; margin-bottom: 2px;"><?php echo esc_html( $r['review_title'] ); ?></strong>
-                                            <?php endif; ?>
-                                            <?php if ( ! empty( $r['review_text'] ) ) : ?>
-                                                <span style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"><?php echo esc_html( $r['review_text'] ); ?></span>
-                                            <?php else : ?>
-                                                View review &rarr;
-                                            <?php endif; ?>
-                                        </a>
+                                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-reviews&s=' . urlencode( $r['tire_id'] ) ) ); ?>" style="color: var(--rtg-action-primary); text-decoration: none; font-size: 13px;">View Reviews &rarr;</a>
                                     <?php else : ?>
                                         <span style="color: var(--rtg-text-muted, #64748b); font-style: italic; font-size: 13px;">&mdash;</span>
                                     <?php endif; ?>
