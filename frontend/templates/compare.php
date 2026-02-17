@@ -286,6 +286,7 @@
       font-weight: 500;
       color: var(--rtg-text-primary);
       border-left: 1px solid rgba(51, 65, 85, 0.4);
+      font-family: monospace;
     }
     .cmp-row-value.is-best {
       color: var(--rtg-accent);
