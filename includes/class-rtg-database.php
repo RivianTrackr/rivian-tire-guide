@@ -681,6 +681,78 @@ class RTG_Database {
         return $wpdb->delete( $table, array( 'id' => $id ), array( '%d' ) );
     }
 
+    // --- Wheels (Stock Wheel Guide) ---
+
+    private static function wheels_table() {
+        global $wpdb;
+        return $wpdb->prefix . 'rtg_wheels';
+    }
+
+    public static function get_all_wheels() {
+        global $wpdb;
+        $table = self::wheels_table();
+        return $wpdb->get_results( "SELECT * FROM {$table} ORDER BY sort_order ASC, id ASC", ARRAY_A );
+    }
+
+    public static function get_wheel( $id ) {
+        global $wpdb;
+        $table = self::wheels_table();
+        return $wpdb->get_row(
+            $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ),
+            ARRAY_A
+        );
+    }
+
+    public static function insert_wheel( $data ) {
+        global $wpdb;
+        $table = self::wheels_table();
+
+        $defaults = array(
+            'name'       => '',
+            'stock_size' => '',
+            'alt_sizes'  => '',
+            'image'      => '',
+            'vehicles'   => '',
+            'sort_order' => 0,
+        );
+
+        $data = wp_parse_args( $data, $defaults );
+
+        $result = $wpdb->insert(
+            $table,
+            $data,
+            array( '%s', '%s', '%s', '%s', '%s', '%d' )
+        );
+
+        return $result !== false ? $wpdb->insert_id : false;
+    }
+
+    public static function update_wheel( $id, $data ) {
+        global $wpdb;
+        $table = self::wheels_table();
+
+        unset( $data['id'], $data['created_at'], $data['updated_at'] );
+
+        $formats = array();
+        foreach ( $data as $key => $value ) {
+            $formats[] = $key === 'sort_order' ? '%d' : '%s';
+        }
+
+        return $wpdb->update( $table, $data, array( 'id' => $id ), $formats, array( '%d' ) );
+    }
+
+    public static function delete_wheel( $id ) {
+        global $wpdb;
+        $table = self::wheels_table();
+        return $wpdb->delete( $table, array( 'id' => $id ), array( '%d' ) );
+    }
+
+    public static function get_wheel_count() {
+        global $wpdb;
+        $table = self::wheels_table();
+        return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
+    }
+
     public static function set_rating( $tire_id, $user_id, $rating ) {
         global $wpdb;
         $table = self::ratings_table();

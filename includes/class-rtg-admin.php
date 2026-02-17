@@ -51,6 +51,24 @@ class RTG_Admin {
 
         add_submenu_page(
             'rtg-tires',
+            'Stock Wheels',
+            'Stock Wheels',
+            'manage_options',
+            'rtg-wheels',
+            array( $this, 'render_wheels_page' )
+        );
+
+        add_submenu_page(
+            'rtg-tires',
+            'Add / Edit Wheel',
+            '',
+            'manage_options',
+            'rtg-wheel-edit',
+            array( $this, 'render_wheel_edit_page' )
+        );
+
+        add_submenu_page(
+            'rtg-tires',
             'Import / Export',
             'Import / Export',
             'manage_options',
@@ -107,6 +125,16 @@ class RTG_Admin {
         // Handle bulk actions from list table.
         if ( isset( $_POST['rtg_bulk_action'] ) && $_POST['rtg_bulk_action'] === 'delete' ) {
             $this->handle_bulk_delete();
+        }
+
+        // Handle wheel save.
+        if ( isset( $_POST['rtg_wheel_save'] ) ) {
+            $this->handle_wheel_save();
+        }
+
+        // Handle wheel delete.
+        if ( isset( $_GET['action'] ) && $_GET['action'] === 'delete_wheel' && isset( $_GET['wheel_id'] ) ) {
+            $this->handle_wheel_delete();
         }
 
         // Handle settings save.
@@ -188,6 +216,20 @@ class RTG_Admin {
             return;
         }
         require_once RTG_PLUGIN_DIR . 'admin/views/tire-edit.php';
+    }
+
+    public function render_wheels_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        require_once RTG_PLUGIN_DIR . 'admin/views/wheel-list.php';
+    }
+
+    public function render_wheel_edit_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        require_once RTG_PLUGIN_DIR . 'admin/views/wheel-edit.php';
     }
 
     public function render_ratings_page() {
@@ -387,6 +429,60 @@ class RTG_Admin {
 
         RTG_Database::delete_rating( $rating_id );
         wp_redirect( admin_url( 'admin.php?page=rtg-ratings&message=deleted' ) );
+        exit;
+    }
+
+    // --- Wheel Handlers ---
+
+    private function handle_wheel_save() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Unauthorized' );
+        }
+
+        check_admin_referer( 'rtg_wheel_save', 'rtg_wheel_nonce' );
+
+        $editing_id = isset( $_POST['editing_id'] ) ? intval( $_POST['editing_id'] ) : 0;
+
+        $post = wp_unslash( $_POST );
+
+        $vehicles_arr = isset( $post['vehicles'] ) && is_array( $post['vehicles'] )
+            ? array_map( 'sanitize_text_field', $post['vehicles'] )
+            : array();
+
+        $data = array(
+            'name'       => sanitize_text_field( $post['wheel_name'] ?? '' ),
+            'stock_size' => sanitize_text_field( $post['stock_size'] ?? '' ),
+            'alt_sizes'  => sanitize_text_field( $post['alt_sizes'] ?? '' ),
+            'image'      => esc_url_raw( $post['wheel_image'] ?? '' ),
+            'vehicles'   => implode( ', ', $vehicles_arr ),
+            'sort_order' => intval( $post['sort_order'] ?? 0 ),
+        );
+
+        if ( $editing_id > 0 ) {
+            $existing = RTG_Database::get_wheel( $editing_id );
+            if ( ! $existing ) {
+                wp_redirect( admin_url( 'admin.php?page=rtg-wheels&message=error' ) );
+                exit;
+            }
+            RTG_Database::update_wheel( $editing_id, $data );
+            wp_redirect( admin_url( 'admin.php?page=rtg-wheels&message=updated' ) );
+        } else {
+            RTG_Database::insert_wheel( $data );
+            wp_redirect( admin_url( 'admin.php?page=rtg-wheels&message=added' ) );
+        }
+        exit;
+    }
+
+    private function handle_wheel_delete() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Unauthorized' );
+        }
+
+        $wheel_id = intval( $_GET['wheel_id'] );
+        check_admin_referer( 'rtg_delete_wheel_' . $wheel_id );
+
+        RTG_Database::delete_wheel( $wheel_id );
+        wp_redirect( admin_url( 'admin.php?page=rtg-wheels&message=deleted' ) );
         exit;
     }
 

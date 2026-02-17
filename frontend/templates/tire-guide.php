@@ -94,6 +94,10 @@ if ( ! defined( 'ABSPATH' ) ) {
           </span>
         </label>
       </div>
+      <?php
+      $rtg_wheels = RTG_Database::get_all_wheels();
+      if ( ! empty( $rtg_wheels ) ) :
+      ?>
       <div id="wheelDrawerContainer">
         <button id="wheelDrawerTrigger" class="wheel-trigger">
           <i class="fa-solid fa-circle-info"></i>
@@ -102,39 +106,37 @@ if ( ! defined( 'ABSPATH' ) ) {
         <div id="wheelDrawer" class="wheel-drawer">
           <p class="wheel-drawer-heading">Rivian Stock Wheel Guide</p>
           <div class="wheel-items">
+            <?php foreach ( $rtg_wheels as $rtg_wheel ) :
+              $alt_list = array_filter( array_map( 'trim', explode( ',', $rtg_wheel['alt_sizes'] ) ) );
+              $vehicle_list = array_filter( array_map( 'trim', explode( ',', $rtg_wheel['vehicles'] ) ) );
+            ?>
             <div class="wheel-item">
-              <img src="https://riviantrackr.com/assets/tire-guide/images/stock/20_All-Terrain.jpg" alt="20-inch All-Terrain" />
+              <?php if ( ! empty( $rtg_wheel['image'] ) ) : ?>
+                <img src="<?php echo esc_url( $rtg_wheel['image'] ); ?>" alt="<?php echo esc_attr( $rtg_wheel['name'] ); ?>" />
+              <?php endif; ?>
               <div>
-                <strong>20" All-Terrain / Dark</strong><br />Stock: <code>275/65R20</code><br />Alt: <code>275/60R20</code>
+                <strong><?php echo esc_html( $rtg_wheel['name'] ); ?></strong>
+                <?php if ( ! empty( $vehicle_list ) ) : ?>
+                  <span class="wheel-vehicle-badges">
+                    <?php foreach ( $vehicle_list as $vehicle ) : ?>
+                      <span class="wheel-vehicle-badge"><?php echo esc_html( $vehicle ); ?></span>
+                    <?php endforeach; ?>
+                  </span>
+                <?php endif; ?>
+                <br />Stock: <code><?php echo esc_html( $rtg_wheel['stock_size'] ); ?></code>
+                <?php if ( ! empty( $alt_list ) ) : ?>
+                  <br />Alt:
+                  <?php foreach ( $alt_list as $alt ) : ?>
+                    <code><?php echo esc_html( $alt ); ?></code>
+                  <?php endforeach; ?>
+                <?php endif; ?>
               </div>
             </div>
-            <div class="wheel-item">
-              <img src="https://riviantrackr.com/assets/tire-guide/images/stock/20_All-Season.jpg" alt="20-inch All Season" />
-              <div>
-                <strong>20" All-Season</strong><br />Stock: <code>275/60R20</code><br />Alt: <code>275/65R20</code>
-              </div>
-            </div>
-            <div class="wheel-item">
-              <img src="https://riviantrackr.com/assets/tire-guide/images/stock/21_Aero.jpg" alt="21-inch Aero" />
-              <div>
-                <strong>21" Aero</strong><br />Stock: <code>275/55R21</code>
-              </div>
-            </div>
-            <div class="wheel-item">
-              <img src="https://riviantrackr.com/assets/tire-guide/images/stock/22_Range.jpg" alt="22-inch Range" />
-              <div>
-                <strong>22" Range</strong><br />Stock: <code>275/50R22</code><br />Alt: <code>285/50R22</code> <code>305/45R22</code>
-              </div>
-            </div>
-            <div class="wheel-item">
-              <img src="https://riviantrackr.com/assets/tire-guide/images/stock/22_Sport-Bright.jpg" alt="22-inch Sport" />
-              <div>
-                <strong>22" Sport / Dark</strong><br />Stock: <code>275/50R22</code><br />Alt: <code>285/50R22</code> <code>305/45R22</code>
-              </div>
-            </div>
+            <?php endforeach; ?>
           </div>
         </div>
       </div>
+      <?php endif; ?>
     </div>
   </div>
 </div>

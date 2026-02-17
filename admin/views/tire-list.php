@@ -153,6 +153,11 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
                                             <span class="edit">
                                                 <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit&id=' . $tire['id'] ) ); ?>">Edit</a> |
                                             </span>
+                                            <?php if ( ! empty( $tire['link'] ) ) : ?>
+                                            <span class="view">
+                                                <a href="<?php echo esc_url( $tire['link'] ); ?>" target="_blank" rel="noopener noreferrer">View</a> |
+                                            </span>
+                                            <?php endif; ?>
                                             <span class="delete">
                                                 <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=rtg-tires&action=delete&tire_id=' . $tire['tire_id'] ), 'rtg_delete_' . $tire['tire_id'] ) ); ?>" class="submitdelete" onclick="return confirm('Delete this tire?');">Delete</a>
                                             </span>
