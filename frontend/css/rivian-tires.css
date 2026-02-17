@@ -963,6 +963,23 @@ body.modal-open {
   margin-right: 6px;
   margin-bottom: 4px;
 }
+.wheel-vehicle-badges {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.wheel-vehicle-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  background-color: color-mix(in srgb, var(--rtg-accent, #5ec095) 18%, transparent);
+  color: var(--rtg-accent, #5ec095);
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+}
 
 /* === Rating Stars === */
 .tire-rating-container {

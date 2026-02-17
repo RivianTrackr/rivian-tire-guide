@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 2;
+    const DB_VERSION = 3;
 
     public static function activate() {
         self::create_tables();
@@ -39,7 +39,23 @@ class RTG_Activator {
         $tires_table   = $wpdb->prefix . 'rtg_tires';
         $ratings_table = $wpdb->prefix . 'rtg_ratings';
 
-        $sql = "CREATE TABLE {$tires_table} (
+        $wheels_table  = $wpdb->prefix . 'rtg_wheels';
+
+        $sql = "CREATE TABLE {$wheels_table} (
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            name VARCHAR(100) NOT NULL DEFAULT '',
+            stock_size VARCHAR(30) NOT NULL DEFAULT '',
+            alt_sizes VARCHAR(200) NOT NULL DEFAULT '',
+            image TEXT NOT NULL,
+            vehicles VARCHAR(200) NOT NULL DEFAULT '',
+            sort_order INT UNSIGNED NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            KEY idx_sort_order (sort_order)
+        ) $charset_collate;
+
+        CREATE TABLE {$tires_table} (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             tire_id VARCHAR(50) NOT NULL,
             size VARCHAR(30) NOT NULL DEFAULT '',
@@ -104,6 +120,7 @@ class RTG_Activator {
         $migrations = array(
             1 => 'migrate_1_initial_schema',
             2 => 'migrate_2_add_tags_index',
+            3 => 'migrate_3_create_wheels_table',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -136,5 +153,13 @@ class RTG_Activator {
         if ( empty( $indexes ) ) {
             $wpdb->query( "ALTER TABLE {$table} ADD KEY idx_tags (tags(100))" );
         }
+    }
+
+    /**
+     * Migration 3: Create wheels table for stock wheel guide.
+     * Table creation handled by dbDelta above; this marks the migration.
+     */
+    private static function migrate_3_create_wheels_table() {
+        // Table created by dbDelta above.
     }
 }
