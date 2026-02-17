@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.7.5] - 2026-02-17
+
+### Changed
+- Renamed review buttons to "Read/Watch Official Review" to distinguish from community reviews.
+
+### Fixed
+- Fixed escaped slashes in review text caused by WordPress magic quotes.
+
 ## [1.7.4] - 2026-02-17
 
 ### Changed
