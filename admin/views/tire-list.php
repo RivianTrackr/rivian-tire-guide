@@ -24,6 +24,19 @@ $tires = RTG_Database::search_tires( $search, $per_page, $paged, $orderby, $orde
 $total = RTG_Database::get_tire_count( $search );
 $total_pages = ceil( $total / $per_page );
 
+// Find the page containing the [rivian_tire_guide] shortcode for deep-link URLs.
+$rtg_guide_url = '';
+$rtg_pages = get_posts( array(
+    's'              => '[rivian_tire_guide',
+    'post_type'      => array( 'page', 'post' ),
+    'post_status'    => 'publish',
+    'posts_per_page' => 1,
+    'fields'         => 'ids',
+) );
+if ( ! empty( $rtg_pages ) ) {
+    $rtg_guide_url = get_permalink( $rtg_pages[0] );
+}
+
 // Sortable column helper.
 $sort_url = function ( $col ) use ( $orderby, $order ) {
     $new_order = ( $orderby === $col && $order === 'ASC' ) ? 'DESC' : 'ASC';
@@ -153,9 +166,9 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
                                             <span class="edit">
                                                 <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit&id=' . $tire['id'] ) ); ?>">Edit</a> |
                                             </span>
-                                            <?php if ( ! empty( $tire['link'] ) ) : ?>
+                                            <?php if ( $rtg_guide_url ) : ?>
                                             <span class="view">
-                                                <a href="<?php echo esc_url( $tire['link'] ); ?>" target="_blank" rel="noopener noreferrer">View</a> |
+                                                <a href="<?php echo esc_url( add_query_arg( 'tire', $tire['tire_id'], $rtg_guide_url ) ); ?>" target="_blank" rel="noopener noreferrer">View</a> |
                                             </span>
                                             <?php endif; ?>
                                             <span class="delete">

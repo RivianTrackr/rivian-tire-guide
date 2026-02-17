@@ -59,7 +59,7 @@ class RTG_Admin {
         );
 
         add_submenu_page(
-            'rtg-tires',
+            null,
             'Add / Edit Wheel',
             '',
             'manage_options',
