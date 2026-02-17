@@ -124,9 +124,8 @@ class RTG_Meta {
             $parts[] = 'size ' . $tire['size'];
         }
 
-        $display_price = floatval( RTG_Database::resolve_display_price( $tire ) );
-        if ( $display_price > 0 ) {
-            $parts[] = '$' . number_format( $display_price, 2 );
+        if ( ! empty( $tire['price'] ) && $tire['price'] > 0 ) {
+            $parts[] = '$' . number_format( (float) $tire['price'], 2 );
         }
 
         if ( ! empty( $tire['three_pms'] ) && $tire['three_pms'] === 'Yes' ) {
