@@ -80,6 +80,7 @@ class RTG_Database {
                 (string) $tire['efficiency_score'],
                 (string) $tire['efficiency_grade'],
                 (string) $tire['bundle_link'],
+                (string) $tire['review_link'],
             );
         }
 
@@ -132,6 +133,7 @@ class RTG_Database {
             'efficiency_score' => 0,
             'efficiency_grade' => '',
             'bundle_link'      => '',
+            'review_link'      => '',
             'sort_order'       => 0,
         );
 
@@ -142,7 +144,7 @@ class RTG_Database {
             '%f', '%d', '%f',
             '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s',
             '%s', '%s',
-            '%d', '%s', '%s',
+            '%d', '%s', '%s', '%s',
             '%d',
         );
 
@@ -435,6 +437,7 @@ class RTG_Database {
                 (string) $tire['efficiency_score'],
                 (string) $tire['efficiency_grade'],
                 (string) $tire['bundle_link'],
+                (string) $tire['review_link'],
             );
         }
 

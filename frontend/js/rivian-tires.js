@@ -295,6 +295,51 @@ function safeBundleLinkURL(url) {
   }
 }
 
+// Review link validation function
+function safeReviewLinkURL(url) {
+  if (typeof url !== "string" || !url.trim()) return "";
+
+  const trimmed = url.trim();
+
+  const reviewLinkPattern = /^https:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}\/[a-zA-Z0-9\-\/_\.%&=?#:+@]*$/;
+
+  if (!reviewLinkPattern.test(trimmed)) {
+    return "";
+  }
+
+  try {
+    const urlObj = new URL(trimmed);
+
+    if (urlObj.protocol !== 'https:') return "";
+
+    const allowedReviewDomains = [
+      'riviantrackr.com', 'www.riviantrackr.com',
+      'youtube.com', 'www.youtube.com', 'youtu.be',
+      'tiktok.com', 'www.tiktok.com',
+      'instagram.com', 'www.instagram.com'
+    ];
+
+    const hostname = urlObj.hostname.toLowerCase();
+    const isAllowed = allowedReviewDomains.some(domain => {
+      return hostname === domain || hostname.endsWith('.' + domain);
+    });
+
+    if (!isAllowed) {
+      console.warn('Review link domain not in allowlist:', hostname);
+      return "";
+    }
+
+    if (urlObj.pathname.includes('..')) {
+      return "";
+    }
+
+    return trimmed;
+  } catch (e) {
+    console.warn('Invalid review link URL:', trimmed);
+    return "";
+  }
+}
+
 // Security: Validate numeric input
 function validateNumeric(value, bounds, defaultValue = 0) {
   if (typeof value === 'string') {
@@ -1870,7 +1915,7 @@ function createSingleCard(row) {
   const [
     tireId, size, diameter, brand, model, category, price, warranty, weight, tpms,
     tread, loadIndex, maxLoad, loadRange, speed, psi, utqg, tags, link, image,
-    efficiencyScore, efficiencyGrade, bundleLink
+    efficiencyScore, efficiencyGrade, bundleLink, reviewLink
   ] = row;
   
   if (!VALIDATION_PATTERNS.tireId.test(tireId)) {
@@ -1887,6 +1932,7 @@ function createSingleCard(row) {
   const safeLink = safeLinkURL(link);
   const safeImage = safeImageURL(image);
   const safeBundleLink = safeBundleLinkURL(bundleLink);
+  const safeReviewLink = safeReviewLinkURL(reviewLink);
 
   const card = document.createElement("div");
   card.className = "tire-card";
@@ -2147,6 +2193,18 @@ function createSingleCard(row) {
     actionsContainer.appendChild(bundleButton);
   }
 
+  if (safeReviewLink) {
+    const reviewButton = document.createElement('a');
+    reviewButton.href = safeReviewLink;
+    reviewButton.target = '_blank';
+    reviewButton.rel = 'noopener noreferrer';
+    reviewButton.className = 'tire-card-cta tire-card-cta-review';
+    const isVideo = safeReviewLink.includes('youtube.com') || safeReviewLink.includes('youtu.be') || safeReviewLink.includes('tiktok.com');
+    const icon = isVideo ? 'fa-circle-play' : 'fa-newspaper';
+    const label = isVideo ? 'Watch Review' : 'Read Review';
+    reviewButton.innerHTML = `${label}&nbsp;<i class="fa-solid ${icon}"></i>`;
+    actionsContainer.appendChild(reviewButton);
+  }
 
   card.appendChild(actionsContainer);
 

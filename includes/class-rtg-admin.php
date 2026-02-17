@@ -289,6 +289,7 @@ class RTG_Admin {
             'link'             => esc_url_raw( $post['link'] ?? '' ),
             'image'            => esc_url_raw( $post['image'] ?? '' ),
             'bundle_link'      => esc_url_raw( $post['bundle_link'] ?? '' ),
+            'review_link'      => esc_url_raw( $post['review_link'] ?? '' ),
             'sort_order'       => intval( $post['sort_order'] ?? 0 ),
         );
 
@@ -495,7 +496,7 @@ class RTG_Admin {
         'tire_id', 'size', 'diameter', 'brand', 'model', 'category',
         'price', 'mileage_warranty', 'weight_lb', 'three_pms', 'tread',
         'load_index', 'max_load_lb', 'load_range', 'speed_rating', 'psi',
-        'utqg', 'tags', 'link', 'image', 'bundle_link', 'sort_order',
+        'utqg', 'tags', 'link', 'image', 'bundle_link', 'review_link', 'sort_order',
     );
 
     private function handle_csv_export() {
@@ -670,6 +671,7 @@ class RTG_Admin {
         $data['link']        = esc_url_raw( $data['link'] ?? '' );
         $data['image']       = esc_url_raw( $data['image'] ?? '' );
         $data['bundle_link'] = esc_url_raw( $data['bundle_link'] ?? '' );
+        $data['review_link'] = esc_url_raw( $data['review_link'] ?? '' );
 
         return $data;
     }
