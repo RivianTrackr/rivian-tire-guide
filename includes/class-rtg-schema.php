@@ -57,11 +57,12 @@ class RTG_Schema {
                 $item['image'] = esc_url( $tire['image'] );
             }
 
-            // Offer (price).
-            if ( ! empty( $tire['price'] ) && $tire['price'] > 0 ) {
+            // Offer (price) — prefer fetched price over manual.
+            $display_price = floatval( RTG_Database::resolve_display_price( $tire ) );
+            if ( $display_price > 0 ) {
                 $item['offers'] = array(
                     '@type'         => 'Offer',
-                    'price'         => number_format( (float) $tire['price'], 2, '.', '' ),
+                    'price'         => number_format( $display_price, 2, '.', '' ),
                     'priceCurrency' => 'USD',
                     'availability'  => 'https://schema.org/InStock',
                 );

@@ -48,8 +48,22 @@ class RTG_Database {
     }
 
     /**
+     * Resolve the display price for a tire: use fetched_price if available, else manual price.
+     *
+     * @param array $tire Tire row from the database.
+     * @return string The display price as a string.
+     */
+    public static function resolve_display_price( $tire ) {
+        $fetched = isset( $tire['fetched_price'] ) ? floatval( $tire['fetched_price'] ) : 0;
+        $manual  = isset( $tire['price'] ) ? floatval( $tire['price'] ) : 0;
+        return (string) ( $fetched > 0 ? $fetched : $manual );
+    }
+
+    /**
      * Returns tires as a numerically-indexed array of arrays matching the CSV column order.
      * This is the format the frontend JS expects (same as PapaParse output).
+     *
+     * Price at index 6 is the resolved display price: fetched if available, else manual.
      */
     public static function get_tires_as_array() {
         $tires = self::get_all_tires();
@@ -63,7 +77,7 @@ class RTG_Database {
                 (string) $tire['brand'],
                 (string) $tire['model'],
                 (string) $tire['category'],
-                (string) $tire['price'],
+                self::resolve_display_price( $tire ),
                 (string) $tire['mileage_warranty'],
                 (string) $tire['weight_lb'],
                 (string) $tire['three_pms'],
@@ -166,6 +180,7 @@ class RTG_Database {
             switch ( $key ) {
                 case 'price':
                 case 'weight_lb':
+                case 'fetched_price':
                     $formats[] = '%f';
                     break;
                 case 'mileage_warranty':
@@ -366,7 +381,7 @@ class RTG_Database {
         }
 
         if ( isset( $filters['price_max'] ) && $filters['price_max'] < 600 ) {
-            $where[]  = 'price <= %f';
+            $where[]  = 'COALESCE(NULLIF(fetched_price, 0.00), price) <= %f';
             $values[] = floatval( $filters['price_max'] );
         }
 
@@ -383,10 +398,11 @@ class RTG_Database {
         $where_sql = implode( ' AND ', $where );
 
         // Determine ORDER BY.
+        $display_price_expr = 'COALESCE(NULLIF(fetched_price, 0.00), price)';
         $sort_map = array(
             'efficiency_score' => 'efficiency_score DESC',
-            'price-asc'        => 'price ASC',
-            'price-desc'       => 'price DESC',
+            'price-asc'        => $display_price_expr . ' ASC',
+            'price-desc'       => $display_price_expr . ' DESC',
             'warranty-desc'    => 'mileage_warranty DESC',
             'weight-asc'       => 'weight_lb ASC',
             'weight-desc'      => 'weight_lb DESC',
@@ -418,7 +434,7 @@ class RTG_Database {
                 (string) $tire['brand'],
                 (string) $tire['model'],
                 (string) $tire['category'],
-                (string) $tire['price'],
+                self::resolve_display_price( $tire ),
                 (string) $tire['mileage_warranty'],
                 (string) $tire['weight_lb'],
                 (string) $tire['three_pms'],

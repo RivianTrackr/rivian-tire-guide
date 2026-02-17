@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Rivian Tire Guide
  * Description: Interactive tire guide for Rivian vehicles with filtering, comparison, and ratings.
- * Version: 1.5.2
+ * Version: 1.6.0
  * Author: RivianTrackr
  * Text Domain: rivian-tire-guide
  * Requires at least: 5.8
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'RTG_VERSION', '1.5.2' );
+define( 'RTG_VERSION', '1.6.0' );
 define( 'RTG_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'RTG_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'RTG_PLUGIN_FILE', __FILE__ );
@@ -29,9 +29,11 @@ require_once RTG_PLUGIN_DIR . 'includes/class-rtg-ajax.php';
 require_once RTG_PLUGIN_DIR . 'includes/class-rtg-compare.php';
 require_once RTG_PLUGIN_DIR . 'includes/class-rtg-schema.php';
 require_once RTG_PLUGIN_DIR . 'includes/class-rtg-meta.php';
+require_once RTG_PLUGIN_DIR . 'includes/class-rtg-price-fetcher.php';
 
 // Activation / Deactivation hooks.
 register_activation_hook( __FILE__, array( 'RTG_Activator', 'activate' ) );
+register_activation_hook( __FILE__, array( 'RTG_Price_Fetcher', 'schedule' ) );
 register_deactivation_hook( __FILE__, array( 'RTG_Deactivator', 'deactivate' ) );
 
 // Initialize plugin components.
@@ -40,6 +42,12 @@ add_action( 'plugins_loaded', 'rtg_init' );
 function rtg_init() {
     // Run pending database migrations on update.
     RTG_Activator::maybe_upgrade();
+
+    // Initialize price fetcher (registers cron schedule and hook).
+    RTG_Price_Fetcher::init();
+
+    // Ensure cron is scheduled (handles case where plugin was updated, not reactivated).
+    RTG_Price_Fetcher::schedule();
 
     // Admin panel.
     if ( is_admin() ) {
