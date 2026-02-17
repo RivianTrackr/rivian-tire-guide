@@ -144,7 +144,6 @@ if ( ! defined( 'ABSPATH' ) ) {
   <span id="tireCount" class="tire-count" aria-live="polite">Showing 0 tires</span>
   <div style="flex: 1;"></div>
   <select id="sortBy" onchange="filterAndRender()">
-    <option value="alpha">Brand: A → Z</option>
     <option value="efficiencyGrade">Efficiency Grade</option>
     <option value="most-reviewed">Most Reviewed</option>
     <option value="newest">Newest Added</option>

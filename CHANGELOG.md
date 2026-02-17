@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.6.1] - 2026-02-17
 
 ### Changed
-- **Sort options refined** — Removed low-value sort directions (Brand Z→A, Weight Heavy→Light). Added "Newest Added" (sorts by date added, descending) and "Most Reviewed" (sorts by number of ratings, with average rating as tiebreaker). Default remains Rating: High → Low.
+- **Sort options refined** — Removed low-value sort options (Brand A→Z, Brand Z→A, Weight Heavy→Light). Added "Newest Added" (sorts by date added, descending) and "Most Reviewed" (sorts by number of ratings, with average rating as tiebreaker). Default remains Rating: High → Low.
 
 ## [1.6.0] - 2026-02-17
 

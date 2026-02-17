@@ -392,7 +392,6 @@ class RTG_Database {
             'price-desc'       => 'price DESC',
             'warranty-desc'    => 'mileage_warranty DESC',
             'weight-asc'       => 'weight_lb ASC',
-            'alpha'            => 'brand ASC, model ASC',
             'newest'           => 'created_at DESC',
         );
         $order_sql = isset( $sort_map[ $sort ] ) ? $sort_map[ $sort ] : 'efficiency_score DESC';

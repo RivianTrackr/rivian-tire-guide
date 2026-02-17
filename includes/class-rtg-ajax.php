@@ -201,7 +201,7 @@ class RTG_Ajax {
         $allowed_sorts = array(
             'efficiency_score', 'price-asc', 'price-desc',
             'warranty-desc', 'weight-asc',
-            'alpha', 'newest',
+            'newest',
         );
         $sort = sanitize_text_field( $_POST['sort'] ?? 'efficiency_score' );
         if ( ! in_array( $sort, $allowed_sorts, true ) ) {

@@ -87,7 +87,7 @@ if (typeof tireRatingAjax !== 'undefined') {
 const ALLOWED_SORT_OPTIONS = [
   "efficiencyGrade", "price-asc", "price-desc",
   "warranty-desc", "weight-asc",
-  "alpha", "reviewed", "rating-desc",
+  "reviewed", "rating-desc",
   "newest", "most-reviewed"
 ];
 
@@ -2582,9 +2582,6 @@ function applySorting(sortOption) {
       break;
     case "weight-asc":
       filteredRows.sort((a, b) => validateNumeric(a[8], NUMERIC_BOUNDS.weight, 0) - validateNumeric(b[8], NUMERIC_BOUNDS.weight, 0));
-      break;
-    case "alpha":
-      filteredRows.sort((a, b) => safeString(a[3]).toLowerCase().localeCompare(safeString(b[3]).toLowerCase()));
       break;
     case "newest":
       filteredRows.sort((a, b) => safeString(b[24]).localeCompare(safeString(a[24])));
