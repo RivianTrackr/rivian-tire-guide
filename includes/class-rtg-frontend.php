@@ -49,14 +49,6 @@ class RTG_Frontend {
             RTG_VERSION
         );
 
-        $admin_suffix = file_exists( RTG_PLUGIN_DIR . 'admin/css/admin-styles.min.css' ) ? '.min' : '';
-        wp_enqueue_style(
-            'rtg-admin-styles',
-            RTG_PLUGIN_URL . 'admin/css/admin-styles' . $admin_suffix . '.css',
-            array(),
-            RTG_VERSION
-        );
-
         wp_enqueue_script(
             'rtg-user-reviews',
             RTG_PLUGIN_URL . 'frontend/js/user-reviews.js',
