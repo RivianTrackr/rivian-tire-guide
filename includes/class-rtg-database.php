@@ -766,8 +766,9 @@ class RTG_Database {
         $table = self::ratings_table();
 
         // Determine review status: admins auto-approve, others pending.
-        $review_status = 'approved';
-        if ( ! empty( $review_text ) && ! user_can( $user_id, 'manage_options' ) ) {
+        $has_review_content = ! empty( $review_text ) || ! empty( $review_title );
+        $review_status      = 'approved';
+        if ( $has_review_content && ! user_can( $user_id, 'manage_options' ) ) {
             $review_status = 'pending';
         }
 
@@ -787,8 +788,8 @@ class RTG_Database {
             );
             $update_formats = array( '%d', '%s', '%s' );
 
-            // Only change status if review text is being added/changed.
-            if ( ! empty( $review_text ) ) {
+            // Reset status to pending whenever review content is present (re-moderation on edit).
+            if ( $has_review_content ) {
                 $update_data['review_status'] = $review_status;
                 $update_formats[]             = '%s';
             }

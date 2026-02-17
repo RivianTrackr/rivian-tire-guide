@@ -1807,13 +1807,13 @@ function openReviewModal(tireId, preselectedRating = 0) {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Submitting...';
 
-    const hasReviewText = textArea.value.trim().length > 0;
-    const isUpdate = !!currentText;
+    const hasReviewContent = textArea.value.trim().length > 0 || titleInput.value.trim().length > 0;
+    const isUpdate = !!currentText || !!currentTitle;
 
     submitTireRating(tireId, selectedRating, titleInput.value.trim(), textArea.value.trim())
       .then((result) => {
         closeModal();
-        if (hasReviewText && result && result.review_status === 'pending') {
+        if (hasReviewContent && result && result.review_status === 'pending') {
           showToast('Thanks! Your review has been submitted and is pending approval.', 'info');
         } else if (isUpdate) {
           showToast('Your review has been updated.', 'success');
