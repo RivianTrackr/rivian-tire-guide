@@ -4,6 +4,13 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.7.7] - 2026-02-17
+
+### Added
+- `[rivian_user_reviews]` shortcode — displays all reviews by a user (via `?reviewer=ID` URL param).
+- Reviewer names in review cards now link to the user's reviews page.
+- New `user_reviews_slug` setting (defaults to `user-reviews`).
+
 ## [1.7.6] - 2026-02-17
 
 ### Added

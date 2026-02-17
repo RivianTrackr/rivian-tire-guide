@@ -9,6 +9,7 @@ class RTG_Frontend {
 
     public function __construct() {
         add_shortcode( 'rivian_tire_guide', array( $this, 'render_shortcode' ) );
+        add_shortcode( 'rivian_user_reviews', array( $this, 'render_user_reviews_shortcode' ) );
         add_action( 'wp_enqueue_scripts', array( $this, 'maybe_enqueue_assets' ), 20 );
     }
 
@@ -21,6 +22,45 @@ class RTG_Frontend {
         ob_start();
         include RTG_PLUGIN_DIR . 'frontend/templates/tire-guide.php';
         return ob_get_clean();
+    }
+
+    public function render_user_reviews_shortcode( $atts ) {
+        $this->enqueue_user_reviews_assets();
+
+        ob_start();
+        include RTG_PLUGIN_DIR . 'frontend/templates/user-reviews.php';
+        return ob_get_clean();
+    }
+
+    private function enqueue_user_reviews_assets() {
+        wp_enqueue_style(
+            'font-awesome',
+            'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css',
+            array(),
+            '6.5.0'
+        );
+
+        $suffix = self::asset_suffix();
+
+        wp_enqueue_style(
+            'rtg-styles',
+            RTG_PLUGIN_URL . 'frontend/css/rivian-tires' . $suffix . '.css',
+            array(),
+            RTG_VERSION
+        );
+
+        wp_enqueue_script(
+            'rtg-user-reviews',
+            RTG_PLUGIN_URL . 'frontend/js/user-reviews.js',
+            array(),
+            RTG_VERSION,
+            true
+        );
+
+        wp_localize_script( 'rtg-user-reviews', 'rtgUserReviews', array(
+            'ajaxurl' => admin_url( 'admin-ajax.php' ),
+            'nonce'   => wp_create_nonce( 'tire_rating_nonce' ),
+        ) );
     }
 
     public function maybe_enqueue_assets() {
@@ -109,16 +149,18 @@ class RTG_Frontend {
             true
         );
 
-        $server_side = ! empty( $settings['server_side_pagination'] );
+        $server_side        = ! empty( $settings['server_side_pagination'] );
+        $user_reviews_slug  = $settings['user_reviews_slug'] ?? 'user-reviews';
 
         // Localize tire data.
         $localized = array(
             'settings' => array(
-                'rowsPerPage'  => intval( $settings['rows_per_page'] ?? 12 ),
-                'compareUrl'   => home_url( '/' . $compare_slug . '/' ),
-                'serverSide'   => $server_side,
-                'ajaxurl'      => admin_url( 'admin-ajax.php' ),
-                'tireNonce'    => wp_create_nonce( 'rtg_tire_nonce' ),
+                'rowsPerPage'     => intval( $settings['rows_per_page'] ?? 12 ),
+                'compareUrl'      => home_url( '/' . $compare_slug . '/' ),
+                'userReviewsUrl'  => home_url( '/' . sanitize_title( $user_reviews_slug ) . '/' ),
+                'serverSide'      => $server_side,
+                'ajaxurl'         => admin_url( 'admin-ajax.php' ),
+                'tireNonce'       => wp_create_nonce( 'rtg_tire_nonce' ),
             ),
         );
 

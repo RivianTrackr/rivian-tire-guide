@@ -23,6 +23,10 @@ class RTG_Ajax {
         add_action( 'wp_ajax_get_tire_reviews', array( $this, 'get_tire_reviews' ) );
         add_action( 'wp_ajax_nopriv_get_tire_reviews', array( $this, 'get_tire_reviews' ) );
 
+        // Get reviews by a user — public.
+        add_action( 'wp_ajax_rtg_get_user_reviews', array( $this, 'get_user_reviews' ) );
+        add_action( 'wp_ajax_nopriv_rtg_get_user_reviews', array( $this, 'get_user_reviews' ) );
+
         // Server-side filtered tire listing — public.
         add_action( 'wp_ajax_rtg_get_tires', array( $this, 'get_tires' ) );
         add_action( 'wp_ajax_nopriv_rtg_get_tires', array( $this, 'get_tires' ) );
@@ -189,6 +193,34 @@ class RTG_Ajax {
             'total'       => $total,
             'page'        => $page,
             'total_pages' => ceil( $total / $per_page ),
+        ) );
+    }
+
+    /**
+     * Get all approved reviews by a specific user.
+     */
+    public function get_user_reviews() {
+        $user_id = absint( $_POST['user_id'] ?? 0 );
+
+        if ( ! $user_id ) {
+            wp_send_json_error( 'Invalid user ID.' );
+        }
+
+        $page     = max( 1, intval( $_POST['page'] ?? 1 ) );
+        $per_page = 10;
+        $offset   = ( $page - 1 ) * $per_page;
+
+        $reviews = RTG_Database::get_user_reviews( $user_id, $per_page, $offset );
+        $total   = RTG_Database::get_user_review_count( $user_id );
+
+        $user = get_user_by( 'ID', $user_id );
+
+        wp_send_json_success( array(
+            'reviews'      => $reviews,
+            'total'        => $total,
+            'page'         => $page,
+            'total_pages'  => ceil( $total / $per_page ),
+            'display_name' => $user ? $user->display_name : 'Anonymous',
         ) );
     }
 

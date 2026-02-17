@@ -1462,6 +1462,15 @@ body.modal-open {
   font-size: 14px;
   color: var(--rtg-text-light, #f1f5f9);
 }
+a.rtg-review-author-link {
+  text-decoration: none;
+  color: var(--rtg-accent, #5ec095);
+  transition: opacity 0.15s;
+}
+a.rtg-review-author-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
 .rtg-review-card-stars {
   display: inline-flex;
   gap: 1px;
@@ -1967,4 +1976,81 @@ body.modal-open {
   .filter-chip {
     animation: none;
   }
+}
+
+/* === User Reviews Page === */
+.rtg-user-reviews-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.rtg-user-reviews-header {
+  margin-bottom: 24px;
+}
+.rtg-user-reviews-header h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--rtg-text-heading, #ffffff);
+  margin: 0 0 4px;
+}
+.rtg-user-reviews-subtitle {
+  font-size: 14px;
+  color: var(--rtg-text-muted, #94a3b8);
+  margin: 0;
+}
+.rtg-user-reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.rtg-user-review-card {
+  padding: 16px 18px !important;
+}
+.rtg-user-review-tire {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--rtg-border, #334155);
+}
+.rtg-user-review-tire-img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: var(--rtg-bg-deep, #0f172a);
+  flex-shrink: 0;
+}
+.rtg-user-review-tire-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--rtg-text-heading, #ffffff);
+}
+.rtg-user-reviews-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+.rtg-pagination-btn {
+  background: var(--rtg-bg-primary, #1e293b);
+  color: var(--rtg-text-primary, #e5e5e5);
+  border: 1px solid var(--rtg-border, #334155);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.rtg-pagination-btn:hover {
+  border-color: var(--rtg-accent, #5ec095);
+  color: var(--rtg-accent, #5ec095);
+}
+.rtg-pagination-info {
+  font-size: 14px;
+  color: var(--rtg-text-muted, #94a3b8);
 }
