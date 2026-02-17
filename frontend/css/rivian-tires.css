@@ -620,6 +620,7 @@ body.modal-open {
   font-weight: 500;
   color: var(--rtg-text-primary);
   text-align: right;
+  font-family: monospace;
 }
 
 /* Card actions */
