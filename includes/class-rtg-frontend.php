@@ -83,6 +83,8 @@ class RTG_Frontend {
             'nonce'        => wp_create_nonce( 'tire_rating_nonce' ),
             'tireGuideUrl' => $tire_guide_url,
         ) );
+
+        $this->inject_theme_color_overrides();
     }
 
     public function maybe_enqueue_assets() {
@@ -131,36 +133,7 @@ class RTG_Frontend {
             RTG_VERSION
         );
 
-        // Theme color overrides — output as inline CSS custom properties.
-        $theme_colors = $settings['theme_colors'] ?? array();
-        if ( ! empty( $theme_colors ) ) {
-            $var_map = array(
-                'accent'       => '--rtg-accent',
-                'accent_hover' => '--rtg-accent-hover',
-                'bg_primary'   => '--rtg-bg-primary',
-                'bg_card'      => '--rtg-bg-card',
-                'bg_input'     => '--rtg-bg-input',
-                'bg_deep'      => '--rtg-bg-deep',
-                'text_primary' => '--rtg-text-primary',
-                'text_light'   => '--rtg-text-light',
-                'text_muted'   => '--rtg-text-muted',
-                'text_heading' => '--rtg-text-heading',
-                'border'       => '--rtg-border',
-            );
-            $css_vars = '';
-            foreach ( $var_map as $key => $prop ) {
-                if ( ! empty( $theme_colors[ $key ] ) ) {
-                    // Re-validate hex color at render time to prevent CSS injection.
-                    $color = sanitize_hex_color( $theme_colors[ $key ] );
-                    if ( $color ) {
-                        $css_vars .= $prop . ':' . $color . ';';
-                    }
-                }
-            }
-            if ( $css_vars ) {
-                wp_add_inline_style( 'rtg-styles', ':root{' . $css_vars . '}' );
-            }
-        }
+        $this->inject_theme_color_overrides();
 
         // JS — no PapaParse needed.
         wp_enqueue_script(
@@ -202,5 +175,43 @@ class RTG_Frontend {
             'register_url' => wp_registration_url(),
             'timezone'     => wp_timezone_string(),
         ) );
+    }
+
+    private function inject_theme_color_overrides() {
+        $settings     = get_option( 'rtg_settings', array() );
+        $theme_colors = $settings['theme_colors'] ?? array();
+
+        if ( empty( $theme_colors ) ) {
+            return;
+        }
+
+        $var_map = array(
+            'accent'       => '--rtg-accent',
+            'accent_hover' => '--rtg-accent-hover',
+            'bg_primary'   => '--rtg-bg-primary',
+            'bg_card'      => '--rtg-bg-card',
+            'bg_input'     => '--rtg-bg-input',
+            'bg_deep'      => '--rtg-bg-deep',
+            'text_primary' => '--rtg-text-primary',
+            'text_light'   => '--rtg-text-light',
+            'text_muted'   => '--rtg-text-muted',
+            'text_heading' => '--rtg-text-heading',
+            'border'       => '--rtg-border',
+        );
+
+        $css_vars = '';
+        foreach ( $var_map as $key => $prop ) {
+            if ( ! empty( $theme_colors[ $key ] ) ) {
+                // Re-validate hex color at render time to prevent CSS injection.
+                $color = sanitize_hex_color( $theme_colors[ $key ] );
+                if ( $color ) {
+                    $css_vars .= $prop . ':' . $color . ';';
+                }
+            }
+        }
+
+        if ( $css_vars ) {
+            wp_add_inline_style( 'rtg-styles', ':root{' . $css_vars . '}' );
+        }
     }
 }
