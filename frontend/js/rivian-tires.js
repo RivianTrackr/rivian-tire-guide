@@ -1807,9 +1807,19 @@ function openReviewModal(tireId, preselectedRating = 0) {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Submitting...';
 
+    const hasReviewText = textArea.value.trim().length > 0;
+    const isUpdate = !!currentText;
+
     submitTireRating(tireId, selectedRating, titleInput.value.trim(), textArea.value.trim())
-      .then(() => {
+      .then((result) => {
         closeModal();
+        if (hasReviewText && result && result.review_status === 'pending') {
+          showToast('Thanks! Your review has been submitted and is pending approval.', 'info');
+        } else if (isUpdate) {
+          showToast('Your review has been updated.', 'success');
+        } else {
+          showToast('Your rating has been saved!', 'success');
+        }
       })
       .catch(err => {
         submitBtn.disabled = false;
@@ -1909,7 +1919,42 @@ function loadReviews(tireId, container, page) {
   .then(r => r.json())
   .then(data => {
     if (!data.success || !data.data.reviews.length) {
-      container.innerHTML = '<div class="rtg-reviews-empty">No written reviews yet. Be the first to share your experience!</div>';
+      const emptyDiv = document.createElement('div');
+      emptyDiv.className = 'rtg-reviews-empty';
+
+      const iconEl = document.createElement('div');
+      iconEl.className = 'rtg-reviews-empty-icon';
+      iconEl.textContent = '\u270D\uFE0F';
+
+      const headingEl = document.createElement('div');
+      headingEl.className = 'rtg-reviews-empty-heading';
+      headingEl.textContent = 'No reviews yet';
+
+      const subEl = document.createElement('div');
+      subEl.textContent = 'Be the first to share your experience with this tire!';
+
+      emptyDiv.appendChild(iconEl);
+      emptyDiv.appendChild(headingEl);
+      emptyDiv.appendChild(subEl);
+
+      if (isLoggedIn) {
+        const ctaBtn = document.createElement('button');
+        ctaBtn.className = 'rtg-reviews-empty-cta';
+        ctaBtn.textContent = 'Write a Review';
+        ctaBtn.addEventListener('click', () => {
+          // Close drawer, open review modal
+          const overlay = container.closest('.rtg-reviews-drawer-overlay');
+          if (overlay) {
+            overlay.classList.remove('active');
+            setTimeout(() => overlay.remove(), 200);
+          }
+          openReviewModal(tireId, userRatings[tireId] || 0);
+        });
+        emptyDiv.appendChild(ctaBtn);
+      }
+
+      container.innerHTML = '';
+      container.appendChild(emptyDiv);
       return;
     }
 
@@ -2029,6 +2074,40 @@ function formatReviewDate(dateStr) {
     return `${months} month${months !== 1 ? 's' : ''} ago`;
   }
   return date.toLocaleDateString('en-US', { ...opts, month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// ── Toast Notifications ──
+
+function showToast(message, type = 'success', duration = 4000) {
+  let container = document.querySelector('.rtg-toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.className = 'rtg-toast-container';
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = `rtg-toast rtg-toast-${type}`;
+
+  const icon = document.createElement('span');
+  icon.className = 'rtg-toast-icon';
+  icon.textContent = type === 'success' ? '\u2714' : '\u2139';
+
+  const text = document.createElement('span');
+  text.textContent = message;
+
+  toast.appendChild(icon);
+  toast.appendChild(text);
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => toast.classList.add('visible'));
+  });
+
+  setTimeout(() => {
+    toast.classList.remove('visible');
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
 }
 
 function setupEventDelegation() {

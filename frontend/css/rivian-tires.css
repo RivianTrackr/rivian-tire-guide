@@ -1414,6 +1414,33 @@ body.modal-open {
   padding: 40px 0;
   font-size: 14px;
 }
+.rtg-reviews-empty-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+.rtg-reviews-empty-heading {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--rtg-text-light, #f1f5f9);
+  margin-bottom: 6px;
+}
+.rtg-reviews-empty-cta {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 8px 20px;
+  background: var(--rtg-accent, #5ec095);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+.rtg-reviews-empty-cta:hover {
+  opacity: 0.85;
+}
 
 /* Individual review card */
 .rtg-review-card {
@@ -1512,6 +1539,67 @@ body.modal-open {
   }
   .rtg-review-star {
     font-size: 32px;
+  }
+}
+
+/* === Toast Notifications === */
+.rtg-toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 100001;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.rtg-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  background: var(--rtg-bg-card, #1e293b);
+  border: 1px solid var(--rtg-border, #334155);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  transform: translateX(120%);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  max-width: 380px;
+  line-height: 1.4;
+}
+.rtg-toast.visible {
+  transform: translateX(0);
+  opacity: 1;
+}
+.rtg-toast-icon {
+  flex-shrink: 0;
+  font-size: 18px;
+}
+.rtg-toast.rtg-toast-success {
+  border-color: var(--rtg-accent, #5ec095);
+}
+.rtg-toast.rtg-toast-success .rtg-toast-icon {
+  color: var(--rtg-accent, #5ec095);
+}
+.rtg-toast.rtg-toast-info {
+  border-color: #60a5fa;
+}
+.rtg-toast.rtg-toast-info .rtg-toast-icon {
+  color: #60a5fa;
+}
+@media (max-width: 640px) {
+  .rtg-toast-container {
+    top: 12px;
+    right: 12px;
+    left: 12px;
+  }
+  .rtg-toast {
+    max-width: 100%;
   }
 }
 

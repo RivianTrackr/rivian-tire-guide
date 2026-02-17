@@ -4,6 +4,13 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.7.3] - 2026-02-17
+
+### Added
+- **Toast notifications** — Users now see confirmation feedback after submitting a review: "Your rating has been saved!", "Your review has been updated.", or "Thanks! Your review has been submitted and is pending approval." depending on context.
+- **Admin pending-reviews notice** — A dismissible info banner appears on the WordPress dashboard and Tire Guide admin pages when reviews are awaiting moderation, with a direct link to the pending queue.
+- **Improved reviews drawer empty state** — When a tire has no reviews, the drawer shows a friendly heading, icon, and "Write a Review" CTA button (for logged-in users) instead of a plain text message.
+
 ## [1.7.2] - 2026-02-17
 
 ### Changed

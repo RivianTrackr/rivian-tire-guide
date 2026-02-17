@@ -137,6 +137,14 @@ class RTG_Ajax {
         // Record this submission for rate limiting.
         $this->record_rate_limit( $user_id );
 
+        // Determine the review status that will be applied.
+        $is_admin = user_can( $user_id, 'manage_options' );
+        if ( ! empty( $review_text ) && ! $is_admin ) {
+            $review_status = 'pending';
+        } else {
+            $review_status = 'approved';
+        }
+
         // Save the rating with optional review.
         RTG_Database::set_rating( $tire_id, $user_id, $rating, $review_title, $review_text );
 
@@ -150,6 +158,7 @@ class RTG_Ajax {
             'review_count'   => $tire_rating['review_count'],
             'user_rating'    => $rating,
             'user_review'    => $review_text,
+            'review_status'  => $review_status,
         ) );
     }
 
