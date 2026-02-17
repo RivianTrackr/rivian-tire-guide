@@ -2627,10 +2627,10 @@ function createSingleCard(row) {
   // Efficiency grade badge — matches compare page pattern
   if (efficiencyGrade) {
     const grade = safeString(efficiencyGrade).trim().toUpperCase();
-    if (['A', 'B', 'C', 'D', 'E', 'F'].includes(grade)) {
+    if (['A', 'B', 'C', 'D', 'F'].includes(grade)) {
       const gradeColor = {
         A: "#5ec095", B: "#a3e635", C: "#facc15",
-        D: "#f97316", E: "#ef4444", F: "#b91c1c"
+        D: "#f97316", F: "#b91c1c"
       }[grade];
 
       const gradeTag = document.createElement('span');

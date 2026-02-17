@@ -625,8 +625,6 @@ class RTG_Database {
             $grade = 'C';
         } elseif ( $score >= 35 ) {
             $grade = 'D';
-        } elseif ( $score >= 20 ) {
-            $grade = 'E';
         } else {
             $grade = 'F';
         }

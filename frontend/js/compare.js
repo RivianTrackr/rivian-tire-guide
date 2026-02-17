@@ -121,7 +121,7 @@ const COL = {
 
 // --- Efficiency badge colors ---
 const GRADE_COLORS = {
-  A: "#5ec095", B: "#a3e635", C: "#facc15", D: "#f97316", E: "#ef4444", F: "#b91c1c"
+  A: "#5ec095", B: "#a3e635", C: "#facc15", D: "#f97316", F: "#b91c1c"
 };
 
 // --- Determine "best" values for highlighting ---
