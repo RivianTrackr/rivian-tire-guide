@@ -9,6 +9,50 @@ class RTG_Admin {
         add_action( 'admin_menu', array( $this, 'register_menu' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
         add_action( 'admin_init', array( $this, 'handle_actions' ) );
+        add_action( 'admin_notices', array( $this, 'pending_reviews_notice' ) );
+    }
+
+    /**
+     * Show an admin notice when there are pending reviews awaiting moderation.
+     */
+    public function pending_reviews_notice() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        // Only show on the main dashboard and Tire Guide pages.
+        $screen = get_current_screen();
+        if ( ! $screen ) {
+            return;
+        }
+
+        $is_dashboard  = $screen->id === 'dashboard';
+        $is_rtg_page   = strpos( $screen->id, 'rtg-' ) !== false;
+        $is_review_page = strpos( $screen->id, 'rtg-reviews' ) !== false;
+
+        if ( ! $is_dashboard && ! $is_rtg_page ) {
+            return;
+        }
+
+        // Don't show on the reviews page itself — they can already see them.
+        if ( $is_review_page ) {
+            return;
+        }
+
+        $counts  = RTG_Database::get_review_status_counts();
+        $pending = intval( $counts['pending'] ?? 0 );
+
+        if ( $pending < 1 ) {
+            return;
+        }
+
+        $url = admin_url( 'admin.php?page=rtg-reviews&status=pending' );
+        printf(
+            '<div class="notice notice-info is-dismissible"><p><strong>Tire Guide:</strong> You have %s pending %s. <a href="%s">Review now</a></p></div>',
+            esc_html( $pending ),
+            $pending === 1 ? 'review' : 'reviews',
+            esc_url( $url )
+        );
     }
 
     public function register_menu() {
