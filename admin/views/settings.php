@@ -31,7 +31,7 @@ $theme_colors = wp_parse_args( $settings['theme_colors'] ?? array(), $default_co
 $dd_brands        = RTG_Admin::get_dropdown_options( 'brands' );
 $dd_categories    = RTG_Admin::get_dropdown_options( 'categories' );
 $dd_sizes         = RTG_Admin::get_dropdown_options( 'sizes' );
-$dd_diameters     = RTG_Admin::get_dropdown_options( 'diameters' );
+$dd_size_diameter_map = RTG_Admin::get_size_diameter_map();
 $dd_load_ranges   = RTG_Admin::get_dropdown_options( 'load_ranges' );
 $dd_speed_ratings = RTG_Admin::get_dropdown_options( 'speed_ratings' );
 $dd_load_index_map = RTG_Admin::get_load_index_map();
@@ -184,9 +184,16 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                     <div>
                         <div class="rtg-field-row">
                             <div class="rtg-field-label-row">
-                                <label class="rtg-field-label" for="rtg_dd_diameters">Diameters</label>
+                                <label class="rtg-field-label" for="rtg_dd_size_diameters">Size &rarr; Tire Diameter</label>
                             </div>
-                            <textarea id="rtg_dd_diameters" name="rtg_dd_diameters" rows="4" class="rtg-input-wide" style="max-width:100%;font-size:14px;font-family:var(--rtg-font-stack);padding:10px 12px;border:1px solid var(--rtg-border);border-radius:8px;resize:vertical;"><?php echo esc_textarea( implode( "\n", $dd_diameters ) ); ?></textarea>
+                            <p class="rtg-field-description">Map each tire size to its overall diameter. Format: <code>size = diameter</code> per line. The diameter auto-fills when selecting a size on the tire edit form.</p>
+                            <?php
+                            $sd_lines = array();
+                            foreach ( $dd_size_diameter_map as $size => $diam ) {
+                                $sd_lines[] = $size . ' = ' . $diam;
+                            }
+                            ?>
+                            <textarea id="rtg_dd_size_diameters" name="rtg_dd_size_diameters" rows="6" class="rtg-input-wide" style="max-width:100%;font-size:14px;font-family:var(--rtg-font-stack);padding:10px 12px;border:1px solid var(--rtg-border);border-radius:8px;resize:vertical;"><?php echo esc_textarea( implode( "\n", $sd_lines ) ); ?></textarea>
                         </div>
                         <div class="rtg-field-row">
                             <div class="rtg-field-label-row">

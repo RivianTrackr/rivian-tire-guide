@@ -45,7 +45,7 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
 $dd_brands        = RTG_Admin::get_dropdown_options( 'brands' );
 $dd_categories    = RTG_Admin::get_dropdown_options( 'categories' );
 $dd_sizes         = RTG_Admin::get_dropdown_options( 'sizes' );
-$dd_diameters     = RTG_Admin::get_dropdown_options( 'diameters' );
+$dd_size_diameter_map = RTG_Admin::get_size_diameter_map();
 $dd_load_ranges   = RTG_Admin::get_dropdown_options( 'load_ranges' );
 $dd_speed_ratings = RTG_Admin::get_dropdown_options( 'speed_ratings' );
 $dd_load_index_map = RTG_Admin::get_load_index_map();
@@ -140,27 +140,17 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                         <select id="size" name="size">
                             <option value="">Select...</option>
                             <?php foreach ( $size_options as $opt ) : ?>
-                                <option value="<?php echo esc_attr( $opt ); ?>" <?php selected( $v['size'], $opt ); ?>><?php echo esc_html( $opt ); ?></option>
+                                <option value="<?php echo esc_attr( $opt ); ?>" data-diameter="<?php echo esc_attr( $dd_size_diameter_map[ $opt ] ?? '' ); ?>" <?php selected( $v['size'], $opt ); ?>><?php echo esc_html( $opt ); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">
-                            <label class="rtg-field-label" for="diameter">Diameter</label>
+                            <label class="rtg-field-label" for="diameter">Tire Diameter</label>
+                            <span class="rtg-badge rtg-badge-info">Auto-filled</span>
                         </div>
-                        <?php
-                        // Ensure the current stored value is always available in the dropdown.
-                        $diameter_options = $dd_diameters;
-                        if ( ! empty( $v['diameter'] ) && ! in_array( $v['diameter'], $diameter_options, true ) ) {
-                            $diameter_options[] = $v['diameter'];
-                        }
-                        ?>
-                        <select id="diameter" name="diameter">
-                            <option value="">Select...</option>
-                            <?php foreach ( $diameter_options as $opt ) : ?>
-                                <option value="<?php echo esc_attr( $opt ); ?>" <?php selected( $v['diameter'], $opt ); ?>><?php echo esc_html( $opt ); ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                        <p class="rtg-field-description">Auto-filled from the size selection. Configured in Settings &rarr; Size &rarr; Tire Diameter map.</p>
+                        <input type="text" id="diameter" name="diameter" value="<?php echo esc_attr( $v['diameter'] ); ?>" readonly style="background:#f5f5f7;color:#86868b;">
                     </div>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">

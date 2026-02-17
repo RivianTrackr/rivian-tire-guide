@@ -88,20 +88,11 @@
             });
         }
 
-        // --- Size → Diameter auto-fill ---
+        // --- Size → Diameter auto-fill (from data attribute mapped in Settings) ---
         $('#size').on('change', function() {
-            var size = $(this).val();
-            if (!size) return;
-            // Extract rim diameter from size string like "275/65R20" → "20"
-            var match = size.match(/R(\d+)$/i);
-            if (match) {
-                var rimSize = match[1] + '"';
-                var $diameter = $('#diameter');
-                // Set the diameter dropdown if the option exists
-                if ($diameter.find('option[value="' + rimSize + '"]').length) {
-                    $diameter.val(rimSize).trigger('change');
-                }
-            }
+            var selected = $(this).find('option:selected');
+            var diameter = selected.data('diameter') || '';
+            $('#diameter').val(diameter);
         });
 
         // --- Load index → max load auto-fill ---

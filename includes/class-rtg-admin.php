@@ -241,7 +241,11 @@ class RTG_Admin {
         'brands'        => array( 'BFGoodrich', 'Continental', 'Cooper', 'Falken', 'Firestone', 'General', 'Goodyear', 'Hankook', 'Kumho', 'Michelin', 'Nitto', 'Pirelli', 'Toyo', 'Yokohama' ),
         'categories'    => array( 'All-Season', 'All-Terrain', 'Highway', 'Mud-Terrain', 'Performance', 'Rugged Terrain', 'Winter' ),
         'sizes'         => array( '275/65R18', '275/60R20', '275/55R22' ),
-        'diameters'     => array( '18"', '20"', '22"' ),
+        'size_diameters' => array(
+            '275/65R18' => '32.1"',
+            '275/60R20' => '33"',
+            '275/55R22' => '33.9"',
+        ),
         'load_ranges'   => array( 'SL', 'HL', 'XL', 'RF', 'D', 'E', 'F' ),
         'speed_ratings' => array( 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'H', 'V', 'W', 'Y', 'Z' ),
         'load_indexes'  => array(
@@ -263,6 +267,17 @@ class RTG_Admin {
             return $saved[ $field ];
         }
         return self::$default_dropdowns[ $field ] ?? array();
+    }
+
+    /**
+     * Get size → tire diameter map (associative: size => diameter string).
+     */
+    public static function get_size_diameter_map() {
+        $saved = get_option( 'rtg_dropdown_options', array() );
+        if ( ! empty( $saved['size_diameters'] ) && is_array( $saved['size_diameters'] ) ) {
+            return $saved['size_diameters'];
+        }
+        return self::$default_dropdowns['size_diameters'];
     }
 
     /**
@@ -464,7 +479,7 @@ class RTG_Admin {
         update_option( 'rtg_settings', $settings );
 
         // Save dropdown options (one value per line in textareas).
-        $dropdown_fields = array( 'brands', 'categories', 'sizes', 'diameters', 'load_ranges', 'speed_ratings' );
+        $dropdown_fields = array( 'brands', 'categories', 'sizes', 'load_ranges', 'speed_ratings' );
         $dropdowns = array();
         foreach ( $dropdown_fields as $field ) {
             $raw = wp_unslash( $_POST[ 'rtg_dd_' . $field ] ?? '' );
@@ -472,6 +487,22 @@ class RTG_Admin {
             if ( ! empty( $lines ) ) {
                 $dropdowns[ $field ] = array_values( $lines );
             }
+        }
+
+        // Save size → diameter map (format: "275/65R20 = 34.1"" per line).
+        $sd_raw   = wp_unslash( $_POST['rtg_dd_size_diameters'] ?? '' );
+        $sd_lines = array_filter( array_map( 'trim', explode( "\n", sanitize_textarea_field( $sd_raw ) ) ), 'strlen' );
+        $sd_map   = array();
+        foreach ( $sd_lines as $line ) {
+            if ( strpos( $line, '=' ) !== false ) {
+                list( $size, $diam ) = array_map( 'trim', explode( '=', $line, 2 ) );
+                if ( ! empty( $size ) && ! empty( $diam ) ) {
+                    $sd_map[ sanitize_text_field( $size ) ] = sanitize_text_field( $diam );
+                }
+            }
+        }
+        if ( ! empty( $sd_map ) ) {
+            $dropdowns['size_diameters'] = $sd_map;
         }
 
         // Save load index map (format: "119 = 2998" per line).
