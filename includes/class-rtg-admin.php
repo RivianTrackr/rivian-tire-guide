@@ -69,15 +69,6 @@ class RTG_Admin {
 
         add_submenu_page(
             'rtg-tires',
-            'Price Fetcher',
-            'Price Fetcher',
-            'manage_options',
-            'rtg-prices',
-            array( $this, 'render_price_fetcher_page' )
-        );
-
-        add_submenu_page(
-            'rtg-tires',
             'Import / Export',
             'Import / Export',
             'manage_options',
@@ -164,16 +155,6 @@ class RTG_Admin {
         // Handle rating delete.
         if ( isset( $_GET['action'] ) && $_GET['action'] === 'delete_rating' && isset( $_GET['rating_id'] ) ) {
             $this->handle_rating_delete();
-        }
-
-        // Handle refresh all prices.
-        if ( isset( $_POST['rtg_refresh_all_prices'] ) ) {
-            $this->handle_refresh_all_prices();
-        }
-
-        // Handle single tire price refresh.
-        if ( isset( $_GET['action'] ) && $_GET['action'] === 'refresh_single' && isset( $_GET['tire_id'] ) ) {
-            $this->handle_refresh_single_price();
         }
     }
 
@@ -270,13 +251,6 @@ class RTG_Admin {
             return;
         }
         require_once RTG_PLUGIN_DIR . 'admin/views/settings.php';
-    }
-
-    public function render_price_fetcher_page() {
-        if ( ! current_user_can( 'manage_options' ) ) {
-            return;
-        }
-        require_once RTG_PLUGIN_DIR . 'admin/views/price-fetcher.php';
     }
 
     // --- Action Handlers ---
@@ -509,56 +483,6 @@ class RTG_Admin {
 
         RTG_Database::delete_wheel( $wheel_id );
         wp_redirect( admin_url( 'admin.php?page=rtg-wheels&message=deleted' ) );
-        exit;
-    }
-
-    // --- Price Fetcher Handlers ---
-
-    private function handle_refresh_all_prices() {
-        if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( 'Unauthorized' );
-        }
-
-        check_admin_referer( 'rtg_refresh_prices', 'rtg_price_nonce' );
-
-        $result = RTG_Price_Fetcher::fetch_all_prices();
-
-        $args = array(
-            'page'    => 'rtg-prices',
-            'message' => 'prices_refreshed',
-            'updated' => $result['updated'],
-            'failed'  => $result['failed'],
-            'skipped' => $result['skipped'],
-        );
-        wp_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) );
-        exit;
-    }
-
-    private function handle_refresh_single_price() {
-        if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( 'Unauthorized' );
-        }
-
-        $tire_id = sanitize_text_field( $_GET['tire_id'] );
-        check_admin_referer( 'rtg_refresh_single_' . $tire_id );
-
-        $result = RTG_Price_Fetcher::fetch_single_price( $tire_id );
-
-        if ( $result['success'] ) {
-            $args = array(
-                'page'    => 'rtg-prices',
-                'message' => 'single_refreshed',
-                'tire'    => $tire_id,
-            );
-        } else {
-            $args = array(
-                'page'    => 'rtg-prices',
-                'message' => 'single_failed',
-                'tire'    => $tire_id,
-                'error'   => substr( $result['error'] ?? 'Unknown', 0, 100 ),
-            );
-        }
-        wp_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) );
         exit;
     }
 

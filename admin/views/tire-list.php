@@ -180,17 +180,7 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
                                     <td><?php echo esc_html( $tire['model'] ); ?></td>
                                     <td><?php echo esc_html( $tire['size'] ); ?></td>
                                     <td><?php echo esc_html( $tire['category'] ); ?></td>
-                                    <td>
-                                        <?php
-                                        $fetched_p = isset( $tire['fetched_price'] ) ? floatval( $tire['fetched_price'] ) : 0;
-                                        $manual_p  = floatval( $tire['price'] );
-                                        if ( $fetched_p > 0 ) :
-                                        ?>
-                                            <span title="Fetched from affiliate link (fallback: $<?php echo esc_attr( number_format( $manual_p, 2 ) ); ?>)" style="color:#34d399;">$<?php echo esc_html( number_format( $fetched_p, 2 ) ); ?></span>
-                                        <?php else : ?>
-                                            $<?php echo esc_html( number_format( $manual_p, 2 ) ); ?>
-                                        <?php endif; ?>
-                                    </td>
+                                    <td>$<?php echo esc_html( number_format( $tire['price'], 2 ) ); ?></td>
                                     <td>
                                         <?php
                                         $grade = strtoupper( $tire['efficiency_grade'] );

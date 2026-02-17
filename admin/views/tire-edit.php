@@ -33,9 +33,6 @@ $defaults = array(
     'efficiency_score' => '',
     'efficiency_grade' => '',
     'bundle_link'      => '',
-    'fetched_price'      => '',
-    'price_updated_at'   => '',
-    'price_fetch_status' => '',
     'sort_order'       => 0,
 );
 $v = $tire ? wp_parse_args( $tire, $defaults ) : $defaults;
@@ -270,39 +267,9 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                 <div class="rtg-card-body">
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">
-                            <label class="rtg-field-label" for="price">Fallback Price ($)</label>
+                            <label class="rtg-field-label" for="price">Price ($)</label>
                         </div>
-                        <p class="rtg-field-description">Manually set price. Used when automatic price fetch is unavailable.</p>
                         <input type="number" id="price" name="price" value="<?php echo esc_attr( $v['price'] ); ?>" step="0.01" min="0" class="rtg-input-small">
-                    </div>
-                    <?php
-                    $fp = floatval( $v['fetched_price'] );
-                    $fp_status = $v['price_fetch_status'];
-                    $fp_date   = $v['price_updated_at'];
-                    ?>
-                    <div class="rtg-field-row">
-                        <div class="rtg-field-label-row">
-                            <label class="rtg-field-label">Fetched Price</label>
-                            <span class="rtg-badge rtg-badge-info">Auto-fetched</span>
-                        </div>
-                        <p class="rtg-field-description">Automatically pulled from the affiliate link. Takes priority over the fallback price when available.</p>
-                        <div style="display:flex;align-items:center;gap:12px;margin-top:4px;">
-                            <?php if ( $fp > 0 ) : ?>
-                                <span style="font-size:20px;font-weight:700;color:#34d399;">$<?php echo esc_html( number_format( $fp, 2 ) ); ?></span>
-                            <?php else : ?>
-                                <span style="font-size:16px;color:var(--rtg-text-muted,#86868b);">Not yet fetched</span>
-                            <?php endif; ?>
-                            <?php if ( $fp_status === 'success' ) : ?>
-                                <span class="rtg-badge rtg-badge-success">Success</span>
-                            <?php elseif ( $fp_status === 'failed' ) : ?>
-                                <span class="rtg-badge rtg-badge-error">Failed</span>
-                            <?php endif; ?>
-                            <?php if ( ! empty( $fp_date ) ) : ?>
-                                <span style="font-size:12px;color:var(--rtg-text-muted,#86868b);">
-                                    <?php echo esc_html( human_time_diff( strtotime( $fp_date ), current_time( 'timestamp' ) ) ); ?> ago
-                                </span>
-                            <?php endif; ?>
-                        </div>
                     </div>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">
