@@ -1413,7 +1413,7 @@ function submitTireRating(tireId, rating, reviewTitle = '', reviewText = '') {
     if (typeof tireRatingAjax !== 'undefined' && tireRatingAjax.login_url) {
       window.location.href = tireRatingAjax.login_url;
     } else {
-      alert('Please log in to rate tires');
+      alert('Please log in or sign up to review tires');
     }
     return Promise.reject('Not logged in');
   }
@@ -1566,8 +1566,14 @@ function createRatingHTML(tireId, average = 0, count = 0, userRating = 0) {
     loginLink.href = typeof tireRatingAjax !== 'undefined' ? tireRatingAjax.login_url : '/wp-login.php';
     loginLink.textContent = 'Log in';
 
+    const registerLink = document.createElement('a');
+    registerLink.href = typeof tireRatingAjax !== 'undefined' && tireRatingAjax.register_url ? tireRatingAjax.register_url : '/wp-login.php?action=register';
+    registerLink.textContent = 'sign up';
+
     loginPrompt.appendChild(loginLink);
-    loginPrompt.appendChild(document.createTextNode(' to review'));
+    loginPrompt.appendChild(document.createTextNode(' or '));
+    loginPrompt.appendChild(registerLink);
+    loginPrompt.appendChild(document.createTextNode(' to review tires'));
     reviewActions.appendChild(loginPrompt);
   }
 
