@@ -4,6 +4,12 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.7.4] - 2026-02-17
+
+### Changed
+- **Ratings admin "Review" column** — Now shows a "View Reviews" link that navigates to the Reviews page filtered by that tire, instead of displaying inline review text.
+- **Re-moderation on edit** — Editing a review (title or body) resets it to pending status for non-admin users, ensuring all changes are re-approved. Title-only reviews are now also subject to moderation.
+
 ## [1.7.3] - 2026-02-17
 
 ### Added
