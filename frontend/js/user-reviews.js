@@ -129,9 +129,16 @@
     card.appendChild(meta);
 
     if (review.review_title) {
-      var titleEl = document.createElement("div");
-      titleEl.className = "rtg-review-card-title";
-      titleEl.textContent = review.review_title;
+      if (tireUrl) {
+        var titleEl = document.createElement("a");
+        titleEl.href = tireUrl;
+        titleEl.className = "rtg-review-card-title rtg-review-card-title-link";
+        titleEl.textContent = review.review_title;
+      } else {
+        var titleEl = document.createElement("div");
+        titleEl.className = "rtg-review-card-title";
+        titleEl.textContent = review.review_title;
+      }
       card.appendChild(titleEl);
     }
 
