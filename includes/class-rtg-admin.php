@@ -220,6 +220,16 @@ class RTG_Admin {
         if ( isset( $_GET['action'] ) && in_array( $_GET['action'], array( 'approve_review', 'reject_review' ), true ) && isset( $_GET['rating_id'] ) ) {
             $this->handle_review_status();
         }
+
+        // Handle recalculate all efficiency scores.
+        if ( isset( $_GET['action'] ) && $_GET['action'] === 'recalculate_efficiency' ) {
+            $this->handle_recalculate_efficiency();
+        }
+
+        // Handle tire duplication.
+        if ( isset( $_GET['action'] ) && $_GET['action'] === 'duplicate' && isset( $_GET['tire_id'] ) ) {
+            $this->handle_tire_duplicate();
+        }
     }
 
     // --- Dropdown Options ---
@@ -358,7 +368,7 @@ class RTG_Admin {
             'utqg'             => sanitize_text_field( $post['utqg'] ?? '' ),
             'tags'             => sanitize_text_field( $post['tags'] ?? '' ),
             'link'             => esc_url_raw( $post['link'] ?? '' ),
-            'image'            => esc_url_raw( $post['image'] ?? '' ),
+            'image'            => $this->build_image_url( $post['image'] ?? '' ),
             'bundle_link'      => esc_url_raw( $post['bundle_link'] ?? '' ),
             'review_link'      => esc_url_raw( $post['review_link'] ?? '' ),
             'sort_order'       => intval( $post['sort_order'] ?? 0 ),
@@ -535,6 +545,48 @@ class RTG_Admin {
         exit;
     }
 
+    private function handle_tire_duplicate() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Unauthorized' );
+        }
+
+        $tire_id = sanitize_text_field( $_GET['tire_id'] );
+        check_admin_referer( 'rtg_duplicate_' . $tire_id );
+
+        $source = RTG_Database::get_tire( $tire_id );
+        if ( ! $source ) {
+            wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=error' ) );
+            exit;
+        }
+
+        // Build new tire data from source, with a new tire_id.
+        $new_tire_id = RTG_Database::get_next_tire_id();
+        $data = $source;
+        unset( $data['id'], $data['created_at'], $data['updated_at'] );
+        $data['tire_id'] = $new_tire_id;
+
+        $new_id = RTG_Database::insert_tire( $data );
+        if ( $new_id ) {
+            wp_redirect( admin_url( 'admin.php?page=rtg-tire-edit&id=' . $new_id . '&message=duplicated' ) );
+        } else {
+            wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=error' ) );
+        }
+        exit;
+    }
+
+    private function handle_recalculate_efficiency() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Unauthorized' );
+        }
+
+        check_admin_referer( 'rtg_recalculate_efficiency' );
+
+        $count = RTG_Database::recalculate_all_efficiency();
+
+        wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=recalculated&count=' . $count ) );
+        exit;
+    }
+
     // --- Wheel Handlers ---
 
     private function handle_wheel_save() {
@@ -587,6 +639,23 @@ class RTG_Admin {
         RTG_Database::delete_wheel( $wheel_id );
         wp_redirect( admin_url( 'admin.php?page=rtg-wheels&message=deleted' ) );
         exit;
+    }
+
+    /**
+     * Build full image URL by prepending the standard prefix if needed.
+     */
+    private function build_image_url( $value ) {
+        $value = trim( $value );
+        if ( empty( $value ) ) {
+            return '';
+        }
+        // If it already starts with http(s), treat as a full URL.
+        if ( preg_match( '#^https?://#i', $value ) ) {
+            return esc_url_raw( $value );
+        }
+        // Otherwise prepend the standard prefix.
+        $prefix = 'https://riviantrackr.com/assets/tire-guide/images/';
+        return esc_url_raw( $prefix . $value );
     }
 
     // --- CSV Import / Export ---

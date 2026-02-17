@@ -3,11 +3,18 @@
     'use strict';
 
     $(document).ready(function() {
-        // Image preview on URL change.
+        // Image preview on URL change (supports prefix-based input).
         var $imageInput = $('#image');
+        var $imagePrefix = $('#image_prefix');
         if ($imageInput.length) {
             $imageInput.on('input', function() {
-                var url = $(this).val().trim();
+                var val = $(this).val().trim();
+                var prefix = $imagePrefix.length ? $imagePrefix.val() : '';
+                // Build full URL: if input already starts with http, use as-is; otherwise prepend prefix.
+                var url = val;
+                if (val && prefix && !/^https?:\/\//i.test(val)) {
+                    url = prefix + val;
+                }
                 var $preview = $('#image-preview');
                 var $container = $('#image-preview-container');
 
@@ -49,6 +56,52 @@
             $(this).closest('.rtg-notice').fadeOut(200, function() {
                 $(this).remove();
             });
+        });
+
+        // --- Tag suggestion clicks ---
+        $(document).on('click', '.rtg-tag-suggestion', function() {
+            var tag = $(this).data('tag');
+            var $tagsInput = $('#tags');
+            var current = $tagsInput.val().trim();
+            // Parse existing tags
+            var tags = current ? current.split(',').map(function(t) { return t.trim(); }).filter(function(t) { return t.length > 0; }) : [];
+            // Toggle: remove if already present, add if not
+            var idx = tags.indexOf(tag);
+            if (idx > -1) {
+                tags.splice(idx, 1);
+                $(this).css({ 'background': '#f5f5f7', 'color': '#1d1d1f' });
+            } else {
+                tags.push(tag);
+                $(this).css({ 'background': '#0071e3', 'color': '#fff' });
+            }
+            $tagsInput.val(tags.join(', '));
+        });
+
+        // Highlight tags that are already selected on load
+        var $tagsInput = $('#tags');
+        if ($tagsInput.length && $tagsInput.val().trim()) {
+            var currentTags = $tagsInput.val().split(',').map(function(t) { return t.trim(); });
+            $('.rtg-tag-suggestion').each(function() {
+                if (currentTags.indexOf($(this).data('tag')) > -1) {
+                    $(this).css({ 'background': '#0071e3', 'color': '#fff' });
+                }
+            });
+        }
+
+        // --- Size → Diameter auto-fill ---
+        $('#size').on('change', function() {
+            var size = $(this).val();
+            if (!size) return;
+            // Extract rim diameter from size string like "275/65R20" → "20"
+            var match = size.match(/R(\d+)$/i);
+            if (match) {
+                var rimSize = match[1] + '"';
+                var $diameter = $('#diameter');
+                // Set the diameter dropdown if the option exists
+                if ($diameter.find('option[value="' + rimSize + '"]').length) {
+                    $diameter.val(rimSize).trigger('change');
+                }
+            }
         });
 
         // --- Load index → max load auto-fill ---

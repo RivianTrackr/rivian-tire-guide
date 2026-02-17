@@ -60,6 +60,13 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
         </div>
     <?php endif; ?>
 
+    <?php if ( $message === 'duplicated' ) : ?>
+        <div class="rtg-notice rtg-notice-success">
+            <span>Tire duplicated successfully. You are now editing the copy.</span>
+            <button type="button" class="rtg-notice-dismiss" aria-label="Dismiss">&times;</button>
+        </div>
+    <?php endif; ?>
+
     <div class="rtg-page-header">
         <h1 class="rtg-page-title"><?php echo esc_html( $page_title ); ?></h1>
     </div>
@@ -301,10 +308,25 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                         <div class="rtg-field-label-row">
                             <label class="rtg-field-label" for="image">Image URL</label>
                         </div>
-                        <input type="url" id="image" name="image" value="<?php echo esc_attr( $v['image'] ); ?>" class="rtg-input-wide">
-                        <?php if ( ! empty( $v['image'] ) ) : ?>
+                        <?php
+                        $image_prefix = 'https://riviantrackr.com/assets/tire-guide/images/';
+                        $image_display = $v['image'];
+                        // Strip the prefix for display so users only see the filename.
+                        if ( ! empty( $image_display ) && strpos( $image_display, $image_prefix ) === 0 ) {
+                            $image_display = substr( $image_display, strlen( $image_prefix ) );
+                        }
+                        ?>
+                        <div style="display:flex;align-items:center;gap:0;">
+                            <span style="background:#f5f5f7;border:1px solid var(--rtg-border,#d2d2d7);border-right:none;border-radius:8px 0 0 8px;padding:8px 10px;font-size:13px;color:#86868b;white-space:nowrap;"><?php echo esc_html( $image_prefix ); ?></span>
+                            <input type="text" id="image" name="image" value="<?php echo esc_attr( $image_display ); ?>" class="rtg-input-wide" style="border-radius:0 8px 8px 0;" placeholder="filename.webp">
+                        </div>
+                        <input type="hidden" id="image_prefix" value="<?php echo esc_attr( $image_prefix ); ?>">
+                        <?php
+                        $full_image_url = $v['image'];
+                        ?>
+                        <?php if ( ! empty( $full_image_url ) ) : ?>
                             <div class="rtg-image-preview">
-                                <img id="image-preview" src="<?php echo esc_url( $v['image'] ); ?>" alt="Preview">
+                                <img id="image-preview" src="<?php echo esc_url( $full_image_url ); ?>" alt="Preview">
                             </div>
                         <?php else : ?>
                             <div id="image-preview-container" class="rtg-image-preview" style="display:none;">
@@ -325,8 +347,18 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                         <div class="rtg-field-label-row">
                             <label class="rtg-field-label" for="tags">Tags</label>
                         </div>
-                        <p class="rtg-field-description">Comma-separated tags.</p>
+                        <p class="rtg-field-description">Comma-separated tags. Click a tag below to add it.</p>
                         <input type="text" id="tags" name="tags" value="<?php echo esc_attr( $v['tags'] ); ?>" class="rtg-input-wide" placeholder="e.g. EV Rated, RIV">
+                        <?php
+                        $existing_tags = RTG_Database::get_all_tags();
+                        if ( ! empty( $existing_tags ) ) :
+                        ?>
+                        <div id="rtg-tag-suggestions" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+                            <?php foreach ( $existing_tags as $tag ) : ?>
+                                <button type="button" class="rtg-tag-suggestion" data-tag="<?php echo esc_attr( $tag ); ?>" style="background:#f5f5f7;border:1px solid var(--rtg-border,#d2d2d7);border-radius:12px;padding:4px 12px;font-size:12px;color:#1d1d1f;cursor:pointer;transition:background 0.15s;"><?php echo esc_html( $tag ); ?></button>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php endif; ?>
                     </div>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">
@@ -345,13 +377,7 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                             <span style="font-size:14px;color:#86868b;">/ 100</span>
                         </div>
                     </div>
-                    <div class="rtg-field-row">
-                        <div class="rtg-field-label-row">
-                            <label class="rtg-field-label" for="sort_order">Sort Order</label>
-                        </div>
-                        <p class="rtg-field-description">Lower numbers appear first (0 = default).</p>
-                        <input type="number" id="sort_order" name="sort_order" value="<?php echo esc_attr( $v['sort_order'] ); ?>" min="0" class="rtg-input-small">
-                    </div>
+                    <input type="hidden" name="sort_order" value="<?php echo esc_attr( $v['sort_order'] ); ?>">
                 </div>
             </div>
 

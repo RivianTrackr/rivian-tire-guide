@@ -280,7 +280,7 @@ function renderComparison(rows, indexes) {
   html += specSection('fa-gauge-high', 'Performance', [
     ['Efficiency', t => effBadge(t[COL.effScore], t[COL.effGrade]), 'effScore'],
     ['Speed Rating', t => t[COL.speedRating] || "-"],
-    ['UTQG', t => t[COL.utqg] || "-"],
+    ['UTQG', t => t[COL.utqg] || "None"],
     ['3PMS Rated', t => {
       const v = (t[COL.threePms] || "").toLowerCase();
       return v === "yes" ? '<span style="color:var(--rtg-accent);font-weight:600"><i class="fa-solid fa-check"></i> Yes</span>' : 'No';
