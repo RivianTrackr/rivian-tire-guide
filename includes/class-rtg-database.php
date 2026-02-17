@@ -81,6 +81,7 @@ class RTG_Database {
                 (string) $tire['efficiency_grade'],
                 (string) $tire['bundle_link'],
                 (string) $tire['review_link'],
+                (string) $tire['created_at'],
             );
         }
 
@@ -391,9 +392,7 @@ class RTG_Database {
             'price-desc'       => 'price DESC',
             'warranty-desc'    => 'mileage_warranty DESC',
             'weight-asc'       => 'weight_lb ASC',
-            'weight-desc'      => 'weight_lb DESC',
-            'alpha'            => 'brand ASC, model ASC',
-            'alpha-desc'       => 'brand DESC, model DESC',
+            'newest'           => 'created_at DESC',
         );
         $order_sql = isset( $sort_map[ $sort ] ) ? $sort_map[ $sort ] : 'efficiency_score DESC';
 
@@ -438,6 +437,7 @@ class RTG_Database {
                 (string) $tire['efficiency_grade'],
                 (string) $tire['bundle_link'],
                 (string) $tire['review_link'],
+                (string) $tire['created_at'],
             );
         }
 
