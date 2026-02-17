@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 5;
+    const DB_VERSION = 6;
 
     public static function activate() {
         self::create_tables();
@@ -102,6 +102,7 @@ class RTG_Activator {
             rating TINYINT UNSIGNED NOT NULL,
             review_title VARCHAR(200) NOT NULL DEFAULT '',
             review_text TEXT NOT NULL,
+            review_status VARCHAR(20) NOT NULL DEFAULT 'approved',
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),
@@ -126,6 +127,7 @@ class RTG_Activator {
             3 => 'migrate_3_create_wheels_table',
             4 => 'migrate_4_add_review_link',
             5 => 'migrate_5_add_review_text',
+            6 => 'migrate_6_add_review_status',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -182,5 +184,14 @@ class RTG_Activator {
      */
     private static function migrate_5_add_review_text() {
         // Columns added by dbDelta above.
+    }
+
+    /**
+     * Migration 6: Add review_status column for review moderation.
+     * Column added by dbDelta above; existing reviews default to 'approved'.
+     */
+    private static function migrate_6_add_review_status() {
+        // Column added by dbDelta above with DEFAULT 'approved',
+        // so all existing rows are automatically approved.
     }
 }

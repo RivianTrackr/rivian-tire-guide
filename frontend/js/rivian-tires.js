@@ -1964,7 +1964,7 @@ function createReviewCard(review) {
 
   const dateEl = document.createElement('span');
   dateEl.className = 'rtg-review-date';
-  dateEl.textContent = formatReviewDate(review.created_at);
+  dateEl.textContent = formatReviewDate(review.updated_at || review.created_at);
 
   header.appendChild(authorEl);
   header.appendChild(starsEl);

@@ -567,7 +567,7 @@ class RTG_Database {
         $placeholders = implode( ', ', array_fill( 0, count( $tire_ids ), '%s' ) );
         $results = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT tire_id, AVG(rating) as average, COUNT(*) as count, SUM(CASE WHEN review_text != '' THEN 1 ELSE 0 END) as review_count FROM {$table} WHERE tire_id IN ({$placeholders}) GROUP BY tire_id",
+                "SELECT tire_id, AVG(rating) as average, COUNT(*) as count, SUM(CASE WHEN review_text != '' AND review_status = 'approved' THEN 1 ELSE 0 END) as review_count FROM {$table} WHERE tire_id IN ({$placeholders}) GROUP BY tire_id",
                 ...$tire_ids
             ),
             ARRAY_A
@@ -765,6 +765,12 @@ class RTG_Database {
         global $wpdb;
         $table = self::ratings_table();
 
+        // Determine review status: admins auto-approve, others pending.
+        $review_status = 'approved';
+        if ( ! empty( $review_text ) && ! user_can( $user_id, 'manage_options' ) ) {
+            $review_status = 'pending';
+        }
+
         $existing = $wpdb->get_var(
             $wpdb->prepare(
                 "SELECT id FROM {$table} WHERE tire_id = %s AND user_id = %d",
@@ -774,15 +780,24 @@ class RTG_Database {
         );
 
         if ( $existing ) {
+            $update_data = array(
+                'rating'       => $rating,
+                'review_title' => $review_title,
+                'review_text'  => $review_text,
+            );
+            $update_formats = array( '%d', '%s', '%s' );
+
+            // Only change status if review text is being added/changed.
+            if ( ! empty( $review_text ) ) {
+                $update_data['review_status'] = $review_status;
+                $update_formats[]             = '%s';
+            }
+
             return $wpdb->update(
                 $table,
-                array(
-                    'rating'       => $rating,
-                    'review_title' => $review_title,
-                    'review_text'  => $review_text,
-                ),
+                $update_data,
                 array( 'tire_id' => $tire_id, 'user_id' => $user_id ),
-                array( '%d', '%s', '%s' ),
+                $update_formats,
                 array( '%s', '%d' )
             );
         }
@@ -790,13 +805,14 @@ class RTG_Database {
         return $wpdb->insert(
             $table,
             array(
-                'tire_id'      => $tire_id,
-                'user_id'      => $user_id,
-                'rating'       => $rating,
-                'review_title' => $review_title,
-                'review_text'  => $review_text,
+                'tire_id'       => $tire_id,
+                'user_id'       => $user_id,
+                'rating'        => $rating,
+                'review_title'  => $review_title,
+                'review_text'   => $review_text,
+                'review_status' => $review_status,
             ),
-            array( '%s', '%d', '%d', '%s', '%s' )
+            array( '%s', '%d', '%d', '%s', '%s', '%s' )
         );
     }
 
@@ -814,10 +830,10 @@ class RTG_Database {
 
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT id, tire_id, user_id, rating, review_title, review_text, created_at
+                "SELECT id, tire_id, user_id, rating, review_title, review_text, created_at, updated_at
                  FROM {$table}
-                 WHERE tire_id = %s AND review_text != ''
-                 ORDER BY created_at DESC
+                 WHERE tire_id = %s AND review_text != '' AND review_status = 'approved'
+                 ORDER BY updated_at DESC
                  LIMIT %d OFFSET %d",
                 $tire_id,
                 $limit,
@@ -859,7 +875,7 @@ class RTG_Database {
 
         return (int) $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT COUNT(*) FROM {$table} WHERE tire_id = %s AND review_text != ''",
+                "SELECT COUNT(*) FROM {$table} WHERE tire_id = %s AND review_text != '' AND review_status = 'approved'",
                 $tire_id
             )
         );
@@ -872,6 +888,153 @@ class RTG_Database {
      * @param int    $user_id WordPress user ID.
      * @return array|null Review data or null.
      */
+    // --- Admin Review Management ---
+
+    /**
+     * Search reviews (ratings with text) for admin management.
+     *
+     * @param string $search   Search term.
+     * @param string $status   Filter by review_status (empty = all).
+     * @param int    $per_page Results per page.
+     * @param int    $page     Page number.
+     * @param string $orderby  Column to sort by.
+     * @param string $order    ASC or DESC.
+     * @return array Reviews with tire and user info.
+     */
+    public static function search_reviews( $search = '', $status = '', $per_page = 20, $page = 1, $orderby = 'r.updated_at', $order = 'DESC' ) {
+        global $wpdb;
+        $table = self::ratings_table();
+        $tires = self::tires_table();
+
+        $allowed_orderby = array( 'r.id', 'r.tire_id', 'r.rating', 'r.created_at', 'r.updated_at', 'r.review_status', 't.brand', 't.model' );
+        if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
+            $orderby = 'r.updated_at';
+        }
+        $order  = strtoupper( $order ) === 'ASC' ? 'ASC' : 'DESC';
+        $offset = max( 0, ( $page - 1 ) * $per_page );
+
+        $where  = array( "r.review_text != ''" );
+        $values = array();
+
+        if ( ! empty( $status ) ) {
+            $where[]  = 'r.review_status = %s';
+            $values[] = $status;
+        }
+
+        if ( ! empty( $search ) ) {
+            $like     = '%' . $wpdb->esc_like( $search ) . '%';
+            $where[]  = '( r.tire_id LIKE %s OR t.brand LIKE %s OR t.model LIKE %s OR r.review_title LIKE %s OR r.review_text LIKE %s )';
+            $values[] = $like;
+            $values[] = $like;
+            $values[] = $like;
+            $values[] = $like;
+            $values[] = $like;
+        }
+
+        $where_sql = implode( ' AND ', $where );
+        $values[]  = $per_page;
+        $values[]  = $offset;
+
+        return $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT r.*, t.brand, t.model FROM {$table} r LEFT JOIN {$tires} t ON r.tire_id = t.tire_id WHERE {$where_sql} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d",
+                ...$values
+            ),
+            ARRAY_A
+        );
+    }
+
+    /**
+     * Count reviews (ratings with text) for admin, optionally filtered by status.
+     *
+     * @param string $search Search term.
+     * @param string $status Filter by review_status (empty = all).
+     * @return int Count.
+     */
+    public static function get_review_count( $search = '', $status = '' ) {
+        global $wpdb;
+        $table = self::ratings_table();
+        $tires = self::tires_table();
+
+        $where  = array( "r.review_text != ''" );
+        $values = array();
+
+        if ( ! empty( $status ) ) {
+            $where[]  = 'r.review_status = %s';
+            $values[] = $status;
+        }
+
+        if ( ! empty( $search ) ) {
+            $like     = '%' . $wpdb->esc_like( $search ) . '%';
+            $where[]  = '( r.tire_id LIKE %s OR t.brand LIKE %s OR t.model LIKE %s OR r.review_title LIKE %s OR r.review_text LIKE %s )';
+            $values[] = $like;
+            $values[] = $like;
+            $values[] = $like;
+            $values[] = $like;
+            $values[] = $like;
+        }
+
+        $where_sql = implode( ' AND ', $where );
+
+        $sql = "SELECT COUNT(*) FROM {$table} r LEFT JOIN {$tires} t ON r.tire_id = t.tire_id WHERE {$where_sql}";
+        if ( ! empty( $values ) ) {
+            $sql = $wpdb->prepare( $sql, ...$values );
+        }
+
+        return (int) $wpdb->get_var( $sql );
+    }
+
+    /**
+     * Get review counts by status for the admin tabs.
+     *
+     * @return array { 'all' => int, 'pending' => int, 'approved' => int, 'rejected' => int }
+     */
+    public static function get_review_status_counts() {
+        global $wpdb;
+        $table = self::ratings_table();
+
+        $rows = $wpdb->get_results(
+            "SELECT review_status, COUNT(*) as cnt FROM {$table} WHERE review_text != '' GROUP BY review_status",
+            ARRAY_A
+        );
+
+        $counts = array( 'all' => 0, 'pending' => 0, 'approved' => 0, 'rejected' => 0 );
+        foreach ( $rows as $row ) {
+            $s = $row['review_status'];
+            if ( isset( $counts[ $s ] ) ) {
+                $counts[ $s ] = (int) $row['cnt'];
+            }
+            $counts['all'] += (int) $row['cnt'];
+        }
+
+        return $counts;
+    }
+
+    /**
+     * Update review status (approve, reject).
+     *
+     * @param int    $rating_id Rating row ID.
+     * @param string $status    New status: 'approved' or 'rejected'.
+     * @return int|false Number of rows updated.
+     */
+    public static function update_review_status( $rating_id, $status ) {
+        global $wpdb;
+        $table = self::ratings_table();
+
+        $allowed = array( 'approved', 'rejected', 'pending' );
+        if ( ! in_array( $status, $allowed, true ) ) {
+            return false;
+        }
+
+        return $wpdb->update(
+            $table,
+            array( 'review_status' => $status ),
+            array( 'id' => $rating_id ),
+            array( '%s' ),
+            array( '%d' )
+        );
+    }
+
     public static function get_user_review( $tire_id, $user_id ) {
         global $wpdb;
         $table = self::ratings_table();
