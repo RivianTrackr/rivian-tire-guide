@@ -4,11 +4,6 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.5.3] - 2026-02-17
-
-### Changed
-- **Pill background on tire spec values** — Spec values on tire cards now display with a subtle pill-shaped background (`var(--rtg-border)`, 6px radius) matching the existing wheel drawer code tag style, improving visual distinction from labels.
-
 ## [1.5.2] - 2026-02-17
 
 ### Changed
