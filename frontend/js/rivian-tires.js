@@ -2009,9 +2009,18 @@ function createReviewCard(review) {
   const header = document.createElement('div');
   header.className = 'rtg-review-card-header';
 
-  const authorEl = document.createElement('span');
-  authorEl.className = 'rtg-review-author';
-  authorEl.textContent = review.display_name || 'Anonymous';
+  const userReviewsUrl = (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.userReviewsUrl) ? rtgData.settings.userReviewsUrl : '';
+  let authorEl;
+  if (review.user_id && userReviewsUrl) {
+    authorEl = document.createElement('a');
+    authorEl.href = userReviewsUrl + '?reviewer=' + encodeURIComponent(review.user_id);
+    authorEl.className = 'rtg-review-author rtg-review-author-link';
+    authorEl.textContent = review.display_name || 'Anonymous';
+  } else {
+    authorEl = document.createElement('span');
+    authorEl.className = 'rtg-review-author';
+    authorEl.textContent = review.display_name || 'Anonymous';
+  }
 
   const starsEl = document.createElement('span');
   starsEl.className = 'rtg-review-card-stars';

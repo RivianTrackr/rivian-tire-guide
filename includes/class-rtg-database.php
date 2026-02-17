@@ -1049,4 +1049,52 @@ class RTG_Database {
             ARRAY_A
         );
     }
+
+    /**
+     * Get all approved reviews by a specific user, joined with tire info.
+     *
+     * @param int $user_id WordPress user ID.
+     * @param int $limit   Max results.
+     * @param int $offset  Offset for pagination.
+     * @return array Reviews with tire brand/model/image.
+     */
+    public static function get_user_reviews( $user_id, $limit = 20, $offset = 0 ) {
+        global $wpdb;
+        $ratings_table = self::ratings_table();
+        $tires_table   = self::tires_table();
+
+        return $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT r.id, r.tire_id, r.rating, r.review_title, r.review_text, r.created_at, r.updated_at,
+                        t.brand, t.model, t.image
+                 FROM {$ratings_table} r
+                 LEFT JOIN {$tires_table} t ON r.tire_id = t.tire_id
+                 WHERE r.user_id = %d AND r.review_text != '' AND r.review_status = 'approved'
+                 ORDER BY r.updated_at DESC
+                 LIMIT %d OFFSET %d",
+                $user_id,
+                $limit,
+                $offset
+            ),
+            ARRAY_A
+        );
+    }
+
+    /**
+     * Count approved reviews by a specific user.
+     *
+     * @param int $user_id WordPress user ID.
+     * @return int Review count.
+     */
+    public static function get_user_review_count( $user_id ) {
+        global $wpdb;
+        $table = self::ratings_table();
+
+        return (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$table} WHERE user_id = %d AND review_text != '' AND review_status = 'approved'",
+                $user_id
+            )
+        );
+    }
 }
