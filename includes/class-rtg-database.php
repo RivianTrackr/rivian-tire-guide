@@ -224,29 +224,53 @@ class RTG_Database {
         return $result;
     }
 
-    public static function get_tire_count( $search = '' ) {
+    public static function get_tire_count( $search = '', $admin_filters = array() ) {
         global $wpdb;
         $table = self::tires_table();
 
+        $where  = array( '1=1' );
+        $values = array();
+
         if ( ! empty( $search ) ) {
+            $like     = '%' . $wpdb->esc_like( $search ) . '%';
+            $where[]  = '( tire_id LIKE %s OR brand LIKE %s OR model LIKE %s OR tags LIKE %s )';
+            $values[] = $like;
+            $values[] = $like;
+            $values[] = $like;
+            $values[] = $like;
+        }
+
+        if ( ! empty( $admin_filters['brand'] ) ) {
+            $where[]  = 'brand = %s';
+            $values[] = $admin_filters['brand'];
+        }
+
+        if ( ! empty( $admin_filters['size'] ) ) {
+            $where[]  = 'size = %s';
+            $values[] = $admin_filters['size'];
+        }
+
+        if ( ! empty( $admin_filters['category'] ) ) {
+            $where[]  = 'category = %s';
+            $values[] = $admin_filters['category'];
+        }
+
+        $where_sql = implode( ' AND ', $where );
+
+        if ( ! empty( $values ) ) {
             return (int) $wpdb->get_var(
-                $wpdb->prepare(
-                    "SELECT COUNT(*) FROM {$table} WHERE tire_id LIKE %s OR brand LIKE %s OR model LIKE %s",
-                    '%' . $wpdb->esc_like( $search ) . '%',
-                    '%' . $wpdb->esc_like( $search ) . '%',
-                    '%' . $wpdb->esc_like( $search ) . '%'
-                )
+                $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}", ...$values )
             );
         }
 
-        return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
+        return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}" );
     }
 
-    public static function search_tires( $search = '', $per_page = 20, $page = 1, $orderby = 'id', $order = 'ASC' ) {
+    public static function search_tires( $search = '', $per_page = 20, $page = 1, $orderby = 'id', $order = 'ASC', $admin_filters = array() ) {
         global $wpdb;
         $table = self::tires_table();
 
-        $allowed_orderby = array( 'id', 'tire_id', 'brand', 'model', 'size', 'category', 'price', 'mileage_warranty', 'weight_lb', 'efficiency_score', 'efficiency_grade' );
+        $allowed_orderby = array( 'id', 'tire_id', 'brand', 'model', 'size', 'category', 'price', 'mileage_warranty', 'weight_lb', 'efficiency_score', 'efficiency_grade', 'load_index' );
         if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
             $orderby = 'id';
         }
@@ -254,25 +278,41 @@ class RTG_Database {
 
         $offset = max( 0, ( $page - 1 ) * $per_page );
 
+        $where  = array( '1=1' );
+        $values = array();
+
         if ( ! empty( $search ) ) {
-            return $wpdb->get_results(
-                $wpdb->prepare(
-                    "SELECT * FROM {$table} WHERE tire_id LIKE %s OR brand LIKE %s OR model LIKE %s ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d",
-                    '%' . $wpdb->esc_like( $search ) . '%',
-                    '%' . $wpdb->esc_like( $search ) . '%',
-                    '%' . $wpdb->esc_like( $search ) . '%',
-                    $per_page,
-                    $offset
-                ),
-                ARRAY_A
-            );
+            $like     = '%' . $wpdb->esc_like( $search ) . '%';
+            $where[]  = '( tire_id LIKE %s OR brand LIKE %s OR model LIKE %s OR tags LIKE %s )';
+            $values[] = $like;
+            $values[] = $like;
+            $values[] = $like;
+            $values[] = $like;
         }
+
+        if ( ! empty( $admin_filters['brand'] ) ) {
+            $where[]  = 'brand = %s';
+            $values[] = $admin_filters['brand'];
+        }
+
+        if ( ! empty( $admin_filters['size'] ) ) {
+            $where[]  = 'size = %s';
+            $values[] = $admin_filters['size'];
+        }
+
+        if ( ! empty( $admin_filters['category'] ) ) {
+            $where[]  = 'category = %s';
+            $values[] = $admin_filters['category'];
+        }
+
+        $where_sql = implode( ' AND ', $where );
+        $values[]  = $per_page;
+        $values[]  = $offset;
 
         return $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$table} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d",
-                $per_page,
-                $offset
+                "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d",
+                ...$values
             ),
             ARRAY_A
         );
@@ -447,6 +487,49 @@ class RTG_Database {
         );
     }
 
+    /**
+     * Get distinct values for a column (for admin filter dropdowns).
+     *
+     * @param string $column Column name.
+     * @return array Sorted list of distinct non-empty values.
+     */
+    public static function get_distinct_values( $column ) {
+        global $wpdb;
+        $table = self::tires_table();
+
+        $allowed = array( 'brand', 'size', 'category', 'diameter', 'load_range', 'speed_rating' );
+        if ( ! in_array( $column, $allowed, true ) ) {
+            return array();
+        }
+
+        return $wpdb->get_col( "SELECT DISTINCT {$column} FROM {$table} WHERE {$column} != '' ORDER BY {$column} ASC" );
+    }
+
+    /**
+     * Get all unique tags used across tires.
+     *
+     * @return array Sorted list of unique tag strings.
+     */
+    public static function get_all_tags() {
+        global $wpdb;
+        $table = self::tires_table();
+        $rows = $wpdb->get_col( "SELECT DISTINCT tags FROM {$table} WHERE tags != ''" );
+
+        $tags = array();
+        foreach ( $rows as $tag_string ) {
+            $parts = array_map( 'trim', explode( ',', $tag_string ) );
+            foreach ( $parts as $part ) {
+                if ( $part !== '' ) {
+                    $tags[ $part ] = true;
+                }
+            }
+        }
+
+        $result = array_keys( $tags );
+        sort( $result );
+        return $result;
+    }
+
     // --- Efficiency Calculation ---
 
     /**
@@ -552,6 +635,35 @@ class RTG_Database {
             'efficiency_score' => $score,
             'efficiency_grade' => $grade,
         );
+    }
+
+    /**
+     * Recalculate efficiency score and grade for all tires.
+     *
+     * Useful when the algorithm changes or data gets out of sync.
+     *
+     * @return int Number of tires updated.
+     */
+    public static function recalculate_all_efficiency() {
+        $tires = self::get_all_tires();
+        $count = 0;
+
+        foreach ( $tires as $tire ) {
+            $efficiency = self::calculate_efficiency( $tire );
+            if (
+                (int) $tire['efficiency_score'] !== $efficiency['efficiency_score'] ||
+                $tire['efficiency_grade'] !== $efficiency['efficiency_grade']
+            ) {
+                self::update_tire( $tire['tire_id'], array(
+                    'efficiency_score' => $efficiency['efficiency_score'],
+                    'efficiency_grade' => $efficiency['efficiency_grade'],
+                ) );
+                $count++;
+            }
+        }
+
+        self::flush_cache();
+        return $count;
     }
 
     // --- Ratings ---

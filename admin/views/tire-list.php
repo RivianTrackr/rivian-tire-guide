@@ -5,23 +5,37 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Display admin notices.
 $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) : '';
+$recalc_count = isset( $_GET['count'] ) ? intval( $_GET['count'] ) : 0;
 $notices = array(
     'added'        => array( 'success', 'Tire added successfully.' ),
     'updated'      => array( 'success', 'Tire updated successfully.' ),
     'deleted'      => array( 'success', 'Tire deleted successfully.' ),
     'bulk_deleted' => array( 'success', 'Selected tires deleted successfully.' ),
+    'duplicated'   => array( 'success', 'Tire duplicated successfully. You are now editing the copy.' ),
+    'recalculated' => array( 'success', 'Efficiency scores recalculated. ' . $recalc_count . ' tire(s) updated.' ),
     'error'        => array( 'error', 'An error occurred.' ),
 );
 
-// Search.
+// Search and filters.
 $search = isset( $_GET['s'] ) ? sanitize_text_field( $_GET['s'] ) : '';
 $orderby = isset( $_GET['orderby'] ) ? sanitize_text_field( $_GET['orderby'] ) : 'id';
 $order = isset( $_GET['order'] ) ? sanitize_text_field( $_GET['order'] ) : 'ASC';
 $paged = isset( $_GET['paged'] ) ? max( 1, intval( $_GET['paged'] ) ) : 1;
 $per_page = 20;
 
-$tires = RTG_Database::search_tires( $search, $per_page, $paged, $orderby, $order );
-$total = RTG_Database::get_tire_count( $search );
+$admin_filters = array(
+    'brand'    => isset( $_GET['filter_brand'] ) ? sanitize_text_field( $_GET['filter_brand'] ) : '',
+    'size'     => isset( $_GET['filter_size'] ) ? sanitize_text_field( $_GET['filter_size'] ) : '',
+    'category' => isset( $_GET['filter_category'] ) ? sanitize_text_field( $_GET['filter_category'] ) : '',
+);
+
+$tires = RTG_Database::search_tires( $search, $per_page, $paged, $orderby, $order, $admin_filters );
+$total = RTG_Database::get_tire_count( $search, $admin_filters );
+
+// Get distinct values for filter dropdowns.
+$filter_brands     = RTG_Database::get_distinct_values( 'brand' );
+$filter_sizes      = RTG_Database::get_distinct_values( 'size' );
+$filter_categories = RTG_Database::get_distinct_values( 'category' );
 $total_pages = ceil( $total / $per_page );
 
 // Find the page containing the [rivian_tire_guide] shortcode for deep-link URLs.
@@ -60,14 +74,36 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
     <div class="rtg-page-header">
         <h1 class="rtg-page-title">Tire Guide</h1>
         <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit' ) ); ?>" class="rtg-page-title-action">Add New</a>
+        <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=rtg-tires&action=recalculate_efficiency' ), 'rtg_recalculate_efficiency' ) ); ?>" class="rtg-page-title-action" style="background:#f5f5f7;color:#1d1d1f;" onclick="return confirm('Recalculate efficiency scores for all tires?');">Recalculate Grades</a>
     </div>
 
-    <!-- Search -->
+    <!-- Search & Filters -->
     <form method="get">
         <input type="hidden" name="page" value="rtg-tires">
-        <div class="rtg-search-box">
-            <input type="search" id="tire-search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="Search by brand, model, or ID...">
-            <button type="submit" class="rtg-btn rtg-btn-secondary">Search</button>
+        <div class="rtg-search-box" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+            <input type="search" id="tire-search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="Search by brand, model, ID, or tags..." style="min-width:220px;">
+            <select name="filter_brand" style="min-width:140px;">
+                <option value="">All Brands</option>
+                <?php foreach ( $filter_brands as $b ) : ?>
+                    <option value="<?php echo esc_attr( $b ); ?>" <?php selected( $admin_filters['brand'], $b ); ?>><?php echo esc_html( $b ); ?></option>
+                <?php endforeach; ?>
+            </select>
+            <select name="filter_size" style="min-width:140px;">
+                <option value="">All Sizes</option>
+                <?php foreach ( $filter_sizes as $sz ) : ?>
+                    <option value="<?php echo esc_attr( $sz ); ?>" <?php selected( $admin_filters['size'], $sz ); ?>><?php echo esc_html( $sz ); ?></option>
+                <?php endforeach; ?>
+            </select>
+            <select name="filter_category" style="min-width:140px;">
+                <option value="">All Categories</option>
+                <?php foreach ( $filter_categories as $cat ) : ?>
+                    <option value="<?php echo esc_attr( $cat ); ?>" <?php selected( $admin_filters['category'], $cat ); ?>><?php echo esc_html( $cat ); ?></option>
+                <?php endforeach; ?>
+            </select>
+            <button type="submit" class="rtg-btn rtg-btn-secondary">Filter</button>
+            <?php if ( $search || $admin_filters['brand'] || $admin_filters['size'] || $admin_filters['category'] ) : ?>
+                <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires' ) ); ?>" class="rtg-btn rtg-btn-secondary" style="text-decoration:none;">Clear</a>
+            <?php endif; ?>
         </div>
     </form>
 
@@ -119,6 +155,9 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
                                 <a href="<?php echo esc_url( $sort_url( 'model' ) ); ?>">Model<?php echo $sort_indicator( 'model' ); ?></a>
                             </th>
                             <th>Size</th>
+                            <th class="sortable <?php echo $orderby === 'load_index' ? 'sorted' : ''; ?>">
+                                <a href="<?php echo esc_url( $sort_url( 'load_index' ) ); ?>">Load Index<?php echo $sort_indicator( 'load_index' ); ?></a>
+                            </th>
                             <th>Category</th>
                             <th class="sortable <?php echo $orderby === 'price' ? 'sorted' : ''; ?>">
                                 <a href="<?php echo esc_url( $sort_url( 'price' ) ); ?>">Price<?php echo $sort_indicator( 'price' ); ?></a>
@@ -132,7 +171,7 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
                     <tbody>
                         <?php if ( empty( $tires ) ) : ?>
                             <tr>
-                                <td colspan="10">
+                                <td colspan="11">
                                     <div class="rtg-empty-state">
                                         <span class="dashicons dashicons-car"></span>
                                         <h3>No tires found</h3>
@@ -166,6 +205,9 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
                                             <span class="edit">
                                                 <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit&id=' . $tire['id'] ) ); ?>">Edit</a> |
                                             </span>
+                                            <span class="duplicate">
+                                                <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=rtg-tires&action=duplicate&tire_id=' . $tire['tire_id'] ), 'rtg_duplicate_' . $tire['tire_id'] ) ); ?>">Duplicate</a> |
+                                            </span>
                                             <?php if ( $rtg_guide_url ) : ?>
                                             <span class="view">
                                                 <a href="<?php echo esc_url( add_query_arg( 'tire', $tire['tire_id'], $rtg_guide_url ) ); ?>" target="_blank" rel="noopener noreferrer">View</a> |
@@ -179,6 +221,7 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
                                     <td><?php echo esc_html( $tire['brand'] ); ?></td>
                                     <td><?php echo esc_html( $tire['model'] ); ?></td>
                                     <td><?php echo esc_html( $tire['size'] ); ?></td>
+                                    <td><?php echo esc_html( $tire['load_index'] ); ?></td>
                                     <td><?php echo esc_html( $tire['category'] ); ?></td>
                                     <td>$<?php echo esc_html( number_format( $tire['price'], 2 ) ); ?></td>
                                     <td>

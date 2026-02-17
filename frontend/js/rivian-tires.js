@@ -2718,7 +2718,7 @@ function createSingleCard(row) {
     ['Load Range', safeString(loadRange)],
     ['Speed Rating', safeString(speed)],
     ['Max PSI', safeString(psi)],
-    ['UTQG', safeString(utqg)]
+    ['UTQG', safeString(utqg) || 'None']
   ];
 
   specs.forEach(([label, value]) => {
