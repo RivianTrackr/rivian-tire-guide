@@ -175,7 +175,7 @@ $render_stars = function ( $rating ) {
                                         <span style="color: var(--rtg-text-muted, #64748b); font-style: italic; font-size: 13px;">&mdash;</span>
                                     <?php endif; ?>
                                 </td>
-                                <td><?php echo esc_html( date( 'M j, Y', strtotime( $r['created_at'] ) ) ); ?></td>
+                                <td><?php echo esc_html( date( 'M j, Y', strtotime( $r['updated_at'] ?? $r['created_at'] ) ) ); ?></td>
                                 <td>
                                     <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=rtg-ratings&action=delete_rating&rating_id=' . $r['id'] ), 'rtg_delete_rating_' . $r['id'] ) ); ?>" class="submitdelete" style="color: var(--rtg-error); text-decoration: none; font-size: 13px;" onclick="return confirm('Delete this rating?');">Delete</a>
                                 </td>
