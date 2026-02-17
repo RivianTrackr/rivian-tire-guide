@@ -135,6 +135,7 @@ class RTG_Frontend {
             'nonce'        => wp_create_nonce( 'tire_rating_nonce' ),
             'is_logged_in' => is_user_logged_in(),
             'login_url'    => wp_login_url( get_permalink() ),
+            'timezone'     => wp_timezone_string(),
         ) );
     }
 }

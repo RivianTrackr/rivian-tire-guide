@@ -1997,15 +1997,23 @@ function renderStarsHTML(rating) {
 }
 
 function formatReviewDate(dateStr) {
-  // Append 'Z' when the server returns a bare datetime (no timezone) so
-  // JS interprets it as UTC instead of local time.
+  // MySQL stores CURRENT_TIMESTAMP in UTC. Append 'Z' so JS parses correctly.
   const normalized = dateStr && !dateStr.includes('T') && !dateStr.includes('Z')
     ? dateStr.replace(' ', 'T') + 'Z'
     : dateStr;
   const date = new Date(normalized);
-  const now = new Date();
-  const diffMs = now - date;
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  // Use the WordPress timezone (IANA string e.g. "America/New_York")
+  // to determine calendar day boundaries for "Today"/"Yesterday".
+  const wpTz = (typeof tireRatingAjax !== 'undefined' && tireRatingAjax.timezone) || undefined;
+  const opts = wpTz ? { timeZone: wpTz } : {};
+
+  // Get the calendar date in the WP timezone for both "now" and the review.
+  const nowParts = new Intl.DateTimeFormat('en-CA', { ...opts, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  const dateParts = new Intl.DateTimeFormat('en-CA', { ...opts, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+  const nowDay = new Date(nowParts + 'T00:00:00');
+  const reviewDay = new Date(dateParts + 'T00:00:00');
+  const diffDays = Math.round((nowDay - reviewDay) / (1000 * 60 * 60 * 24));
 
   if (diffDays <= 0) return 'Today';
   if (diffDays === 1) return 'Yesterday';
@@ -2014,7 +2022,7 @@ function formatReviewDate(dateStr) {
     const months = Math.floor(diffDays / 30);
     return `${months} month${months !== 1 ? 's' : ''} ago`;
   }
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return date.toLocaleDateString('en-US', { ...opts, month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function setupEventDelegation() {
