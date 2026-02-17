@@ -193,13 +193,12 @@
         else if (score >= 65) grade = 'B';
         else if (score >= 50) grade = 'C';
         else if (score >= 35) grade = 'D';
-        else if (score >= 20) grade = 'E';
         else grade = 'F';
 
         // Grade CSS class.
         var gradeClasses = {
             A: 'rtg-grade-a', B: 'rtg-grade-b', C: 'rtg-grade-c',
-            D: 'rtg-grade-d', E: 'rtg-grade-e', F: 'rtg-grade-f'
+            D: 'rtg-grade-d', F: 'rtg-grade-f'
         };
 
         // Update display.
@@ -207,7 +206,7 @@
         var $score = $('#rtg-eff-score');
 
         $grade
-            .removeClass('rtg-grade-a rtg-grade-b rtg-grade-c rtg-grade-d rtg-grade-e rtg-grade-f rtg-grade-none')
+            .removeClass('rtg-grade-a rtg-grade-b rtg-grade-c rtg-grade-d rtg-grade-f rtg-grade-none')
             .addClass(gradeClasses[grade])
             .text(grade);
         $score.text(score);
