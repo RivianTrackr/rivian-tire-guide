@@ -621,9 +621,6 @@ body.modal-open {
   color: var(--rtg-text-primary);
   text-align: right;
   font-family: monospace;
-  background-color: var(--rtg-border);
-  padding: 2px 6px;
-  border-radius: 6px;
 }
 
 /* Card actions */
