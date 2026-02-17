@@ -71,8 +71,12 @@ const TOOLTIP_DATA = {
     content: 'Filters for tires labeled as EV Rated in their specs or marketing. These are typically optimized for electric vehicles.'
   },
   'Studded Available Filter': {
-    title: 'Studded Available Filter', 
+    title: 'Studded Available Filter',
     content: 'Filters for tires marked as "Studded Available" — these can be fitted with studs for enhanced traction on ice.'
+  },
+  'Officially Reviewed Filter': {
+    title: 'Officially Reviewed Filter',
+    content: 'Filters for tires that have an official review from RivianTrackr — either a written article or video review.'
   },
   'Efficiency Score': {
     title: 'Efficiency Score',
@@ -2252,6 +2256,7 @@ function applyFiltersFromURL() {
   setChecked("filter3pms", params.get("3pms"));
   setChecked("filterEVRated", params.get("ev"));
   setChecked("filterStudded", params.get("studded"));
+  setChecked("filterReviewed", params.get("reviewed"));
 
   const sort = params.get("sort");
   if (sort && ALLOWED_SORT_OPTIONS.includes(sort)) {
@@ -2946,7 +2951,8 @@ function updateURLFromFilters() {
   if (getChecked("filter3pms")) params.set("3pms", "1");
   if (getChecked("filterEVRated")) params.set("ev", "1");
   if (getChecked("filterStudded")) params.set("studded", "1");
-  
+  if (getChecked("filterReviewed")) params.set("reviewed", "1");
+
   const currentSort = getVal("sortBy");
   if (currentSort && ALLOWED_SORT_OPTIONS.includes(currentSort) && currentSort !== "rating-desc") {
     params.set("sort", currentSort);
@@ -3025,7 +3031,8 @@ function getFilteredIndexes(filters) {
     if (filters["3PMS"] && !safeString(row[9]).toLowerCase().includes("yes")) return false;
     if (filters["EVRated"] && !safeString(row[17]).toLowerCase().includes("ev rated")) return false;
     if (filters["Studded"] && !safeString(row[17]).toLowerCase().includes("studded available")) return false;
-    
+    if (filters["Reviewed"] && !safeString(row[23])) return false;
+
     return true;
   });
 }
@@ -3038,6 +3045,7 @@ function filterAndRender() {
   const filter3pms = getDOMElement("filter3pms");
   const filterEVRated = getDOMElement("filterEVRated");
   const filterStudded = getDOMElement("filterStudded");
+  const filterReviewed = getDOMElement("filterReviewed");
   const filterSize = getDOMElement("filterSize");
   const filterBrand = getDOMElement("filterBrand");
   const filterCategory = getDOMElement("filterCategory");
@@ -3056,6 +3064,7 @@ function filterAndRender() {
     "3PMS": filter3pms?.checked || false,
     "EVRated": filterEVRated?.checked || false,
     "Studded": filterStudded?.checked || false,
+    "Reviewed": filterReviewed?.checked || false,
     Size: filterSize?.value && VALID_SIZES.includes(filterSize.value) ? filterSize.value : "",
     Brand: filterBrand?.value && VALID_BRANDS.includes(filterBrand.value) ? filterBrand.value : "",
     Category: filterCategory?.value && VALID_CATEGORIES.includes(filterCategory.value) ? filterCategory.value : ""
@@ -3271,7 +3280,7 @@ function resetFilters() {
     if (el) el.value = value;
   });
   
-  const checkboxes = ["filter3pms", "filterEVRated", "filterStudded"];
+  const checkboxes = ["filter3pms", "filterEVRated", "filterStudded", "filterReviewed"];
   checkboxes.forEach(id => {
     const el = getDOMElement(id);
     if (el) el.checked = false;
@@ -3355,6 +3364,9 @@ function renderActiveFilterChips() {
   }
   if (getDOMElement("filterStudded")?.checked) {
     chips.push({ label: "Studded", value: "Yes", clear: () => { getDOMElement("filterStudded").checked = false; } });
+  }
+  if (getDOMElement("filterReviewed")?.checked) {
+    chips.push({ label: "Reviewed", value: "Yes", clear: () => { getDOMElement("filterReviewed").checked = false; } });
   }
 
   container.innerHTML = "";
@@ -3449,6 +3461,7 @@ function initializeUI() {
     { id: "filter3pms", listener: filterFn },
     { id: "filterEVRated", listener: filterFn },
     { id: "filterStudded", listener: filterFn },
+    { id: "filterReviewed", listener: filterFn },
   ];
 
   inputsToWatch.forEach(({ id, listener }) => {

@@ -88,6 +88,18 @@ if ( ! defined( 'ABSPATH' ) ) {
           <input type="checkbox" id="filterStudded" aria-label="Studded Available"/>
           <span class="switch-slider" onclick="document.getElementById('filterStudded').click()"></span>
         </div>
+        <div class="switch-label">
+          <span class="switch-text">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span>Officially Reviewed</span>
+              <button class="info-tooltip-trigger" data-tooltip-key="Officially Reviewed Filter" style="background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onmouseenter="this.style.color='var(--rtg-accent, #5ec095)'; this.style.backgroundColor='color-mix(in srgb, var(--rtg-accent, #5ec095) 10%, transparent)'" onmouseleave="this.style.color='#94a3b8'; this.style.backgroundColor='transparent'">
+                <i class="fa-solid fa-circle-info"></i>
+              </button>
+            </div>
+          </span>
+          <input type="checkbox" id="filterReviewed" aria-label="Officially Reviewed"/>
+          <span class="switch-slider" onclick="document.getElementById('filterReviewed').click()"></span>
+        </div>
         <label class="switch-label reset-white" onclick="resetFilters()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resetFilters()}" role="button" tabindex="0">
           <span class="switch-text">
             <i class="fa-solid fa-rotate-left" style="margin-right: 6px;"></i>Clear All

@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.7.6] - 2026-02-17
+
+### Added
+- "Officially Reviewed" toggle filter to show only tires with an official RivianTrackr review.
+
 ## [1.7.5] - 2026-02-17
 
 ### Changed
