@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.6.0] - 2026-02-17
+
+### Added
+- **Review link on tire cards** — Each tire can now link to an article or video review via a new `review_link` field. The button adapts based on the URL: YouTube/TikTok links show "Watch Review" with a play icon, while article links (RivianTrackr, Instagram) show "Read Review" with a newspaper icon. Styled with a purple CTA button.
+- **Review link in admin** — New "Review Link" input in the Pricing & Links section of the tire edit form, with description text guiding accepted platforms.
+- **Review link in CSV import/export** — The `review_link` column is included in CSV exports and recognized during imports.
+- **Review link on compare page** — The "Where to Buy" section now includes the review link alongside existing View Tire and Bundle buttons.
+- **Review link URL validation** — Frontend validates review links against an allowlist of domains: riviantrackr.com, YouTube, TikTok, and Instagram.
+- **Database migration 4** — Adds the `review_link` column to the tires table for existing installations.
+
 ## [1.5.2] - 2026-02-17
 
 ### Changed

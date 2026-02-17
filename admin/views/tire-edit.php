@@ -33,6 +33,7 @@ $defaults = array(
     'efficiency_score' => '',
     'efficiency_grade' => '',
     'bundle_link'      => '',
+    'review_link'      => '',
     'sort_order'       => 0,
 );
 $v = $tire ? wp_parse_args( $tire, $defaults ) : $defaults;
@@ -288,6 +289,13 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                             <label class="rtg-field-label" for="bundle_link">Bundle Link</label>
                         </div>
                         <input type="url" id="bundle_link" name="bundle_link" value="<?php echo esc_attr( $v['bundle_link'] ); ?>" class="rtg-input-wide">
+                    </div>
+                    <div class="rtg-field-row">
+                        <div class="rtg-field-label-row">
+                            <label class="rtg-field-label" for="review_link">Review Link</label>
+                        </div>
+                        <p class="rtg-field-description">Link to your article or video review (YouTube, RivianTrackr, etc.).</p>
+                        <input type="url" id="review_link" name="review_link" value="<?php echo esc_attr( $v['review_link'] ); ?>" class="rtg-input-wide">
                     </div>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">

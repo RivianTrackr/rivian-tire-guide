@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 3;
+    const DB_VERSION = 4;
 
     public static function activate() {
         self::create_tables();
@@ -80,6 +80,7 @@ class RTG_Activator {
             efficiency_score INT UNSIGNED NOT NULL DEFAULT 0,
             efficiency_grade CHAR(1) NOT NULL DEFAULT '',
             bundle_link TEXT NOT NULL,
+            review_link TEXT NOT NULL,
             sort_order INT UNSIGNED NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -121,6 +122,7 @@ class RTG_Activator {
             1 => 'migrate_1_initial_schema',
             2 => 'migrate_2_add_tags_index',
             3 => 'migrate_3_create_wheels_table',
+            4 => 'migrate_4_add_review_link',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -161,5 +163,13 @@ class RTG_Activator {
      */
     private static function migrate_3_create_wheels_table() {
         // Table created by dbDelta above.
+    }
+
+    /**
+     * Migration 4: Add review_link column for linking tire reviews (articles/videos).
+     * Column creation handled by dbDelta above; this marks the migration.
+     */
+    private static function migrate_4_add_review_link() {
+        // Column added by dbDelta above.
     }
 }

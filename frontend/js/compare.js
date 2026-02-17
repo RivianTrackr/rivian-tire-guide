@@ -58,6 +58,30 @@ function safeLinkURL(url) {
   }
 }
 
+function safeReviewLinkURL(url) {
+  if (typeof url !== "string" || !url.trim()) return "";
+  const trimmed = url.trim();
+  try {
+    const urlObj = new URL(trimmed);
+    if (urlObj.protocol !== 'https:') return "";
+    if (urlObj.pathname.includes('..')) return "";
+    const allowedDomains = [
+      'riviantrackr.com', 'www.riviantrackr.com',
+      'youtube.com', 'www.youtube.com', 'youtu.be',
+      'tiktok.com', 'www.tiktok.com',
+      'instagram.com', 'www.instagram.com'
+    ];
+    const hostname = urlObj.hostname.toLowerCase();
+    const isAllowed = allowedDomains.some(domain =>
+      hostname === domain || hostname.endsWith('.' + domain)
+    );
+    if (!isAllowed) return "";
+    return trimmed;
+  } catch {
+    return "";
+  }
+}
+
 function getCompareIndexes() {
   const params = new URLSearchParams(window.location.search);
   return (params.get("compare") || "")
@@ -92,7 +116,7 @@ const COL = {
   price: 6, warranty: 7, weight: 8, threePms: 9, tread: 10,
   loadIndex: 11, maxLoad: 12, loadRange: 13, speedRating: 14,
   psi: 15, utqg: 16, tags: 17, link: 18, image: 19,
-  effScore: 20, effGrade: 21, bundleLink: 22
+  effScore: 20, effGrade: 21, bundleLink: 22, reviewLink: 23
 };
 
 // --- Efficiency badge colors ---
@@ -150,7 +174,8 @@ function renderTags(tagStr) {
 function renderCTAs(tire) {
   const link = safeLinkURL(tire[COL.link]);
   const bundle = safeLinkURL(tire[COL.bundleLink]);
-  if (!link && !bundle) return "-";
+  const review = safeReviewLinkURL(tire[COL.reviewLink]);
+  if (!link && !bundle && !review) return "-";
   let html = '<div class="cmp-cta-wrap">';
   if (link) {
     html += `<a href="${escapeHTML(link)}" target="_blank" rel="noopener noreferrer" class="cmp-cta cmp-cta-primary">
@@ -159,6 +184,13 @@ function renderCTAs(tire) {
   if (bundle) {
     html += `<a href="${escapeHTML(bundle)}" target="_blank" rel="noopener noreferrer" class="cmp-cta cmp-cta-bundle">
       Wheel &amp; Tire Bundle <i class="fa-solid fa-arrow-up-right-from-square"></i></a>`;
+  }
+  if (review) {
+    const isVideo = review.includes('youtube.com') || review.includes('youtu.be') || review.includes('tiktok.com');
+    const icon = isVideo ? 'fa-circle-play' : 'fa-newspaper';
+    const label = isVideo ? 'Watch Review' : 'Read Review';
+    html += `<a href="${escapeHTML(review)}" target="_blank" rel="noopener noreferrer" class="cmp-cta cmp-cta-review">
+      ${label} <i class="fa-solid ${icon}"></i></a>`;
   }
   html += '</div>';
   return html;

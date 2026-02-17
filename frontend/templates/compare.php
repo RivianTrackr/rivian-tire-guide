@@ -337,6 +337,11 @@
       color: #fff;
     }
     .cmp-cta-bundle:hover { background: #1d4ed8; }
+    .cmp-cta-review {
+      background: #7c3aed;
+      color: #fff;
+    }
+    .cmp-cta-review:hover { background: #6d28d9; }
 
     /* --- Empty state --- */
     .cmp-empty {
