@@ -1489,6 +1489,16 @@ a.rtg-review-author-link:hover {
   color: var(--rtg-text-heading, #f8fafc);
   margin-bottom: 4px;
 }
+a.rtg-review-card-title-link {
+  display: block;
+  text-decoration: none;
+  color: var(--rtg-text-heading, #f8fafc);
+  transition: opacity 0.15s;
+}
+a.rtg-review-card-title-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
 .rtg-review-card-body {
   font-size: 14px;
   color: var(--rtg-text-primary, #e2e8f0);
