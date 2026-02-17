@@ -188,7 +188,7 @@ function renderCTAs(tire) {
   if (review) {
     const isVideo = review.includes('youtube.com') || review.includes('youtu.be') || review.includes('tiktok.com');
     const icon = isVideo ? 'fa-circle-play' : 'fa-newspaper';
-    const label = isVideo ? 'Watch Review' : 'Read Review';
+    const label = isVideo ? 'Watch Official Review' : 'Read Official Review';
     html += `<a href="${escapeHTML(review)}" target="_blank" rel="noopener noreferrer" class="cmp-cta cmp-cta-review">
       ${label} <i class="fa-solid ${icon}"></i></a>`;
   }
