@@ -71,11 +71,9 @@
   }
 
   function buildTireUrl(review) {
-    if (!tireGuideUrl) return "";
-    var name = ((review.brand || "") + " " + (review.model || "")).trim();
-    if (!name) return "";
+    if (!tireGuideUrl || !review.tire_id) return "";
     var url = new URL(tireGuideUrl);
-    url.searchParams.set("search", name);
+    url.searchParams.set("tire", review.tire_id);
     return url.toString();
   }
 
