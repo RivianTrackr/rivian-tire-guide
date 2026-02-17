@@ -57,9 +57,23 @@ class RTG_Frontend {
             true
         );
 
+        // Find the page containing the tire guide shortcode for the back link.
+        $tire_guide_url = home_url( '/' );
+        $guide_pages = get_posts( array(
+            'post_type'   => 'page',
+            'post_status' => 'publish',
+            's'           => '[rivian_tire_guide]',
+            'numberposts' => 1,
+            'fields'      => 'ids',
+        ) );
+        if ( ! empty( $guide_pages ) ) {
+            $tire_guide_url = get_permalink( $guide_pages[0] );
+        }
+
         wp_localize_script( 'rtg-user-reviews', 'rtgUserReviews', array(
-            'ajaxurl' => admin_url( 'admin-ajax.php' ),
-            'nonce'   => wp_create_nonce( 'tire_rating_nonce' ),
+            'ajaxurl'      => admin_url( 'admin-ajax.php' ),
+            'nonce'        => wp_create_nonce( 'tire_rating_nonce' ),
+            'tireGuideUrl' => $tire_guide_url,
         ) );
     }
 
