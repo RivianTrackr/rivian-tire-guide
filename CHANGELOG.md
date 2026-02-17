@@ -4,7 +4,7 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.8.0] - 2026-02-17
+## [1.7.1] - 2026-02-17
 
 ### Added
 - **Review moderation** — New admin "Reviews" page (Tire Guide > Reviews) with status tabs (All, Pending, Approved, Rejected). Pending review count displays as a badge in the admin menu. Admins can approve, reject, or delete reviews. Only approved reviews are visible on the frontend and in Schema.org structured data.
@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 - **Review date showing original rating date** — The reviews drawer and Schema.org markup now use the `updated_at` timestamp instead of `created_at`, so editing a review shows the correct date (e.g. "Today") instead of when the original star rating was submitted.
+- **Review date timezone** — Review relative dates ("Today", "Yesterday") now use the WordPress timezone setting instead of UTC or the browser's local time.
 
 ## [1.7.0] - 2026-02-17
 
