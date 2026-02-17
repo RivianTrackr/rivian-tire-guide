@@ -9,6 +9,7 @@ $settings = get_option( 'rtg_settings', array() );
 $rows_per_page = $settings['rows_per_page'] ?? 12;
 $cdn_prefix = $settings['cdn_prefix'] ?? '';
 $compare_slug = $settings['compare_slug'] ?? 'tire-compare';
+$user_reviews_slug = $settings['user_reviews_slug'] ?? 'user-reviews';
 
 // Theme color defaults.
 $default_colors = array(
@@ -90,6 +91,13 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                     </div>
                     <p class="rtg-field-description">URL slug for the comparison page. Default: <code>tire-compare</code> (accessible at <code><?php echo esc_html( home_url( '/' . $compare_slug . '/' ) ); ?></code>)</p>
                     <input type="text" id="compare_slug" name="compare_slug" value="<?php echo esc_attr( $compare_slug ); ?>">
+                </div>
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="user_reviews_slug">User Reviews Page Slug</label>
+                    </div>
+                    <p class="rtg-field-description">Page slug where the <code>[rivian_user_reviews]</code> shortcode is placed. Default: <code>user-reviews</code> (accessible at <code><?php echo esc_html( home_url( '/' . $user_reviews_slug . '/' ) ); ?></code>)</p>
+                    <input type="text" id="user_reviews_slug" name="user_reviews_slug" value="<?php echo esc_attr( $user_reviews_slug ); ?>">
                 </div>
             </div>
         </div>

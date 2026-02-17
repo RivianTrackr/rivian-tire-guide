@@ -1,6 +1,18 @@
 (function () {
   "use strict";
 
+  var tireGuideUrl = (typeof rtgUserReviews !== "undefined" && rtgUserReviews.tireGuideUrl) || "";
+
+  // Render back link
+  var backContainer = document.getElementById("rtg-user-reviews-back");
+  if (backContainer && tireGuideUrl) {
+    var backLink = document.createElement("a");
+    backLink.href = tireGuideUrl;
+    backLink.className = "rtg-user-reviews-back-link";
+    backLink.innerHTML = '<i class="fa-solid fa-arrow-left"></i> Back to Tire Guide';
+    backContainer.appendChild(backLink);
+  }
+
   const params = new URLSearchParams(window.location.search);
   const userId = parseInt(params.get("reviewer"), 10);
 
@@ -58,6 +70,15 @@
       });
   }
 
+  function buildTireUrl(review) {
+    if (!tireGuideUrl) return "";
+    var name = ((review.brand || "") + " " + (review.model || "")).trim();
+    if (!name) return "";
+    var url = new URL(tireGuideUrl);
+    url.searchParams.set("search", name);
+    return url.toString();
+  }
+
   function createUserReviewCard(review) {
     var card = document.createElement("div");
     card.className = "rtg-review-card rtg-user-review-card";
@@ -65,6 +86,8 @@
     // Tire info header
     var tireInfo = document.createElement("div");
     tireInfo.className = "rtg-user-review-tire";
+
+    var tireUrl = buildTireUrl(review);
 
     if (review.image) {
       var img = document.createElement("img");
@@ -75,10 +98,19 @@
       tireInfo.appendChild(img);
     }
 
-    var tireName = document.createElement("span");
-    tireName.className = "rtg-user-review-tire-name";
-    tireName.textContent = (review.brand || "") + " " + (review.model || "");
-    tireInfo.appendChild(tireName);
+    var tireLabel = (review.brand || "") + " " + (review.model || "");
+    if (tireUrl) {
+      var tireLink = document.createElement("a");
+      tireLink.href = tireUrl;
+      tireLink.className = "rtg-user-review-tire-name rtg-user-review-tire-link";
+      tireLink.textContent = tireLabel;
+      tireInfo.appendChild(tireLink);
+    } else {
+      var tireName = document.createElement("span");
+      tireName.className = "rtg-user-review-tire-name";
+      tireName.textContent = tireLabel;
+      tireInfo.appendChild(tireName);
+    }
 
     card.appendChild(tireInfo);
 

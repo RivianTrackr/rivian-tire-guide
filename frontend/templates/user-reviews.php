@@ -4,6 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 <div id="rtg-user-reviews" class="rtg-user-reviews-page">
+  <div id="rtg-user-reviews-back" class="rtg-user-reviews-back"></div>
   <div class="rtg-user-reviews-header">
     <h2 id="rtg-user-reviews-title">Reviews</h2>
     <p id="rtg-user-reviews-count" class="rtg-user-reviews-subtitle"></p>

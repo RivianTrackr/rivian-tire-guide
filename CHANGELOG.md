@@ -4,6 +4,13 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.7.8] - 2026-02-17
+
+### Added
+- "User Reviews Page Slug" setting in admin settings to configure the shortcode page slug.
+- "Back to Tire Guide" link on the user reviews page.
+- Tire names on the user reviews page now link to the tire guide filtered to that tire.
+
 ## [1.7.7] - 2026-02-17
 
 ### Added
