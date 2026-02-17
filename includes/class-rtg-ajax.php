@@ -104,10 +104,13 @@ class RTG_Ajax {
             wp_send_json_error( 'Too many rating submissions. Please wait a moment and try again.' );
         }
 
-        $tire_id      = sanitize_text_field( $_POST['tire_id'] ?? '' );
-        $rating       = intval( $_POST['rating'] ?? 0 );
-        $review_title = sanitize_text_field( $_POST['review_title'] ?? '' );
-        $review_text  = sanitize_textarea_field( $_POST['review_text'] ?? '' );
+        // Strip WordPress magic quotes before sanitizing.
+        $post = wp_unslash( $_POST );
+
+        $tire_id      = sanitize_text_field( $post['tire_id'] ?? '' );
+        $rating       = intval( $post['rating'] ?? 0 );
+        $review_title = sanitize_text_field( $post['review_title'] ?? '' );
+        $review_text  = sanitize_textarea_field( $post['review_text'] ?? '' );
 
         // Validate tire_id format.
         if ( ! preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) || strlen( $tire_id ) > 50 ) {
