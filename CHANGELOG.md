@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.7.2] - 2026-02-17
+
+### Changed
+- Updated logged-out prompt to "Log in or sign up to review tires" with separate login and registration links.
+
 ## [1.7.1] - 2026-02-17
 
 ### Added
