@@ -3314,9 +3314,13 @@ function resetFilters() {
   hideSearchSuggestions();
   delete domCache["searchInput"];
   lastFilterState = null;
-  
+
   document.dispatchEvent(new CustomEvent('filtersReset'));
-  filterAndRender();
+  if (isServerSide()) {
+    serverSideFilterAndRender();
+  } else {
+    filterAndRender();
+  }
   history.replaceState(null, "", location.pathname);
 }
 
@@ -3398,7 +3402,11 @@ function renderActiveFilterChips() {
     dismiss.addEventListener("click", () => {
       chip.clear();
       lastFilterState = null;
-      filterAndRender();
+      if (isServerSide()) {
+        serverSideFilterAndRender();
+      } else {
+        filterAndRender();
+      }
     });
 
     el.appendChild(label);
