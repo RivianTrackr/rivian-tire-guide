@@ -86,8 +86,9 @@ if (typeof tireRatingAjax !== 'undefined') {
 
 const ALLOWED_SORT_OPTIONS = [
   "efficiencyGrade", "price-asc", "price-desc",
-  "warranty-desc", "weight-asc", "weight-desc",
-  "alpha", "alpha-desc", "reviewed", "rating-desc", "rating-asc"
+  "warranty-desc", "weight-asc",
+  "alpha", "reviewed", "rating-desc",
+  "newest", "most-reviewed"
 ];
 
 // Security: Input validation patterns
@@ -2507,7 +2508,7 @@ function filterAndRender() {
   
   filteredRows = getFilteredIndexes(f);
 
-  if (sortOption === "rating-desc" || sortOption === "rating-asc") {
+  if (sortOption === "rating-desc" || sortOption === "most-reviewed") {
     const allFilteredTireIds = filteredRows.map(row => row[0]).filter(Boolean);
     loadTireRatings(allFilteredTireIds).then(() => {
       applySorting(sortOption);
@@ -2554,22 +2555,22 @@ function applySorting(sortOption) {
       });
       break;
       
-    case "rating-asc":
+    case "most-reviewed":
       filteredRows.sort((a, b) => {
-        const aRating = validateNumeric(tireRatings[a[0]]?.average, { min: 0, max: 5 }, 0);
-        const bRating = validateNumeric(tireRatings[b[0]]?.average, { min: 0, max: 5 }, 0);
-        const ratingDiff = aRating - bRating;
-        
-        if (Math.abs(ratingDiff) < 0.01) {
-          const aCount = validateNumeric(tireRatings[a[0]]?.count, { min: 0, max: 10000 }, 0);
-          const bCount = validateNumeric(tireRatings[b[0]]?.count, { min: 0, max: 10000 }, 0);
-          const countDiff = bCount - aCount;
-          return Math.abs(countDiff) < 0.01 ? safeString(a[0]).localeCompare(safeString(b[0])) : countDiff;
+        const aCount = validateNumeric(tireRatings[a[0]]?.count, { min: 0, max: 10000 }, 0);
+        const bCount = validateNumeric(tireRatings[b[0]]?.count, { min: 0, max: 10000 }, 0);
+        const countDiff = bCount - aCount;
+
+        if (Math.abs(countDiff) < 0.01) {
+          const aRating = validateNumeric(tireRatings[a[0]]?.average, { min: 0, max: 5 }, 0);
+          const bRating = validateNumeric(tireRatings[b[0]]?.average, { min: 0, max: 5 }, 0);
+          const ratingDiff = bRating - aRating;
+          return Math.abs(ratingDiff) < 0.01 ? safeString(a[0]).localeCompare(safeString(b[0])) : ratingDiff;
         }
-        return ratingDiff;
+        return countDiff;
       });
       break;
-      
+
     case "price-asc":
       filteredRows.sort((a, b) => validateNumeric(a[6], NUMERIC_BOUNDS.price, 0) - validateNumeric(b[6], NUMERIC_BOUNDS.price, 0));
       break;
@@ -2582,14 +2583,11 @@ function applySorting(sortOption) {
     case "weight-asc":
       filteredRows.sort((a, b) => validateNumeric(a[8], NUMERIC_BOUNDS.weight, 0) - validateNumeric(b[8], NUMERIC_BOUNDS.weight, 0));
       break;
-    case "weight-desc":
-      filteredRows.sort((a, b) => validateNumeric(b[8], NUMERIC_BOUNDS.weight, 0) - validateNumeric(a[8], NUMERIC_BOUNDS.weight, 0));
-      break;
     case "alpha":
       filteredRows.sort((a, b) => safeString(a[3]).toLowerCase().localeCompare(safeString(b[3]).toLowerCase()));
       break;
-    case "alpha-desc":
-      filteredRows.sort((a, b) => safeString(b[3]).toLowerCase().localeCompare(safeString(a[3]).toLowerCase()));
+    case "newest":
+      filteredRows.sort((a, b) => safeString(b[24]).localeCompare(safeString(a[24])));
       break;
   }
 }

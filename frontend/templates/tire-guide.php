@@ -145,14 +145,14 @@ if ( ! defined( 'ABSPATH' ) ) {
   <div style="flex: 1;"></div>
   <select id="sortBy" onchange="filterAndRender()">
     <option value="alpha">Brand: A → Z</option>
-    <option value="alpha-desc">Brand: Z → A</option>
     <option value="efficiencyGrade">Efficiency Grade</option>
+    <option value="most-reviewed">Most Reviewed</option>
+    <option value="newest">Newest Added</option>
     <option value="price-asc">Price: Low → High</option>
     <option value="price-desc">Price: High → Low</option>
     <option value="rating-desc" selected>Rating: High → Low</option>
     <option value="warranty-desc">Warranty: High → Low</option>
     <option value="weight-asc">Weight: Light → Heavy</option>
-    <option value="weight-desc">Weight: Heavy → Light</option>
   </select>
 </div>
 <div id="activeFilters" class="active-filters" aria-label="Active filters" role="region"></div>
