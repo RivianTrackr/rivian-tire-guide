@@ -567,7 +567,7 @@ class RTG_Database {
         $placeholders = implode( ', ', array_fill( 0, count( $tire_ids ), '%s' ) );
         $results = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT tire_id, AVG(rating) as average, COUNT(*) as count FROM {$table} WHERE tire_id IN ({$placeholders}) GROUP BY tire_id",
+                "SELECT tire_id, AVG(rating) as average, COUNT(*) as count, SUM(CASE WHEN review_text != '' THEN 1 ELSE 0 END) as review_count FROM {$table} WHERE tire_id IN ({$placeholders}) GROUP BY tire_id",
                 ...$tire_ids
             ),
             ARRAY_A
@@ -576,8 +576,9 @@ class RTG_Database {
         $ratings = array();
         foreach ( $results as $row ) {
             $ratings[ $row['tire_id'] ] = array(
-                'average' => round( (float) $row['average'], 1 ),
-                'count'   => (int) $row['count'],
+                'average'      => round( (float) $row['average'], 1 ),
+                'count'        => (int) $row['count'],
+                'review_count' => (int) $row['review_count'],
             );
         }
 
@@ -597,7 +598,7 @@ class RTG_Database {
 
         $results = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT tire_id, rating FROM {$table} WHERE tire_id IN ({$placeholders}) AND user_id = %d",
+                "SELECT tire_id, rating, review_title, review_text FROM {$table} WHERE tire_id IN ({$placeholders}) AND user_id = %d",
                 ...$args
             ),
             ARRAY_A
@@ -605,7 +606,11 @@ class RTG_Database {
 
         $ratings = array();
         foreach ( $results as $row ) {
-            $ratings[ $row['tire_id'] ] = (int) $row['rating'];
+            $ratings[ $row['tire_id'] ] = array(
+                'rating'       => (int) $row['rating'],
+                'review_title' => $row['review_title'],
+                'review_text'  => $row['review_text'],
+            );
         }
 
         return $ratings;
@@ -756,7 +761,7 @@ class RTG_Database {
         return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
     }
 
-    public static function set_rating( $tire_id, $user_id, $rating ) {
+    public static function set_rating( $tire_id, $user_id, $rating, $review_title = '', $review_text = '' ) {
         global $wpdb;
         $table = self::ratings_table();
 
@@ -771,9 +776,13 @@ class RTG_Database {
         if ( $existing ) {
             return $wpdb->update(
                 $table,
-                array( 'rating' => $rating ),
+                array(
+                    'rating'       => $rating,
+                    'review_title' => $review_title,
+                    'review_text'  => $review_text,
+                ),
                 array( 'tire_id' => $tire_id, 'user_id' => $user_id ),
-                array( '%d' ),
+                array( '%d', '%s', '%s' ),
                 array( '%s', '%d' )
             );
         }
@@ -781,11 +790,99 @@ class RTG_Database {
         return $wpdb->insert(
             $table,
             array(
-                'tire_id' => $tire_id,
-                'user_id' => $user_id,
-                'rating'  => $rating,
+                'tire_id'      => $tire_id,
+                'user_id'      => $user_id,
+                'rating'       => $rating,
+                'review_title' => $review_title,
+                'review_text'  => $review_text,
             ),
-            array( '%s', '%d', '%d' )
+            array( '%s', '%d', '%d', '%s', '%s' )
+        );
+    }
+
+    /**
+     * Get reviews (ratings with text) for a specific tire.
+     *
+     * @param string $tire_id Tire identifier.
+     * @param int    $limit   Max reviews to return.
+     * @param int    $offset  Offset for pagination.
+     * @return array Reviews with user display names.
+     */
+    public static function get_tire_reviews( $tire_id, $limit = 20, $offset = 0 ) {
+        global $wpdb;
+        $table = self::ratings_table();
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT id, tire_id, user_id, rating, review_title, review_text, created_at
+                 FROM {$table}
+                 WHERE tire_id = %s AND review_text != ''
+                 ORDER BY created_at DESC
+                 LIMIT %d OFFSET %d",
+                $tire_id,
+                $limit,
+                $offset
+            ),
+            ARRAY_A
+        );
+
+        if ( empty( $rows ) ) {
+            return array();
+        }
+
+        // Map user IDs to display names.
+        $user_ids = array_unique( array_column( $rows, 'user_id' ) );
+        $user_map = array();
+        if ( ! empty( $user_ids ) ) {
+            $users = get_users( array( 'include' => $user_ids, 'fields' => array( 'ID', 'display_name' ) ) );
+            foreach ( $users as $user ) {
+                $user_map[ $user->ID ] = $user->display_name;
+            }
+        }
+
+        foreach ( $rows as &$row ) {
+            $row['display_name'] = $user_map[ $row['user_id'] ] ?? 'Anonymous';
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Count reviews (ratings with text) for a specific tire.
+     *
+     * @param string $tire_id Tire identifier.
+     * @return int Review count.
+     */
+    public static function get_tire_review_count( $tire_id ) {
+        global $wpdb;
+        $table = self::ratings_table();
+
+        return (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$table} WHERE tire_id = %s AND review_text != ''",
+                $tire_id
+            )
+        );
+    }
+
+    /**
+     * Get the current user's review for a specific tire (if any).
+     *
+     * @param string $tire_id Tire identifier.
+     * @param int    $user_id WordPress user ID.
+     * @return array|null Review data or null.
+     */
+    public static function get_user_review( $tire_id, $user_id ) {
+        global $wpdb;
+        $table = self::ratings_table();
+
+        return $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT rating, review_title, review_text FROM {$table} WHERE tire_id = %s AND user_id = %d",
+                $tire_id,
+                $user_id
+            ),
+            ARRAY_A
         );
     }
 }
