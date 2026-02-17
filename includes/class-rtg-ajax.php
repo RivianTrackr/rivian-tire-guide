@@ -138,8 +138,9 @@ class RTG_Ajax {
         $this->record_rate_limit( $user_id );
 
         // Determine the review status that will be applied.
-        $is_admin = user_can( $user_id, 'manage_options' );
-        if ( ! empty( $review_text ) && ! $is_admin ) {
+        $is_admin           = user_can( $user_id, 'manage_options' );
+        $has_review_content = ! empty( $review_text ) || ! empty( $review_title );
+        if ( $has_review_content && ! $is_admin ) {
             $review_status = 'pending';
         } else {
             $review_status = 'approved';
