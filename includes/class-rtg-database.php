@@ -677,7 +677,7 @@ class RTG_Database {
         $placeholders = implode( ', ', array_fill( 0, count( $tire_ids ), '%s' ) );
         $results = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT tire_id, AVG(rating) as average, COUNT(*) as count, SUM(CASE WHEN review_text != '' AND review_status = 'approved' THEN 1 ELSE 0 END) as review_count FROM {$table} WHERE tire_id IN ({$placeholders}) GROUP BY tire_id",
+                "SELECT tire_id, AVG(rating) as average, COUNT(*) as count, SUM(CASE WHEN review_status = 'approved' THEN 1 ELSE 0 END) as review_count FROM {$table} WHERE tire_id IN ({$placeholders}) GROUP BY tire_id",
                 ...$tire_ids
             ),
             ARRAY_A
@@ -928,7 +928,7 @@ class RTG_Database {
     }
 
     /**
-     * Get reviews (ratings with text) for a specific tire.
+     * Get reviews (all approved ratings) for a specific tire.
      *
      * @param string $tire_id Tire identifier.
      * @param int    $limit   Max reviews to return.
@@ -943,7 +943,7 @@ class RTG_Database {
             $wpdb->prepare(
                 "SELECT id, tire_id, user_id, rating, review_title, review_text, created_at, updated_at
                  FROM {$table}
-                 WHERE tire_id = %s AND review_text != '' AND review_status = 'approved'
+                 WHERE tire_id = %s AND review_status = 'approved'
                  ORDER BY updated_at DESC
                  LIMIT %d OFFSET %d",
                 $tire_id,
@@ -975,7 +975,7 @@ class RTG_Database {
     }
 
     /**
-     * Count reviews (ratings with text) for a specific tire.
+     * Count reviews (all approved ratings) for a specific tire.
      *
      * @param string $tire_id Tire identifier.
      * @return int Review count.
@@ -986,7 +986,7 @@ class RTG_Database {
 
         return (int) $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT COUNT(*) FROM {$table} WHERE tire_id = %s AND review_text != '' AND review_status = 'approved'",
+                "SELECT COUNT(*) FROM {$table} WHERE tire_id = %s AND review_status = 'approved'",
                 $tire_id
             )
         );
@@ -1179,7 +1179,7 @@ class RTG_Database {
                         t.brand, t.model, t.image
                  FROM {$ratings_table} r
                  LEFT JOIN {$tires_table} t ON r.tire_id = t.tire_id
-                 WHERE r.user_id = %d AND r.review_text != '' AND r.review_status = 'approved'
+                 WHERE r.user_id = %d AND r.review_status = 'approved'
                  ORDER BY r.updated_at DESC
                  LIMIT %d OFFSET %d",
                 $user_id,
@@ -1202,7 +1202,7 @@ class RTG_Database {
 
         return (int) $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT COUNT(*) FROM {$table} WHERE user_id = %d AND review_text != '' AND review_status = 'approved'",
+                "SELECT COUNT(*) FROM {$table} WHERE user_id = %d AND review_status = 'approved'",
                 $user_id
             )
         );

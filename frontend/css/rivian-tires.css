@@ -1537,6 +1537,10 @@ a.rtg-review-card-title-link:hover {
   white-space: pre-wrap;
   word-break: break-word;
 }
+.rtg-review-rating-only {
+  font-style: italic;
+  color: var(--rtg-text-muted, #94a3b8);
+}
 
 /* Reviews pagination */
 .rtg-reviews-pagination {
