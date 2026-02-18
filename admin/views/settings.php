@@ -24,6 +24,9 @@ $default_colors = array(
     'text_muted'   => '#94a3b8',
     'text_heading' => '#ffffff',
     'border'       => '#334155',
+    'star_filled'  => '#fbbf24',
+    'star_user'    => '#5ec095',
+    'star_empty'   => '#475569',
 );
 $theme_colors = wp_parse_args( $settings['theme_colors'] ?? array(), $default_colors );
 
@@ -123,6 +126,9 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                         'text_muted'   => 'Text (Muted)',
                         'text_heading' => 'Text (Heading)',
                         'border'       => 'Border / Divider',
+                        'star_filled'  => 'Stars (Filled)',
+                        'star_user'    => 'Stars (Your Rating)',
+                        'star_empty'   => 'Stars (Empty)',
                     );
                     foreach ( $color_labels as $key => $label ) :
                     ?>

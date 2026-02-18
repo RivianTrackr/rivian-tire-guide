@@ -1514,7 +1514,7 @@ function createRatingHTML(tireId, average = 0, count = 0, userRating = 0) {
     star.className = 'star';
     star.dataset.rating = i.toString();
     star.dataset.tireId = tireId;
-    star.innerHTML = starSVGMarkup(20);
+    star.innerHTML = starSVGMarkup(24);
 
     // Determine fill level based on rounded average
     if (roundedAvg >= i) {
@@ -1677,7 +1677,7 @@ function openReviewModal(tireId, preselectedRating = 0) {
     const star = document.createElement('span');
     star.className = 'rtg-review-star' + (i <= selectedRating ? ' selected' : '');
     star.dataset.value = i;
-    star.innerHTML = starSVGMarkup(32);
+    star.innerHTML = starSVGMarkup(36);
     star.setAttribute('role', 'radio');
     star.setAttribute('aria-checked', i === selectedRating ? 'true' : 'false');
     star.setAttribute('aria-label', `${i} star${i !== 1 ? 's' : ''}`);

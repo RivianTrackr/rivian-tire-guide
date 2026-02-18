@@ -459,7 +459,7 @@ class RTG_Admin {
         // Theme colors — sanitize hex values.
         $theme_colors = array();
         $raw_colors = $_POST['rtg_colors'] ?? array();
-        $valid_keys = array( 'accent', 'accent_hover', 'bg_primary', 'bg_card', 'bg_input', 'bg_deep', 'text_primary', 'text_light', 'text_muted', 'text_heading', 'border' );
+        $valid_keys = array( 'accent', 'accent_hover', 'bg_primary', 'bg_card', 'bg_input', 'bg_deep', 'text_primary', 'text_light', 'text_muted', 'text_heading', 'border', 'star_filled', 'star_user', 'star_empty' );
         foreach ( $valid_keys as $key ) {
             $val = isset( $raw_colors[ $key ] ) ? trim( $raw_colors[ $key ] ) : '';
             if ( preg_match( '/^#[0-9a-fA-F]{6}$/', $val ) ) {

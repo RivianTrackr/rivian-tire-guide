@@ -11,6 +11,9 @@
   --rtg-text-muted: #94a3b8;
   --rtg-text-heading: #ffffff;
   --rtg-border: #334155;
+  --rtg-star-filled: #fbbf24;
+  --rtg-star-user: #5ec095;
+  --rtg-star-empty: #475569;
 }
 
 html, body {
@@ -1009,7 +1012,7 @@ body.modal-open {
   align-items: center;
 }
 .rating-stars .star {
-  color: #475569;
+  color: var(--rtg-star-empty, #475569);
   display: flex;
   align-items: center;
   user-select: none;
@@ -1028,8 +1031,8 @@ body.modal-open {
 }
 /* Active (fully filled) star */
 .rating-stars .star.active {
-  color: #fbbf24;
-  filter: drop-shadow(0 1px 3px rgba(251, 191, 36, 0.35));
+  color: var(--rtg-star-filled, #fbbf24);
+  filter: drop-shadow(0 1px 3px color-mix(in srgb, var(--rtg-star-filled, #fbbf24) 35%, transparent));
 }
 .rating-stars .star.active .star-fill {
   opacity: 1;
@@ -1041,10 +1044,10 @@ body.modal-open {
 .rating-stars .star.active.half .star-half {
   opacity: 1;
 }
-/* User-rated: green accent color */
+/* User-rated: distinct color */
 .rating-stars .star.user-rated {
-  color: var(--rtg-accent);
-  filter: drop-shadow(0 1px 3px color-mix(in srgb, var(--rtg-accent) 35%, transparent));
+  color: var(--rtg-star-user, #5ec095);
+  filter: drop-shadow(0 1px 3px color-mix(in srgb, var(--rtg-star-user, #5ec095) 35%, transparent));
 }
 .rating-stars .star.user-rated .star-fill {
   opacity: 1;
@@ -1054,9 +1057,9 @@ body.modal-open {
   cursor: pointer;
 }
 .rating-stars .star.hover {
-  color: #fbbf24 !important;
+  color: var(--rtg-star-filled, #fbbf24) !important;
   transform: scale(1.15);
-  filter: drop-shadow(0 2px 6px rgba(251, 191, 36, 0.5));
+  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--rtg-star-filled, #fbbf24) 50%, transparent));
 }
 .rating-stars .star.hover .star-fill {
   opacity: 1 !important;
@@ -1064,14 +1067,14 @@ body.modal-open {
 .rating-stars .star.hover .star-half {
   opacity: 0 !important;
 }
-/* User-rated hover: green accent */
+/* User-rated hover */
 .rating-stars.has-user-rating .star.hover {
-  color: var(--rtg-accent-hover) !important;
-  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--rtg-accent-hover) 50%, transparent));
+  color: color-mix(in srgb, var(--rtg-star-user, #5ec095) 85%, white) !important;
+  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--rtg-star-user, #5ec095) 50%, transparent));
 }
 .rating-stars.has-user-rating.interactive .star:hover {
-  color: var(--rtg-accent-hover);
-  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--rtg-accent-hover) 50%, transparent));
+  color: color-mix(in srgb, var(--rtg-star-user, #5ec095) 85%, white);
+  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--rtg-star-user, #5ec095) 50%, transparent));
 }
 .rating-info {
   display: flex;
@@ -1244,7 +1247,7 @@ body.modal-open {
   gap: 8px;
 }
 .rtg-review-star {
-  color: #475569;
+  color: var(--rtg-star-empty, #475569);
   cursor: pointer;
   transition: color 0.15s ease, transform 0.15s ease, filter 0.15s ease;
   user-select: none;
@@ -1260,14 +1263,14 @@ body.modal-open {
   transition: opacity 0.15s ease;
 }
 .rtg-review-star.selected {
-  color: var(--rtg-accent, #5ec095);
-  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--rtg-accent, #5ec095) 40%, transparent));
+  color: var(--rtg-star-user, #5ec095);
+  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--rtg-star-user, #5ec095) 40%, transparent));
 }
 .rtg-review-star.selected .star-fill {
   opacity: 1;
 }
 .rtg-review-star.hovered {
-  color: #fbbf24;
+  color: var(--rtg-star-filled, #fbbf24);
   transform: scale(1.15);
 }
 .rtg-review-star.hovered .star-fill {
@@ -1460,7 +1463,7 @@ body.modal-open {
   gap: 2px;
 }
 .rtg-mini-star {
-  color: #475569;
+  color: var(--rtg-star-empty, #475569);
   display: inline-flex;
   line-height: 0;
 }
@@ -1472,13 +1475,13 @@ body.modal-open {
   opacity: 0;
 }
 .rtg-mini-star.filled {
-  color: #fbbf24;
+  color: var(--rtg-star-filled, #fbbf24);
 }
 .rtg-mini-star.filled .star-fill {
   opacity: 1;
 }
 .rtg-mini-star.half-filled {
-  color: #fbbf24;
+  color: var(--rtg-star-filled, #fbbf24);
 }
 .rtg-mini-star.half-filled .star-half {
   opacity: 1;
