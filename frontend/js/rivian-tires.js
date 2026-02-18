@@ -1551,7 +1551,11 @@ function createRatingHTML(tireId, average = 0, count = 0, userRating = 0) {
     const viewReviewsBtn = document.createElement('button');
     viewReviewsBtn.className = 'review-action-link view-reviews-btn';
     viewReviewsBtn.dataset.tireId = tireId;
-    viewReviewsBtn.textContent = `${reviewCount} review${reviewCount !== 1 ? 's' : ''}`;
+    const reviewIcon = document.createElement('i');
+    reviewIcon.className = 'fa-solid fa-message';
+    reviewIcon.setAttribute('aria-hidden', 'true');
+    viewReviewsBtn.appendChild(reviewIcon);
+    viewReviewsBtn.appendChild(document.createTextNode(` ${reviewCount} review${reviewCount !== 1 ? 's' : ''}`));
     reviewActions.appendChild(viewReviewsBtn);
   }
 
@@ -1563,21 +1567,15 @@ function createRatingHTML(tireId, average = 0, count = 0, userRating = 0) {
     writeBtn.textContent = hasReview ? 'Edit Review' : 'Write a Review';
     reviewActions.appendChild(writeBtn);
   } else {
-    const loginPrompt = document.createElement('span');
+    const loginPrompt = document.createElement('a');
     loginPrompt.className = 'login-prompt';
+    loginPrompt.href = typeof tireRatingAjax !== 'undefined' ? tireRatingAjax.login_url : '/wp-login.php';
 
-    const loginLink = document.createElement('a');
-    loginLink.href = typeof tireRatingAjax !== 'undefined' ? tireRatingAjax.login_url : '/wp-login.php';
-    loginLink.textContent = 'Log in';
-
-    const registerLink = document.createElement('a');
-    registerLink.href = typeof tireRatingAjax !== 'undefined' && tireRatingAjax.register_url ? tireRatingAjax.register_url : '/wp-login.php?action=register';
-    registerLink.textContent = 'sign up';
-
-    loginPrompt.appendChild(loginLink);
-    loginPrompt.appendChild(document.createTextNode(' or '));
-    loginPrompt.appendChild(registerLink);
-    loginPrompt.appendChild(document.createTextNode(' to review tires'));
+    const promptIcon = document.createElement('i');
+    promptIcon.className = 'fa-solid fa-pen-to-square';
+    promptIcon.setAttribute('aria-hidden', 'true');
+    loginPrompt.appendChild(promptIcon);
+    loginPrompt.appendChild(document.createTextNode(' Log in to review this tire'));
     reviewActions.appendChild(loginPrompt);
   }
 

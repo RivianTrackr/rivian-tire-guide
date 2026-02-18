@@ -1065,16 +1065,26 @@ body.modal-open {
   font-weight: 400;
 }
 .login-prompt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
-  color: var(--rtg-text-muted, #94a3b8);
-  margin-top: 4px;
-}
-.login-prompt a {
   color: var(--rtg-accent, #5ec095);
+  background: color-mix(in srgb, var(--rtg-accent, #5ec095) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rtg-accent, #5ec095) 25%, transparent);
+  border-radius: 6px;
+  padding: 4px 10px;
   text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
-.login-prompt a:hover {
-  text-decoration: underline;
+.login-prompt:hover {
+  background: color-mix(in srgb, var(--rtg-accent, #5ec095) 15%, transparent);
+  border-color: color-mix(in srgb, var(--rtg-accent, #5ec095) 40%, transparent);
+  color: var(--rtg-accent-hover, #4daa80);
+}
+.login-prompt i {
+  font-size: 11px;
 }
 
 /* === Review Actions (below stars) === */
@@ -1096,11 +1106,24 @@ body.modal-open {
   transition: color 0.2s ease;
 }
 .view-reviews-btn {
-  color: var(--rtg-text-muted, #94a3b8);
+  color: var(--rtg-text-light, #f1f5f9);
+  background: color-mix(in srgb, var(--rtg-text-light, #f1f5f9) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rtg-text-light, #f1f5f9) 15%, transparent);
+  border-radius: 6px;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.view-reviews-btn i {
+  font-size: 11px;
+  color: var(--rtg-accent, #5ec095);
 }
 .view-reviews-btn:hover {
   color: var(--rtg-text-light, #f1f5f9);
-  text-decoration: underline;
+  background: color-mix(in srgb, var(--rtg-text-light, #f1f5f9) 15%, transparent);
+  border-color: color-mix(in srgb, var(--rtg-text-light, #f1f5f9) 25%, transparent);
+  text-decoration: none;
 }
 .write-review-btn {
   color: var(--rtg-accent, #5ec095);
