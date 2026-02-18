@@ -1560,7 +1560,7 @@ function createRatingHTML(tireId, average = 0, count = 0, userRating = 0) {
   }
 
   if (isLoggedIn) {
-    const hasReview = userReviews[tireId]?.review_text;
+    const hasReview = userReviews[tireId]?.rating;
     const writeBtn = document.createElement('button');
     writeBtn.className = 'review-action-link write-review-btn';
     writeBtn.dataset.tireId = tireId;
@@ -2041,10 +2041,17 @@ function createReviewCard(review) {
     card.appendChild(titleEl);
   }
 
-  const bodyEl = document.createElement('div');
-  bodyEl.className = 'rtg-review-card-body';
-  bodyEl.textContent = review.review_text;
-  card.appendChild(bodyEl);
+  if (review.review_text) {
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'rtg-review-card-body';
+    bodyEl.textContent = review.review_text;
+    card.appendChild(bodyEl);
+  } else {
+    const ratingOnly = document.createElement('div');
+    ratingOnly.className = 'rtg-review-card-body rtg-review-rating-only';
+    ratingOnly.textContent = 'Rating only \u2014 no written review yet.';
+    card.appendChild(ratingOnly);
+  }
 
   return card;
 }
