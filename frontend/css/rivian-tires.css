@@ -534,6 +534,7 @@ body.modal-open {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   line-height: 1.1;
+  margin-bottom: -8px;
 }
 .tire-card-model {
   font-size: 20px;
@@ -1002,7 +1003,7 @@ body.modal-open {
 /* === Rating Stars (SVG-based with half-star support) === */
 .tire-rating-container {
   margin: 0;
-  padding: 0;
+  padding: 6px 0;
 }
 .rating-display {
   display: flex;
@@ -1120,7 +1121,7 @@ body.modal-open {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 4px;
+  margin-top: 6px;
   font-size: 13px;
   line-height: 1;
 }

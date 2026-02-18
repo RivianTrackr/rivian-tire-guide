@@ -4,6 +4,38 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.9.4] - 2026-02-18
+
+### Changed
+- **Mobile-first card body spacing** — Rewrote tire card body spacing to use a single `gap` as the source of truth instead of mixing gap with individual child margins. Base styles target mobile, with a `min-width: 601px` breakpoint scaling up padding for desktop.
+- **Brand/model tightened** — Brand name and model title now sit closer together as a visual unit, with more breathing room around the star rating area below.
+- **Review actions spacing** — Increased separation between the star row and the "Write a Review" / "View Reviews" action links so the stars feel like they float in their own space.
+
+### Fixed
+- **User-rated stars overriding average display** — The `.user-rated` CSS class was forcing `star-fill` opacity to 1 on all stars up to the user's personal rating, regardless of the actual average. A 3/5 average could show 5 full green stars if the user had rated 5. The user-rated styling now only colorizes stars that are already filled based on the average.
+
+## [1.9.0] - 2026-02-18
+
+### Added
+- **SVG star ratings with half-star support** — Replaced the old Unicode star characters with layered SVG stars (background outline, full fill, and half fill via `clip-path`). Ratings round to the nearest 0.5 for accurate half-star display.
+- **Star color settings** — New admin settings for Star Filled, Star User-Rated, and Star Empty colors, output as CSS custom properties (`--rtg-star-filled`, `--rtg-star-user`, `--rtg-star-empty`).
+
+### Changed
+- **Rebrand to orange/gold accent** — Primary accent shifted from green to orange/gold (`#fba919`) with an optimized dark navy palette. Updated all CSS custom property defaults, admin color picker defaults, and the comparison page theme.
+
+## [1.8.4] - 2026-02-18
+
+### Fixed
+- **Shared page links reverting to page 1** — Fixed pagination links losing the current page when sharing. Renamed the page URL parameter from `page` to `pg` to avoid a conflict with a reserved WordPress query variable.
+
+## [1.8.3] - 2026-02-18
+
+### Added
+- **Highlighted user reviews** — Reviews with text now display a prominent badge and CTA styling. Rating-only entries (no review body) are also included in the reviews drawer with a blank body.
+
+### Changed
+- **Write-review button styling** — Aligned the write-review button with matching pill styling for consistency.
+
 ## [1.8.2] - 2026-02-17
 
 ### Fixed
