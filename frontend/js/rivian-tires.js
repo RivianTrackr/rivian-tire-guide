@@ -2301,7 +2301,7 @@ function applyFiltersFromURL() {
     if (el) el.value = validWeight;
   }
 
-  const pageParam = params.get("page");
+  const pageParam = params.get("pg") || params.get("page");
   if (pageParam) {
     const validPage = validateNumeric(pageParam, NUMERIC_BOUNDS.page, 1);
     currentPage = validPage;
@@ -2937,7 +2937,7 @@ function updateURLFromFilters() {
   const params = new URLSearchParams();
 
   if (currentPage > 1) {
-    params.set("page", currentPage);
+    params.set("pg", currentPage);
   }
 
   const getVal = id => getDOMElement(id)?.value;
