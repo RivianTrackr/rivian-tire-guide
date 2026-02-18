@@ -1207,4 +1207,75 @@ class RTG_Database {
             )
         );
     }
+
+    // --- Favorites ---
+
+    private static function favorites_table() {
+        global $wpdb;
+        return $wpdb->prefix . 'rtg_favorites';
+    }
+
+    /**
+     * Get all favorite tire IDs for a user.
+     *
+     * @param int $user_id WordPress user ID.
+     * @return array Array of tire_id strings.
+     */
+    public static function get_user_favorites( $user_id ) {
+        global $wpdb;
+        $table = self::favorites_table();
+
+        return $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT tire_id FROM {$table} WHERE user_id = %d ORDER BY created_at DESC",
+                $user_id
+            )
+        );
+    }
+
+    /**
+     * Add a tire to a user's favorites.
+     *
+     * @param string $tire_id Tire ID.
+     * @param int    $user_id WordPress user ID.
+     * @return bool True on success.
+     */
+    public static function add_favorite( $tire_id, $user_id ) {
+        global $wpdb;
+        $table = self::favorites_table();
+
+        $result = $wpdb->replace(
+            $table,
+            array(
+                'tire_id' => $tire_id,
+                'user_id' => $user_id,
+            ),
+            array( '%s', '%d' )
+        );
+
+        return $result !== false;
+    }
+
+    /**
+     * Remove a tire from a user's favorites.
+     *
+     * @param string $tire_id Tire ID.
+     * @param int    $user_id WordPress user ID.
+     * @return bool True on success.
+     */
+    public static function remove_favorite( $tire_id, $user_id ) {
+        global $wpdb;
+        $table = self::favorites_table();
+
+        $result = $wpdb->delete(
+            $table,
+            array(
+                'tire_id' => $tire_id,
+                'user_id' => $user_id,
+            ),
+            array( '%s', '%d' )
+        );
+
+        return $result !== false;
+    }
 }

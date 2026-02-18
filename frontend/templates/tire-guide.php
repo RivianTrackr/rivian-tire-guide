@@ -100,6 +100,19 @@ if ( ! defined( 'ABSPATH' ) ) {
           <input type="checkbox" id="filterReviewed" aria-label="Officially Reviewed"/>
           <span class="switch-slider" onclick="document.getElementById('filterReviewed').click()"></span>
         </div>
+        <?php if ( is_user_logged_in() ) : ?>
+        <div class="switch-label favorites-filter-wrapper">
+          <span class="switch-text">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-heart" style="color: #ef4444; font-size: 13px;"></i>
+              <span>My Favorites</span>
+            </div>
+          </span>
+          <span id="favoritesCount" class="favorites-count-badge" style="display: none;"></span>
+          <input type="checkbox" id="filterFavorites" aria-label="My Favorites"/>
+          <span class="switch-slider" onclick="document.getElementById('filterFavorites').click()"></span>
+        </div>
+        <?php endif; ?>
         <label class="switch-label reset-white" onclick="resetFilters()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resetFilters()}" role="button" tabindex="0">
           <span class="switch-text">
             <i class="fa-solid fa-rotate-left" style="margin-right: 6px;"></i>Clear All

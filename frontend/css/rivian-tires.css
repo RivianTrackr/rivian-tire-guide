@@ -796,12 +796,68 @@ body.modal-open {
   opacity: 0.8;
 }
 
-/* === No Results State === */
+/* === No Results State (Enhanced) === */
 #noResults {
   text-align: center;
   padding: 60px 20px;
   color: var(--rtg-text-muted);
   font-size: 16px;
+}
+.no-results-icon {
+  font-size: 48px;
+  color: var(--rtg-border);
+  margin-bottom: 16px;
+  opacity: 0.7;
+}
+.no-results-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--rtg-text-heading);
+  margin-bottom: 8px;
+}
+.no-results-description {
+  font-size: 14px;
+  color: var(--rtg-text-muted);
+  margin-bottom: 24px;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+.no-results-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  max-width: 400px;
+  margin: 0 auto;
+}
+.no-results-suggestion-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--rtg-bg-card);
+  border: 1px solid var(--rtg-border);
+  border-radius: 8px;
+  color: var(--rtg-text-light);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  width: 100%;
+  justify-content: center;
+}
+.no-results-suggestion-btn:hover {
+  border-color: var(--rtg-accent);
+  color: var(--rtg-accent);
+  background: color-mix(in srgb, var(--rtg-accent) 5%, var(--rtg-bg-card));
+}
+.no-results-suggestion-btn i {
+  font-size: 13px;
+  width: 16px;
+  text-align: center;
 }
 
 /* === Pagination === */
@@ -2178,4 +2234,100 @@ a.rtg-user-review-tire-link:hover {
 .rtg-pagination-info {
   font-size: 14px;
   color: var(--rtg-text-muted, #8493a5);
+}
+
+/* === Favorite Button Overlay === */
+.tire-card-fav-btn {
+  position: absolute;
+  top: 10px;
+  right: 44px;
+  z-index: 10;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+.tire-card-fav-btn:hover {
+  border-color: #ef4444;
+  background: rgba(15, 23, 42, 0.75);
+  color: #ef4444;
+}
+.tire-card-fav-btn.is-favorite {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #fff;
+}
+.tire-card-fav-btn.is-favorite:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+/* When card has no image, position relative to card */
+.tire-card > .tire-card-fav-btn {
+  position: absolute;
+}
+
+/* === Favorites Filter Toggle === */
+.favorites-filter-wrapper {
+  position: relative;
+}
+.favorites-count-badge {
+  display: none;
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+/* === Lazy Image Loading === */
+.rtg-lazy-img {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.rtg-lazy-img.rtg-img-loaded {
+  opacity: 1;
+}
+/* If IntersectionObserver not supported, show immediately */
+.rtg-lazy-img[src]:not([data-src]) {
+  opacity: 1;
+}
+/* Placeholder background while loading */
+.tire-card-image {
+  min-height: 170px;
+  background: linear-gradient(135deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: rtg-shimmer 1.5s infinite;
+}
+.tire-card-image:has(.rtg-img-loaded) {
+  animation: none;
+  background: #fff;
+}
+@keyframes rtg-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* === Card Grid Animation Enhancement === */
+#tireCards {
+  transition: gap 0.3s ease;
 }

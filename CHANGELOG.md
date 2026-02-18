@@ -4,6 +4,20 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.10.0] - 2026-02-18
+
+### Added
+- **Favorites / Wishlist system** — Logged-in users can now save tires to a personal favorites list by clicking the heart icon on each tire card. New `wp_rtg_favorites` database table stores user preferences. Includes a "My Favorites" filter toggle to show only favorited tires, with a badge count on the toggle. Optimistic UI updates for instant feedback.
+- **Smart No Results state** — The empty state when no tires match filters now shows an illustrated view with specific, actionable suggestions (e.g., "Remove size filter", "Show all brands", "Clear all filters") based on which filters are active.
+- **Enhanced image lazy loading** — Added `IntersectionObserver`-based lazy loading with `data-src` pattern and shimmer placeholder animation. Images fade in smoothly on load. Falls back to native `loading="lazy"` when IntersectionObserver is unavailable.
+- **Browser back/forward for filters** — Filter changes now push to browser history via `pushState`, enabling back/forward navigation through filter states. Added `popstate` listener to restore filters from URL.
+- **Favorites filter in URL** — The `?favorites=1` URL parameter persists the favorites filter for shareable links.
+
+### Changed
+- **Card enter/exit animations** — Cards now use a slide-up (`translateY`) + scale animation with cubic-bezier easing and staggered delays (40ms per card on desktop) for a smoother cascade effect on filter changes.
+- **Database schema version** — Bumped to v7 with migration for the new favorites table.
+- **Plugin version** — Bumped to 1.10.0.
+
 ## [1.9.4.2] - 2026-02-18
 
 ### Changed
