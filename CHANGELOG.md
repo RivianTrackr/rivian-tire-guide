@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.9.4.2] - 2026-02-18
+
+### Changed
+- **Larger star ratings** — Bumped SVG star sizes across all contexts for better visibility: default 20→22px, interactive 24→26px, review modal 36→40px, mini stars 16→18px, mobile modal 28→32px.
+
 ## [1.9.4] - 2026-02-18
 
 ### Changed
