@@ -114,6 +114,16 @@ const NUMERIC_BOUNDS = {
   page: { min: 1, max: 1000 }
 };
 
+// SVG star path and reusable markup
+const STAR_PATH = 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z';
+function starSVGMarkup(size = 20) {
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">` +
+    `<path class="star-bg" d="${STAR_PATH}" fill="none" stroke="currentColor" stroke-width="1.5"/>` +
+    `<path class="star-fill" d="${STAR_PATH}" fill="currentColor"/>` +
+    `<path class="star-half" d="${STAR_PATH}" fill="currentColor" style="clip-path:inset(0 50% 0 0)"/>` +
+    `</svg>`;
+}
+
 // Enhanced performance optimizations
 let domCache = {};
 let isRendering = false;
@@ -1496,16 +1506,23 @@ function createRatingHTML(tireId, average = 0, count = 0, userRating = 0) {
   starsContainer.setAttribute('role', isInteractive ? 'radiogroup' : 'img');
   starsContainer.setAttribute('aria-label', displayAverage > 0 ? `Rating: ${displayAverage.toFixed(1)} out of 5 stars` : 'No ratings yet');
 
+  // Round to nearest 0.5 for half-star display
+  const roundedAvg = displayAverage > 0 ? Math.round(displayAverage * 2) / 2 : 0;
+
   for (let i = 1; i <= 5; i++) {
     const star = document.createElement('span');
     star.className = 'star';
     star.dataset.rating = i.toString();
     star.dataset.tireId = tireId;
-    star.textContent = '★';
+    star.innerHTML = starSVGMarkup(20);
 
-    if (displayAverage > 0 && i <= Math.round(displayAverage)) {
+    // Determine fill level based on rounded average
+    if (roundedAvg >= i) {
       star.classList.add('active');
+    } else if (roundedAvg >= i - 0.5) {
+      star.classList.add('active', 'half');
     }
+
     if (validUserRating > 0 && i <= validUserRating) {
       star.classList.add('user-rated');
     }
@@ -1660,7 +1677,7 @@ function openReviewModal(tireId, preselectedRating = 0) {
     const star = document.createElement('span');
     star.className = 'rtg-review-star' + (i <= selectedRating ? ' selected' : '');
     star.dataset.value = i;
-    star.textContent = '\u2605';
+    star.innerHTML = starSVGMarkup(32);
     star.setAttribute('role', 'radio');
     star.setAttribute('aria-checked', i === selectedRating ? 'true' : 'false');
     star.setAttribute('aria-label', `${i} star${i !== 1 ? 's' : ''}`);
@@ -2058,10 +2075,13 @@ function createReviewCard(review) {
 }
 
 function renderStarsHTML(rating) {
-  const rounded = Math.round(rating);
+  const rounded = Math.round(rating * 2) / 2;
   let html = '';
   for (let i = 1; i <= 5; i++) {
-    html += `<span class="rtg-mini-star${i <= rounded ? ' filled' : ''}">\u2605</span>`;
+    let cls = 'rtg-mini-star';
+    if (rounded >= i) cls += ' filled';
+    else if (rounded >= i - 0.5) cls += ' half-filled';
+    html += `<span class="${cls}">${starSVGMarkup(16)}</span>`;
   }
   return html;
 }

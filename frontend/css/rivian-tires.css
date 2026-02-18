@@ -991,7 +991,7 @@ body.modal-open {
   line-height: 1.5;
 }
 
-/* === Rating Stars === */
+/* === Rating Stars (SVG-based with half-star support) === */
 .tire-rating-container {
   margin: 2px 0 4px 0;
   padding: 0;
@@ -1005,49 +1005,73 @@ body.modal-open {
 }
 .rating-stars {
   display: flex;
-  gap: 3px;
-  font-size: 28px !important;
-  line-height: 1 !important;
+  gap: 2px;
   align-items: center;
 }
 .rating-stars .star {
   color: #475569;
-  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
   user-select: none;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
-  font-weight: 400;
   position: relative;
-  font-size: 28px !important;
+  transition: color 0.2s ease, transform 0.2s ease, filter 0.2s ease;
+  line-height: 0;
 }
+/* SVG layer visibility */
+.rating-stars .star .star-bg {
+  opacity: 0.35;
+}
+.rating-stars .star .star-fill,
+.rating-stars .star .star-half {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+/* Active (fully filled) star */
 .rating-stars .star.active {
   color: #fbbf24;
-  filter: drop-shadow(0 2px 4px rgba(251, 191, 36, 0.4));
+  filter: drop-shadow(0 1px 3px rgba(251, 191, 36, 0.35));
 }
+.rating-stars .star.active .star-fill {
+  opacity: 1;
+}
+/* Half-filled star */
+.rating-stars .star.active.half .star-fill {
+  opacity: 0;
+}
+.rating-stars .star.active.half .star-half {
+  opacity: 1;
+}
+/* User-rated: green accent color */
 .rating-stars .star.user-rated {
   color: var(--rtg-accent);
-  filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--rtg-accent) 40%, transparent));
+  filter: drop-shadow(0 1px 3px color-mix(in srgb, var(--rtg-accent) 35%, transparent));
 }
+.rating-stars .star.user-rated .star-fill {
+  opacity: 1;
+}
+/* Interactive hover */
 .rating-stars.interactive .star {
   cursor: pointer;
-  transition: all 0.2s ease;
-}
-.rating-stars.interactive .star:hover {
-  color: #fbbf24;
-  transform: scale(1.15);
-  filter: drop-shadow(0 3px 6px rgba(251, 191, 36, 0.5));
 }
 .rating-stars .star.hover {
   color: #fbbf24 !important;
   transform: scale(1.15);
-  filter: drop-shadow(0 3px 6px rgba(251, 191, 36, 0.5));
+  filter: drop-shadow(0 2px 6px rgba(251, 191, 36, 0.5));
 }
+.rating-stars .star.hover .star-fill {
+  opacity: 1 !important;
+}
+.rating-stars .star.hover .star-half {
+  opacity: 0 !important;
+}
+/* User-rated hover: green accent */
 .rating-stars.has-user-rating .star.hover {
   color: var(--rtg-accent-hover) !important;
-  filter: drop-shadow(0 3px 6px color-mix(in srgb, var(--rtg-accent-hover) 50%, transparent));
+  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--rtg-accent-hover) 50%, transparent));
 }
 .rating-stars.has-user-rating.interactive .star:hover {
   color: var(--rtg-accent-hover);
-  filter: drop-shadow(0 3px 6px color-mix(in srgb, var(--rtg-accent-hover) 50%, transparent));
+  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--rtg-accent-hover) 50%, transparent));
 }
 .rating-info {
   display: flex;
@@ -1220,20 +1244,34 @@ body.modal-open {
   gap: 8px;
 }
 .rtg-review-star {
-  font-size: 36px;
   color: #475569;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: color 0.15s ease, transform 0.15s ease, filter 0.15s ease;
   user-select: none;
-  line-height: 1;
+  display: inline-flex;
+  line-height: 0;
+}
+.rtg-review-star .star-bg {
+  opacity: 0.35;
+}
+.rtg-review-star .star-fill,
+.rtg-review-star .star-half {
+  opacity: 0;
+  transition: opacity 0.15s ease;
 }
 .rtg-review-star.selected {
   color: var(--rtg-accent, #5ec095);
   filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--rtg-accent, #5ec095) 40%, transparent));
 }
+.rtg-review-star.selected .star-fill {
+  opacity: 1;
+}
 .rtg-review-star.hovered {
   color: #fbbf24;
   transform: scale(1.15);
+}
+.rtg-review-star.hovered .star-fill {
+  opacity: 1;
 }
 .rtg-review-star:hover {
   transform: scale(1.15);
@@ -1423,10 +1461,27 @@ body.modal-open {
 }
 .rtg-mini-star {
   color: #475569;
-  font-size: 16px;
+  display: inline-flex;
+  line-height: 0;
+}
+.rtg-mini-star .star-bg {
+  opacity: 0.35;
+}
+.rtg-mini-star .star-fill,
+.rtg-mini-star .star-half {
+  opacity: 0;
 }
 .rtg-mini-star.filled {
   color: #fbbf24;
+}
+.rtg-mini-star.filled .star-fill {
+  opacity: 1;
+}
+.rtg-mini-star.half-filled {
+  color: #fbbf24;
+}
+.rtg-mini-star.half-filled .star-half {
+  opacity: 1;
 }
 .rtg-reviews-total {
   color: var(--rtg-text-muted, #94a3b8);
@@ -1591,8 +1646,9 @@ a.rtg-review-card-title-link:hover {
   .rtg-reviews-drawer {
     max-width: 100%;
   }
-  .rtg-review-star {
-    font-size: 32px;
+  .rtg-review-star svg {
+    width: 28px;
+    height: 28px;
   }
 }
 
