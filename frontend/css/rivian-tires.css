@@ -996,7 +996,7 @@ body.modal-open {
 
 /* === Rating Stars (SVG-based with half-star support) === */
 .tire-rating-container {
-  margin: 2px 0 4px 0;
+  margin: 8px 0;
   padding: 0;
   border-radius: 8px;
 }
