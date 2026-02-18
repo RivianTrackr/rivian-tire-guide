@@ -189,6 +189,9 @@ class RTG_Frontend {
             'text_muted'   => '--rtg-text-muted',
             'text_heading' => '--rtg-text-heading',
             'border'       => '--rtg-border',
+            'star_filled'  => '--rtg-star-filled',
+            'star_user'    => '--rtg-star-user',
+            'star_empty'   => '--rtg-star-empty',
         );
 
         $css_vars = '';

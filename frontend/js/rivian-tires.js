@@ -1009,7 +1009,7 @@ function createInfoTooltip(label, tooltipKey) {
   infoButton.style.cssText = `
     background: none;
     border: none;
-    color: #94a3b8;
+    color: var(--rtg-text-muted);
     font-size: 14px;
     cursor: pointer;
     padding: 2px;
@@ -1052,7 +1052,7 @@ function createFilterTooltip(labelText, tooltipKey) {
   infoButton.style.cssText = `
     background: none;
     border: none;
-    color: #94a3b8;
+    color: var(--rtg-text-muted);
     font-size: 14px;
     cursor: pointer;
     padding: 2px;
@@ -1146,7 +1146,7 @@ function showTooltipModal(tooltipKey, triggerElement) {
     right: 16px;
     background: none;
     border: none;
-    color: #94a3b8;
+    color: var(--rtg-text-muted);
     font-size: 16px;
     cursor: pointer;
     padding: 4px;
@@ -1514,7 +1514,7 @@ function createRatingHTML(tireId, average = 0, count = 0, userRating = 0) {
     star.className = 'star';
     star.dataset.rating = i.toString();
     star.dataset.tireId = tireId;
-    star.innerHTML = starSVGMarkup(20);
+    star.innerHTML = starSVGMarkup(24);
 
     // Determine fill level based on rounded average
     if (roundedAvg >= i) {
@@ -1677,7 +1677,7 @@ function openReviewModal(tireId, preselectedRating = 0) {
     const star = document.createElement('span');
     star.className = 'rtg-review-star' + (i <= selectedRating ? ' selected' : '');
     star.dataset.value = i;
-    star.innerHTML = starSVGMarkup(32);
+    star.innerHTML = starSVGMarkup(36);
     star.setAttribute('role', 'radio');
     star.setAttribute('aria-checked', i === selectedRating ? 'true' : 'false');
     star.setAttribute('aria-label', `${i} star${i !== 1 ? 's' : ''}`);
@@ -2680,7 +2680,7 @@ function createSingleCard(row) {
       infoButton.style.cssText = `
         background: none;
         border: none;
-        color: #94a3b8;
+        color: var(--rtg-text-muted);
         font-size: 12px;
         cursor: pointer;
         padding: 1px;
@@ -2699,7 +2699,7 @@ function createSingleCard(row) {
       });
 
       infoButton.addEventListener('mouseleave', () => {
-        infoButton.style.color = '#94a3b8';
+        infoButton.style.color = rtgColor('text-muted');
         infoButton.style.backgroundColor = 'transparent';
       });
 
