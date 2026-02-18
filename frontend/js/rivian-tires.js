@@ -119,6 +119,7 @@ let domCache = {};
 let isRendering = false;
 let pendingRender = false;
 let lastFilterState = null;
+let initialRenderDone = false;
 let renderAnimationFrame = null;
 
 // Card cache and container
@@ -3185,7 +3186,16 @@ function finishFilterAndRender() {
   if (tireCountEl) {
     tireCountEl.textContent = `Showing ${filteredRows.length} tire${filteredRows.length === 1 ? "" : "s"}`;
   }
-  currentPage = 1;
+  if (initialRenderDone) {
+    currentPage = 1;
+  } else {
+    // On initial load, keep the page from the URL but clamp to valid range.
+    const totalPages = Math.max(1, Math.ceil(filteredRows.length / ROWS_PER_PAGE));
+    if (currentPage > totalPages) {
+      currentPage = totalPages;
+    }
+    initialRenderDone = true;
+  }
   throttledRender();
   updateURLFromFilters();
   renderActiveFilterChips();
