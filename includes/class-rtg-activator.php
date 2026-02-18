@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 6;
+    const DB_VERSION = 7;
 
     public static function activate() {
         self::create_tables();
@@ -36,10 +36,10 @@ class RTG_Activator {
         global $wpdb;
         $charset_collate = $wpdb->get_charset_collate();
 
-        $tires_table   = $wpdb->prefix . 'rtg_tires';
-        $ratings_table = $wpdb->prefix . 'rtg_ratings';
-
-        $wheels_table  = $wpdb->prefix . 'rtg_wheels';
+        $tires_table     = $wpdb->prefix . 'rtg_tires';
+        $ratings_table   = $wpdb->prefix . 'rtg_ratings';
+        $wheels_table    = $wpdb->prefix . 'rtg_wheels';
+        $favorites_table = $wpdb->prefix . 'rtg_favorites';
 
         $sql = "CREATE TABLE {$wheels_table} (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -108,6 +108,17 @@ class RTG_Activator {
             PRIMARY KEY  (id),
             UNIQUE KEY user_tire (user_id, tire_id),
             KEY idx_tire_id (tire_id)
+        ) $charset_collate;
+
+        CREATE TABLE {$favorites_table} (
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            tire_id VARCHAR(50) NOT NULL,
+            user_id BIGINT(20) UNSIGNED NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            UNIQUE KEY user_tire_fav (user_id, tire_id),
+            KEY idx_user_id (user_id),
+            KEY idx_tire_id (tire_id)
         ) $charset_collate;";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -128,6 +139,7 @@ class RTG_Activator {
             4 => 'migrate_4_add_review_link',
             5 => 'migrate_5_add_review_text',
             6 => 'migrate_6_add_review_status',
+            7 => 'migrate_7_create_favorites_table',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -193,5 +205,13 @@ class RTG_Activator {
     private static function migrate_6_add_review_status() {
         // Column added by dbDelta above with DEFAULT 'approved',
         // so all existing rows are automatically approved.
+    }
+
+    /**
+     * Migration 7: Create favorites table for user tire wishlists.
+     * Table creation handled by dbDelta above; this marks the migration.
+     */
+    private static function migrate_7_create_favorites_table() {
+        // Table created by dbDelta above.
     }
 }

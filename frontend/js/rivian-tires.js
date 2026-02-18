@@ -124,6 +124,9 @@ function starSVGMarkup(size = 22) {
     `</svg>`;
 }
 
+// Favorites system
+let userFavorites = new Set();
+
 // Enhanced performance optimizations
 let domCache = {};
 let isRendering = false;
@@ -2292,6 +2295,7 @@ function applyFiltersFromURL() {
   setChecked("filterEVRated", params.get("ev"));
   setChecked("filterStudded", params.get("studded"));
   setChecked("filterReviewed", params.get("reviewed"));
+  setChecked("filterFavorites", params.get("favorites"));
 
   const sort = params.get("sort");
   if (sort && ALLOWED_SORT_OPTIONS.includes(sort)) {
@@ -2442,8 +2446,8 @@ function renderCards(rows) {
     } else {
       card.style.transition = `opacity ${animationDuration}ms ease, transform ${animationDuration}ms ease`;
       card.style.opacity = '0';
-      card.style.transform = isMobile ? 'scale(0.98)' : 'scale(0.95)';
-      
+      card.style.transform = isMobile ? 'translateY(-4px) scale(0.98)' : 'translateY(-8px) scale(0.97)';
+
       setTimeout(() => {
         if (card.parentNode) {
           card.parentNode.removeChild(card);
@@ -2460,7 +2464,7 @@ function renderCards(rows) {
       if (card) {
         if (!prefersReducedMotion) {
           card.style.opacity = '0';
-          card.style.transform = isMobile ? 'scale(0.98)' : 'scale(0.95)';
+          card.style.transform = isMobile ? 'translateY(8px) scale(0.98)' : 'translateY(12px) scale(0.97)';
         }
         newCards.push(card);
       }
@@ -2474,19 +2478,19 @@ function renderCards(rows) {
   if (!prefersReducedMotion && newCards.length > 0) {
     requestAnimationFrame(() => {
       newCards.forEach((card, index) => {
-        const staggerDelay = isMobile ? index * 50 : 0;
-        
+        const staggerDelay = isMobile ? index * 50 : index * 40;
+
         setTimeout(() => {
-          card.style.transition = `opacity ${animationDuration}ms ease, transform ${animationDuration}ms ease`;
+          card.style.transition = `opacity ${animationDuration}ms cubic-bezier(0.16, 1, 0.3, 1), transform ${animationDuration}ms cubic-bezier(0.16, 1, 0.3, 1)`;
           card.style.opacity = '1';
-          card.style.transform = 'scale(1)';
+          card.style.transform = 'translateY(0) scale(1)';
         }, staggerDelay);
       });
     });
   } else if (prefersReducedMotion) {
     newCards.forEach(card => {
       card.style.opacity = '1';
-      card.style.transform = 'scale(1)';
+      card.style.transform = 'translateY(0) scale(1)';
     });
   }
   
@@ -2518,6 +2522,9 @@ function renderCards(rows) {
   }
   
   setupCompareCheckboxes();
+
+  // Trigger IntersectionObserver for lazy-loaded images
+  if (cardContainer) observeCardImages(cardContainer);
 }
 
 function createSingleCard(row) {
@@ -2580,6 +2587,21 @@ function createSingleCard(row) {
   compareOverlay.appendChild(compareCheckbox);
   compareOverlay.appendChild(compareIcon);
 
+  // Favorite button overlay
+  const favBtn = document.createElement('button');
+  favBtn.className = 'tire-card-fav-btn';
+  favBtn.dataset.tireId = tireId;
+  const isFav = userFavorites.has(tireId);
+  favBtn.classList.toggle('is-favorite', isFav);
+  favBtn.setAttribute('aria-label', isFav ? 'Remove from favorites' : 'Add to favorites');
+  favBtn.innerHTML = isFav
+    ? '<i class="fa-solid fa-heart"></i>'
+    : '<i class="fa-regular fa-heart"></i>';
+  favBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleFavorite(tireId);
+  });
+
   // Share button overlay
   const shareBtn = document.createElement('button');
   shareBtn.className = 'tire-card-share-btn';
@@ -2614,18 +2636,26 @@ function createSingleCard(row) {
     imageContainer.className = 'tire-card-image';
 
     const img = document.createElement('img');
-    img.src = safeImage;
     img.alt = `${escapeHTML(safeString(brand))} ${escapeHTML(safeString(model))}`;
     img.loading = 'lazy';
     img.fetchpriority = 'low';
+    img.className = 'rtg-lazy-img';
+    // Use data-src for IntersectionObserver, fallback to native lazy
+    if ('IntersectionObserver' in window) {
+      img.dataset.src = safeImage;
+    } else {
+      img.src = safeImage;
+    }
     img.onclick = () => openImageModal(safeImage, `${escapeHTML(safeString(brand))} ${escapeHTML(safeString(model))}`);
 
     imageContainer.appendChild(img);
     imageContainer.appendChild(compareOverlay);
+    imageContainer.appendChild(favBtn);
     imageContainer.appendChild(shareBtn);
     card.appendChild(imageContainer);
   } else {
     card.appendChild(compareOverlay);
+    card.appendChild(favBtn);
     card.appendChild(shareBtn);
   }
 
@@ -2871,6 +2901,40 @@ function preloadNextPageImages() {
   });
 }
 
+// IntersectionObserver for enhanced lazy loading with fade-in
+let imageObserver = null;
+function setupImageObserver() {
+  if (imageObserver || !('IntersectionObserver' in window)) return;
+
+  imageObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const img = entry.target;
+        const src = img.dataset.src;
+        if (src) {
+          img.src = src;
+          img.removeAttribute('data-src');
+          img.addEventListener('load', () => {
+            img.classList.add('rtg-img-loaded');
+          }, { once: true });
+        }
+        imageObserver.unobserve(img);
+      }
+    });
+  }, {
+    rootMargin: '200px 0px',
+    threshold: 0
+  });
+}
+
+function observeCardImages(container) {
+  if (!imageObserver) setupImageObserver();
+  if (!imageObserver) return;
+
+  const images = container.querySelectorAll('img[data-src]');
+  images.forEach(img => imageObserver.observe(img));
+}
+
 function paginate(data) {
   const start = (currentPage - 1) * ROWS_PER_PAGE;
   return data.slice(start, start + ROWS_PER_PAGE);
@@ -2928,29 +2992,156 @@ function styleButton(button) {
 
 function render() {
   const visible = paginate(filteredRows);
-  
+
   const tireIds = visible.map(row => row[0]).filter(Boolean);
-  
+
   loadTireRatings(tireIds).then(() => {
     renderCards(visible);
     renderPaginationControls(filteredRows);
-    
+
     const noResults = getDOMElement("noResults");
     const tireCards = getDOMElement("tireCards");
     if (filteredRows.length === 0) {
+      renderSmartNoResults();
       noResults.style.display = "block";
       tireCards.style.display = "none";
     } else {
-      noResults.style.display = "none";  
+      noResults.style.display = "none";
       tireCards.style.display = "grid";
     }
-    
+
     if ('requestIdleCallback' in window) {
       requestIdleCallback(() => preloadNextPageImages());
     } else {
       setTimeout(preloadNextPageImages, 100);
     }
   });
+}
+
+function renderSmartNoResults() {
+  const container = getDOMElement("noResults");
+  if (!container) return;
+
+  // Determine which filters are active and build suggestions
+  const suggestions = [];
+  const activeFilterNames = [];
+
+  const sizeEl = getDOMElement("filterSize");
+  const brandEl = getDOMElement("filterBrand");
+  const categoryEl = getDOMElement("filterCategory");
+  const priceEl = getDOMElement("priceMax");
+  const warrantyEl = getDOMElement("warrantyMax");
+  const weightEl = getDOMElement("weightMax");
+  const searchEl = getDOMElement("searchInput");
+
+  if (sizeEl?.value) activeFilterNames.push("Size");
+  if (brandEl?.value) activeFilterNames.push("Brand");
+  if (categoryEl?.value) activeFilterNames.push("Category");
+  if (priceEl && parseInt(priceEl.value) < 600) activeFilterNames.push("Price");
+  if (warrantyEl && parseInt(warrantyEl.value) < 80000) activeFilterNames.push("Warranty");
+  if (weightEl && parseInt(weightEl.value) < 70) activeFilterNames.push("Weight");
+  if (getDOMElement("filter3pms")?.checked) activeFilterNames.push("3PMS");
+  if (getDOMElement("filterEVRated")?.checked) activeFilterNames.push("EV Rated");
+  if (getDOMElement("filterStudded")?.checked) activeFilterNames.push("Studded");
+  if (getDOMElement("filterReviewed")?.checked) activeFilterNames.push("Reviewed");
+  if (getDOMElement("filterFavorites")?.checked) activeFilterNames.push("Favorites");
+  if (searchEl?.value?.trim()) activeFilterNames.push("Search");
+
+  // Build smart suggestion buttons
+  if (activeFilterNames.length > 1) {
+    suggestions.push({
+      label: '<i class="fa-solid fa-rotate-left"></i> Clear all filters',
+      action: () => resetFilters()
+    });
+  }
+
+  if (getDOMElement("filterFavorites")?.checked) {
+    suggestions.push({
+      label: '<i class="fa-regular fa-heart"></i> Show all tires (not just favorites)',
+      action: () => { getDOMElement("filterFavorites").checked = false; lastFilterState = null; filterAndRender(); }
+    });
+  }
+
+  if (sizeEl?.value) {
+    suggestions.push({
+      label: `<i class="fa-solid fa-ruler"></i> Remove size filter (${escapeHTML(sizeEl.value)})`,
+      action: () => { sizeEl.value = ""; lastFilterState = null; filterAndRender(); }
+    });
+  }
+
+  if (brandEl?.value) {
+    suggestions.push({
+      label: `<i class="fa-solid fa-building"></i> Show all brands`,
+      action: () => { brandEl.value = ""; lastFilterState = null; filterAndRender(); }
+    });
+  }
+
+  if (categoryEl?.value) {
+    suggestions.push({
+      label: `<i class="fa-solid fa-tags"></i> Show all categories`,
+      action: () => { categoryEl.value = ""; lastFilterState = null; filterAndRender(); }
+    });
+  }
+
+  if (priceEl && parseInt(priceEl.value) < 600) {
+    suggestions.push({
+      label: '<i class="fa-solid fa-dollar-sign"></i> Increase price limit to max',
+      action: () => { priceEl.value = 600; getDOMElement("priceVal").textContent = "$600"; updateSliderBackground(priceEl); lastFilterState = null; filterAndRender(); }
+    });
+  }
+
+  if (getDOMElement("filter3pms")?.checked) {
+    suggestions.push({
+      label: '<i class="fa-solid fa-snowflake"></i> Remove 3PMS filter',
+      action: () => { getDOMElement("filter3pms").checked = false; lastFilterState = null; filterAndRender(); }
+    });
+  }
+
+  if (searchEl?.value?.trim()) {
+    suggestions.push({
+      label: `<i class="fa-solid fa-magnifying-glass"></i> Clear search "${escapeHTML(safeString(searchEl.value.trim(), 30))}"`,
+      action: () => { searchEl.value = ""; delete domCache["searchInput"]; lastFilterState = null; filterAndRender(); }
+    });
+  }
+
+  // Limit to 4 suggestions
+  const displaySuggestions = suggestions.slice(0, 4);
+
+  container.innerHTML = '';
+
+  const icon = document.createElement('div');
+  icon.className = 'no-results-icon';
+  icon.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i>';
+  container.appendChild(icon);
+
+  const title = document.createElement('div');
+  title.className = 'no-results-title';
+  title.textContent = 'No tires match your filters';
+  container.appendChild(title);
+
+  const desc = document.createElement('div');
+  desc.className = 'no-results-description';
+  if (activeFilterNames.length > 0) {
+    desc.textContent = `You have ${activeFilterNames.length} active filter${activeFilterNames.length > 1 ? 's' : ''}: ${activeFilterNames.join(', ')}. Try adjusting your filters to see more options.`;
+  } else {
+    desc.textContent = 'Try adjusting the filters or search to see more options.';
+  }
+  container.appendChild(desc);
+
+  if (displaySuggestions.length > 0) {
+    const suggestionsContainer = document.createElement('div');
+    suggestionsContainer.className = 'no-results-suggestions';
+
+    displaySuggestions.forEach(suggestion => {
+      const btn = document.createElement('button');
+      btn.className = 'no-results-suggestion-btn';
+      btn.innerHTML = suggestion.label;
+      btn.addEventListener('click', suggestion.action);
+      suggestionsContainer.appendChild(btn);
+    });
+
+    container.appendChild(suggestionsContainer);
+  }
 }
 
 function updateURLFromFilters() {
@@ -3008,11 +3199,21 @@ function updateURLFromFilters() {
     params.set("weight", weightVal);
   }
   
+  // Include favorites filter in URL
+  if (getDOMElement("filterFavorites")?.checked) {
+    params.set("favorites", "1");
+  }
+
   const newURL = params.toString()
     ? `${location.pathname}?${params.toString()}`
     : `${location.pathname}`;
 
-  history.replaceState(null, "", newURL);
+  // Use pushState after initial render so back/forward works
+  if (initialRenderDone && newURL !== location.pathname + location.search) {
+    history.pushState(null, "", newURL);
+  } else {
+    history.replaceState(null, "", newURL);
+  }
 }
 
 function getFilteredIndexes(filters) {
@@ -3067,6 +3268,7 @@ function getFilteredIndexes(filters) {
     if (filters["EVRated"] && !safeString(row[17]).toLowerCase().includes("ev rated")) return false;
     if (filters["Studded"] && !safeString(row[17]).toLowerCase().includes("studded available")) return false;
     if (filters["Reviewed"] && !safeString(row[23])) return false;
+    if (filters["Favorites"] && !userFavorites.has(row[0])) return false;
 
     return true;
   });
@@ -3081,6 +3283,7 @@ function filterAndRender() {
   const filterEVRated = getDOMElement("filterEVRated");
   const filterStudded = getDOMElement("filterStudded");
   const filterReviewed = getDOMElement("filterReviewed");
+  const filterFavorites = getDOMElement("filterFavorites");
   const filterSize = getDOMElement("filterSize");
   const filterBrand = getDOMElement("filterBrand");
   const filterCategory = getDOMElement("filterCategory");
@@ -3100,6 +3303,7 @@ function filterAndRender() {
     "EVRated": filterEVRated?.checked || false,
     "Studded": filterStudded?.checked || false,
     "Reviewed": filterReviewed?.checked || false,
+    "Favorites": filterFavorites?.checked || false,
     Size: filterSize?.value && VALID_SIZES.includes(filterSize.value) ? filterSize.value : "",
     Brand: filterBrand?.value && VALID_BRANDS.includes(filterBrand.value) ? filterBrand.value : "",
     Category: filterCategory?.value && VALID_CATEGORIES.includes(filterCategory.value) ? filterCategory.value : ""
@@ -3324,7 +3528,7 @@ function resetFilters() {
     if (el) el.value = value;
   });
   
-  const checkboxes = ["filter3pms", "filterEVRated", "filterStudded", "filterReviewed"];
+  const checkboxes = ["filter3pms", "filterEVRated", "filterStudded", "filterReviewed", "filterFavorites"];
   checkboxes.forEach(id => {
     const el = getDOMElement(id);
     if (el) el.checked = false;
@@ -3415,6 +3619,9 @@ function renderActiveFilterChips() {
   }
   if (getDOMElement("filterReviewed")?.checked) {
     chips.push({ label: "Reviewed", value: "Yes", clear: () => { getDOMElement("filterReviewed").checked = false; } });
+  }
+  if (getDOMElement("filterFavorites")?.checked) {
+    chips.push({ label: "Favorites", value: "Yes", clear: () => { getDOMElement("filterFavorites").checked = false; } });
   }
 
   container.innerHTML = "";
@@ -3514,6 +3721,7 @@ function initializeUI() {
     { id: "filterEVRated", listener: filterFn },
     { id: "filterStudded", listener: filterFn },
     { id: "filterReviewed", listener: filterFn },
+    { id: "filterFavorites", listener: filterFn },
   ];
 
   inputsToWatch.forEach(({ id, listener }) => {
@@ -3552,6 +3760,9 @@ function initializeUI() {
       countDisplay.textContent = `Showing ${filteredRows.length} tire${filteredRows.length !== 1 ? "s" : ""}`;
     }
   }
+
+  // Load favorites after UI is ready (non-blocking)
+  loadFavorites();
 }
 
 // --- Server-side pagination mode ---
@@ -3624,6 +3835,7 @@ function fetchTiresFromServer(page) {
     const noResults = getDOMElement("noResults");
     const tireCards = getDOMElement("tireCards");
     if (filteredRows.length === 0) {
+      renderSmartNoResults();
       if (noResults) noResults.style.display = "block";
       if (tireCards) tireCards.style.display = "none";
     } else {
@@ -3731,6 +3943,114 @@ function serverSideFilterAndRender() {
   fetchTiresFromServer(1);
   renderActiveFilterChips();
 }
+
+// === Favorites System ===
+function loadFavorites() {
+  if (!isLoggedIn || typeof tireRatingAjax === 'undefined') return Promise.resolve();
+
+  const body = new FormData();
+  body.append('action', 'rtg_get_favorites');
+  body.append('nonce', tireRatingAjax.nonce);
+
+  return fetch(tireRatingAjax.ajaxurl, { method: 'POST', body })
+    .then(res => res.json())
+    .then(json => {
+      if (json.success && Array.isArray(json.data.favorites)) {
+        userFavorites = new Set(json.data.favorites);
+        updateFavoriteButtons();
+        updateFavoritesFilterCount();
+      }
+    })
+    .catch(err => console.error('Failed to load favorites:', err));
+}
+
+function toggleFavorite(tireId) {
+  if (!isLoggedIn) {
+    if (typeof tireRatingAjax !== 'undefined' && tireRatingAjax.login_url) {
+      window.location.href = tireRatingAjax.login_url;
+    }
+    return;
+  }
+
+  if (!VALIDATION_PATTERNS.tireId.test(tireId)) return;
+
+  const isFav = userFavorites.has(tireId);
+  const action = isFav ? 'rtg_remove_favorite' : 'rtg_add_favorite';
+
+  // Optimistic update
+  if (isFav) {
+    userFavorites.delete(tireId);
+  } else {
+    userFavorites.add(tireId);
+  }
+  updateFavoriteButton(tireId);
+  updateFavoritesFilterCount();
+
+  const body = new FormData();
+  body.append('action', action);
+  body.append('tire_id', tireId);
+  body.append('nonce', tireRatingAjax.nonce);
+
+  fetch(tireRatingAjax.ajaxurl, { method: 'POST', body })
+    .then(res => res.json())
+    .then(json => {
+      if (!json.success) {
+        // Revert optimistic update
+        if (isFav) {
+          userFavorites.add(tireId);
+        } else {
+          userFavorites.delete(tireId);
+        }
+        updateFavoriteButton(tireId);
+        updateFavoritesFilterCount();
+      }
+    })
+    .catch(() => {
+      // Revert on network error
+      if (isFav) {
+        userFavorites.add(tireId);
+      } else {
+        userFavorites.delete(tireId);
+      }
+      updateFavoriteButton(tireId);
+      updateFavoritesFilterCount();
+    });
+}
+
+function updateFavoriteButton(tireId) {
+  const btns = document.querySelectorAll(`.tire-card-fav-btn[data-tire-id="${CSS.escape(tireId)}"]`);
+  btns.forEach(btn => {
+    const isFav = userFavorites.has(tireId);
+    btn.classList.toggle('is-favorite', isFav);
+    btn.setAttribute('aria-label', isFav ? 'Remove from favorites' : 'Add to favorites');
+    btn.innerHTML = isFav
+      ? '<i class="fa-solid fa-heart"></i>'
+      : '<i class="fa-regular fa-heart"></i>';
+  });
+}
+
+function updateFavoriteButtons() {
+  document.querySelectorAll('.tire-card-fav-btn').forEach(btn => {
+    const tireId = btn.dataset.tireId;
+    if (tireId) updateFavoriteButton(tireId);
+  });
+}
+
+function updateFavoritesFilterCount() {
+  const badge = document.getElementById('favoritesCount');
+  if (badge) {
+    badge.textContent = userFavorites.size > 0 ? userFavorites.size : '';
+    badge.style.display = userFavorites.size > 0 ? 'inline-flex' : 'none';
+  }
+}
+
+// === Popstate handler for browser back/forward ===
+window.addEventListener('popstate', function() {
+  if (isServerSide()) return;
+  lastFilterState = null;
+  applyFiltersFromURL();
+  filterAndRender();
+});
 
 // Load tire data from WordPress localized script.
 if (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.serverSide) {
