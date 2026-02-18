@@ -1044,13 +1044,10 @@ body.modal-open {
 .rating-stars .star.active.half .star-half {
   opacity: 1;
 }
-/* User-rated: distinct color */
-.rating-stars .star.user-rated {
+/* User-rated: distinct color (only on filled stars) */
+.rating-stars .star.active.user-rated {
   color: var(--rtg-star-user, #4ade80);
   filter: drop-shadow(0 1px 3px color-mix(in srgb, var(--rtg-star-user, #4ade80) 35%, transparent));
-}
-.rating-stars .star.user-rated .star-fill {
-  opacity: 1;
 }
 /* Interactive hover */
 .rating-stars.interactive .star {
