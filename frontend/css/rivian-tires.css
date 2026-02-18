@@ -1127,10 +1127,18 @@ body.modal-open {
 }
 .write-review-btn {
   color: var(--rtg-accent, #5ec095);
+  background: color-mix(in srgb, var(--rtg-accent, #5ec095) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rtg-accent, #5ec095) 25%, transparent);
+  border-radius: 6px;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
 }
 .write-review-btn:hover {
+  background: color-mix(in srgb, var(--rtg-accent, #5ec095) 15%, transparent);
+  border-color: color-mix(in srgb, var(--rtg-accent, #5ec095) 40%, transparent);
   color: var(--rtg-accent-hover, #4daa80);
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 /* === Review Modal === */
