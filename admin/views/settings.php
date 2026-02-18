@@ -13,20 +13,20 @@ $user_reviews_slug = $settings['user_reviews_slug'] ?? 'user-reviews';
 
 // Theme color defaults.
 $default_colors = array(
-    'accent'       => '#5ec095',
-    'accent_hover' => '#4ade80',
-    'bg_primary'   => '#1e293b',
-    'bg_card'      => '#121e2b',
+    'accent'       => '#fba919',
+    'accent_hover' => '#fdbe40',
+    'bg_primary'   => '#121e2b',
+    'bg_card'      => '#162231',
     'bg_input'     => '#374151',
-    'bg_deep'      => '#111827',
-    'text_primary' => '#e5e5e5',
+    'bg_deep'      => '#0c1620',
+    'text_primary' => '#e5e7eb',
     'text_light'   => '#f1f5f9',
-    'text_muted'   => '#94a3b8',
+    'text_muted'   => '#8493a5',
     'text_heading' => '#ffffff',
-    'border'       => '#334155',
-    'star_filled'  => '#fbbf24',
-    'star_user'    => '#5ec095',
-    'star_empty'   => '#475569',
+    'border'       => '#1e3044',
+    'star_filled'  => '#fba919',
+    'star_user'    => '#4ade80',
+    'star_empty'   => '#2d3a49',
 );
 $theme_colors = wp_parse_args( $settings['theme_colors'] ?? array(), $default_colors );
 

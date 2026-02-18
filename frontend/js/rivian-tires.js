@@ -1009,7 +1009,7 @@ function createInfoTooltip(label, tooltipKey) {
   infoButton.style.cssText = `
     background: none;
     border: none;
-    color: #94a3b8;
+    color: var(--rtg-text-muted);
     font-size: 14px;
     cursor: pointer;
     padding: 2px;
@@ -1052,7 +1052,7 @@ function createFilterTooltip(labelText, tooltipKey) {
   infoButton.style.cssText = `
     background: none;
     border: none;
-    color: #94a3b8;
+    color: var(--rtg-text-muted);
     font-size: 14px;
     cursor: pointer;
     padding: 2px;
@@ -1146,7 +1146,7 @@ function showTooltipModal(tooltipKey, triggerElement) {
     right: 16px;
     background: none;
     border: none;
-    color: #94a3b8;
+    color: var(--rtg-text-muted);
     font-size: 16px;
     cursor: pointer;
     padding: 4px;
@@ -2680,7 +2680,7 @@ function createSingleCard(row) {
       infoButton.style.cssText = `
         background: none;
         border: none;
-        color: #94a3b8;
+        color: var(--rtg-text-muted);
         font-size: 12px;
         cursor: pointer;
         padding: 1px;
@@ -2699,7 +2699,7 @@ function createSingleCard(row) {
       });
 
       infoButton.addEventListener('mouseleave', () => {
-        infoButton.style.color = '#94a3b8';
+        infoButton.style.color = rtgColor('text-muted');
         infoButton.style.backgroundColor = 'transparent';
       });
 
