@@ -5,12 +5,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 <a class="rtg-skip-link" href="#tireCards">Skip to tire results</a>
 <button id="toggleFilters" class="toggle-filters-btn" aria-expanded="false" aria-controls="mobileFilterContent">
-  <?php echo RTG_Icons::render( 'sliders', 16 ); ?>&nbsp; Show Filters
+  <i class="fa-solid fa-sliders" aria-hidden="true"></i>&nbsp; Show Filters
 </button>
 <div id="filterTop"></div>
 <div class="filter-wrapper">
   <div class="filter-header">
-    <?php echo RTG_Icons::render( 'sliders', 16 ); ?>
+    <i class="fa-solid fa-sliders" aria-hidden="true"></i>
     Filter, Sort, and Compare
   </div>
   <div class="filter-body">
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
       <div class="search-container">
         <label for="searchInput" class="screen-reader-text">Search tires</label>
         <input id="searchInput" type="text" placeholder="Search tires..." class="search-input" aria-label="Search tires"/>
-        <?php echo RTG_Icons::render( 'magnifying-glass', 16, 'search-icon' ); ?>
+        <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
       </div>
     </div>
     <div id="mobileFilterContent" class="mobile-filter-content">
@@ -71,7 +71,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             <div style="display: flex; align-items: center; gap: 6px;">
               <span>3PMS Rated</span>
               <button class="info-tooltip-trigger" data-tooltip-key="3PMS Filter" style="background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onmouseenter="this.style.color='var(--rtg-accent, #5ec095)'; this.style.backgroundColor='color-mix(in srgb, var(--rtg-accent, #5ec095) 10%, transparent)'" onmouseleave="this.style.color='#94a3b8'; this.style.backgroundColor='transparent'">
-                <?php echo RTG_Icons::render( 'circle-info', 14 ); ?>
+                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
               </button>
             </div>
           </span>
@@ -83,7 +83,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             <div style="display: flex; align-items: center; gap: 6px;">
               <span>EV Rated</span>
               <button class="info-tooltip-trigger" data-tooltip-key="EV Rated Filter" style="background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onmouseenter="this.style.color='var(--rtg-accent, #5ec095)'; this.style.backgroundColor='color-mix(in srgb, var(--rtg-accent, #5ec095) 10%, transparent)'" onmouseleave="this.style.color='#94a3b8'; this.style.backgroundColor='transparent'">
-                <?php echo RTG_Icons::render( 'circle-info', 14 ); ?>
+                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
               </button>
             </div>
           </span>
@@ -95,7 +95,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             <div style="display: flex; align-items: center; gap: 6px;">
               <span>Studded Available</span>
               <button class="info-tooltip-trigger" data-tooltip-key="Studded Available Filter" style="background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onmouseenter="this.style.color='var(--rtg-accent, #5ec095)'; this.style.backgroundColor='color-mix(in srgb, var(--rtg-accent, #5ec095) 10%, transparent)'" onmouseleave="this.style.color='#94a3b8'; this.style.backgroundColor='transparent'">
-                <?php echo RTG_Icons::render( 'circle-info', 14 ); ?>
+                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
               </button>
             </div>
           </span>
@@ -107,7 +107,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             <div style="display: flex; align-items: center; gap: 6px;">
               <span>Officially Reviewed</span>
               <button class="info-tooltip-trigger" data-tooltip-key="Officially Reviewed Filter" style="background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onmouseenter="this.style.color='var(--rtg-accent, #5ec095)'; this.style.backgroundColor='color-mix(in srgb, var(--rtg-accent, #5ec095) 10%, transparent)'" onmouseleave="this.style.color='#94a3b8'; this.style.backgroundColor='transparent'">
-                <?php echo RTG_Icons::render( 'circle-info', 14 ); ?>
+                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
               </button>
             </div>
           </span>
@@ -118,7 +118,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         <div class="switch-label favorites-filter-wrapper">
           <span class="switch-text">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <?php echo RTG_Icons::render( 'heart', 13 ); ?>
+              <i class="fa-solid fa-heart" aria-hidden="true"></i>
               <span>My Favorites</span>
             </div>
           </span>
@@ -139,7 +139,7 @@ if ( ! defined( 'ABSPATH' ) ) {
       ?>
       <div id="wheelDrawerContainer">
         <button id="wheelDrawerTrigger" class="wheel-trigger">
-          <?php echo RTG_Icons::render( 'circle-info', 14 ); ?>
+          <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
           Not sure which Rivian tire you need?
         </button>
         <div id="wheelDrawer" class="wheel-drawer">

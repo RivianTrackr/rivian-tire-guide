@@ -78,11 +78,6 @@ class RTG_Frontend {
             'tireGuideUrl' => $tire_guide_url,
         ) );
 
-        // Provide icon map for user-reviews page.
-        wp_localize_script( 'rtg-user-reviews', 'rtgData', array(
-            'icons' => json_decode( RTG_Icons::get_js_icon_map(), true ),
-        ) );
-
         $this->inject_theme_color_overrides();
     }
 
@@ -181,9 +176,6 @@ class RTG_Frontend {
         if ( ! $server_side ) {
             $localized['tires'] = RTG_Database::get_tires_as_array();
         }
-
-        // Provide inline SVG icon definitions (replaces Font Awesome CDN).
-        $localized['icons'] = json_decode( RTG_Icons::get_js_icon_map(), true );
 
         wp_localize_script( 'rtg-tire-guide', 'rtgData', $localized );
 

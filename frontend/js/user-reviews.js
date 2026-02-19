@@ -1,15 +1,18 @@
 (function () {
   "use strict";
 
-  // Inline SVG icon helper (uses icon map from localized script data).
+  // Font Awesome icon helper.
   function rtgIcon(name, size, cls) {
-    size = size || 16;
-    var icons = (typeof rtgData !== 'undefined' && rtgData.icons) ? rtgData.icons : {};
-    var def = icons[name];
-    if (!def) return '';
-    var classAttr = 'rtg-icon' + (cls ? ' ' + cls : '');
-    return '<svg class="' + classAttr + '" width="' + size + '" height="' + size
-      + '" viewBox="' + def.viewBox + '" aria-hidden="true">' + def.paths + '</svg>';
+    var faPrefix = 'fa-solid';
+    var faName = 'fa-' + name;
+    if (name === 'heart-outline') { faPrefix = 'fa-regular'; faName = 'fa-heart'; }
+    else if (name === 'arrow-up-right') { faName = 'fa-up-right-from-square'; }
+    else if (name === 'trash') { faName = 'fa-trash-can'; }
+    else if (name === 'share') { faName = 'fa-share-nodes'; }
+    var classStr = faPrefix + ' ' + faName;
+    if (cls) classStr += ' ' + cls;
+    var style = size ? ' style="font-size:' + size + 'px"' : '';
+    return '<i class="' + classStr + '"' + style + ' aria-hidden="true"></i>';
   }
 
   var tireGuideUrl = (typeof rtgUserReviews !== "undefined" && rtgUserReviews.tireGuideUrl) || "";

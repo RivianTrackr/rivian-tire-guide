@@ -49,7 +49,6 @@
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    .rtg-icon { display: inline-block; vertical-align: middle; flex-shrink: 0; fill: currentColor; color: inherit; }
     .cmp-placeholder-icon { color: var(--rtg-border); }
 
     body {
@@ -447,17 +446,17 @@
         <img src="https://riviantrackr.com/wp-content/uploads/2024/01/RivianTrackrLogo.webp" class="cmp-logo" alt="RivianTrackr" />
       </a>
       <a href="<?php echo esc_url( home_url( '/rivian-tire-guide/' ) ); ?>" class="cmp-back">
-        <?php echo RTG_Icons::render( 'arrow-left', 16 ); ?>
+        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
         <span>Back to Tire Guide</span>
       </a>
     </div>
     <div class="cmp-topbar-actions">
       <button type="button" class="cmp-btn" id="shareBtn">
-        <?php echo RTG_Icons::render( 'share', 16 ); ?>
+        <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
         <span>Share</span>
       </button>
       <button type="button" class="cmp-btn" onclick="window.print()">
-        <?php echo RTG_Icons::render( 'print', 16 ); ?>
+        <i class="fa-solid fa-print" aria-hidden="true"></i>
         <span>Print</span>
       </button>
     </div>
@@ -468,11 +467,11 @@
     <h1 class="cmp-title">Tire Comparison</h1>
     <div id="comparisonContent">
       <div class="cmp-empty">
-        <div class="cmp-empty-icon"><?php echo RTG_Icons::render( 'scale-balanced', 48 ); ?></div>
+        <div class="cmp-empty-icon"><i class="fa-solid fa-scale-balanced" style="font-size:48px" aria-hidden="true"></i></div>
         <div class="cmp-empty-title">No tires selected</div>
         <div class="cmp-empty-text">Head back to the tire guide and select tires to compare.</div>
         <a href="<?php echo esc_url( home_url( '/rivian-tire-guide/' ) ); ?>" class="cmp-btn cmp-btn-primary">
-          <?php echo RTG_Icons::render( 'arrow-left', 16 ); ?> Browse Tires
+          <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Browse Tires
         </a>
       </div>
     </div>

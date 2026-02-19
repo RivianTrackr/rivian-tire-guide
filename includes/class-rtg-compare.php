@@ -65,10 +65,9 @@ class RTG_Compare {
             true
         );
 
-        // Localize tire data and icon map for compare page.
+        // Localize tire data for compare page.
         wp_localize_script( 'rtg-compare', 'rtgData', array(
             'tires' => RTG_Database::get_tires_as_array(),
-            'icons' => json_decode( RTG_Icons::get_js_icon_map(), true ),
         ) );
 
         // Load the compare template.
