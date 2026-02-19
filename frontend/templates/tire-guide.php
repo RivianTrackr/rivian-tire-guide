@@ -43,24 +43,15 @@ if ( ! defined( 'ABSPATH' ) ) {
         </div>
         <div class="slider-row">
           <div class="filter-group slider-wrapper">
-            <div class="slider-label-row">
-              <label for="priceMax">Average Price: <span id="priceVal" class="slider-value-label">$600</span></label>
-              <input id="priceMaxInput" type="number" class="slider-number-input" min="0" max="600" step="10" value="600" aria-label="Enter maximum price" />
-            </div>
+            <label for="priceMax">Average Price: <span id="priceVal">$600</span></label>
             <input id="priceMax" class="range-slider" type="range" min="0" max="600" value="600" step="10" aria-label="Maximum Price"/>
           </div>
           <div class="filter-group slider-wrapper">
-            <div class="slider-label-row">
-              <label for="warrantyMax">Warranty: <span id="warrantyVal" class="slider-value-label">80,000 miles</span></label>
-              <input id="warrantyMaxInput" type="number" class="slider-number-input" min="0" max="80000" step="1000" value="80000" aria-label="Enter maximum warranty in miles" />
-            </div>
+            <label for="warrantyMax">Warranty: <span id="warrantyVal">80,000 miles</span></label>
             <input id="warrantyMax" class="range-slider" type="range" min="0" max="80000" value="80000" step="1000" aria-label="Maximum Warranty in miles"/>
           </div>
           <div class="filter-group slider-wrapper">
-            <div class="slider-label-row">
-              <label for="weightMax">Weight: <span id="weightVal" class="slider-value-label">70</span></label>
-              <input id="weightMaxInput" type="number" class="slider-number-input" min="0" max="70" step="1" value="70" aria-label="Enter maximum weight in pounds" />
-            </div>
+            <label for="weightMax">Weight: <span id="weightVal">70</span></label>
             <input id="weightMax" class="range-slider" type="range" min="0" max="70" value="70" step="1" aria-label="Maximum Weight in pounds"/>
           </div>
         </div>
