@@ -1116,3 +1116,61 @@
     accent-color: var(--rtg-action-primary);
     cursor: pointer;
 }
+
+/* ==========================================================================
+   Affiliate Links Dashboard
+   ========================================================================== */
+
+.rtg-affiliate-table .rtg-link-url {
+    color: var(--rtg-action-primary);
+    text-decoration: none;
+    font-size: 13px;
+    word-break: break-all;
+}
+
+.rtg-affiliate-table .rtg-link-url:hover {
+    text-decoration: underline;
+    color: var(--rtg-action-hover);
+}
+
+.rtg-affiliate-table .rtg-link-empty {
+    font-size: 13px;
+    color: var(--rtg-text-muted);
+    font-style: italic;
+}
+
+.rtg-affiliate-table .rtg-link-cell {
+    min-width: 180px;
+}
+
+.rtg-affiliate-table .rtg-link-input {
+    font-size: 13px !important;
+    padding: 6px 10px !important;
+    max-width: 100% !important;
+}
+
+.rtg-affiliate-table .rtg-btn {
+    padding: 5px 12px;
+    font-size: 13px;
+}
+
+.rtg-affiliate-table .rtg-btn-save-links,
+.rtg-affiliate-table .rtg-btn-cancel-links {
+    margin-top: 4px;
+}
+
+.rtg-affiliate-table td {
+    vertical-align: top;
+    padding-top: 14px;
+    padding-bottom: 14px;
+}
+
+.rtg-affiliate-table tbody tr {
+    transition: background 0.3s ease;
+}
+
+@media (max-width: 1200px) {
+    .rtg-affiliate-table .rtg-link-cell {
+        min-width: 140px;
+    }
+}

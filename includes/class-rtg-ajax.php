@@ -39,6 +39,9 @@ class RTG_Ajax {
         add_action( 'wp_ajax_rtg_get_favorites', array( $this, 'get_favorites' ) );
         add_action( 'wp_ajax_rtg_add_favorite', array( $this, 'add_favorite' ) );
         add_action( 'wp_ajax_rtg_remove_favorite', array( $this, 'remove_favorite' ) );
+
+        // Admin: update tire links (affiliate link management).
+        add_action( 'wp_ajax_rtg_update_tire_links', array( $this, 'update_tire_links' ) );
     }
 
     /**
@@ -417,6 +420,50 @@ class RTG_Ajax {
             wp_send_json_success( array( 'tire_id' => $tire_id ) );
         } else {
             wp_send_json_error( 'Failed to remove favorite.' );
+        }
+    }
+
+    /**
+     * Admin AJAX: Update tire links from the affiliate links dashboard.
+     * Requires manage_options capability.
+     */
+    public function update_tire_links() {
+        if ( ! check_ajax_referer( 'rtg_affiliate_links_nonce', 'nonce', false ) ) {
+            wp_send_json_error( 'Security check failed.' );
+        }
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized.' );
+        }
+
+        $post = wp_unslash( $_POST );
+
+        $tire_id     = sanitize_text_field( $post['tire_id'] ?? '' );
+        $link        = esc_url_raw( $post['link'] ?? '' );
+        $bundle_link = esc_url_raw( $post['bundle_link'] ?? '' );
+        $review_link = esc_url_raw( $post['review_link'] ?? '' );
+
+        if ( ! preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) || strlen( $tire_id ) > 50 ) {
+            wp_send_json_error( 'Invalid tire ID.' );
+        }
+
+        // Verify the tire exists.
+        $tire = RTG_Database::get_tire( $tire_id );
+        if ( ! $tire ) {
+            wp_send_json_error( 'Tire not found.' );
+        }
+
+        $result = RTG_Database::update_tire_links( $tire_id, $link, $bundle_link, $review_link );
+
+        if ( false !== $result ) {
+            wp_send_json_success( array(
+                'tire_id'     => $tire_id,
+                'link'        => $link,
+                'bundle_link' => $bundle_link,
+                'review_link' => $review_link,
+            ) );
+        } else {
+            wp_send_json_error( 'Failed to update links.' );
         }
     }
 }
