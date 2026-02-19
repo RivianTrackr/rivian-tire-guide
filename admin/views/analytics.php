@@ -111,7 +111,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 </div>
 
 <script>
-(function() {
+document.addEventListener('DOMContentLoaded', function() {
     'use strict';
 
     if (typeof rtgAnalytics === 'undefined') return;
@@ -446,5 +446,5 @@ if ( ! defined( 'ABSPATH' ) ) {
 
     // Initial load.
     loadAnalytics(currentPeriod);
-})();
+});
 </script>
