@@ -54,9 +54,17 @@ class RTG_Compare {
         );
 
         wp_enqueue_script(
+            'rtg-shared',
+            RTG_PLUGIN_URL . 'frontend/js/rtg-shared.js',
+            array(),
+            RTG_VERSION,
+            true
+        );
+
+        wp_enqueue_script(
             'rtg-compare',
             RTG_PLUGIN_URL . 'frontend/js/compare.js',
-            array(),
+            array( 'rtg-shared' ),
             RTG_VERSION,
             true
         );

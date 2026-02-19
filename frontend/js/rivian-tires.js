@@ -1066,9 +1066,11 @@ function createInfoTooltip(label, tooltipKey) {
   labelText.textContent = label;
   
   const infoButton = document.createElement('button');
-  infoButton.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+  infoButton.innerHTML = '<i class="fa-solid fa-circle-info" aria-hidden="true"></i>';
   infoButton.className = 'info-tooltip-trigger';
   infoButton.dataset.tooltipKey = tooltipKey;
+  infoButton.setAttribute('aria-label', `More info about ${label}`);
+  infoButton.setAttribute('type', 'button');
   infoButton.style.cssText = `
     background: none;
     border: none;
@@ -1084,20 +1086,20 @@ function createInfoTooltip(label, tooltipKey) {
     justify-content: center;
     transition: all 0.2s ease;
   `;
-  
+
   infoButton.addEventListener('mouseenter', () => {
     infoButton.style.color = rtgColor('accent');
     infoButton.style.backgroundColor = `color-mix(in srgb, ${rtgColor('accent')} 10%, transparent)`;
   });
-  
+
   infoButton.addEventListener('mouseleave', () => {
     infoButton.style.color = rtgColor('text-muted');
     infoButton.style.backgroundColor = 'transparent';
   });
-  
+
   container.appendChild(labelText);
   container.appendChild(infoButton);
-  
+
   return container;
 }
 
@@ -1109,9 +1111,11 @@ function createFilterTooltip(labelText, tooltipKey) {
   label.textContent = labelText;
   
   const infoButton = document.createElement('button');
-  infoButton.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+  infoButton.innerHTML = '<i class="fa-solid fa-circle-info" aria-hidden="true"></i>';
   infoButton.className = 'info-tooltip-trigger';
   infoButton.dataset.tooltipKey = tooltipKey;
+  infoButton.setAttribute('aria-label', `More info about ${labelText}`);
+  infoButton.setAttribute('type', 'button');
   infoButton.style.cssText = `
     background: none;
     border: none;
@@ -1127,20 +1131,20 @@ function createFilterTooltip(labelText, tooltipKey) {
     justify-content: center;
     transition: all 0.2s ease;
   `;
-  
+
   infoButton.addEventListener('mouseenter', () => {
     infoButton.style.color = rtgColor('accent');
     infoButton.style.backgroundColor = `color-mix(in srgb, ${rtgColor('accent')} 10%, transparent)`;
   });
-  
+
   infoButton.addEventListener('mouseleave', () => {
     infoButton.style.color = rtgColor('text-muted');
     infoButton.style.backgroundColor = 'transparent';
   });
-  
+
   container.appendChild(label);
   container.appendChild(infoButton);
-  
+
   return container;
 }
 
@@ -2472,10 +2476,12 @@ function applyTireDeepLink() {
 }
 
 function renderCards(rows) {
+  removeSkeletonLoader();
+
   if (!cardContainer) {
     cardContainer = getDOMElement("tireCards");
   }
-  
+
   if (typeof tireRatingAjax !== 'undefined') {
     isLoggedIn = tireRatingAjax.is_logged_in === true || tireRatingAjax.is_logged_in === '1' || tireRatingAjax.is_logged_in === 1;
   }
@@ -3826,6 +3832,7 @@ function initializeUI() {
     }
   });
 
+  applyShortcodePrefilters();
   applyFiltersFromURL();
   applyCompareFromURL();
   setupSliderHandlers();
@@ -4172,6 +4179,60 @@ window.addEventListener('popstate', function() {
 
 // Initialize analytics tracking.
 RTG_ANALYTICS.init();
+
+// Show skeleton loading placeholders while data loads.
+(function showSkeletonLoading() {
+  const tireCards = document.getElementById('tireCards');
+  if (!tireCards || tireCards.children.length > 0) return;
+  const count = (typeof rtgData !== 'undefined' && rtgData.settings) ? (rtgData.settings.rowsPerPage || 12) : 12;
+  const grid = document.createElement('div');
+  grid.className = 'rtg-skeleton-grid';
+  grid.id = 'rtg-skeleton-loader';
+  for (let i = 0; i < Math.min(count, 12); i++) {
+    grid.innerHTML += '<div class="rtg-skeleton-card">'
+      + '<div class="rtg-skeleton-shimmer rtg-skeleton-image"></div>'
+      + '<div class="rtg-skeleton-shimmer rtg-skeleton-title"></div>'
+      + '<div class="rtg-skeleton-shimmer rtg-skeleton-subtitle"></div>'
+      + '<div class="rtg-skeleton-row"><div class="rtg-skeleton-shimmer rtg-skeleton-badge"></div><div class="rtg-skeleton-shimmer rtg-skeleton-badge"></div></div>'
+      + '<div class="rtg-skeleton-shimmer rtg-skeleton-text"></div>'
+      + '<div class="rtg-skeleton-shimmer rtg-skeleton-text-short"></div>'
+      + '<div class="rtg-skeleton-shimmer rtg-skeleton-stars"></div>'
+      + '</div>';
+  }
+  tireCards.appendChild(grid);
+})();
+
+// Apply shortcode prefilters (e.g., [rivian_tire_guide brand="Michelin" category="All-Season"]).
+function applyShortcodePrefilters() {
+  if (typeof rtgData === 'undefined' || !rtgData.settings || !rtgData.settings.prefilters) return;
+  const pf = rtgData.settings.prefilters;
+  if (pf.size) {
+    const el = document.getElementById('filterSize');
+    if (el) el.value = pf.size;
+  }
+  if (pf.brand) {
+    const el = document.getElementById('filterBrand');
+    if (el) el.value = pf.brand;
+  }
+  if (pf.category) {
+    const el = document.getElementById('filterCategory');
+    if (el) el.value = pf.category;
+  }
+  if (pf.sort) {
+    const el = document.getElementById('sortBy');
+    if (el) el.value = pf.sort;
+  }
+  if (pf.three_pms) {
+    const el = document.getElementById('filter3pms');
+    if (el) el.checked = true;
+  }
+}
+
+// Remove skeleton loader when real content renders.
+function removeSkeletonLoader() {
+  const skeleton = document.getElementById('rtg-skeleton-loader');
+  if (skeleton) skeleton.remove();
+}
 
 // Load tire data from WordPress localized script.
 if (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.serverSide) {

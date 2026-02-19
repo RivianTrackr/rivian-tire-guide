@@ -2,6 +2,8 @@
 (function($) {
     'use strict';
 
+    var efficiencyTimer = null;
+
     $(document).ready(function() {
         // Image preview on URL change (supports prefix-based input).
         var $imageInput = $('#image');
@@ -103,6 +105,7 @@
         });
 
         // --- Real-time efficiency calculator on the edit form ---
+        // Uses AJAX to call the canonical PHP formula (eliminates duplicate JS logic).
         if ($('#rtg-efficiency-preview').length) {
             var effFields = '#size, #weight_lb, #tread, #load_range, #speed_rating, #utqg, #category, #three_pms';
 
@@ -116,100 +119,46 @@
     });
 
     function updateEfficiencyPreview() {
-        var size       = $('#size').val() || '';
-        var weightLb   = parseFloat($('#weight_lb').val()) || 0;
-        var tread      = $('#tread').val() || '';
-        var loadRange  = ($('#load_range').val() || '').toUpperCase().trim();
-        var speedRaw   = ($('#speed_rating').val() || '').trim();
-        var utqg       = ($('#utqg').val() || '').trim();
-        var category   = $('#category').val() || '';
-        var threePms   = $('#three_pms').val() || 'No';
-
-        // Width score from size (e.g., "275/60R20" → 275). Missing = 0.5 neutral.
-        var widthVal = 0;
-        var slashIdx = size.indexOf('/');
-        if (slashIdx > 0) {
-            widthVal = parseFloat(size.substring(0, slashIdx)) || 0;
+        // Debounce to avoid excessive AJAX calls during rapid input.
+        if (efficiencyTimer) {
+            clearTimeout(efficiencyTimer);
         }
-        var widthScore = widthVal > 0 ? (305 - widthVal) / 30 : 0.5;
 
-        // Weight score. Missing = 0.5 neutral.
-        var weightScore = weightLb > 0 ? (70 - weightLb) / 40 : 0.5;
+        efficiencyTimer = setTimeout(function() {
+            // Bail if rtgAdmin is not available (missing nonce localization).
+            if (typeof rtgAdmin === 'undefined') {
+                return;
+            }
 
-        // Tread score (e.g., "10/32" → 10). Missing = 0.5 neutral.
-        var treadVal = 0;
-        var treadSlash = tread.indexOf('/');
-        if (treadSlash > 0) {
-            treadVal = parseFloat(tread.substring(0, treadSlash)) || 0;
-        }
-        var treadScore = treadVal > 0 ? (20 - treadVal) / 11 : 0.5;
+            $.post(rtgAdmin.ajaxurl, {
+                action:       'rtg_calculate_efficiency',
+                nonce:        rtgAdmin.nonce,
+                size:         $('#size').val() || '',
+                weight_lb:    $('#weight_lb').val() || '0',
+                tread:        $('#tread').val() || '',
+                load_range:   $('#load_range').val() || '',
+                speed_rating: $('#speed_rating').val() || '',
+                utqg:         $('#utqg').val() || '',
+                category:     $('#category').val() || '',
+                three_pms:    $('#three_pms').val() || 'No'
+            }, function(response) {
+                if (response.success) {
+                    var score = response.data.efficiency_score;
+                    var grade = response.data.efficiency_grade;
 
-        // Load range score. Missing = 0.5 neutral.
-        var loadScores = { SL: 1, HL: 0.9, XL: 0.9, RF: 0.7, D: 0.3, E: 0, F: 0 };
-        var loadScore = loadScores.hasOwnProperty(loadRange) ? loadScores[loadRange] : 0.5;
+                    var gradeClasses = {
+                        A: 'rtg-grade-a', B: 'rtg-grade-b', C: 'rtg-grade-c',
+                        D: 'rtg-grade-d', F: 'rtg-grade-f'
+                    };
 
-        // Speed rating score (first character).
-        var speedChar = speedRaw.length > 0 ? speedRaw.charAt(0).toUpperCase() : '';
-        var speedScores = { P: 1, Q: 0.95, R: 0.9, S: 0.85, T: 0.8, H: 0.7, V: 0.6 };
-        var speedScore = speedChar && speedScores.hasOwnProperty(speedChar) ? speedScores[speedChar] : 0.5;
-
-        // UTQG score (first number from "620 A B").
-        var utqgVal = 0;
-        if (utqg) {
-            var utqgParts = utqg.split(' ');
-            utqgVal = parseInt(utqgParts[0], 10) || 0;
-        }
-        var utqgScore = utqgVal === 0 ? 0.5 : (utqgVal - 420) / 400;
-
-        // Category score. Missing = 0.5 neutral.
-        var catScores = {
-            'All-Season': 1, 'Performance': 1, 'Highway': 1,
-            'All-Terrain': 0.5, 'Rugged Terrain': 0.25,
-            'Mud-Terrain': 0, 'Winter': 0
-        };
-        var catScore = catScores.hasOwnProperty(category) ? catScores[category] : 0.5;
-
-        // 3PMS score (No = better for efficiency).
-        var pmsScore = threePms === 'No' ? 1 : 0;
-
-        // Weighted total (weights sum to 1.0).
-        var total = (
-            weightScore * 0.26 +
-            treadScore  * 0.16 +
-            loadScore   * 0.16 +
-            speedScore  * 0.10 +
-            utqgScore   * 0.10 +
-            catScore    * 0.10 +
-            pmsScore    * 0.08 +
-            widthScore  * 0.04
-        );
-
-        // Clamp to 0–100.
-        var score = Math.max(0, Math.min(100, Math.round(total * 100)));
-
-        // Determine grade.
-        var grade;
-        if (score >= 80) grade = 'A';
-        else if (score >= 65) grade = 'B';
-        else if (score >= 50) grade = 'C';
-        else if (score >= 35) grade = 'D';
-        else grade = 'F';
-
-        // Grade CSS class.
-        var gradeClasses = {
-            A: 'rtg-grade-a', B: 'rtg-grade-b', C: 'rtg-grade-c',
-            D: 'rtg-grade-d', F: 'rtg-grade-f'
-        };
-
-        // Update display.
-        var $grade = $('#rtg-eff-grade');
-        var $score = $('#rtg-eff-score');
-
-        $grade
-            .removeClass('rtg-grade-a rtg-grade-b rtg-grade-c rtg-grade-d rtg-grade-f rtg-grade-none')
-            .addClass(gradeClasses[grade])
-            .text(grade);
-        $score.text(score);
+                    $('#rtg-eff-grade')
+                        .removeClass('rtg-grade-a rtg-grade-b rtg-grade-c rtg-grade-d rtg-grade-f rtg-grade-none')
+                        .addClass(gradeClasses[grade] || '')
+                        .text(grade);
+                    $('#rtg-eff-score').text(score);
+                }
+            });
+        }, 300);
     }
 
 })(jQuery);
