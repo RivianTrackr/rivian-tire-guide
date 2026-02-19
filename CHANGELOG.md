@@ -4,6 +4,18 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.13.0] - 2026-02-19
+
+### Added
+- **Affiliate click tracking** — Tracks when users click purchase, bundle, and review links using `navigator.sendBeacon()` for zero-latency, privacy-respecting analytics. New `wp_rtg_click_events` database table with server-side 5-second deduplication.
+- **Search analytics** — Tracks user search queries, active filters, sort options, and result counts. New `wp_rtg_search_events` database table with 2-second client-side debounce and 3-second server-side deduplication.
+- **Analytics admin page** — New admin page (Tire Guide > Analytics) with period selector (7/30/90 days), summary cards (total clicks, unique visitors, total searches), Chart.js line charts for clicks-over-time and search volume, ranked tables for most clicked tires, top search queries, zero-result searches (unmet demand), and most used filters.
+- **Analytics data retention** — Configurable retention period (7–365 days, default 90) in Settings. Daily WP-Cron job automatically cleans up old events.
+
+### Changed
+- **Database schema version** — Bumped to v9 with migrations 8–9 for click events and search events tables.
+- **Plugin version** — Bumped to 1.13.0.
+
 ## [1.12.1] - 2026-02-19
 
 ### Fixed

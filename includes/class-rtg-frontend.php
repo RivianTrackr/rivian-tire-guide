@@ -148,6 +148,7 @@ class RTG_Frontend {
                 'serverSide'      => $server_side,
                 'ajaxurl'         => admin_url( 'admin-ajax.php' ),
                 'tireNonce'       => wp_create_nonce( 'rtg_tire_nonce' ),
+                'analyticsNonce'  => wp_create_nonce( 'rtg_analytics_nonce' ),
             ),
         );
 
