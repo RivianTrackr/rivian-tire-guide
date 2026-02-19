@@ -191,7 +191,7 @@ class Test_RTG_Database extends WP_UnitTestCase {
 
         $user_ratings = RTG_Database::get_user_ratings( array( 'user-rate-001' ), 42 );
         $this->assertArrayHasKey( 'user-rate-001', $user_ratings );
-        $this->assertEquals( 4, $user_ratings['user-rate-001'] );
+        $this->assertEquals( 4, $user_ratings['user-rate-001']['rating'] );
     }
 
     public function test_cache_invalidation_on_insert() {

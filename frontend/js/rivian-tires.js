@@ -1535,7 +1535,7 @@ function submitTireRating(tireId, rating, reviewTitle = '', reviewText = '') {
 
       return data.data;
     } else {
-      throw new Error(data.data || 'Failed to save rating');
+      throw new Error(data.data || 'Failed to save review');
     }
   });
 }
@@ -1567,7 +1567,7 @@ function createRatingHTML(tireId, average = 0, count = 0, userRating = 0) {
   starsContainer.className = `rating-stars ${isInteractive ? 'interactive' : ''} ${validUserRating > 0 ? 'has-user-rating' : ''}`;
   starsContainer.dataset.tireId = tireId;
   starsContainer.setAttribute('role', isInteractive ? 'radiogroup' : 'img');
-  starsContainer.setAttribute('aria-label', displayAverage > 0 ? `Rating: ${displayAverage.toFixed(1)} out of 5 stars` : 'No ratings yet');
+  starsContainer.setAttribute('aria-label', displayAverage > 0 ? `Rating: ${displayAverage.toFixed(1)} out of 5 stars` : 'No reviews yet');
 
   // Round to nearest 0.5 for half-star display
   const roundedAvg = displayAverage > 0 ? Math.round(displayAverage * 2) / 2 : 0;
@@ -1607,14 +1607,14 @@ function createRatingHTML(tireId, average = 0, count = 0, userRating = 0) {
   
   const averageSpan = document.createElement('span');
   averageSpan.className = 'rating-average';
-  averageSpan.textContent = displayAverage > 0 ? displayAverage.toFixed(1) : 'No ratings';
+  averageSpan.textContent = displayAverage > 0 ? displayAverage.toFixed(1) : 'No reviews';
   
   ratingInfo.appendChild(averageSpan);
   
   if (displayCount > 0) {
     const countSpan = document.createElement('span');
     countSpan.className = 'rating-count';
-    countSpan.textContent = `(${displayCount} rating${displayCount !== 1 ? 's' : ''})`;
+    countSpan.textContent = `(${displayCount} review${displayCount !== 1 ? 's' : ''})`;
     ratingInfo.appendChild(countSpan);
   }
   
@@ -1901,7 +1901,7 @@ function openReviewModal(tireId, preselectedRating = 0) {
         } else if (isUpdate) {
           showToast('Your review has been updated.', 'success');
         } else {
-          showToast('Your rating has been saved!', 'success');
+          showToast('Your review has been saved!', 'success');
         }
       })
       .catch(err => {
@@ -1944,7 +1944,7 @@ function openReviewsDrawer(tireId) {
   const summaryEl = document.createElement('div');
   summaryEl.className = 'rtg-reviews-summary';
   if (ratingData.average > 0) {
-    summaryEl.innerHTML = `<span class="rtg-reviews-avg">${ratingData.average.toFixed(1)}</span> <span class="rtg-reviews-stars-mini">${renderStarsHTML(ratingData.average)}</span> <span class="rtg-reviews-total">${ratingData.count} rating${ratingData.count !== 1 ? 's' : ''}</span>`;
+    summaryEl.innerHTML = `<span class="rtg-reviews-avg">${ratingData.average.toFixed(1)}</span> <span class="rtg-reviews-stars-mini">${renderStarsHTML(ratingData.average)}</span> <span class="rtg-reviews-total">${ratingData.count} review${ratingData.count !== 1 ? 's' : ''}</span>`;
   }
 
   const closeBtn = document.createElement('button');
@@ -2130,7 +2130,7 @@ function createReviewCard(review) {
   } else {
     const ratingOnly = document.createElement('div');
     ratingOnly.className = 'rtg-review-card-body rtg-review-rating-only';
-    ratingOnly.textContent = 'Rating only \u2014 no written review yet.';
+    ratingOnly.textContent = 'Star rating only \u2014 no written review.';
     card.appendChild(ratingOnly);
   }
 
