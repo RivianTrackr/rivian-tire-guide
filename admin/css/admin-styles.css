@@ -1223,6 +1223,7 @@
 }
 
 .rtg-bar-fill {
+    display: block;
     height: 100%;
     border-radius: var(--rtg-radius-pill);
     background: var(--rtg-action-primary);
