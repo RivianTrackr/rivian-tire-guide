@@ -129,7 +129,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         <?php endif; ?>
         <label class="switch-label reset-white" onclick="resetFilters()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resetFilters()}" role="button" tabindex="0">
           <span class="switch-text">
-            <?php echo RTG_Icons::render( 'rotate-left', 14 ); ?> Clear All
+            <?php echo RTG_Icons::render( 'trash', 14 ); ?> Clear All
           </span>
         </label>
       </div>
