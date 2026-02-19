@@ -1145,10 +1145,6 @@ body.modal-open {
   color: var(--rtg-text-light, #f1f5f9);
   font-weight: 600;
 }
-.rating-count {
-  color: var(--rtg-text-muted, #8493a5);
-  font-weight: 400;
-}
 .login-prompt {
   display: inline-flex;
   align-items: center;
