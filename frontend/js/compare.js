@@ -1,85 +1,28 @@
 /* =====================================================================
    Rivian Tire Guide — Compare Page
+   Uses RTG_SHARED (rtg-shared.js) for URL validation & escaping.
    ===================================================================== */
 
-// --- Utilities ---
+// --- Utilities (delegates to shared module) ---
 
 function rtgColor(name) {
   return getComputedStyle(document.documentElement).getPropertyValue('--rtg-' + name).trim();
 }
 
 function escapeHTML(str) {
-  return String(str).replace(/[&<>"']/g, c =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c])
-  );
+  return RTG_SHARED.escapeHTML(str);
 }
 
 function safeImageURL(url) {
-  if (typeof url !== "string") return "";
-  const trimmed = url.trim();
-  const allowedHostnames = ["riviantrackr.com", "cdn.riviantrackr.com"];
-  try {
-    const u = new URL(trimmed);
-    if (!/^https?:$/.test(u.protocol)) return "";
-    if (!allowedHostnames.includes(u.hostname)) return "";
-    if (u.pathname.includes('..') || u.pathname.includes('//')) return "";
-    return trimmed;
-  } catch {
-    return "";
-  }
+  return RTG_SHARED.safeImageURL(url);
 }
 
 function safeLinkURL(url) {
-  if (typeof url !== "string" || !url.trim()) return "";
-  const trimmed = url.trim();
-  try {
-    const urlObj = new URL(trimmed);
-    if (urlObj.protocol !== 'https:') return "";
-    if (urlObj.pathname.includes('..')) return "";
-    const allowedDomains = [
-      'riviantrackr.com', 'tirerack.com', 'discounttire.com', 'amazon.com', 'amzn.to',
-      'costco.com', 'walmart.com', 'goodyear.com', 'bridgestonetire.com', 'michelinman.com',
-      'continental-tires.com', 'pirelli.com', 'yokohamatire.com', 'coopertire.com',
-      'bfgoodrichtires.com', 'firestone.com', 'generaltire.com', 'hankooktire.com',
-      'kumhotire.com', 'toyo.com', 'falkentire.com', 'nittotire.com', 'simpletire.com',
-      'prioritytire.com', 'evsportline.com', 'tsportline.com',
-      'anrdoezrs.net', 'dpbolvw.net', 'jdoqocy.com', 'kqzyfj.com', 'tkqlhce.com',
-      'commission-junction.com', 'cj.com', 'linksynergy.com', 'click.linksynergy.com',
-      'shareasale.com', 'avantlink.com', 'impact.com', 'partnerize.com'
-    ];
-    const hostname = urlObj.hostname.toLowerCase();
-    const isAllowed = allowedDomains.some(domain =>
-      hostname === domain || hostname.endsWith('.' + domain)
-    );
-    if (!isAllowed) return "";
-    return trimmed;
-  } catch {
-    return "";
-  }
+  return RTG_SHARED.safeLinkURL(url);
 }
 
 function safeReviewLinkURL(url) {
-  if (typeof url !== "string" || !url.trim()) return "";
-  const trimmed = url.trim();
-  try {
-    const urlObj = new URL(trimmed);
-    if (urlObj.protocol !== 'https:') return "";
-    if (urlObj.pathname.includes('..')) return "";
-    const allowedDomains = [
-      'riviantrackr.com', 'www.riviantrackr.com',
-      'youtube.com', 'www.youtube.com', 'youtu.be',
-      'tiktok.com', 'www.tiktok.com',
-      'instagram.com', 'www.instagram.com'
-    ];
-    const hostname = urlObj.hostname.toLowerCase();
-    const isAllowed = allowedDomains.some(domain =>
-      hostname === domain || hostname.endsWith('.' + domain)
-    );
-    if (!isAllowed) return "";
-    return trimmed;
-  } catch {
-    return "";
-  }
+  return RTG_SHARED.safeReviewLinkURL(url);
 }
 
 function getCompareIndexes() {

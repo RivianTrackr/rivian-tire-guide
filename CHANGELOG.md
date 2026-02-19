@@ -4,6 +4,21 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.14.0] - 2026-02-19
+
+### Added
+- **REST API** — New public REST API under `rtg/v1` namespace with four endpoints: `GET /tires` (filtered, paginated listing), `GET /tires/{tire_id}` (single tire with ratings), `GET /tires/{tire_id}/reviews` (paginated reviews), and `POST /efficiency` (calculate efficiency score from specs). All inputs validated and sanitized per WordPress REST API conventions.
+- **Shortcode attributes** — The `[rivian_tire_guide]` shortcode now accepts optional pre-filter attributes: `size`, `brand`, `category`, `sort`, and `3pms`. Example: `[rivian_tire_guide brand="Michelin" category="All-Season" sort="price-asc"]`.
+- **Skeleton loading states** — Shimmer placeholder cards display immediately while tire data loads, eliminating the flash of empty content. Respects `prefers-reduced-motion`.
+- **Accessibility (a11y) improvements** — Skip-to-content link, `aria-label` attributes on all filter controls, search input, sort dropdown, and tooltip info buttons. `role="status"` and `aria-live="polite"` on no-results container. Screen-reader-only labels for dropdowns. Focus-visible outline styles for all interactive elements (stars, buttons, filters, links). `.screen-reader-text` utility class.
+- **JavaScript unit tests** — New `tests/test-validation.js` with 83 tests covering `escapeHTML`, `sanitizeInput`, `validateNumeric`, `safeImageURL`, `safeLinkURL`, and `fuzzyMatch`. Runnable via `node tests/test-validation.js`.
+- **Efficiency calculator AJAX endpoint** — Admin tire edit form now calls the canonical PHP `RTG_Database::calculate_efficiency()` via AJAX with debouncing, eliminating the duplicate JS formula.
+
+### Changed
+- **Consolidated URL validation** — Extracted shared `escapeHTML`, `safeImageURL`, `safeLinkURL`, and `safeReviewLinkURL` into `rtg-shared.js`. The compare page now delegates to this shared module instead of maintaining duplicate implementations with divergent domain lists.
+- **Admin efficiency preview** — Replaced the 95-line duplicate JS efficiency formula in `admin-scripts.js` with a debounced AJAX call to the PHP source of truth. The formula now only exists in `RTG_Database::calculate_efficiency()`.
+- **Plugin version** — Bumped to 1.14.0.
+
 ## [1.13.1] - 2026-02-19
 
 ### Changed

@@ -187,6 +187,12 @@ class RTG_Admin {
             true
         );
 
+        // Localize admin nonce for AJAX endpoints (efficiency calculator, etc.).
+        wp_localize_script( 'rtg-admin-scripts', 'rtgAdmin', array(
+            'ajaxurl' => admin_url( 'admin-ajax.php' ),
+            'nonce'   => wp_create_nonce( 'rtg_admin_nonce' ),
+        ) );
+
         // Enqueue Chart.js on the analytics page.
         if ( strpos( $hook, 'rtg-analytics' ) !== false ) {
             wp_enqueue_script(

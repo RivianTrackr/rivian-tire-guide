@@ -3,8 +3,9 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 ?>
-<button id="toggleFilters" class="toggle-filters-btn">
-  <i class="fa-solid fa-sliders"></i>&nbsp; Show Filters
+<a class="rtg-skip-link" href="#tireCards">Skip to tire results</a>
+<button id="toggleFilters" class="toggle-filters-btn" aria-expanded="false" aria-controls="mobileFilterContent">
+  <i class="fa-solid fa-sliders" aria-hidden="true"></i>&nbsp; Show Filters
 </button>
 <div id="filterTop"></div>
 <div class="filter-wrapper">
@@ -15,24 +16,28 @@ if ( ! defined( 'ABSPATH' ) ) {
   <div class="filter-body">
     <div class="filter-search">
       <div class="search-container">
-        <input id="searchInput" type="text" placeholder="Search tires..." class="search-input"/>
+        <label for="searchInput" class="screen-reader-text">Search tires</label>
+        <input id="searchInput" type="text" placeholder="Search tires..." class="search-input" aria-label="Search tires"/>
         <i class="fa-solid fa-magnifying-glass search-icon"></i>
       </div>
     </div>
     <div id="mobileFilterContent" class="mobile-filter-content">
       <div class="filter-container">
         <div class="filter-group">
-          <select id="filterSize">
+          <label for="filterSize" class="screen-reader-text">Filter by tire size</label>
+          <select id="filterSize" aria-label="Filter by tire size">
             <option value="">All Sizes</option>
           </select>
         </div>
         <div class="filter-group">
-          <select id="filterBrand">
+          <label for="filterBrand" class="screen-reader-text">Filter by brand</label>
+          <select id="filterBrand" aria-label="Filter by brand">
             <option value="">All Brands</option>
           </select>
         </div>
         <div class="filter-group">
-          <select id="filterCategory">
+          <label for="filterCategory" class="screen-reader-text">Filter by category</label>
+          <select id="filterCategory" aria-label="Filter by category">
             <option value="">All Categories</option>
           </select>
         </div>
@@ -168,7 +173,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 <div class="sort-wrapper">
   <span id="tireCount" class="tire-count" aria-live="polite">Showing 0 tires</span>
   <div style="flex: 1;"></div>
-  <select id="sortBy" onchange="filterAndRender()">
+  <label for="sortBy" class="screen-reader-text">Sort tires by</label>
+  <select id="sortBy" aria-label="Sort tires by" onchange="filterAndRender()">
     <option value="efficiencyGrade">Efficiency Grade</option>
     <option value="most-reviewed">Most Reviewed</option>
     <option value="newest">Newest Added</option>
@@ -183,7 +189,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 <div id="tireSection">
   <div id="tireCards"></div>
 </div>
-<div id="noResults" style="display: none;">
+<div id="noResults" role="status" aria-live="polite" style="display: none;">
   No tires match your current filters.<br />Try adjusting the filters to see more options.
 </div>
 <div id="paginationControls"></div>

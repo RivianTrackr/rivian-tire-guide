@@ -16,8 +16,17 @@ class RTG_Frontend {
     public function render_shortcode( $atts ) {
         $this->shortcode_present = true;
 
+        // Parse shortcode attributes for pre-filtering.
+        $atts = shortcode_atts( array(
+            'size'     => '',
+            'brand'    => '',
+            'category' => '',
+            'sort'     => '',
+            '3pms'     => '',
+        ), $atts, 'rivian_tire_guide' );
+
         // Enqueue assets now that we know the shortcode is on the page.
-        $this->enqueue_assets();
+        $this->enqueue_assets( $atts );
 
         ob_start();
         include RTG_PLUGIN_DIR . 'frontend/templates/tire-guide.php';
@@ -100,7 +109,7 @@ class RTG_Frontend {
         return '';
     }
 
-    private function enqueue_assets() {
+    private function enqueue_assets( $shortcode_atts = array() ) {
         if ( wp_script_is( 'rtg-tire-guide', 'enqueued' ) ) {
             return;
         }
@@ -139,6 +148,28 @@ class RTG_Frontend {
         $server_side        = ! empty( $settings['server_side_pagination'] );
         $user_reviews_slug  = $settings['user_reviews_slug'] ?? 'user-reviews';
 
+        // Build shortcode pre-filter overrides.
+        $prefilters = array();
+        if ( ! empty( $shortcode_atts['size'] ) ) {
+            $prefilters['size'] = sanitize_text_field( $shortcode_atts['size'] );
+        }
+        if ( ! empty( $shortcode_atts['brand'] ) ) {
+            $prefilters['brand'] = sanitize_text_field( $shortcode_atts['brand'] );
+        }
+        if ( ! empty( $shortcode_atts['category'] ) ) {
+            $prefilters['category'] = sanitize_text_field( $shortcode_atts['category'] );
+        }
+        if ( ! empty( $shortcode_atts['sort'] ) ) {
+            $allowed_sorts = array( 'efficiencyGrade', 'price-asc', 'price-desc', 'warranty-desc', 'weight-asc', 'newest', 'rating-desc', 'most-reviewed' );
+            $sort_val = sanitize_text_field( $shortcode_atts['sort'] );
+            if ( in_array( $sort_val, $allowed_sorts, true ) ) {
+                $prefilters['sort'] = $sort_val;
+            }
+        }
+        if ( strtolower( $shortcode_atts['3pms'] ?? '' ) === 'yes' ) {
+            $prefilters['three_pms'] = true;
+        }
+
         // Localize tire data.
         $localized = array(
             'settings' => array(
@@ -151,6 +182,10 @@ class RTG_Frontend {
                 'analyticsNonce'  => wp_create_nonce( 'rtg_analytics_nonce' ),
             ),
         );
+
+        if ( ! empty( $prefilters ) ) {
+            $localized['settings']['prefilters'] = $prefilters;
+        }
 
         // Only embed full tire array when client-side mode is active.
         if ( ! $server_side ) {
