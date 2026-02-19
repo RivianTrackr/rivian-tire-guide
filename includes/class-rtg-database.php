@@ -1255,15 +1255,8 @@ class RTG_Database {
         $where  = array( '1=1' );
         $values = array();
 
-        // Known affiliate domains.
-        $affiliate_domains = array(
-            'tkqlhce.com', 'commission-junction.com', 'cj.com',
-            'linksynergy.com', 'click.linksynergy.com', 'shareasale.com',
-            'avantlink.com', 'impact.com', 'partnerize.com',
-            'tirerackaffiliates.com', 'walmart-affiliates.com',
-            'costco-affiliates.com', 'walmart-redirect.com',
-            'ebay-redirect.com', 'simplifytires.com',
-        );
+        // Load affiliate domains from settings.
+        $affiliate_domains = RTG_Admin::get_affiliate_domains();
 
         switch ( $link_filter ) {
             case 'missing':

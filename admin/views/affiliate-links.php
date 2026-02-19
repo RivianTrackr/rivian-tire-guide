@@ -24,15 +24,8 @@ if ( ! function_exists( 'rtg_truncate_url' ) ) {
 $link_filter = isset( $_GET['link_filter'] ) ? sanitize_text_field( $_GET['link_filter'] ) : 'all';
 $search      = isset( $_GET['s'] ) ? sanitize_text_field( $_GET['s'] ) : '';
 
-// Known affiliate domains (used for classifying links).
-$affiliate_domains = array(
-    'tkqlhce.com', 'commission-junction.com', 'cj.com',
-    'linksynergy.com', 'click.linksynergy.com', 'shareasale.com',
-    'avantlink.com', 'impact.com', 'partnerize.com',
-    'tirerackaffiliates.com', 'walmart-affiliates.com',
-    'costco-affiliates.com', 'walmart-redirect.com',
-    'ebay-redirect.com', 'simplifytires.com',
-);
+// Load affiliate domains from settings.
+$affiliate_domains = RTG_Admin::get_affiliate_domains();
 
 // Get data.
 $counts = RTG_Database::get_link_status_counts();
