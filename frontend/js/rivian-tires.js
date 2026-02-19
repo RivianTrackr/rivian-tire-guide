@@ -3180,7 +3180,7 @@ function renderSmartNoResults() {
   if (priceEl && parseInt(priceEl.value) < 600) {
     suggestions.push({
       label: rtgIcon('dollar-sign', 14) + ' Increase price limit to max',
-      action: () => { priceEl.value = 600; getDOMElement("priceVal").textContent = "$600"; const pi = getDOMElement("priceMaxInput"); if (pi) pi.value = 600; updateSliderBackground(priceEl); lastFilterState = null; filterAndRender(); }
+      action: () => { priceEl.value = 600; getDOMElement("priceVal").textContent = "$600"; updateSliderBackground(priceEl); lastFilterState = null; filterAndRender(); }
     });
   }
 
@@ -3602,45 +3602,28 @@ function populateSizeDropdownGrouped(id, rows) {
 
 function setupSliderHandlers() {
   const sliders = [
-    { id: "priceMax", numId: "priceMaxInput", label: "priceVal", format: val => `$${val}`, bounds: NUMERIC_BOUNDS.price },
-    { id: "warrantyMax", numId: "warrantyMaxInput", label: "warrantyVal", format: val => `${Number(val).toLocaleString()} miles`, bounds: NUMERIC_BOUNDS.warranty },
-    { id: "weightMax", numId: "weightMaxInput", label: "weightVal", format: val => `${val} lb`, bounds: NUMERIC_BOUNDS.weight },
+    { id: "priceMax", label: "priceVal", format: val => `$${val}`, bounds: NUMERIC_BOUNDS.price },
+    { id: "warrantyMax", label: "warrantyVal", format: val => `${Number(val).toLocaleString()} miles`, bounds: NUMERIC_BOUNDS.warranty },
+    { id: "weightMax", label: "weightVal", format: val => `${val} lb`, bounds: NUMERIC_BOUNDS.weight },
   ];
 
-  sliders.forEach(({ id, numId, label, format, bounds }) => {
-    const slider = getDOMElement(id);
-    const numInput = getDOMElement(numId);
+  sliders.forEach(({ id, label, format, bounds }) => {
+    const input = getDOMElement(id);
     const output = getDOMElement(label);
-    if (!slider || !output) return;
-
-    // Range slider → update label + number input
-    slider.addEventListener("input", () => {
-      const validValue = validateNumeric(slider.value, bounds, bounds.max);
-      slider.value = validValue;
-      output.textContent = format(validValue);
-      if (numInput) numInput.value = validValue;
-      updateSliderBackground(slider);
-    });
-
-    slider.addEventListener("input", debounce(filterAndRender, 400));
-
-    // Number input → sync back to range slider
-    if (numInput) {
-      const syncFromNumber = () => {
-        const validValue = validateNumeric(numInput.value, bounds, bounds.max);
-        numInput.value = validValue;
-        slider.value = validValue;
+    if (input && output) {
+      input.addEventListener("input", () => {
+        const validValue = validateNumeric(input.value, bounds, bounds.max);
+        input.value = validValue;
         output.textContent = format(validValue);
-        updateSliderBackground(slider);
-      };
-      numInput.addEventListener("change", () => { syncFromNumber(); filterAndRender(); });
-      numInput.addEventListener("input", debounce(() => { syncFromNumber(); filterAndRender(); }, 600));
-    }
+        updateSliderBackground(input);
+      });
 
-    const initialValue = validateNumeric(slider.value, bounds, bounds.max);
-    output.textContent = format(initialValue);
-    if (numInput) numInput.value = initialValue;
-    updateSliderBackground(slider);
+      input.addEventListener("input", debounce(filterAndRender, 400));
+
+      const initialValue = validateNumeric(input.value, bounds, bounds.max);
+      output.textContent = format(initialValue);
+      updateSliderBackground(input);
+    }
   });
 }
 
@@ -3651,11 +3634,8 @@ function resetFilters() {
     { id: "filterBrand", value: "" },
     { id: "filterCategory", value: "" },
     { id: "priceMax", value: 600 },
-    { id: "priceMaxInput", value: 600 },
     { id: "warrantyMax", value: 80000 },
-    { id: "warrantyMaxInput", value: 80000 },
     { id: "weightMax", value: 70 },
-    { id: "weightMaxInput", value: 70 },
     { id: "sortBy", value: "rating-desc" }
   ];
   
@@ -3729,19 +3709,19 @@ function renderActiveFilterChips() {
   const priceEl = getDOMElement("priceMax");
   const priceVal = priceEl ? parseInt(priceEl.value) : 600;
   if (priceVal < 600) {
-    chips.push({ label: "Price", value: "≤ $" + priceVal, clear: () => { priceEl.value = 600; const lbl = getDOMElement("priceVal"); if (lbl) lbl.textContent = "$600"; const pi = getDOMElement("priceMaxInput"); if (pi) pi.value = 600; updateSliderBackground(priceEl); } });
+    chips.push({ label: "Price", value: "≤ $" + priceVal, clear: () => { priceEl.value = 600; const lbl = getDOMElement("priceVal"); if (lbl) lbl.textContent = "$600"; updateSliderBackground(priceEl); } });
   }
 
   const warrantyEl = getDOMElement("warrantyMax");
   const warrantyVal = warrantyEl ? parseInt(warrantyEl.value) : 80000;
   if (warrantyVal < 80000) {
-    chips.push({ label: "Warranty", value: "≤ " + Number(warrantyVal).toLocaleString() + " mi", clear: () => { warrantyEl.value = 80000; const lbl = getDOMElement("warrantyVal"); if (lbl) lbl.textContent = "80,000 miles"; const wi = getDOMElement("warrantyMaxInput"); if (wi) wi.value = 80000; updateSliderBackground(warrantyEl); } });
+    chips.push({ label: "Warranty", value: "≤ " + Number(warrantyVal).toLocaleString() + " mi", clear: () => { warrantyEl.value = 80000; const lbl = getDOMElement("warrantyVal"); if (lbl) lbl.textContent = "80,000 miles"; updateSliderBackground(warrantyEl); } });
   }
 
   const weightEl = getDOMElement("weightMax");
   const weightVal = weightEl ? parseInt(weightEl.value) : 70;
   if (weightVal < 70) {
-    chips.push({ label: "Weight", value: "≤ " + weightVal + " lb", clear: () => { weightEl.value = 70; const lbl = getDOMElement("weightVal"); if (lbl) lbl.textContent = "70 lb"; const wti = getDOMElement("weightMaxInput"); if (wti) wti.value = 70; updateSliderBackground(weightEl); } });
+    chips.push({ label: "Weight", value: "≤ " + weightVal + " lb", clear: () => { weightEl.value = 70; const lbl = getDOMElement("weightVal"); if (lbl) lbl.textContent = "70 lb"; updateSliderBackground(weightEl); } });
   }
 
   if (getDOMElement("filter3pms")?.checked) {
