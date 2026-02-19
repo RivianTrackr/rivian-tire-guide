@@ -870,64 +870,12 @@ class RTG_Database {
         return $ratings;
     }
 
-    public static function get_rating_count( $search = '' ) {
-        global $wpdb;
-        $table = self::ratings_table();
-        $tires = self::tires_table();
-
-        if ( ! empty( $search ) ) {
-            $like = '%' . $wpdb->esc_like( $search ) . '%';
-            return (int) $wpdb->get_var(
-                $wpdb->prepare(
-                    "SELECT COUNT(*) FROM {$table} r LEFT JOIN {$tires} t ON r.tire_id = t.tire_id WHERE r.tire_id LIKE %s OR t.brand LIKE %s OR t.model LIKE %s",
-                    $like,
-                    $like,
-                    $like
-                )
-            );
-        }
-
-        return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
-    }
-
-    public static function search_ratings( $search = '', $per_page = 20, $page = 1, $orderby = 'r.created_at', $order = 'DESC' ) {
-        global $wpdb;
-        $table = self::ratings_table();
-        $tires = self::tires_table();
-
-        $allowed_orderby = array( 'r.id', 'r.tire_id', 'r.rating', 'r.created_at', 't.brand', 't.model' );
-        if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
-            $orderby = 'r.created_at';
-        }
-        $order = strtoupper( $order ) === 'ASC' ? 'ASC' : 'DESC';
-        $offset = max( 0, ( $page - 1 ) * $per_page );
-
-        if ( ! empty( $search ) ) {
-            $like = '%' . $wpdb->esc_like( $search ) . '%';
-            return $wpdb->get_results(
-                $wpdb->prepare(
-                    "SELECT r.*, t.brand, t.model FROM {$table} r LEFT JOIN {$tires} t ON r.tire_id = t.tire_id WHERE r.tire_id LIKE %s OR t.brand LIKE %s OR t.model LIKE %s ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d",
-                    $like,
-                    $like,
-                    $like,
-                    $per_page,
-                    $offset
-                ),
-                ARRAY_A
-            );
-        }
-
-        return $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT r.*, t.brand, t.model FROM {$table} r LEFT JOIN {$tires} t ON r.tire_id = t.tire_id ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d",
-                $per_page,
-                $offset
-            ),
-            ARRAY_A
-        );
-    }
-
-    public static function get_ratings_summary() {
+    /**
+     * Get summary statistics for all reviews.
+     *
+     * @return array { 'total' => int, 'tires_rated' => int, 'unique_users' => int, 'avg_rating' => float }
+     */
+    public static function get_review_summary() {
         global $wpdb;
         $table = self::ratings_table();
 
@@ -1146,7 +1094,9 @@ class RTG_Database {
     // --- Admin Review Management ---
 
     /**
-     * Search reviews (ratings with text) for admin management.
+     * Search reviews for admin management.
+     *
+     * Every rating entry is considered a review (star-only reviews included).
      *
      * @param string $search   Search term.
      * @param string $status   Filter by review_status (empty = all).
@@ -1168,7 +1118,7 @@ class RTG_Database {
         $order  = strtoupper( $order ) === 'ASC' ? 'ASC' : 'DESC';
         $offset = max( 0, ( $page - 1 ) * $per_page );
 
-        $where  = array( "r.review_text != ''" );
+        $where  = array( '1=1' );
         $values = array();
 
         if ( ! empty( $status ) ) {
@@ -1200,7 +1150,9 @@ class RTG_Database {
     }
 
     /**
-     * Count reviews (ratings with text) for admin, optionally filtered by status.
+     * Count reviews for admin, optionally filtered by status.
+     *
+     * Every rating entry is considered a review (star-only reviews included).
      *
      * @param string $search Search term.
      * @param string $status Filter by review_status (empty = all).
@@ -1211,7 +1163,7 @@ class RTG_Database {
         $table = self::ratings_table();
         $tires = self::tires_table();
 
-        $where  = array( "r.review_text != ''" );
+        $where  = array( '1=1' );
         $values = array();
 
         if ( ! empty( $status ) ) {
@@ -1242,6 +1194,8 @@ class RTG_Database {
     /**
      * Get review counts by status for the admin tabs.
      *
+     * Every rating entry is considered a review (star-only reviews included).
+     *
      * @return array { 'all' => int, 'pending' => int, 'approved' => int, 'rejected' => int }
      */
     public static function get_review_status_counts() {
@@ -1249,7 +1203,7 @@ class RTG_Database {
         $table = self::ratings_table();
 
         $rows = $wpdb->get_results(
-            "SELECT review_status, COUNT(*) as cnt FROM {$table} WHERE review_text != '' GROUP BY review_status",
+            "SELECT review_status, COUNT(*) as cnt FROM {$table} GROUP BY review_status",
             ARRAY_A
         );
 

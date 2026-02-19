@@ -32,7 +32,7 @@ class Test_RTG_Admin extends WP_UnitTestCase {
         $this->assertContains( 'rtg-dashboard', $slugs );
         $this->assertContains( 'rtg-tires', $slugs );
         $this->assertContains( 'rtg-tire-edit', $slugs );
-        $this->assertContains( 'rtg-ratings', $slugs );
+        $this->assertContains( 'rtg-reviews', $slugs );
         $this->assertContains( 'rtg-import', $slugs );
         $this->assertContains( 'rtg-settings', $slugs );
     }

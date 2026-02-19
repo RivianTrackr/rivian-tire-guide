@@ -6,17 +6,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 class RTG_Ajax {
 
     /**
-     * Maximum rating submissions per minute per user.
+     * Maximum review submissions per minute per user.
      */
     const RATE_LIMIT_MAX    = 10;
     const RATE_LIMIT_WINDOW = 60; // seconds
 
     public function __construct() {
-        // Rating handlers — available to both logged-in and logged-out users.
+        // Review handlers — available to both logged-in and logged-out users.
         add_action( 'wp_ajax_get_tire_ratings', array( $this, 'get_tire_ratings' ) );
         add_action( 'wp_ajax_nopriv_get_tire_ratings', array( $this, 'get_tire_ratings' ) );
 
-        // Submit rating — logged-in users only.
+        // Submit review — logged-in users only.
         add_action( 'wp_ajax_submit_tire_rating', array( $this, 'submit_tire_rating' ) );
 
         // Get reviews for a tire — public.

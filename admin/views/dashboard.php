@@ -10,7 +10,7 @@ $core            = $stats['core'];
 $total_tires     = (int) ( $core['total_tires'] ?? 0 );
 $avg_price       = floatval( $core['avg_price'] ?? 0 );
 $avg_efficiency  = (int) ( $core['avg_efficiency'] ?? 0 );
-$total_ratings   = (int) ( $stats['ratings']['total_ratings'] ?? 0 );
+$total_reviews   = (int) ( $stats['ratings']['total_ratings'] ?? 0 );
 
 // Price range.
 $min_price = floatval( $core['min_price'] ?? 0 );
@@ -77,8 +77,8 @@ $grade_colors = array(
             <div class="rtg-stat-label">Avg Efficiency Score</div>
         </div>
         <div class="rtg-stat-card">
-            <div class="rtg-stat-value"><?php echo esc_html( $total_ratings ); ?></div>
-            <div class="rtg-stat-label">Total Ratings</div>
+            <div class="rtg-stat-value"><?php echo esc_html( $total_reviews ); ?></div>
+            <div class="rtg-stat-label">Total Reviews</div>
         </div>
     </div>
 
@@ -237,7 +237,7 @@ $grade_colors = array(
             <div class="rtg-card-header"><h2>Top Rated Tires</h2></div>
             <div class="rtg-card-body">
                 <?php if ( empty( $stats['top_rated'] ) ) : ?>
-                    <p style="color: var(--rtg-text-muted);">No ratings yet.</p>
+                    <p style="color: var(--rtg-text-muted);">No reviews yet.</p>
                 <?php else : ?>
                     <ul class="rtg-mini-list">
                         <?php foreach ( $stats['top_rated'] as $i => $tire ) : ?>
@@ -250,7 +250,7 @@ $grade_colors = array(
                                     <span class="rtg-mini-list-name">
                                         <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires&s=' . urlencode( $tire['tire_id'] ) ) ); ?>"><?php echo esc_html( $tire['brand'] . ' ' . $tire['model'] ); ?></a>
                                     </span>
-                                    <span class="rtg-mini-list-meta"><?php echo esc_html( $tire['rating_count'] ); ?> rating<?php echo (int) $tire['rating_count'] !== 1 ? 's' : ''; ?></span>
+                                    <span class="rtg-mini-list-meta"><?php echo esc_html( $tire['rating_count'] ); ?> review<?php echo (int) $tire['rating_count'] !== 1 ? 's' : ''; ?></span>
                                 </span>
                                 <span class="rtg-mini-list-value"><?php echo esc_html( $tire['avg_rating'] ); ?> / 5</span>
                             </li>

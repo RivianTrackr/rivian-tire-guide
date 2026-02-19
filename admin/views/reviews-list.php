@@ -14,6 +14,7 @@ $notices = array(
 // Current status tab.
 $current_status = isset( $_GET['status'] ) ? sanitize_text_field( $_GET['status'] ) : '';
 $status_counts  = RTG_Database::get_review_status_counts();
+$summary        = RTG_Database::get_review_summary();
 
 // Search & pagination.
 $search   = isset( $_GET['s'] ) ? sanitize_text_field( $_GET['s'] ) : '';
@@ -88,6 +89,26 @@ $status_badge = function ( $status ) {
 
     <div class="rtg-page-header">
         <h1 class="rtg-page-title">Reviews</h1>
+    </div>
+
+    <!-- Stats -->
+    <div class="rtg-stats-grid">
+        <div class="rtg-stat-card">
+            <div class="rtg-stat-value"><?php echo intval( $summary['total'] ?? 0 ); ?></div>
+            <div class="rtg-stat-label">Total Reviews</div>
+        </div>
+        <div class="rtg-stat-card">
+            <div class="rtg-stat-value"><?php echo esc_html( $summary['avg_rating'] ?? '0' ); ?></div>
+            <div class="rtg-stat-label">Avg Rating</div>
+        </div>
+        <div class="rtg-stat-card">
+            <div class="rtg-stat-value"><?php echo intval( $summary['tires_rated'] ?? 0 ); ?></div>
+            <div class="rtg-stat-label">Tires Reviewed</div>
+        </div>
+        <div class="rtg-stat-card">
+            <div class="rtg-stat-value"><?php echo intval( $summary['unique_users'] ?? 0 ); ?></div>
+            <div class="rtg-stat-label">Unique Reviewers</div>
+        </div>
     </div>
 
     <!-- Status Tabs -->
@@ -180,7 +201,7 @@ $status_badge = function ( $status ) {
                                         <?php if ( $current_status === 'pending' ) : ?>
                                             No reviews are awaiting moderation.
                                         <?php else : ?>
-                                            Written reviews will appear here once users submit them on the frontend.
+                                            Reviews will appear here once users start reviewing tires on the frontend.
                                         <?php endif; ?>
                                     </p>
                                 </div>
@@ -198,10 +219,16 @@ $status_badge = function ( $status ) {
                                 <td><?php echo esc_html( $user_map[ $r['user_id'] ] ?? 'User #' . $r['user_id'] ); ?></td>
                                 <td style="white-space: nowrap;"><?php echo $render_stars( intval( $r['rating'] ) ); ?></td>
                                 <td style="max-width: 340px;">
-                                    <?php if ( ! empty( $r['review_title'] ) ) : ?>
-                                        <strong style="display: block; margin-bottom: 2px; color: var(--rtg-text-primary, #1d1d1f);"><?php echo esc_html( $r['review_title'] ); ?></strong>
+                                    <?php if ( ! empty( $r['review_title'] ) || ! empty( $r['review_text'] ) ) : ?>
+                                        <?php if ( ! empty( $r['review_title'] ) ) : ?>
+                                            <strong style="display: block; margin-bottom: 2px; color: var(--rtg-text-primary, #1d1d1f);"><?php echo esc_html( $r['review_title'] ); ?></strong>
+                                        <?php endif; ?>
+                                        <?php if ( ! empty( $r['review_text'] ) ) : ?>
+                                            <span style="color: var(--rtg-text-secondary, #6e6e73); font-size: 13px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;" title="<?php echo esc_attr( $r['review_text'] ); ?>"><?php echo esc_html( $r['review_text'] ); ?></span>
+                                        <?php endif; ?>
+                                    <?php else : ?>
+                                        <span style="color: var(--rtg-text-muted, #86868b); font-style: italic; font-size: 13px;">Star rating only</span>
                                     <?php endif; ?>
-                                    <span style="color: var(--rtg-text-secondary, #6e6e73); font-size: 13px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;" title="<?php echo esc_attr( $r['review_text'] ); ?>"><?php echo esc_html( $r['review_text'] ); ?></span>
                                 </td>
                                 <td><?php echo $status_badge( $r['review_status'] ?? 'approved' ); ?></td>
                                 <td style="white-space: nowrap;">
@@ -220,7 +247,7 @@ $status_badge = function ( $status ) {
                                         <?php if ( $review_status !== 'rejected' ) : ?>
                                             <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=rtg-reviews&action=reject_review&rating_id=' . $r['id'] . $status_param ), 'rtg_review_reject_review_' . $r['id'] ) ); ?>" style="color: var(--rtg-warning-text, #856404); text-decoration: none;">Reject</a>
                                         <?php endif; ?>
-                                        <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=rtg-reviews&action=delete_rating&rating_id=' . $r['id'] . $status_param ), 'rtg_delete_rating_' . $r['id'] ) ); ?>" style="color: var(--rtg-error, #ff3b30); text-decoration: none;" onclick="return confirm('Delete this review and rating permanently?');">Delete</a>
+                                        <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=rtg-reviews&action=delete_rating&rating_id=' . $r['id'] . $status_param ), 'rtg_delete_rating_' . $r['id'] ) ); ?>" style="color: var(--rtg-error, #ff3b30); text-decoration: none;" onclick="return confirm('Delete this review permanently?');">Delete</a>
                                     </div>
                                 </td>
                             </tr>

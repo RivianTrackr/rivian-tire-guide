@@ -93,15 +93,6 @@ class RTG_Admin {
             array( $this, 'render_edit_page' )
         );
 
-        add_submenu_page(
-            'rtg-dashboard',
-            'Ratings',
-            'Ratings',
-            'manage_options',
-            'rtg-ratings',
-            array( $this, 'render_ratings_page' )
-        );
-
         // Reviews management page with pending count badge.
         $pending = RTG_Database::get_review_status_counts();
         $badge   = $pending['pending'] > 0
@@ -254,7 +245,7 @@ class RTG_Admin {
             $this->handle_csv_export();
         }
 
-        // Handle rating delete.
+        // Handle review delete.
         if ( isset( $_GET['action'] ) && $_GET['action'] === 'delete_rating' && isset( $_GET['rating_id'] ) ) {
             $this->handle_rating_delete();
         }
@@ -397,13 +388,6 @@ class RTG_Admin {
             return;
         }
         require_once RTG_PLUGIN_DIR . 'admin/views/wheel-edit.php';
-    }
-
-    public function render_ratings_page() {
-        if ( ! current_user_can( 'manage_options' ) ) {
-            return;
-        }
-        require_once RTG_PLUGIN_DIR . 'admin/views/ratings-list.php';
     }
 
     public function render_reviews_page() {
@@ -660,10 +644,8 @@ class RTG_Admin {
 
         RTG_Database::delete_rating( $rating_id );
 
-        // Redirect back to whichever page initiated the delete.
-        $page = isset( $_GET['page'] ) && $_GET['page'] === 'rtg-reviews' ? 'rtg-reviews' : 'rtg-ratings';
-        $redirect_args = array( 'page' => $page, 'message' => 'deleted' );
-        if ( $page === 'rtg-reviews' && ! empty( $_GET['status'] ) ) {
+        $redirect_args = array( 'page' => 'rtg-reviews', 'message' => 'deleted' );
+        if ( ! empty( $_GET['status'] ) ) {
             $redirect_args['status'] = sanitize_text_field( $_GET['status'] );
         }
         wp_redirect( add_query_arg( $redirect_args, admin_url( 'admin.php' ) ) );
