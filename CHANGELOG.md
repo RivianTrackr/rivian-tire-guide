@@ -4,6 +4,18 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.11.0] - 2026-02-19
+
+### Added
+- **Affiliate Links dashboard** — New admin page (Tire Guide > Affiliate Links) providing a centralized view of all tire purchase, bundle, and review links. Summary stats show counts for affiliate, regular, and missing links at a glance.
+- **Link classification** — Automatically detects whether a purchase link is an affiliate link (via known affiliate network domains like CJ, ShareASale, AvantLink, Impact, etc.) or a regular direct retailer link, displayed as color-coded badges.
+- **Filter tabs** — Quick-filter buttons to show only tires with affiliate links, regular links, missing links, missing bundle links, or missing review links — making it easy to find which tires still need affiliate links added.
+- **Inline link editing** — Edit all three link fields (purchase, bundle, review) directly in the table row with AJAX save — no page reload required.
+- **Search** — Search the affiliate links table by brand, model, or tire ID.
+
+### Changed
+- **Plugin version** — Bumped to 1.11.0.
+
 ## [1.10.0] - 2026-02-18
 
 ### Added

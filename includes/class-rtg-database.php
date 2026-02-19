@@ -1208,6 +1208,151 @@ class RTG_Database {
         );
     }
 
+    // --- Affiliate Link Management ---
+
+    /**
+     * Get link status summary counts for the affiliate links dashboard.
+     *
+     * @return array { 'total' => int, 'affiliate' => int, 'regular' => int, 'missing' => int, 'bundle_set' => int, 'bundle_missing' => int }
+     */
+    public static function get_link_status_counts() {
+        global $wpdb;
+        $table = self::tires_table();
+
+        $row = $wpdb->get_row(
+            "SELECT
+                COUNT(*) as total,
+                SUM(CASE WHEN link = '' THEN 1 ELSE 0 END) as missing_link,
+                SUM(CASE WHEN bundle_link = '' THEN 1 ELSE 0 END) as missing_bundle,
+                SUM(CASE WHEN bundle_link != '' THEN 1 ELSE 0 END) as has_bundle,
+                SUM(CASE WHEN review_link = '' THEN 1 ELSE 0 END) as missing_review,
+                SUM(CASE WHEN review_link != '' THEN 1 ELSE 0 END) as has_review
+            FROM {$table}",
+            ARRAY_A
+        );
+
+        return array(
+            'total'          => (int) ( $row['total'] ?? 0 ),
+            'missing_link'   => (int) ( $row['missing_link'] ?? 0 ),
+            'missing_bundle' => (int) ( $row['missing_bundle'] ?? 0 ),
+            'has_bundle'     => (int) ( $row['has_bundle'] ?? 0 ),
+            'missing_review' => (int) ( $row['missing_review'] ?? 0 ),
+            'has_review'     => (int) ( $row['has_review'] ?? 0 ),
+        );
+    }
+
+    /**
+     * Get all tires with link info for the affiliate links management page.
+     *
+     * @param string $link_filter Filter: 'all', 'affiliate', 'regular', 'missing'.
+     * @param string $search      Search term.
+     * @return array Tire rows with id, tire_id, brand, model, size, link, bundle_link, review_link.
+     */
+    public static function get_tires_for_link_management( $link_filter = 'all', $search = '' ) {
+        global $wpdb;
+        $table = self::tires_table();
+
+        $where  = array( '1=1' );
+        $values = array();
+
+        // Known affiliate domains.
+        $affiliate_domains = array(
+            'tkqlhce.com', 'commission-junction.com', 'cj.com',
+            'linksynergy.com', 'click.linksynergy.com', 'shareasale.com',
+            'avantlink.com', 'impact.com', 'partnerize.com',
+            'tirerackaffiliates.com', 'walmart-affiliates.com',
+            'costco-affiliates.com', 'walmart-redirect.com',
+            'ebay-redirect.com', 'simplifytires.com',
+        );
+
+        switch ( $link_filter ) {
+            case 'missing':
+                $where[] = "link = ''";
+                break;
+            case 'affiliate':
+                $clauses = array();
+                foreach ( $affiliate_domains as $domain ) {
+                    $clauses[] = 'link LIKE %s';
+                    $values[]  = '%' . $wpdb->esc_like( $domain ) . '%';
+                }
+                $where[] = '( ' . implode( ' OR ', $clauses ) . ' )';
+                break;
+            case 'regular':
+                $not_clauses = array( "link != ''" );
+                foreach ( $affiliate_domains as $domain ) {
+                    $not_clauses[] = 'link NOT LIKE %s';
+                    $values[]      = '%' . $wpdb->esc_like( $domain ) . '%';
+                }
+                $where[] = '( ' . implode( ' AND ', $not_clauses ) . ' )';
+                break;
+            case 'no_bundle':
+                $where[] = "bundle_link = ''";
+                break;
+            case 'no_review':
+                $where[] = "review_link = ''";
+                break;
+        }
+
+        if ( ! empty( $search ) ) {
+            $like     = '%' . $wpdb->esc_like( $search ) . '%';
+            $where[]  = '( tire_id LIKE %s OR brand LIKE %s OR model LIKE %s )';
+            $values[] = $like;
+            $values[] = $like;
+            $values[] = $like;
+        }
+
+        $where_sql = implode( ' AND ', $where );
+
+        if ( ! empty( $values ) ) {
+            $results = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT id, tire_id, brand, model, size, category, link, bundle_link, review_link FROM {$table} WHERE {$where_sql} ORDER BY brand ASC, model ASC",
+                    ...$values
+                ),
+                ARRAY_A
+            );
+        } else {
+            $results = $wpdb->get_results(
+                "SELECT id, tire_id, brand, model, size, category, link, bundle_link, review_link FROM {$table} WHERE {$where_sql} ORDER BY brand ASC, model ASC",
+                ARRAY_A
+            );
+        }
+
+        return $results;
+    }
+
+    /**
+     * Update only link fields for a tire (used by affiliate links AJAX).
+     *
+     * @param string $tire_id     Tire identifier.
+     * @param string $link        Primary link URL.
+     * @param string $bundle_link Bundle link URL.
+     * @param string $review_link Review link URL.
+     * @return int|false Number of rows updated.
+     */
+    public static function update_tire_links( $tire_id, $link, $bundle_link, $review_link ) {
+        global $wpdb;
+        $table = self::tires_table();
+
+        $result = $wpdb->update(
+            $table,
+            array(
+                'link'        => $link,
+                'bundle_link' => $bundle_link,
+                'review_link' => $review_link,
+            ),
+            array( 'tire_id' => $tire_id ),
+            array( '%s', '%s', '%s' ),
+            array( '%s' )
+        );
+
+        if ( $result !== false ) {
+            self::flush_cache();
+        }
+
+        return $result;
+    }
+
     // --- Favorites ---
 
     private static function favorites_table() {

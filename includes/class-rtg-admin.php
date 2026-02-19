@@ -128,6 +128,15 @@ class RTG_Admin {
 
         add_submenu_page(
             'rtg-tires',
+            'Affiliate Links',
+            'Affiliate Links',
+            'manage_options',
+            'rtg-affiliate-links',
+            array( $this, 'render_affiliate_links_page' )
+        );
+
+        add_submenu_page(
+            'rtg-tires',
             'Import / Export',
             'Import / Export',
             'manage_options',
@@ -333,6 +342,13 @@ class RTG_Admin {
             return;
         }
         require_once RTG_PLUGIN_DIR . 'admin/views/reviews-list.php';
+    }
+
+    public function render_affiliate_links_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        require_once RTG_PLUGIN_DIR . 'admin/views/affiliate-links.php';
     }
 
     public function render_import_page() {
