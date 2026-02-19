@@ -516,8 +516,8 @@ class RTG_Ajax {
         }
 
         $search_query = sanitize_text_field( wp_unslash( $_POST['search_query'] ?? '' ) );
-        $filters_json = sanitize_text_field( $_POST['filters_json'] ?? '{}' );
-        $sort_by      = sanitize_text_field( $_POST['sort_by'] ?? '' );
+        $filters_json = sanitize_text_field( wp_unslash( $_POST['filters_json'] ?? '{}' ) );
+        $sort_by      = sanitize_text_field( wp_unslash( $_POST['sort_by'] ?? '' ) );
         $result_count = intval( $_POST['result_count'] ?? 0 );
 
         // Validate filters JSON.
