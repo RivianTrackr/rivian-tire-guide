@@ -4,6 +4,12 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.13.1] - 2026-02-19
+
+### Changed
+- **Simplified tire card rating display** — Removed redundant review count from the rating line. The average score now shows cleanly next to the stars (e.g. "5.0") while the review count appears only in the actionable "X reviews" button below.
+- **Plugin version** — Bumped to 1.13.1.
+
 ## [1.13.0] - 2026-02-19
 
 ### Added
