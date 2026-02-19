@@ -9,6 +9,6 @@
     "test": "node tests/test-validation.js"
   },
   "devDependencies": {
-    "esbuild": "^0.24.0"
+    "esbuild": "^0.25.0"
   }
 }
