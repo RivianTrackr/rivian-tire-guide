@@ -273,15 +273,15 @@ function initShareButton() {
     const url = window.location.href;
 
     function showCopied() {
-      const svgEl = btn.querySelector("svg");
+      const iconEl = btn.querySelector("i");
       const spanEl = btn.querySelector("span");
-      const origSVG = svgEl ? svgEl.outerHTML : "";
+      const origIcon = iconEl ? iconEl.outerHTML : "";
       const origText = spanEl ? spanEl.textContent : "";
-      if (svgEl) svgEl.outerHTML = rtgIcon('check', 16);
+      if (iconEl) iconEl.outerHTML = rtgIcon('check', 16);
       if (spanEl) spanEl.textContent = "Copied!";
       setTimeout(() => {
-        const current = btn.querySelector("svg");
-        if (current) current.outerHTML = origSVG;
+        const current = btn.querySelector("i");
+        if (current) current.outerHTML = origIcon;
         if (spanEl) spanEl.textContent = origText;
       }, 2000);
     }

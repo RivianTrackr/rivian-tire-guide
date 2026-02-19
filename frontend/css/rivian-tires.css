@@ -16,14 +16,6 @@
   --rtg-star-empty: #2d3a49;
 }
 
-/* === Inline SVG Icon Base === */
-.rtg-icon {
-  display: inline-block;
-  vertical-align: middle;
-  flex-shrink: 0;
-  fill: currentColor;
-  color: inherit;
-}
 
 html, body {
   width: 100%;
