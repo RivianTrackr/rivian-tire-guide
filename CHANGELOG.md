@@ -4,6 +4,19 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.15.0] - 2026-02-19
+
+### Added
+- **esbuild build pipeline** — New `package.json` with `npm run build` and `npm run build:watch` commands. esbuild minifies all JS and CSS assets, producing `.min.js` and `.min.css` files. Console/debugger statements are automatically stripped from production builds. Replaces the ad-hoc `build.sh` script.
+- **GitHub Actions CI** — New `.github/workflows/ci.yml` runs JS tests, build verification, and PHP syntax linting (PHP 7.4, 8.0, 8.2) on every push and pull request.
+- **REST API rate limiting** — All REST API endpoints now enforce per-IP rate limits via WordPress transients: 60 requests/minute for read endpoints, 10 requests/minute for the write (efficiency) endpoint. Returns HTTP 429 when exceeded.
+- **Inline SVG icon system** — Replaced the Font Awesome 6.5 CDN dependency (~60 KB CSS + web fonts) with lightweight inline SVGs. New `RTG_Icons` PHP class and `rtgIcon()` JS helper render icons from a shared map. All ~35 Font Awesome icon references across JS and PHP templates have been replaced. CSP headers updated to remove cloudflare.com allowance.
+- **Mobile range slider improvements** — Added editable number inputs alongside range sliders on mobile (visible below 600px breakpoint). Number inputs and sliders sync bidirectionally. Slider thumbs have larger 28px touch targets on mobile for easier interaction.
+
+### Changed
+- **Asset loading** — Frontend, compare, and admin pages now serve minified assets (`.min.js`/`.min.css`) when available and `SCRIPT_DEBUG` is off. Falls back to unminified sources for development.
+- **Plugin version** — Bumped to 1.15.0.
+
 ## [1.14.0] - 2026-02-19
 
 ### Added

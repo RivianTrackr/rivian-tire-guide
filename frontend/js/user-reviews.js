@@ -1,6 +1,17 @@
 (function () {
   "use strict";
 
+  // Inline SVG icon helper (uses icon map from localized script data).
+  function rtgIcon(name, size, cls) {
+    size = size || 16;
+    var icons = (typeof rtgData !== 'undefined' && rtgData.icons) ? rtgData.icons : {};
+    var def = icons[name];
+    if (!def) return '';
+    var classAttr = 'rtg-icon' + (cls ? ' ' + cls : '');
+    return '<svg class="' + classAttr + '" width="' + size + '" height="' + size
+      + '" viewBox="' + def.viewBox + '" aria-hidden="true">' + def.paths + '</svg>';
+  }
+
   var tireGuideUrl = (typeof rtgUserReviews !== "undefined" && rtgUserReviews.tireGuideUrl) || "";
 
   // Render back link
@@ -9,7 +20,7 @@
     var backLink = document.createElement("a");
     backLink.href = tireGuideUrl;
     backLink.className = "rtg-user-reviews-back-link";
-    backLink.innerHTML = '<i class="fa-solid fa-arrow-left"></i> Back to Tire Guide';
+    backLink.innerHTML = rtgIcon('arrow-left', 14) + ' Back to Tire Guide';
     backContainer.appendChild(backLink);
   }
 
@@ -188,7 +199,7 @@
     if (currentPage > 1) {
       var prev = document.createElement("button");
       prev.className = "rtg-pagination-btn";
-      prev.innerHTML = '<i class="fa-solid fa-chevron-left"></i> Previous';
+      prev.innerHTML = rtgIcon('chevron-left', 14) + ' Previous';
       prev.addEventListener("click", function () { loadUserReviews(currentPage - 1); });
       container.appendChild(prev);
     }
@@ -201,7 +212,7 @@
     if (currentPage < totalPages) {
       var next = document.createElement("button");
       next.className = "rtg-pagination-btn";
-      next.innerHTML = 'Next <i class="fa-solid fa-chevron-right"></i>';
+      next.innerHTML = 'Next ' + rtgIcon('chevron-right', 14);
       next.addEventListener("click", function () { loadUserReviews(currentPage + 1); });
       container.appendChild(next);
     }

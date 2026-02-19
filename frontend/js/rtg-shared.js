@@ -92,10 +92,31 @@ var RTG_SHARED = (function() {
     }
   }
 
+  // --- Inline SVG Icon System ---
+
+  /**
+   * Render an inline SVG icon from the icon map provided by rtgData.icons.
+   *
+   * @param {string} name  Icon name (e.g. 'heart', 'arrow-left').
+   * @param {number} size  Width/height in px (default 16).
+   * @param {string} cls   Extra CSS class(es) (optional).
+   * @return {string} SVG markup, or empty string if icon not found.
+   */
+  function icon(name, size, cls) {
+    size = size || 16;
+    var icons = (typeof rtgData !== 'undefined' && rtgData.icons) ? rtgData.icons : {};
+    var def = icons[name];
+    if (!def) return '';
+    var classAttr = 'rtg-icon' + (cls ? ' ' + cls : '');
+    return '<svg class="' + classAttr + '" width="' + size + '" height="' + size
+      + '" viewBox="' + def.viewBox + '" aria-hidden="true">' + def.paths + '</svg>';
+  }
+
   // --- Public API ---
 
   return {
     escapeHTML: escapeHTML,
+    icon: icon,
     safeImageURL: safeImageURL,
     safeLinkURL: safeLinkURL,
     safeReviewLinkURL: safeReviewLinkURL,
