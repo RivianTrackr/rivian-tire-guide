@@ -22,6 +22,12 @@ class RTG_REST_API {
     const NAMESPACE = 'rtg/v1';
 
     /**
+     * Rate limits: requests per minute per IP.
+     */
+    const RATE_LIMIT_READ  = 60;
+    const RATE_LIMIT_WRITE = 10;
+
+    /**
      * Hook into rest_api_init to register routes.
      */
     public function __construct() {
@@ -124,6 +130,10 @@ class RTG_REST_API {
      * @return WP_REST_Response
      */
     public function get_tires( WP_REST_Request $request ) {
+        $rate_check = $this->check_rate_limit( 'read', self::RATE_LIMIT_READ );
+        if ( is_wp_error( $rate_check ) ) {
+            return $rate_check;
+        }
 
         $filters = array();
 
@@ -196,6 +206,11 @@ class RTG_REST_API {
      * @return WP_REST_Response|WP_Error
      */
     public function get_tire( WP_REST_Request $request ) {
+        $rate_check = $this->check_rate_limit( 'read', self::RATE_LIMIT_READ );
+        if ( is_wp_error( $rate_check ) ) {
+            return $rate_check;
+        }
+
         $tire_id = sanitize_text_field( $request->get_param( 'tire_id' ) );
 
         $tire = RTG_Database::get_tire( $tire_id );
@@ -230,6 +245,11 @@ class RTG_REST_API {
      * @return WP_REST_Response|WP_Error
      */
     public function get_tire_reviews( WP_REST_Request $request ) {
+        $rate_check = $this->check_rate_limit( 'read', self::RATE_LIMIT_READ );
+        if ( is_wp_error( $rate_check ) ) {
+            return $rate_check;
+        }
+
         $tire_id  = sanitize_text_field( $request->get_param( 'tire_id' ) );
         $page     = absint( $request->get_param( 'page' ) );
         $per_page = absint( $request->get_param( 'per_page' ) );
@@ -277,6 +297,11 @@ class RTG_REST_API {
      * @return WP_REST_Response
      */
     public function calculate_efficiency( WP_REST_Request $request ) {
+        $rate_check = $this->check_rate_limit( 'write', self::RATE_LIMIT_WRITE );
+        if ( is_wp_error( $rate_check ) ) {
+            return $rate_check;
+        }
+
         $data = array(
             'size'          => sanitize_text_field( $request->get_param( 'size' ) ),
             'weight_lb'     => floatval( $request->get_param( 'weight_lb' ) ),
@@ -297,6 +322,40 @@ class RTG_REST_API {
             ),
             200
         );
+    }
+
+    // ------------------------------------------------------------------
+    // Rate limiting
+    // ------------------------------------------------------------------
+
+    /**
+     * Check rate limit for the current request.
+     *
+     * Uses WordPress transients keyed by IP address. Returns a WP_Error
+     * if the limit is exceeded, or true if the request may proceed.
+     *
+     * @param string $bucket  A short identifier for the rate limit bucket (e.g. 'read', 'write').
+     * @param int    $limit   Maximum requests allowed per window.
+     * @param int    $window  Window length in seconds (default 60).
+     * @return true|WP_Error
+     */
+    private function check_rate_limit( $bucket, $limit, $window = 60 ) {
+        $ip  = preg_replace( '/[^a-fA-F0-9.:_]/', '', $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0' );
+        $key = 'rtg_rl_' . $bucket . '_' . md5( $ip );
+
+        $current = (int) get_transient( $key );
+
+        if ( $current >= $limit ) {
+            return new WP_Error(
+                'rtg_rate_limit',
+                'Rate limit exceeded. Please try again later.',
+                array( 'status' => 429 )
+            );
+        }
+
+        set_transient( $key, $current + 1, $window );
+
+        return true;
     }
 
     // ------------------------------------------------------------------

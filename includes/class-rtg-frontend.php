@@ -42,13 +42,6 @@ class RTG_Frontend {
     }
 
     private function enqueue_user_reviews_assets() {
-        wp_enqueue_style(
-            'font-awesome',
-            'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css',
-            array(),
-            '6.5.0'
-        );
-
         $suffix = self::asset_suffix();
 
         wp_enqueue_style(
@@ -85,6 +78,11 @@ class RTG_Frontend {
             'tireGuideUrl' => $tire_guide_url,
         ) );
 
+        // Provide icon map for user-reviews page.
+        wp_localize_script( 'rtg-user-reviews', 'rtgData', array(
+            'icons' => json_decode( RTG_Icons::get_js_icon_map(), true ),
+        ) );
+
         $this->inject_theme_color_overrides();
     }
 
@@ -116,14 +114,6 @@ class RTG_Frontend {
 
         $settings = get_option( 'rtg_settings', array() );
         $compare_slug = $settings['compare_slug'] ?? 'tire-compare';
-
-        // CSS.
-        wp_enqueue_style(
-            'font-awesome',
-            'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css',
-            array(),
-            '6.5.0'
-        );
 
         $suffix = self::asset_suffix();
 
@@ -191,6 +181,9 @@ class RTG_Frontend {
         if ( ! $server_side ) {
             $localized['tires'] = RTG_Database::get_tires_as_array();
         }
+
+        // Provide inline SVG icon definitions (replaces Font Awesome CDN).
+        $localized['icons'] = json_decode( RTG_Icons::get_js_icon_map(), true );
 
         wp_localize_script( 'rtg-tire-guide', 'rtgData', $localized );
 

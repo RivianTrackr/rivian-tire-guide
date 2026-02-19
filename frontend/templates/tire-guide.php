@@ -5,12 +5,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 <a class="rtg-skip-link" href="#tireCards">Skip to tire results</a>
 <button id="toggleFilters" class="toggle-filters-btn" aria-expanded="false" aria-controls="mobileFilterContent">
-  <i class="fa-solid fa-sliders" aria-hidden="true"></i>&nbsp; Show Filters
+  <?php echo RTG_Icons::render( 'sliders', 16 ); ?>&nbsp; Show Filters
 </button>
 <div id="filterTop"></div>
 <div class="filter-wrapper">
   <div class="filter-header">
-    <i class="fa-solid fa-sliders"></i>
+    <?php echo RTG_Icons::render( 'sliders', 16 ); ?>
     Filter, Sort, and Compare
   </div>
   <div class="filter-body">
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
       <div class="search-container">
         <label for="searchInput" class="screen-reader-text">Search tires</label>
         <input id="searchInput" type="text" placeholder="Search tires..." class="search-input" aria-label="Search tires"/>
-        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <?php echo RTG_Icons::render( 'magnifying-glass', 16, 'search-icon' ); ?>
       </div>
     </div>
     <div id="mobileFilterContent" class="mobile-filter-content">
@@ -43,15 +43,24 @@ if ( ! defined( 'ABSPATH' ) ) {
         </div>
         <div class="slider-row">
           <div class="filter-group slider-wrapper">
-            <label for="priceMax">Average Price: <span id="priceVal">$600</span></label>
+            <div class="slider-label-row">
+              <label for="priceMax">Average Price: <span id="priceVal" class="slider-value-label">$600</span></label>
+              <input id="priceMaxInput" type="number" class="slider-number-input" min="0" max="600" step="10" value="600" aria-label="Enter maximum price" />
+            </div>
             <input id="priceMax" class="range-slider" type="range" min="0" max="600" value="600" step="10" aria-label="Maximum Price"/>
           </div>
           <div class="filter-group slider-wrapper">
-            <label for="warrantyMax">Warranty: <span id="warrantyVal">80,000 miles</span></label>
+            <div class="slider-label-row">
+              <label for="warrantyMax">Warranty: <span id="warrantyVal" class="slider-value-label">80,000 miles</span></label>
+              <input id="warrantyMaxInput" type="number" class="slider-number-input" min="0" max="80000" step="1000" value="80000" aria-label="Enter maximum warranty in miles" />
+            </div>
             <input id="warrantyMax" class="range-slider" type="range" min="0" max="80000" value="80000" step="1000" aria-label="Maximum Warranty in miles"/>
           </div>
           <div class="filter-group slider-wrapper">
-            <label for="weightMax">Weight: <span id="weightVal">70</span></label>
+            <div class="slider-label-row">
+              <label for="weightMax">Weight: <span id="weightVal" class="slider-value-label">70</span></label>
+              <input id="weightMaxInput" type="number" class="slider-number-input" min="0" max="70" step="1" value="70" aria-label="Enter maximum weight in pounds" />
+            </div>
             <input id="weightMax" class="range-slider" type="range" min="0" max="70" value="70" step="1" aria-label="Maximum Weight in pounds"/>
           </div>
         </div>
@@ -62,7 +71,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             <div style="display: flex; align-items: center; gap: 6px;">
               <span>3PMS Rated</span>
               <button class="info-tooltip-trigger" data-tooltip-key="3PMS Filter" style="background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onmouseenter="this.style.color='var(--rtg-accent, #5ec095)'; this.style.backgroundColor='color-mix(in srgb, var(--rtg-accent, #5ec095) 10%, transparent)'" onmouseleave="this.style.color='#94a3b8'; this.style.backgroundColor='transparent'">
-                <i class="fa-solid fa-circle-info"></i>
+                <?php echo RTG_Icons::render( 'circle-info', 14 ); ?>
               </button>
             </div>
           </span>
@@ -74,7 +83,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             <div style="display: flex; align-items: center; gap: 6px;">
               <span>EV Rated</span>
               <button class="info-tooltip-trigger" data-tooltip-key="EV Rated Filter" style="background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onmouseenter="this.style.color='var(--rtg-accent, #5ec095)'; this.style.backgroundColor='color-mix(in srgb, var(--rtg-accent, #5ec095) 10%, transparent)'" onmouseleave="this.style.color='#94a3b8'; this.style.backgroundColor='transparent'">
-                <i class="fa-solid fa-circle-info"></i>
+                <?php echo RTG_Icons::render( 'circle-info', 14 ); ?>
               </button>
             </div>
           </span>
@@ -86,7 +95,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             <div style="display: flex; align-items: center; gap: 6px;">
               <span>Studded Available</span>
               <button class="info-tooltip-trigger" data-tooltip-key="Studded Available Filter" style="background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onmouseenter="this.style.color='var(--rtg-accent, #5ec095)'; this.style.backgroundColor='color-mix(in srgb, var(--rtg-accent, #5ec095) 10%, transparent)'" onmouseleave="this.style.color='#94a3b8'; this.style.backgroundColor='transparent'">
-                <i class="fa-solid fa-circle-info"></i>
+                <?php echo RTG_Icons::render( 'circle-info', 14 ); ?>
               </button>
             </div>
           </span>
@@ -98,7 +107,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             <div style="display: flex; align-items: center; gap: 6px;">
               <span>Officially Reviewed</span>
               <button class="info-tooltip-trigger" data-tooltip-key="Officially Reviewed Filter" style="background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onmouseenter="this.style.color='var(--rtg-accent, #5ec095)'; this.style.backgroundColor='color-mix(in srgb, var(--rtg-accent, #5ec095) 10%, transparent)'" onmouseleave="this.style.color='#94a3b8'; this.style.backgroundColor='transparent'">
-                <i class="fa-solid fa-circle-info"></i>
+                <?php echo RTG_Icons::render( 'circle-info', 14 ); ?>
               </button>
             </div>
           </span>
@@ -109,7 +118,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         <div class="switch-label favorites-filter-wrapper">
           <span class="switch-text">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <i class="fa-solid fa-heart" style="color: #ef4444; font-size: 13px;"></i>
+              <?php echo RTG_Icons::render( 'heart', 13 ); ?>
               <span>My Favorites</span>
             </div>
           </span>
@@ -120,7 +129,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         <?php endif; ?>
         <label class="switch-label reset-white" onclick="resetFilters()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resetFilters()}" role="button" tabindex="0">
           <span class="switch-text">
-            <i class="fa-solid fa-rotate-left" style="margin-right: 6px;"></i>Clear All
+            <?php echo RTG_Icons::render( 'rotate-left', 14 ); ?> Clear All
           </span>
         </label>
       </div>
@@ -130,7 +139,7 @@ if ( ! defined( 'ABSPATH' ) ) {
       ?>
       <div id="wheelDrawerContainer">
         <button id="wheelDrawerTrigger" class="wheel-trigger">
-          <i class="fa-solid fa-circle-info"></i>
+          <?php echo RTG_Icons::render( 'circle-info', 14 ); ?>
           Not sure which Rivian tire you need?
         </button>
         <div id="wheelDrawer" class="wheel-drawer">

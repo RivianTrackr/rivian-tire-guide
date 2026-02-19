@@ -42,20 +42,16 @@ class RTG_Compare {
         // Security headers for the standalone compare page.
         header( 'X-Content-Type-Options: nosniff' );
         header( 'X-Frame-Options: SAMEORIGIN' );
-        header( "Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src https://cdnjs.cloudflare.com; img-src 'self' https://riviantrackr.com https://cdn.riviantrackr.com data:;" );
+        header( "Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://riviantrackr.com https://cdn.riviantrackr.com data:;" );
         header( 'Referrer-Policy: strict-origin-when-cross-origin' );
 
-        // Enqueue assets for compare page.
-        wp_enqueue_style(
-            'font-awesome',
-            'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css',
-            array(),
-            '6.5.0'
+        $suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : (
+            file_exists( RTG_PLUGIN_DIR . 'frontend/js/rtg-shared.min.js' ) ? '.min' : ''
         );
 
         wp_enqueue_script(
             'rtg-shared',
-            RTG_PLUGIN_URL . 'frontend/js/rtg-shared.js',
+            RTG_PLUGIN_URL . 'frontend/js/rtg-shared' . $suffix . '.js',
             array(),
             RTG_VERSION,
             true
@@ -63,15 +59,16 @@ class RTG_Compare {
 
         wp_enqueue_script(
             'rtg-compare',
-            RTG_PLUGIN_URL . 'frontend/js/compare.js',
+            RTG_PLUGIN_URL . 'frontend/js/compare' . $suffix . '.js',
             array( 'rtg-shared' ),
             RTG_VERSION,
             true
         );
 
-        // Localize tire data for compare page.
+        // Localize tire data and icon map for compare page.
         wp_localize_script( 'rtg-compare', 'rtgData', array(
             'tires' => RTG_Database::get_tires_as_array(),
+            'icons' => json_decode( RTG_Icons::get_js_icon_map(), true ),
         ) );
 
         // Load the compare template.

@@ -5,6 +5,17 @@ function rtgColor(name) {
   return getComputedStyle(document.documentElement).getPropertyValue('--rtg-' + name).trim();
 }
 
+// Inline SVG icon helper — renders icons from the rtgData.icons map.
+function rtgIcon(name, size, cls) {
+  size = size || 16;
+  var icons = (typeof rtgData !== 'undefined' && rtgData.icons) ? rtgData.icons : {};
+  var def = icons[name];
+  if (!def) return '';
+  var classAttr = 'rtg-icon' + (cls ? ' ' + cls : '');
+  return '<svg class="' + classAttr + '" width="' + size + '" height="' + size
+    + '" viewBox="' + def.viewBox + '" aria-hidden="true">' + def.paths + '</svg>';
+}
+
 const ROWS_PER_PAGE = (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.rowsPerPage) ? rtgData.settings.rowsPerPage : 12;
 let filteredRows = [];
 let allRows = [];
@@ -798,20 +809,20 @@ function showSearchSuggestions(suggestions, inputElement) {
     
     const getIcon = (type) => {
       switch (type) {
-        case 'brand': return 'fa-solid fa-building';
-        case 'model': return 'fa-solid fa-circle';
-        case 'category': return 'fa-solid fa-tags';
-        case 'size': return 'fa-solid fa-ruler';
-        default: return 'fa-solid fa-search';
+        case 'brand': return 'building';
+        case 'model': return 'circle';
+        case 'category': return 'tags';
+        case 'size': return 'ruler';
+        default: return 'magnifying-glass';
       }
     };
     
     const content = document.createElement('div');
     content.style.cssText = 'display: flex; align-items: center; gap: 12px; flex: 1;';
     
-    const icon = document.createElement('i');
-    icon.className = getIcon(suggestion.type);
-    icon.style.cssText = `color: ${rtgColor('text-muted')}; font-size: 14px; width: 16px;`;
+    const icon = document.createElement('span');
+    icon.innerHTML = rtgIcon(getIcon(suggestion.type), 14);
+    icon.style.cssText = `color: ${rtgColor('text-muted')}; width: 16px; display: flex; align-items: center;`;
 
     const text = document.createElement('div');
     text.style.cssText = `color: ${rtgColor('text-light')}; font-weight: 500;`;
@@ -1066,7 +1077,7 @@ function createInfoTooltip(label, tooltipKey) {
   labelText.textContent = label;
   
   const infoButton = document.createElement('button');
-  infoButton.innerHTML = '<i class="fa-solid fa-circle-info" aria-hidden="true"></i>';
+  infoButton.innerHTML = '' + rtgIcon('circle-info', 14) + '';
   infoButton.className = 'info-tooltip-trigger';
   infoButton.dataset.tooltipKey = tooltipKey;
   infoButton.setAttribute('aria-label', `More info about ${label}`);
@@ -1111,7 +1122,7 @@ function createFilterTooltip(labelText, tooltipKey) {
   label.textContent = labelText;
   
   const infoButton = document.createElement('button');
-  infoButton.innerHTML = '<i class="fa-solid fa-circle-info" aria-hidden="true"></i>';
+  infoButton.innerHTML = '' + rtgIcon('circle-info', 14) + '';
   infoButton.className = 'info-tooltip-trigger';
   infoButton.dataset.tooltipKey = tooltipKey;
   infoButton.setAttribute('aria-label', `More info about ${labelText}`);
@@ -1206,7 +1217,7 @@ function showTooltipModal(tooltipKey, triggerElement) {
   `;
   
   const closeButton = document.createElement('button');
-  closeButton.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+  closeButton.innerHTML = rtgIcon('xmark', 18);
   closeButton.style.cssText = `
     position: absolute;
     top: 16px;
@@ -1629,9 +1640,9 @@ function createRatingHTML(tireId, average = 0, count = 0, userRating = 0) {
     const viewReviewsBtn = document.createElement('button');
     viewReviewsBtn.className = 'review-action-link view-reviews-btn';
     viewReviewsBtn.dataset.tireId = tireId;
-    const reviewIcon = document.createElement('i');
-    reviewIcon.className = 'fa-solid fa-message';
-    reviewIcon.setAttribute('aria-hidden', 'true');
+    const reviewIcon = document.createElement('span');
+    reviewIcon.innerHTML = rtgIcon('message', 14);
+    reviewIcon.style.display = 'inline-flex';
     viewReviewsBtn.appendChild(reviewIcon);
     viewReviewsBtn.appendChild(document.createTextNode(` ${reviewCount} review${reviewCount !== 1 ? 's' : ''}`));
     reviewActions.appendChild(viewReviewsBtn);
@@ -1649,9 +1660,9 @@ function createRatingHTML(tireId, average = 0, count = 0, userRating = 0) {
     loginPrompt.className = 'login-prompt';
     loginPrompt.href = typeof tireRatingAjax !== 'undefined' ? tireRatingAjax.login_url : '/wp-login.php';
 
-    const promptIcon = document.createElement('i');
-    promptIcon.className = 'fa-solid fa-pen-to-square';
-    promptIcon.setAttribute('aria-hidden', 'true');
+    const promptIcon = document.createElement('span');
+    promptIcon.innerHTML = rtgIcon('pen-to-square', 14);
+    promptIcon.style.display = 'inline-flex';
     loginPrompt.appendChild(promptIcon);
     loginPrompt.appendChild(document.createTextNode(' Log in to review this tire'));
     reviewActions.appendChild(loginPrompt);
@@ -2468,7 +2479,7 @@ function applyTireDeepLink() {
     const backBtn = document.createElement("a");
     backBtn.href = window.location.pathname;
     backBtn.className = "tire-deeplink-back";
-    backBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i> View all tires';
+    backBtn.innerHTML = rtgIcon('arrow-left', 14) + ' View all tires';
 
     backBar.appendChild(backBtn);
     tireSection.parentNode.insertBefore(backBar, tireSection);
@@ -2640,8 +2651,9 @@ function createSingleCard(row) {
     const badgeInner = document.createElement('div');
     badgeInner.className = 'tire-card-badge-inner';
 
-    const icon = document.createElement('i');
-    icon.className = 'fa-solid fa-circle-check';
+    const icon = document.createElement('span');
+    icon.innerHTML = rtgIcon('circle-check', 14);
+    icon.style.display = 'inline-flex';
 
     badgeInner.appendChild(icon);
     badgeInner.appendChild(document.createTextNode('Reviewed'));
@@ -2674,8 +2686,8 @@ function createSingleCard(row) {
   favBtn.classList.toggle('is-favorite', isFav);
   favBtn.setAttribute('aria-label', isFav ? 'Remove from favorites' : 'Add to favorites');
   favBtn.innerHTML = isFav
-    ? '<i class="fa-solid fa-heart"></i>'
-    : '<i class="fa-regular fa-heart"></i>';
+    ? rtgIcon('heart', 16)
+    : rtgIcon('heart-outline', 16);
   favBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     toggleFavorite(tireId);
@@ -2685,7 +2697,7 @@ function createSingleCard(row) {
   const shareBtn = document.createElement('button');
   shareBtn.className = 'tire-card-share-btn';
   shareBtn.setAttribute('aria-label', `Share ${escapeHTML(safeString(brand))} ${escapeHTML(safeString(model))}`);
-  shareBtn.innerHTML = '<i class="fa-solid fa-share-nodes"></i>';
+  shareBtn.innerHTML = rtgIcon('share', 16);
   shareBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     const url = new URL(window.location.href);
@@ -2695,10 +2707,10 @@ function createSingleCard(row) {
     const shareTitle = `${safeString(brand)} ${safeString(model)}`;
 
     function showCopied() {
-      shareBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
+      shareBtn.innerHTML = rtgIcon('check', 16);
       shareBtn.classList.add('copied');
       setTimeout(() => {
-        shareBtn.innerHTML = '<i class="fa-solid fa-share-nodes"></i>';
+        shareBtn.innerHTML = rtgIcon('share', 16);
         shareBtn.classList.remove('copied');
       }, 2000);
     }
@@ -2783,7 +2795,7 @@ function createSingleCard(row) {
       scoreText.textContent = `Efficiency (${escapeHTML(safeString(efficiencyScore))}/100)`;
 
       const infoButton = document.createElement('button');
-      infoButton.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+      infoButton.innerHTML = '' + rtgIcon('circle-info', 12) + '';
       infoButton.className = 'info-tooltip-trigger';
       infoButton.dataset.tooltipKey = 'Efficiency Score';
       infoButton.style.cssText = `
@@ -2892,7 +2904,7 @@ function createSingleCard(row) {
     viewButton.target = '_blank';
     viewButton.rel = 'noopener noreferrer';
     viewButton.className = 'tire-card-cta tire-card-cta-primary';
-    viewButton.innerHTML = 'View Tire&nbsp;<i class="fa-solid fa-square-up-right"></i>';
+    viewButton.innerHTML = 'View Tire&nbsp;' + rtgIcon('arrow-up-right', 14);
     actionsContainer.appendChild(viewButton);
   } else {
     const comingSoon = document.createElement('span');
@@ -2907,7 +2919,7 @@ function createSingleCard(row) {
     bundleButton.target = '_blank';
     bundleButton.rel = 'noopener noreferrer';
     bundleButton.className = 'tire-card-cta tire-card-cta-bundle';
-    bundleButton.innerHTML = 'Wheel & Tire from EV Sportline&nbsp;<i class="fa-solid fa-square-up-right"></i>';
+    bundleButton.innerHTML = 'Wheel & Tire from EV Sportline&nbsp;' + rtgIcon('arrow-up-right', 14);
     actionsContainer.appendChild(bundleButton);
   }
 
@@ -2918,9 +2930,9 @@ function createSingleCard(row) {
     reviewButton.rel = 'noopener noreferrer';
     reviewButton.className = 'tire-card-cta tire-card-cta-review';
     const isVideo = safeReviewLink.includes('youtube.com') || safeReviewLink.includes('youtu.be') || safeReviewLink.includes('tiktok.com');
-    const icon = isVideo ? 'fa-circle-play' : 'fa-newspaper';
+    const iconName = isVideo ? 'circle-play' : 'newspaper';
     const label = isVideo ? 'Watch Official Review' : 'Read Official Review';
-    reviewButton.innerHTML = `${label}&nbsp;<i class="fa-solid ${icon}"></i>`;
+    reviewButton.innerHTML = `${label}&nbsp;${rtgIcon(iconName, 14)}`;
     actionsContainer.appendChild(reviewButton);
   }
 
@@ -3129,56 +3141,56 @@ function renderSmartNoResults() {
   // Build smart suggestion buttons
   if (activeFilterNames.length > 1) {
     suggestions.push({
-      label: '<i class="fa-solid fa-rotate-left"></i> Clear all filters',
+      label: rtgIcon('rotate-left', 14) + ' Clear all filters',
       action: () => resetFilters()
     });
   }
 
   if (getDOMElement("filterFavorites")?.checked) {
     suggestions.push({
-      label: '<i class="fa-regular fa-heart"></i> Show all tires (not just favorites)',
+      label: rtgIcon('heart-outline', 14) + ' Show all tires (not just favorites)',
       action: () => { getDOMElement("filterFavorites").checked = false; lastFilterState = null; filterAndRender(); }
     });
   }
 
   if (sizeEl?.value) {
     suggestions.push({
-      label: `<i class="fa-solid fa-ruler"></i> Remove size filter (${escapeHTML(sizeEl.value)})`,
+      label: rtgIcon('ruler', 14) + ` Remove size filter (${escapeHTML(sizeEl.value)})`,
       action: () => { sizeEl.value = ""; lastFilterState = null; filterAndRender(); }
     });
   }
 
   if (brandEl?.value) {
     suggestions.push({
-      label: `<i class="fa-solid fa-building"></i> Show all brands`,
+      label: rtgIcon('building', 14) + ' Show all brands',
       action: () => { brandEl.value = ""; lastFilterState = null; filterAndRender(); }
     });
   }
 
   if (categoryEl?.value) {
     suggestions.push({
-      label: `<i class="fa-solid fa-tags"></i> Show all categories`,
+      label: rtgIcon('tags', 14) + ' Show all categories',
       action: () => { categoryEl.value = ""; lastFilterState = null; filterAndRender(); }
     });
   }
 
   if (priceEl && parseInt(priceEl.value) < 600) {
     suggestions.push({
-      label: '<i class="fa-solid fa-dollar-sign"></i> Increase price limit to max',
-      action: () => { priceEl.value = 600; getDOMElement("priceVal").textContent = "$600"; updateSliderBackground(priceEl); lastFilterState = null; filterAndRender(); }
+      label: rtgIcon('dollar-sign', 14) + ' Increase price limit to max',
+      action: () => { priceEl.value = 600; getDOMElement("priceVal").textContent = "$600"; const pi = getDOMElement("priceMaxInput"); if (pi) pi.value = 600; updateSliderBackground(priceEl); lastFilterState = null; filterAndRender(); }
     });
   }
 
   if (getDOMElement("filter3pms")?.checked) {
     suggestions.push({
-      label: '<i class="fa-solid fa-snowflake"></i> Remove 3PMS filter',
+      label: rtgIcon('snowflake', 14) + ' Remove 3PMS filter',
       action: () => { getDOMElement("filter3pms").checked = false; lastFilterState = null; filterAndRender(); }
     });
   }
 
   if (searchEl?.value?.trim()) {
     suggestions.push({
-      label: `<i class="fa-solid fa-magnifying-glass"></i> Clear search "${escapeHTML(safeString(searchEl.value.trim(), 30))}"`,
+      label: rtgIcon('magnifying-glass', 14) + ` Clear search "${escapeHTML(safeString(searchEl.value.trim(), 30))}"`,
       action: () => { searchEl.value = ""; delete domCache["searchInput"]; lastFilterState = null; filterAndRender(); }
     });
   }
@@ -3190,7 +3202,7 @@ function renderSmartNoResults() {
 
   const icon = document.createElement('div');
   icon.className = 'no-results-icon';
-  icon.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i>';
+  icon.innerHTML = rtgIcon('magnifying-glass', 24);
   container.appendChild(icon);
 
   const title = document.createElement('div');
@@ -3587,28 +3599,45 @@ function populateSizeDropdownGrouped(id, rows) {
 
 function setupSliderHandlers() {
   const sliders = [
-    { id: "priceMax", label: "priceVal", format: val => `$${val}`, bounds: NUMERIC_BOUNDS.price },
-    { id: "warrantyMax", label: "warrantyVal", format: val => `${Number(val).toLocaleString()} miles`, bounds: NUMERIC_BOUNDS.warranty },
-    { id: "weightMax", label: "weightVal", format: val => `${val} lb`, bounds: NUMERIC_BOUNDS.weight },
+    { id: "priceMax", numId: "priceMaxInput", label: "priceVal", format: val => `$${val}`, bounds: NUMERIC_BOUNDS.price },
+    { id: "warrantyMax", numId: "warrantyMaxInput", label: "warrantyVal", format: val => `${Number(val).toLocaleString()} miles`, bounds: NUMERIC_BOUNDS.warranty },
+    { id: "weightMax", numId: "weightMaxInput", label: "weightVal", format: val => `${val} lb`, bounds: NUMERIC_BOUNDS.weight },
   ];
-  
-  sliders.forEach(({ id, label, format, bounds }) => {
-    const input = getDOMElement(id);
+
+  sliders.forEach(({ id, numId, label, format, bounds }) => {
+    const slider = getDOMElement(id);
+    const numInput = getDOMElement(numId);
     const output = getDOMElement(label);
-    if (input && output) {
-      input.addEventListener("input", () => {
-        const validValue = validateNumeric(input.value, bounds, bounds.max);
-        input.value = validValue;
+    if (!slider || !output) return;
+
+    // Range slider → update label + number input
+    slider.addEventListener("input", () => {
+      const validValue = validateNumeric(slider.value, bounds, bounds.max);
+      slider.value = validValue;
+      output.textContent = format(validValue);
+      if (numInput) numInput.value = validValue;
+      updateSliderBackground(slider);
+    });
+
+    slider.addEventListener("input", debounce(filterAndRender, 400));
+
+    // Number input → sync back to range slider
+    if (numInput) {
+      const syncFromNumber = () => {
+        const validValue = validateNumeric(numInput.value, bounds, bounds.max);
+        numInput.value = validValue;
+        slider.value = validValue;
         output.textContent = format(validValue);
-        updateSliderBackground(input);
-      });
-      
-      input.addEventListener("input", debounce(filterAndRender, 400));
-      
-      const initialValue = validateNumeric(input.value, bounds, bounds.max);
-      output.textContent = format(initialValue);
-      updateSliderBackground(input);
+        updateSliderBackground(slider);
+      };
+      numInput.addEventListener("change", () => { syncFromNumber(); filterAndRender(); });
+      numInput.addEventListener("input", debounce(() => { syncFromNumber(); filterAndRender(); }, 600));
     }
+
+    const initialValue = validateNumeric(slider.value, bounds, bounds.max);
+    output.textContent = format(initialValue);
+    if (numInput) numInput.value = initialValue;
+    updateSliderBackground(slider);
   });
 }
 
@@ -3619,8 +3648,11 @@ function resetFilters() {
     { id: "filterBrand", value: "" },
     { id: "filterCategory", value: "" },
     { id: "priceMax", value: 600 },
+    { id: "priceMaxInput", value: 600 },
     { id: "warrantyMax", value: 80000 },
+    { id: "warrantyMaxInput", value: 80000 },
     { id: "weightMax", value: 70 },
+    { id: "weightMaxInput", value: 70 },
     { id: "sortBy", value: "rating-desc" }
   ];
   
@@ -3694,19 +3726,19 @@ function renderActiveFilterChips() {
   const priceEl = getDOMElement("priceMax");
   const priceVal = priceEl ? parseInt(priceEl.value) : 600;
   if (priceVal < 600) {
-    chips.push({ label: "Price", value: "≤ $" + priceVal, clear: () => { priceEl.value = 600; const lbl = getDOMElement("priceVal"); if (lbl) lbl.textContent = "$600"; updateSliderBackground(priceEl); } });
+    chips.push({ label: "Price", value: "≤ $" + priceVal, clear: () => { priceEl.value = 600; const lbl = getDOMElement("priceVal"); if (lbl) lbl.textContent = "$600"; const pi = getDOMElement("priceMaxInput"); if (pi) pi.value = 600; updateSliderBackground(priceEl); } });
   }
 
   const warrantyEl = getDOMElement("warrantyMax");
   const warrantyVal = warrantyEl ? parseInt(warrantyEl.value) : 80000;
   if (warrantyVal < 80000) {
-    chips.push({ label: "Warranty", value: "≤ " + Number(warrantyVal).toLocaleString() + " mi", clear: () => { warrantyEl.value = 80000; const lbl = getDOMElement("warrantyVal"); if (lbl) lbl.textContent = "80,000 miles"; updateSliderBackground(warrantyEl); } });
+    chips.push({ label: "Warranty", value: "≤ " + Number(warrantyVal).toLocaleString() + " mi", clear: () => { warrantyEl.value = 80000; const lbl = getDOMElement("warrantyVal"); if (lbl) lbl.textContent = "80,000 miles"; const wi = getDOMElement("warrantyMaxInput"); if (wi) wi.value = 80000; updateSliderBackground(warrantyEl); } });
   }
 
   const weightEl = getDOMElement("weightMax");
   const weightVal = weightEl ? parseInt(weightEl.value) : 70;
   if (weightVal < 70) {
-    chips.push({ label: "Weight", value: "≤ " + weightVal + " lb", clear: () => { weightEl.value = 70; const lbl = getDOMElement("weightVal"); if (lbl) lbl.textContent = "70 lb"; updateSliderBackground(weightEl); } });
+    chips.push({ label: "Weight", value: "≤ " + weightVal + " lb", clear: () => { weightEl.value = 70; const lbl = getDOMElement("weightVal"); if (lbl) lbl.textContent = "70 lb"; const wti = getDOMElement("weightMaxInput"); if (wti) wti.value = 70; updateSliderBackground(weightEl); } });
   }
 
   if (getDOMElement("filter3pms")?.checked) {
@@ -3741,7 +3773,7 @@ function renderActiveFilterChips() {
     const dismiss = document.createElement("button");
     dismiss.className = "filter-chip-dismiss";
     dismiss.setAttribute("aria-label", "Remove " + chip.label + " filter");
-    dismiss.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+    dismiss.innerHTML = rtgIcon('xmark', 12);
     dismiss.addEventListener("click", () => {
       chip.clear();
       lastFilterState = null;
@@ -4149,8 +4181,8 @@ function updateFavoriteButton(tireId) {
     btn.classList.toggle('is-favorite', isFav);
     btn.setAttribute('aria-label', isFav ? 'Remove from favorites' : 'Add to favorites');
     btn.innerHTML = isFav
-      ? '<i class="fa-solid fa-heart"></i>'
-      : '<i class="fa-regular fa-heart"></i>';
+      ? rtgIcon('heart', 16)
+      : rtgIcon('heart-outline', 16);
   });
 }
 

@@ -16,6 +16,15 @@
   --rtg-star-empty: #2d3a49;
 }
 
+/* === Inline SVG Icon Base === */
+.rtg-icon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  fill: currentColor;
+  color: inherit;
+}
+
 html, body {
   width: 100%;
   height: 100%;
@@ -342,6 +351,62 @@ body.modal-open {
   flex: 1 1 30%;
   min-width: 200px;
   box-sizing: border-box;
+}
+.slider-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.slider-value-label {
+  font-variant-numeric: tabular-nums;
+}
+.slider-number-input {
+  display: none;
+  width: 72px;
+  padding: 4px 6px;
+  font-size: 13px;
+  text-align: right;
+  color: var(--rtg-text-light);
+  background: var(--rtg-bg-input);
+  border: 1px solid var(--rtg-border);
+  border-radius: 6px;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.slider-number-input::-webkit-inner-spin-button,
+.slider-number-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.slider-number-input:focus {
+  outline: 2px solid var(--rtg-accent);
+  outline-offset: -1px;
+  border-color: var(--rtg-accent);
+}
+/* Show number input on mobile for direct editing */
+@media (max-width: 600px) {
+  .slider-number-input {
+    display: block;
+  }
+  .slider-value-label {
+    display: none;
+  }
+}
+/* Larger touch target for range slider thumb on mobile */
+@media (max-width: 600px) {
+  .range-slider::-webkit-slider-thumb {
+    width: 28px;
+    height: 28px;
+  }
+  .range-slider::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+  }
+  .range-slider {
+    height: 10px;
+    padding: 10px 0;
+  }
 }
 
 /* === Tooltips === */

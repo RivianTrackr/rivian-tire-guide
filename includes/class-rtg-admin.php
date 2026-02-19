@@ -181,7 +181,7 @@ class RTG_Admin {
 
         wp_enqueue_script(
             'rtg-admin-scripts',
-            RTG_PLUGIN_URL . 'admin/js/admin-scripts.js',
+            RTG_PLUGIN_URL . 'admin/js/admin-scripts' . $suffix . '.js',
             array( 'jquery' ),
             RTG_VERSION,
             true

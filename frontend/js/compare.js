@@ -13,6 +13,10 @@ function escapeHTML(str) {
   return RTG_SHARED.escapeHTML(str);
 }
 
+function rtgIcon(name, size, cls) {
+  return RTG_SHARED.icon(name, size, cls);
+}
+
 function safeImageURL(url) {
   return RTG_SHARED.safeImageURL(url);
 }
@@ -122,18 +126,18 @@ function renderCTAs(tire) {
   let html = '<div class="cmp-cta-wrap">';
   if (link) {
     html += `<a href="${escapeHTML(link)}" target="_blank" rel="noopener noreferrer" class="cmp-cta cmp-cta-primary">
-      View Tire <i class="fa-solid fa-arrow-up-right-from-square"></i></a>`;
+      View Tire ${rtgIcon('arrow-up-right', 14)}</a>`;
   }
   if (bundle) {
     html += `<a href="${escapeHTML(bundle)}" target="_blank" rel="noopener noreferrer" class="cmp-cta cmp-cta-bundle">
-      Wheel &amp; Tire Bundle <i class="fa-solid fa-arrow-up-right-from-square"></i></a>`;
+      Wheel &amp; Tire Bundle ${rtgIcon('arrow-up-right', 14)}</a>`;
   }
   if (review) {
     const isVideo = review.includes('youtube.com') || review.includes('youtu.be') || review.includes('tiktok.com');
-    const icon = isVideo ? 'fa-circle-play' : 'fa-newspaper';
+    const iconName = isVideo ? 'circle-play' : 'newspaper';
     const label = isVideo ? 'Watch Official Review' : 'Read Official Review';
     html += `<a href="${escapeHTML(review)}" target="_blank" rel="noopener noreferrer" class="cmp-cta cmp-cta-review">
-      ${label} <i class="fa-solid ${icon}"></i></a>`;
+      ${label} ${rtgIcon(iconName, 14)}</a>`;
   }
   html += '</div>';
   return html;
@@ -156,9 +160,9 @@ function specSection(icon, title, rows, tires, best, colCount) {
 
   return `<div class="cmp-section">
     <div class="cmp-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
-      <i class="cmp-section-icon fa-solid ${icon}"></i>
+      ${rtgIcon(icon, 16, 'cmp-section-icon')}
       <span class="cmp-section-title">${escapeHTML(title)}</span>
-      <i class="cmp-section-chevron fa-solid fa-chevron-down"></i>
+      ${rtgIcon('chevron-down', 14, 'cmp-section-chevron')}
     </div>
     <div class="cmp-section-body">${body}</div>
   </div>`;
@@ -184,7 +188,7 @@ function renderComparison(rows, indexes) {
     html += `<div class="cmp-tire-header">
       <div class="cmp-tire-img-wrap">
         ${img ? `<img src="${escapeHTML(img)}" alt="${escapeHTML(t[COL.brand] + ' ' + t[COL.model])}" loading="lazy" />` :
-          '<i class="fa-solid fa-image" style="font-size:32px;color:var(--rtg-border)"></i>'}
+          rtgIcon('image', 32, 'cmp-placeholder-icon')}
       </div>
       <div class="cmp-tire-info">
         <div class="cmp-tire-brand">${escapeHTML(t[COL.brand])}</div>
@@ -214,23 +218,23 @@ function renderComparison(rows, indexes) {
 
   // --- Spec sections ---
 
-  html += specSection('fa-dollar-sign', 'Price & Value', [
+  html += specSection('dollar-sign', 'Price & Value', [
     ['Price', t => fmtPrice(t[COL.price]), 'price'],
     ['Mileage Warranty', t => fmtWarranty(t[COL.warranty]), 'warranty'],
     ['Category', t => t[COL.category] || "-"],
   ], tires, best, n);
 
-  html += specSection('fa-gauge-high', 'Performance', [
+  html += specSection('gauge-high', 'Performance', [
     ['Efficiency', t => effBadge(t[COL.effScore], t[COL.effGrade]), 'effScore'],
     ['Speed Rating', t => t[COL.speedRating] || "-"],
     ['UTQG', t => t[COL.utqg] || "None"],
     ['3PMS Rated', t => {
       const v = (t[COL.threePms] || "").toLowerCase();
-      return v === "yes" ? '<span style="color:var(--rtg-accent);font-weight:600"><i class="fa-solid fa-check"></i> Yes</span>' : 'No';
+      return v === "yes" ? '<span style="color:var(--rtg-accent);font-weight:600">' + rtgIcon('check', 14) + ' Yes</span>' : 'No';
     }],
   ], tires, best, n);
 
-  html += specSection('fa-weight-hanging', 'Size & Weight', [
+  html += specSection('weight-hanging', 'Size & Weight', [
     ['Tire Size', t => t[COL.size] || "-"],
     ['Rim Diameter', t => {
       const d = t[COL.diameter] || "-";
@@ -240,7 +244,7 @@ function renderComparison(rows, indexes) {
     ['Tread Depth', t => t[COL.tread] || "-"],
   ], tires, best, n);
 
-  html += specSection('fa-truck', 'Load & Pressure', [
+  html += specSection('truck', 'Load & Pressure', [
     ['Load Index', t => t[COL.loadIndex] || "-"],
     ['Max Load', t => fmtLoad(t[COL.maxLoad])],
     ['Load Range', t => t[COL.loadRange] || "-"],
@@ -250,11 +254,11 @@ function renderComparison(rows, indexes) {
     }],
   ], tires, best, n);
 
-  html += specSection('fa-tags', 'Tags & Features', [
+  html += specSection('tags', 'Tags & Features', [
     ['Tags', t => renderTags(t[COL.tags])],
   ], tires, best, n);
 
-  html += specSection('fa-cart-shopping', 'Where to Buy', [
+  html += specSection('cart-shopping', 'Where to Buy', [
     ['Links', t => renderCTAs(t)],
   ], tires, best, n);
 
@@ -269,14 +273,15 @@ function initShareButton() {
     const url = window.location.href;
 
     function showCopied() {
-      const icon = btn.querySelector("i");
+      const svgEl = btn.querySelector("svg");
       const spanEl = btn.querySelector("span");
-      const origIcon = icon.className;
+      const origSVG = svgEl ? svgEl.outerHTML : "";
       const origText = spanEl ? spanEl.textContent : "";
-      icon.className = "fa-solid fa-check";
+      if (svgEl) svgEl.outerHTML = rtgIcon('check', 16);
       if (spanEl) spanEl.textContent = "Copied!";
       setTimeout(() => {
-        icon.className = origIcon;
+        const current = btn.querySelector("svg");
+        if (current) current.outerHTML = origSVG;
         if (spanEl) spanEl.textContent = origText;
       }, 2000);
     }
@@ -299,7 +304,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderComparison(rtgData.tires, indexes);
   } else {
     document.getElementById("comparisonContent").innerHTML =
-      '<div class="cmp-empty"><div class="cmp-empty-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>' +
+      '<div class="cmp-empty"><div class="cmp-empty-icon">' + rtgIcon('triangle-exclamation', 48) + '</div>' +
       '<div class="cmp-empty-title">Data unavailable</div>' +
       '<div class="cmp-empty-text">Tire data could not be loaded.</div></div>';
   }
