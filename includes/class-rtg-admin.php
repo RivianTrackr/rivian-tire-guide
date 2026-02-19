@@ -244,6 +244,41 @@ class RTG_Admin {
     // --- Dropdown Options ---
 
     /**
+     * Default affiliate network domains used to classify links.
+     */
+    private static $default_affiliate_domains = array(
+        'anrdoezrs.net',
+        'tkqlhce.com',
+        'commission-junction.com',
+        'cj.com',
+        'linksynergy.com',
+        'click.linksynergy.com',
+        'shareasale.com',
+        'avantlink.com',
+        'impact.com',
+        'partnerize.com',
+        'tirerackaffiliates.com',
+        'walmart-affiliates.com',
+        'costco-affiliates.com',
+        'walmart-redirect.com',
+        'ebay-redirect.com',
+        'simplifytires.com',
+    );
+
+    /**
+     * Get the list of affiliate domains (user-configured or defaults).
+     *
+     * @return array List of domain strings.
+     */
+    public static function get_affiliate_domains() {
+        $saved = get_option( 'rtg_affiliate_domains', array() );
+        if ( ! empty( $saved ) && is_array( $saved ) ) {
+            return $saved;
+        }
+        return self::$default_affiliate_domains;
+    }
+
+    /**
      * Default dropdown options for tire fields.
      */
     private static $default_dropdowns = array(
@@ -541,6 +576,20 @@ class RTG_Admin {
         }
 
         update_option( 'rtg_dropdown_options', $dropdowns );
+
+        // Save affiliate domains (one per line).
+        $aff_raw   = wp_unslash( $_POST['rtg_affiliate_domains'] ?? '' );
+        $aff_lines = array_filter( array_map( 'trim', explode( "\n", sanitize_textarea_field( $aff_raw ) ) ), 'strlen' );
+        // Normalize: strip protocol/www, lowercase.
+        $aff_domains = array();
+        foreach ( $aff_lines as $line ) {
+            $domain = strtolower( preg_replace( '#^(https?://)?(www\.)?#', '', $line ) );
+            $domain = rtrim( $domain, '/' );
+            if ( ! empty( $domain ) ) {
+                $aff_domains[] = $domain;
+            }
+        }
+        update_option( 'rtg_affiliate_domains', array_values( array_unique( $aff_domains ) ) );
 
         // Flush rewrite rules if compare slug changed.
         update_option( 'rtg_flush_rewrite', 1 );

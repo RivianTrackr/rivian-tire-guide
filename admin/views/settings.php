@@ -231,6 +231,24 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
             </div>
         </div>
 
+        <!-- Affiliate Link Domains -->
+        <div class="rtg-card">
+            <div class="rtg-card-header">
+                <h2>Affiliate Link Domains</h2>
+                <p>Domains used to identify affiliate links on the <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-affiliate-links' ) ); ?>">Affiliate Links</a> dashboard. One domain per line. Any tire link containing one of these domains will be classified as an affiliate link.</p>
+            </div>
+            <div class="rtg-card-body">
+                <div class="rtg-field-row" style="border-bottom:none;">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="rtg_affiliate_domains">Affiliate Network Domains</label>
+                    </div>
+                    <p class="rtg-field-description">Enter the base domain only (e.g. <code>anrdoezrs.net</code> or <code>tkqlhce.com</code>). Protocols and www prefixes are stripped automatically.</p>
+                    <?php $aff_domains = RTG_Admin::get_affiliate_domains(); ?>
+                    <textarea id="rtg_affiliate_domains" name="rtg_affiliate_domains" rows="10" class="rtg-input-wide" style="max-width:500px;font-size:14px;font-family:var(--rtg-font-mono);padding:10px 12px;border:1px solid var(--rtg-border);border-radius:8px;resize:vertical;"><?php echo esc_textarea( implode( "\n", $aff_domains ) ); ?></textarea>
+                </div>
+            </div>
+        </div>
+
         <div class="rtg-footer-actions">
             <button type="submit" class="rtg-btn rtg-btn-primary">Save Settings</button>
         </div>

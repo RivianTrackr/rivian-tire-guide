@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.11.1] - 2026-02-19
+
+### Added
+- **Configurable affiliate domains** — New "Affiliate Link Domains" section on the Settings page. Admins can add or remove affiliate network domains (one per line) to control how links are classified on the Affiliate Links dashboard. Protocols and www prefixes are stripped automatically.
+
+### Changed
+- **Plugin version** — Bumped to 1.11.1.
+
 ## [1.11.0] - 2026-02-19
 
 ### Added
