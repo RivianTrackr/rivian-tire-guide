@@ -506,6 +506,150 @@ class RTG_Database {
     }
 
     /**
+     * Get all statistics for the admin dashboard.
+     *
+     * @return array Dashboard statistics.
+     */
+    public static function get_dashboard_stats() {
+        global $wpdb;
+        $tires_table   = self::tires_table();
+        $ratings_table = self::ratings_table();
+
+        $stats = array();
+
+        // Core tire aggregates.
+        $stats['core'] = $wpdb->get_row(
+            "SELECT
+                COUNT(*) as total_tires,
+                ROUND(AVG(CASE WHEN price > 0 THEN price ELSE NULL END), 2) as avg_price,
+                ROUND(AVG(CASE WHEN efficiency_score > 0 THEN efficiency_score ELSE NULL END), 0) as avg_efficiency,
+                MIN(CASE WHEN price > 0 THEN price ELSE NULL END) as min_price,
+                MAX(price) as max_price,
+                MIN(CASE WHEN weight_lb > 0 THEN weight_lb ELSE NULL END) as min_weight,
+                MAX(weight_lb) as max_weight,
+                ROUND(AVG(CASE WHEN weight_lb > 0 THEN weight_lb ELSE NULL END), 1) as avg_weight,
+                SUM(CASE WHEN image = '' OR image IS NULL THEN 1 ELSE 0 END) as missing_images,
+                SUM(CASE WHEN link = '' OR link IS NULL THEN 1 ELSE 0 END) as missing_links
+            FROM {$tires_table}",
+            ARRAY_A
+        );
+
+        // Tires by category.
+        $stats['by_category'] = $wpdb->get_results(
+            "SELECT category, COUNT(*) as count
+             FROM {$tires_table}
+             WHERE category != ''
+             GROUP BY category
+             ORDER BY count DESC",
+            ARRAY_A
+        );
+
+        // Tires by brand (top 10).
+        $stats['by_brand'] = $wpdb->get_results(
+            "SELECT brand, COUNT(*) as count
+             FROM {$tires_table}
+             WHERE brand != ''
+             GROUP BY brand
+             ORDER BY count DESC
+             LIMIT 10",
+            ARRAY_A
+        );
+
+        // Tires by size.
+        $stats['by_size'] = $wpdb->get_results(
+            "SELECT size, COUNT(*) as count
+             FROM {$tires_table}
+             WHERE size != ''
+             GROUP BY size
+             ORDER BY count DESC",
+            ARRAY_A
+        );
+
+        // Efficiency grade distribution.
+        $stats['by_grade'] = $wpdb->get_results(
+            "SELECT efficiency_grade, COUNT(*) as count
+             FROM {$tires_table}
+             WHERE efficiency_grade != ''
+             GROUP BY efficiency_grade
+             ORDER BY FIELD(efficiency_grade, 'A', 'B', 'C', 'D', 'E', 'F')",
+            ARRAY_A
+        );
+
+        // Ratings summary.
+        $stats['ratings'] = $wpdb->get_row(
+            "SELECT COUNT(*) as total_ratings,
+                    ROUND(AVG(rating), 1) as avg_rating
+             FROM {$ratings_table}",
+            ARRAY_A
+        );
+
+        // Top rated tires (top 5 by average rating, min 1 rating).
+        $stats['top_rated'] = $wpdb->get_results(
+            "SELECT t.tire_id, t.brand, t.model, t.image,
+                    ROUND(AVG(r.rating), 1) as avg_rating,
+                    COUNT(r.id) as rating_count
+             FROM {$ratings_table} r
+             INNER JOIN {$tires_table} t ON r.tire_id = t.tire_id
+             GROUP BY r.tire_id
+             HAVING rating_count >= 1
+             ORDER BY avg_rating DESC, rating_count DESC
+             LIMIT 5",
+            ARRAY_A
+        );
+
+        // Most reviewed tires (top 5 by approved review count).
+        $stats['most_reviewed'] = $wpdb->get_results(
+            "SELECT t.tire_id, t.brand, t.model, t.image,
+                    COUNT(r.id) as review_count,
+                    ROUND(AVG(r.rating), 1) as avg_rating
+             FROM {$ratings_table} r
+             INNER JOIN {$tires_table} t ON r.tire_id = t.tire_id
+             WHERE r.review_text != '' AND r.review_status = 'approved'
+             GROUP BY r.tire_id
+             ORDER BY review_count DESC
+             LIMIT 5",
+            ARRAY_A
+        );
+
+        // Pending reviews count.
+        $stats['pending_reviews'] = (int) $wpdb->get_var(
+            "SELECT COUNT(*) FROM {$ratings_table}
+             WHERE review_text != '' AND review_status = 'pending'"
+        );
+
+        // Recently added tires (last 5).
+        $stats['recent_tires'] = $wpdb->get_results(
+            "SELECT tire_id, brand, model, category, image, created_at
+             FROM {$tires_table}
+             ORDER BY created_at DESC
+             LIMIT 5",
+            ARRAY_A
+        );
+
+        // Affiliate link coverage.
+        $affiliate_domains = RTG_Admin::get_affiliate_domains();
+        if ( ! empty( $affiliate_domains ) ) {
+            $like_clauses = array();
+            $values       = array();
+            foreach ( $affiliate_domains as $domain ) {
+                $like_clauses[] = 'link LIKE %s';
+                $values[]       = '%' . $wpdb->esc_like( $domain ) . '%';
+            }
+            $where = implode( ' OR ', $like_clauses );
+            $stats['affiliate_count'] = (int) $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT COUNT(*) FROM {$tires_table} WHERE {$where}",
+                    ...$values
+                )
+            );
+        } else {
+            $stats['affiliate_count'] = 0;
+        }
+
+        return $stats;
+    }
+
+    /**
      * Get all unique tags used across tires.
      *
      * @return array Sorted list of unique tag strings.
