@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.12.0] - 2026-02-19
+
+### Added
+- **Admin dashboard** — New default landing page when opening Tire Guide in the admin panel. Shows overview cards (total tires, average price, average efficiency score, total ratings), breakdowns by category/brand/size/efficiency grade with horizontal bar charts, key insights (price and weight ranges, affiliate link coverage), top rated and most reviewed tires, content health indicators (pending reviews, missing images, missing links with action buttons), and recently added tires.
+
+### Changed
+- **Plugin version** — Bumped to 1.12.0.
+
 ## [1.11.1] - 2026-02-19
 
 ### Added
