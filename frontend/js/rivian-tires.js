@@ -1611,13 +1611,6 @@ function createRatingHTML(tireId, average = 0, count = 0, userRating = 0) {
   
   ratingInfo.appendChild(averageSpan);
   
-  if (displayCount > 0) {
-    const countSpan = document.createElement('span');
-    countSpan.className = 'rating-count';
-    countSpan.textContent = `(${displayCount} review${displayCount !== 1 ? 's' : ''})`;
-    ratingInfo.appendChild(countSpan);
-  }
-  
   ratingDisplay.appendChild(starsContainer);
   ratingDisplay.appendChild(ratingInfo);
   container.appendChild(ratingDisplay);
