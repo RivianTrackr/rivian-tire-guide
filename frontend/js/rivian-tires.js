@@ -29,6 +29,66 @@ let userRatings = {};
 let userReviews = {};
 let isLoggedIn = false;
 
+// --- Analytics Tracking ---
+const RTG_ANALYTICS = {
+  nonce: null,
+  ajaxurl: null,
+
+  init() {
+    if (typeof rtgData !== 'undefined' && rtgData.settings) {
+      this.nonce = rtgData.settings.analyticsNonce || null;
+      this.ajaxurl = rtgData.settings.ajaxurl || null;
+    }
+  },
+
+  /**
+   * Send a tracking beacon. Uses sendBeacon primary, fetch+keepalive fallback.
+   */
+  track(action, data) {
+    if (!this.ajaxurl || !this.nonce) return;
+
+    const payload = new FormData();
+    payload.append('action', action);
+    payload.append('nonce', this.nonce);
+    Object.entries(data).forEach(([k, v]) => payload.append(k, v));
+
+    if (navigator.sendBeacon) {
+      const sent = navigator.sendBeacon(this.ajaxurl, payload);
+      if (sent) return;
+    }
+
+    try {
+      fetch(this.ajaxurl, {
+        method: 'POST',
+        body: payload,
+        keepalive: true,
+      }).catch(() => {});
+    } catch (e) {
+      // Analytics should never break the page.
+    }
+  },
+
+  trackClick(tireId, linkType) {
+    this.track('rtg_track_click', {
+      tire_id: tireId,
+      link_type: linkType,
+    });
+  },
+
+  _searchDebounceTimer: null,
+  trackSearch(query, filters, sortBy, resultCount) {
+    clearTimeout(this._searchDebounceTimer);
+    this._searchDebounceTimer = setTimeout(() => {
+      this.track('rtg_track_search', {
+        search_query: query,
+        filters_json: JSON.stringify(filters),
+        sort_by: sortBy,
+        result_count: String(resultCount),
+      });
+    }, 2000);
+  },
+};
+
 let activeTooltip = null;
 
 // Smart Search Variables
@@ -2222,6 +2282,26 @@ function setupEventDelegation() {
     stars.forEach(s => s.classList.remove('hover'));
   }, true);
 
+  // Affiliate click tracking via event delegation.
+  document.addEventListener('click', function(e) {
+    const link = e.target.closest(
+      '.tire-card-cta-primary, .tire-card-cta-bundle, .tire-card-cta-review'
+    );
+    if (!link) return;
+
+    const card = link.closest('.tire-card');
+    if (!card) return;
+
+    const tireId = card.dataset.tireId;
+    if (!tireId || !VALIDATION_PATTERNS.tireId.test(tireId)) return;
+
+    let linkType = 'purchase';
+    if (link.classList.contains('tire-card-cta-bundle')) linkType = 'bundle';
+    if (link.classList.contains('tire-card-cta-review')) linkType = 'review';
+
+    RTG_ANALYTICS.trackClick(tireId, linkType);
+  });
+
   // Keyboard navigation for star ratings (arrow keys, Enter/Space).
   document.addEventListener('keydown', function(e) {
     const star = e.target.closest('.rating-stars.interactive .star');
@@ -3324,6 +3404,28 @@ function filterAndRender() {
   
   filteredRows = getFilteredIndexes(f);
 
+  // Track search/filter usage when non-default filters are active.
+  const activeFilters = {};
+  if (f.search) activeFilters.search = f.search;
+  if (f.Size) activeFilters.size = f.Size;
+  if (f.Brand) activeFilters.brand = f.Brand;
+  if (f.Category) activeFilters.category = f.Category;
+  if (f["3PMS"]) activeFilters.three_pms = true;
+  if (f["EVRated"]) activeFilters.ev_rated = true;
+  if (f["Studded"]) activeFilters.studded = true;
+  if (f.PriceMax < 600) activeFilters.price_max = f.PriceMax;
+  if (f.WarrantyMax < 80000) activeFilters.warranty_max = f.WarrantyMax;
+  if (f.WeightMax < 70) activeFilters.weight_max = f.WeightMax;
+
+  if (f.search || Object.keys(activeFilters).length > 0) {
+    RTG_ANALYTICS.trackSearch(
+      f.search || '',
+      activeFilters,
+      sortOption,
+      filteredRows.length
+    );
+  }
+
   if (sortOption === "rating-desc" || sortOption === "most-reviewed") {
     const allFilteredTireIds = filteredRows.map(row => row[0]).filter(Boolean);
     loadTireRatings(allFilteredTireIds).then(() => {
@@ -3843,6 +3945,29 @@ function fetchTiresFromServer(page) {
       if (tireCards) tireCards.style.display = "grid";
     }
 
+    // Track search/filter usage in server-side mode.
+    const ssSearch = searchInput ? searchInput.value : '';
+    const ssFilters = {};
+    if (ssSearch) ssFilters.search = ssSearch;
+    const ssSize = getDOMElement("filterSize")?.value || '';
+    const ssBrand = getDOMElement("filterBrand")?.value || '';
+    const ssCat = getDOMElement("filterCategory")?.value || '';
+    if (ssSize) ssFilters.size = ssSize;
+    if (ssBrand) ssFilters.brand = ssBrand;
+    if (ssCat) ssFilters.category = ssCat;
+    if (getDOMElement("filter3pms")?.checked) ssFilters.three_pms = true;
+    if (getDOMElement("filterEVRated")?.checked) ssFilters.ev_rated = true;
+    if (getDOMElement("filterStudded")?.checked) ssFilters.studded = true;
+
+    if (ssSearch || Object.keys(ssFilters).length > 0) {
+      RTG_ANALYTICS.trackSearch(
+        ssSearch,
+        ssFilters,
+        sortVal,
+        serverSideTotal
+      );
+    }
+
     // Load ratings for visible tires.
     const tireIds = filteredRows.map(row => row[0]).filter(Boolean);
     loadTireRatings(tireIds);
@@ -4051,6 +4176,9 @@ window.addEventListener('popstate', function() {
   applyFiltersFromURL();
   filterAndRender();
 });
+
+// Initialize analytics tracking.
+RTG_ANALYTICS.init();
 
 // Load tire data from WordPress localized script.
 if (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.serverSide) {

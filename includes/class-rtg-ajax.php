@@ -42,6 +42,17 @@ class RTG_Ajax {
 
         // Admin: update tire links (affiliate link management).
         add_action( 'wp_ajax_rtg_update_tire_links', array( $this, 'update_tire_links' ) );
+
+        // Analytics: click tracking — public.
+        add_action( 'wp_ajax_rtg_track_click', array( $this, 'track_click' ) );
+        add_action( 'wp_ajax_nopriv_rtg_track_click', array( $this, 'track_click' ) );
+
+        // Analytics: search tracking — public.
+        add_action( 'wp_ajax_rtg_track_search', array( $this, 'track_search' ) );
+        add_action( 'wp_ajax_nopriv_rtg_track_search', array( $this, 'track_search' ) );
+
+        // Analytics: admin data endpoint.
+        add_action( 'wp_ajax_rtg_get_analytics', array( $this, 'get_analytics' ) );
     }
 
     /**
@@ -465,5 +476,80 @@ class RTG_Ajax {
         } else {
             wp_send_json_error( 'Failed to update links.' );
         }
+    }
+
+    // --- Analytics Tracking ---
+
+    /**
+     * Track an affiliate link click.
+     * Available to both logged-in and logged-out users.
+     */
+    public function track_click() {
+        if ( ! check_ajax_referer( 'rtg_analytics_nonce', 'nonce', false ) ) {
+            wp_send_json_error( 'Security check failed.' );
+        }
+
+        $tire_id   = sanitize_text_field( $_POST['tire_id'] ?? '' );
+        $link_type = sanitize_text_field( $_POST['link_type'] ?? 'purchase' );
+
+        if ( ! preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) || strlen( $tire_id ) > 50 ) {
+            wp_send_json_error( 'Invalid tire ID.' );
+        }
+
+        $allowed_types = array( 'purchase', 'bundle', 'review' );
+        if ( ! in_array( $link_type, $allowed_types, true ) ) {
+            $link_type = 'purchase';
+        }
+
+        RTG_Database::insert_click_event( $tire_id, $link_type );
+
+        wp_send_json_success();
+    }
+
+    /**
+     * Track a search/filter event.
+     * Available to both logged-in and logged-out users.
+     */
+    public function track_search() {
+        if ( ! check_ajax_referer( 'rtg_analytics_nonce', 'nonce', false ) ) {
+            wp_send_json_error( 'Security check failed.' );
+        }
+
+        $search_query = sanitize_text_field( wp_unslash( $_POST['search_query'] ?? '' ) );
+        $filters_json = sanitize_text_field( $_POST['filters_json'] ?? '{}' );
+        $sort_by      = sanitize_text_field( $_POST['sort_by'] ?? '' );
+        $result_count = intval( $_POST['result_count'] ?? 0 );
+
+        // Validate filters JSON.
+        if ( strlen( $filters_json ) > 1000 ) {
+            $filters_json = '{}';
+        }
+        json_decode( $filters_json );
+        if ( json_last_error() !== JSON_ERROR_NONE ) {
+            $filters_json = '{}';
+        }
+
+        RTG_Database::insert_search_event( $search_query, $filters_json, $sort_by, $result_count );
+
+        wp_send_json_success();
+    }
+
+    /**
+     * Get analytics data for the admin dashboard.
+     * Requires manage_options capability.
+     */
+    public function get_analytics() {
+        if ( ! check_ajax_referer( 'rtg_analytics_nonce', 'nonce', false ) ) {
+            wp_send_json_error( 'Security check failed.' );
+        }
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized.' );
+        }
+
+        $period = intval( $_POST['period'] ?? 30 );
+        $data   = RTG_Database::get_analytics_data( $period );
+
+        wp_send_json_success( $data );
     }
 }

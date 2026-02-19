@@ -41,6 +41,12 @@ function rtg_init() {
     // Run pending database migrations on update.
     RTG_Activator::maybe_upgrade();
 
+    // Schedule daily analytics cleanup if not already scheduled.
+    if ( ! wp_next_scheduled( 'rtg_analytics_cleanup' ) ) {
+        wp_schedule_event( time(), 'daily', 'rtg_analytics_cleanup' );
+    }
+    add_action( 'rtg_analytics_cleanup', array( 'RTG_Database', 'cleanup_analytics' ) );
+
     // Admin panel.
     if ( is_admin() ) {
         new RTG_Admin();

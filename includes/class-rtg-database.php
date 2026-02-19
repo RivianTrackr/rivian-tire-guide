@@ -1490,6 +1490,243 @@ class RTG_Database {
         return $result;
     }
 
+    // --- Analytics (Click & Search Tracking) ---
+
+    private static function click_events_table() {
+        global $wpdb;
+        return $wpdb->prefix . 'rtg_click_events';
+    }
+
+    private static function search_events_table() {
+        global $wpdb;
+        return $wpdb->prefix . 'rtg_search_events';
+    }
+
+    /**
+     * Generate a privacy-safe session hash for deduplication.
+     * Uses SHA-256 of IP + User-Agent + date. No PII is stored.
+     *
+     * @return string 64-character hex hash.
+     */
+    private static function generate_session_hash() {
+        $ip   = $_SERVER['REMOTE_ADDR'] ?? '';
+        $ua   = $_SERVER['HTTP_USER_AGENT'] ?? '';
+        $date = gmdate( 'Y-m-d' );
+        return hash( 'sha256', $ip . '|' . $ua . '|' . $date );
+    }
+
+    /**
+     * Record an affiliate link click event.
+     *
+     * @param string $tire_id  Tire identifier.
+     * @param string $link_type One of: 'purchase', 'bundle', 'review'.
+     * @return bool True on insert, false if deduplicated or failed.
+     */
+    public static function insert_click_event( $tire_id, $link_type ) {
+        global $wpdb;
+        $table        = self::click_events_table();
+        $session_hash = self::generate_session_hash();
+
+        // Dedup: skip if same session + tire + type within 5 seconds.
+        $recent = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table}
+             WHERE session_hash = %s AND tire_id = %s AND link_type = %s
+             AND created_at > DATE_SUB(NOW(), INTERVAL 5 SECOND)",
+            $session_hash, $tire_id, $link_type
+        ) );
+
+        if ( $recent > 0 ) {
+            return false;
+        }
+
+        $referrer = isset( $_SERVER['HTTP_REFERER'] )
+            ? esc_url_raw( substr( $_SERVER['HTTP_REFERER'], 0, 500 ) )
+            : '';
+
+        return (bool) $wpdb->insert( $table, array(
+            'tire_id'      => $tire_id,
+            'link_type'    => $link_type,
+            'session_hash' => $session_hash,
+            'referrer_url' => $referrer,
+        ), array( '%s', '%s', '%s', '%s' ) );
+    }
+
+    /**
+     * Record a search/filter event.
+     *
+     * @param string $search_query User's search text.
+     * @param string $filters_json JSON-encoded active filters.
+     * @param string $sort_by      Sort option used.
+     * @param int    $result_count Number of matching tires.
+     * @return bool True on insert, false if deduplicated or failed.
+     */
+    public static function insert_search_event( $search_query, $filters_json, $sort_by, $result_count ) {
+        global $wpdb;
+        $table        = self::search_events_table();
+        $session_hash = self::generate_session_hash();
+
+        // Dedup: skip if same session + query within 3 seconds.
+        $recent = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table}
+             WHERE session_hash = %s AND search_query = %s
+             AND created_at > DATE_SUB(NOW(), INTERVAL 3 SECOND)",
+            $session_hash, $search_query
+        ) );
+
+        if ( $recent > 0 ) {
+            return false;
+        }
+
+        return (bool) $wpdb->insert( $table, array(
+            'search_query' => substr( $search_query, 0, 200 ),
+            'filters_json' => $filters_json,
+            'sort_by'      => $sort_by,
+            'result_count' => max( 0, $result_count ),
+            'session_hash' => $session_hash,
+        ), array( '%s', '%s', '%s', '%d', '%s' ) );
+    }
+
+    /**
+     * Get aggregated analytics data for the admin dashboard.
+     *
+     * @param int $days Number of days to look back.
+     * @return array Analytics data arrays.
+     */
+    public static function get_analytics_data( $days = 30 ) {
+        global $wpdb;
+        $clicks = self::click_events_table();
+        $search = self::search_events_table();
+        $tires  = self::tires_table();
+        $days   = max( 1, min( 365, intval( $days ) ) );
+        $since  = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
+
+        $data = array();
+
+        // Click totals by type.
+        $data['click_totals'] = $wpdb->get_results( $wpdb->prepare(
+            "SELECT link_type, COUNT(*) as total, COUNT(DISTINCT session_hash) as unique_sessions
+             FROM {$clicks} WHERE created_at >= %s GROUP BY link_type",
+            $since
+        ), ARRAY_A );
+
+        // Top clicked tires (top 10).
+        $data['top_clicked'] = $wpdb->get_results( $wpdb->prepare(
+            "SELECT c.tire_id, t.brand, t.model, t.image,
+                    COUNT(*) as click_count,
+                    COUNT(DISTINCT c.session_hash) as unique_clicks
+             FROM {$clicks} c
+             INNER JOIN {$tires} t ON c.tire_id = t.tire_id
+             WHERE c.created_at >= %s
+             GROUP BY c.tire_id
+             ORDER BY click_count DESC
+             LIMIT 10",
+            $since
+        ), ARRAY_A );
+
+        // Clicks over time (daily).
+        $data['clicks_daily'] = $wpdb->get_results( $wpdb->prepare(
+            "SELECT DATE(created_at) as date, link_type, COUNT(*) as count
+             FROM {$clicks} WHERE created_at >= %s
+             GROUP BY DATE(created_at), link_type
+             ORDER BY date ASC",
+            $since
+        ), ARRAY_A );
+
+        // Top search queries (top 20).
+        $data['top_searches'] = $wpdb->get_results( $wpdb->prepare(
+            "SELECT search_query, COUNT(*) as count,
+                    ROUND(AVG(result_count), 0) as avg_results
+             FROM {$search}
+             WHERE created_at >= %s AND search_query != ''
+             GROUP BY search_query
+             ORDER BY count DESC
+             LIMIT 20",
+            $since
+        ), ARRAY_A );
+
+        // Zero-result searches (top 10).
+        $data['zero_result_searches'] = $wpdb->get_results( $wpdb->prepare(
+            "SELECT search_query, COUNT(*) as count
+             FROM {$search}
+             WHERE created_at >= %s AND result_count = 0 AND search_query != ''
+             GROUP BY search_query
+             ORDER BY count DESC
+             LIMIT 10",
+            $since
+        ), ARRAY_A );
+
+        // Most used filters.
+        $data['filter_usage'] = $wpdb->get_results( $wpdb->prepare(
+            "SELECT filters_json, COUNT(*) as count
+             FROM {$search}
+             WHERE created_at >= %s AND filters_json != '{}' AND filters_json != ''
+             GROUP BY filters_json
+             ORDER BY count DESC
+             LIMIT 50",
+            $since
+        ), ARRAY_A );
+
+        // Search volume daily.
+        $data['searches_daily'] = $wpdb->get_results( $wpdb->prepare(
+            "SELECT DATE(created_at) as date, COUNT(*) as count
+             FROM {$search} WHERE created_at >= %s
+             GROUP BY DATE(created_at)
+             ORDER BY date ASC",
+            $since
+        ), ARRAY_A );
+
+        // Summary totals.
+        $data['summary'] = array(
+            'total_clicks'    => (int) $wpdb->get_var( $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$clicks} WHERE created_at >= %s", $since
+            ) ),
+            'unique_clickers' => (int) $wpdb->get_var( $wpdb->prepare(
+                "SELECT COUNT(DISTINCT session_hash) FROM {$clicks} WHERE created_at >= %s", $since
+            ) ),
+            'total_searches'  => (int) $wpdb->get_var( $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$search} WHERE created_at >= %s", $since
+            ) ),
+            'unique_searchers' => (int) $wpdb->get_var( $wpdb->prepare(
+                "SELECT COUNT(DISTINCT session_hash) FROM {$search} WHERE created_at >= %s", $since
+            ) ),
+        );
+
+        return $data;
+    }
+
+    /**
+     * Delete analytics events older than the retention period.
+     *
+     * @param int|null $days Retention period in days. Reads from settings if null.
+     * @return array { 'deleted_clicks' => int, 'deleted_searches' => int }
+     */
+    public static function cleanup_analytics( $days = null ) {
+        global $wpdb;
+
+        if ( $days === null ) {
+            $settings = get_option( 'rtg_settings', array() );
+            $days = intval( $settings['analytics_retention_days'] ?? 90 );
+        }
+
+        $days   = max( 7, min( 365, $days ) );
+        $clicks = self::click_events_table();
+        $search = self::search_events_table();
+        $cutoff = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
+
+        $deleted_clicks = $wpdb->query( $wpdb->prepare(
+            "DELETE FROM {$clicks} WHERE created_at < %s", $cutoff
+        ) );
+
+        $deleted_searches = $wpdb->query( $wpdb->prepare(
+            "DELETE FROM {$search} WHERE created_at < %s", $cutoff
+        ) );
+
+        return array(
+            'deleted_clicks'   => (int) $deleted_clicks,
+            'deleted_searches' => (int) $deleted_searches,
+        );
+    }
+
     // --- Favorites ---
 
     private static function favorites_table() {

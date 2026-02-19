@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 7;
+    const DB_VERSION = 9;
 
     public static function activate() {
         self::create_tables();
@@ -36,10 +36,12 @@ class RTG_Activator {
         global $wpdb;
         $charset_collate = $wpdb->get_charset_collate();
 
-        $tires_table     = $wpdb->prefix . 'rtg_tires';
-        $ratings_table   = $wpdb->prefix . 'rtg_ratings';
-        $wheels_table    = $wpdb->prefix . 'rtg_wheels';
-        $favorites_table = $wpdb->prefix . 'rtg_favorites';
+        $tires_table         = $wpdb->prefix . 'rtg_tires';
+        $ratings_table       = $wpdb->prefix . 'rtg_ratings';
+        $wheels_table        = $wpdb->prefix . 'rtg_wheels';
+        $favorites_table     = $wpdb->prefix . 'rtg_favorites';
+        $click_events_table  = $wpdb->prefix . 'rtg_click_events';
+        $search_events_table = $wpdb->prefix . 'rtg_search_events';
 
         $sql = "CREATE TABLE {$wheels_table} (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -119,6 +121,33 @@ class RTG_Activator {
             UNIQUE KEY user_tire_fav (user_id, tire_id),
             KEY idx_user_id (user_id),
             KEY idx_tire_id (tire_id)
+        ) $charset_collate;
+
+        CREATE TABLE {$click_events_table} (
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            tire_id VARCHAR(50) NOT NULL,
+            link_type VARCHAR(20) NOT NULL DEFAULT 'purchase',
+            session_hash VARCHAR(64) NOT NULL DEFAULT '',
+            referrer_url VARCHAR(500) NOT NULL DEFAULT '',
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            KEY idx_tire_id (tire_id),
+            KEY idx_link_type (link_type),
+            KEY idx_created_at (created_at),
+            KEY idx_session_date (session_hash, created_at)
+        ) $charset_collate;
+
+        CREATE TABLE {$search_events_table} (
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            search_query VARCHAR(200) NOT NULL DEFAULT '',
+            filters_json VARCHAR(1000) NOT NULL DEFAULT '',
+            sort_by VARCHAR(30) NOT NULL DEFAULT '',
+            result_count INT UNSIGNED NOT NULL DEFAULT 0,
+            session_hash VARCHAR(64) NOT NULL DEFAULT '',
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            KEY idx_created_at (created_at),
+            KEY idx_search_query (search_query(50))
         ) $charset_collate;";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -140,6 +169,8 @@ class RTG_Activator {
             5 => 'migrate_5_add_review_text',
             6 => 'migrate_6_add_review_status',
             7 => 'migrate_7_create_favorites_table',
+            8 => 'migrate_8_create_click_events_table',
+            9 => 'migrate_9_create_search_events_table',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -212,6 +243,22 @@ class RTG_Activator {
      * Table creation handled by dbDelta above; this marks the migration.
      */
     private static function migrate_7_create_favorites_table() {
+        // Table created by dbDelta above.
+    }
+
+    /**
+     * Migration 8: Create click events table for affiliate click tracking.
+     * Table creation handled by dbDelta above; this marks the migration.
+     */
+    private static function migrate_8_create_click_events_table() {
+        // Table created by dbDelta above.
+    }
+
+    /**
+     * Migration 9: Create search events table for search analytics.
+     * Table creation handled by dbDelta above; this marks the migration.
+     */
+    private static function migrate_9_create_search_events_table() {
         // Table created by dbDelta above.
     }
 }

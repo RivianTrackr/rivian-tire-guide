@@ -249,6 +249,24 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
             </div>
         </div>
 
+        <!-- Analytics Settings -->
+        <div class="rtg-card">
+            <div class="rtg-card-header">
+                <h2>Analytics</h2>
+                <p>Settings for affiliate click tracking and search analytics. View analytics data on the <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-analytics' ) ); ?>">Analytics</a> dashboard.</p>
+            </div>
+            <div class="rtg-card-body">
+                <div class="rtg-field-row" style="border-bottom:none;">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="analytics_retention_days">Data Retention Period (days)</label>
+                    </div>
+                    <p class="rtg-field-description">Analytics events older than this many days are automatically deleted. Min: 7, Max: 365. Default: 90.</p>
+                    <?php $retention_days = $settings['analytics_retention_days'] ?? 90; ?>
+                    <input type="number" id="analytics_retention_days" name="analytics_retention_days" value="<?php echo esc_attr( $retention_days ); ?>" min="7" max="365" step="1" class="rtg-input-small">
+                </div>
+            </div>
+        </div>
+
         <div class="rtg-footer-actions">
             <button type="submit" class="rtg-btn rtg-btn-primary">Save Settings</button>
         </div>

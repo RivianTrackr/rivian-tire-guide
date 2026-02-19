@@ -146,6 +146,15 @@ class RTG_Admin {
 
         add_submenu_page(
             'rtg-dashboard',
+            'Analytics',
+            'Analytics',
+            'manage_options',
+            'rtg-analytics',
+            array( $this, 'render_analytics_page' )
+        );
+
+        add_submenu_page(
+            'rtg-dashboard',
             'Import / Export',
             'Import / Export',
             'manage_options',
@@ -186,6 +195,22 @@ class RTG_Admin {
             RTG_VERSION,
             true
         );
+
+        // Enqueue Chart.js on the analytics page.
+        if ( strpos( $hook, 'rtg-analytics' ) !== false ) {
+            wp_enqueue_script(
+                'chartjs',
+                'https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js',
+                array(),
+                '4.4.7',
+                true
+            );
+
+            wp_localize_script( 'rtg-admin-scripts', 'rtgAnalytics', array(
+                'ajaxurl' => admin_url( 'admin-ajax.php' ),
+                'nonce'   => wp_create_nonce( 'rtg_analytics_nonce' ),
+            ) );
+        }
     }
 
     public function handle_actions() {
@@ -395,6 +420,13 @@ class RTG_Admin {
         require_once RTG_PLUGIN_DIR . 'admin/views/affiliate-links.php';
     }
 
+    public function render_analytics_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        require_once RTG_PLUGIN_DIR . 'admin/views/analytics.php';
+    }
+
     public function render_import_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
@@ -534,13 +566,17 @@ class RTG_Admin {
             }
         }
 
+        $retention_days = intval( $_POST['analytics_retention_days'] ?? 90 );
+        $retention_days = max( 7, min( 365, $retention_days ) );
+
         $settings = array(
-            'rows_per_page'          => intval( $_POST['rows_per_page'] ?? 12 ),
-            'cdn_prefix'             => esc_url_raw( $_POST['cdn_prefix'] ?? '' ),
-            'compare_slug'           => sanitize_title( $_POST['compare_slug'] ?? 'tire-compare' ),
-            'user_reviews_slug'      => sanitize_title( $_POST['user_reviews_slug'] ?? 'user-reviews' ),
-            'server_side_pagination' => ! empty( $_POST['server_side_pagination'] ),
-            'theme_colors'           => $theme_colors,
+            'rows_per_page'            => intval( $_POST['rows_per_page'] ?? 12 ),
+            'cdn_prefix'               => esc_url_raw( $_POST['cdn_prefix'] ?? '' ),
+            'compare_slug'             => sanitize_title( $_POST['compare_slug'] ?? 'tire-compare' ),
+            'user_reviews_slug'        => sanitize_title( $_POST['user_reviews_slug'] ?? 'user-reviews' ),
+            'server_side_pagination'   => ! empty( $_POST['server_side_pagination'] ),
+            'theme_colors'             => $theme_colors,
+            'analytics_retention_days' => $retention_days,
         );
 
         update_option( 'rtg_settings', $settings );
