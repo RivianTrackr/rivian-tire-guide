@@ -60,14 +60,23 @@ class RTG_Admin {
             'Tire Guide',
             'Tire Guide',
             'manage_options',
-            'rtg-tires',
-            array( $this, 'render_list_page' ),
+            'rtg-dashboard',
+            array( $this, 'render_dashboard_page' ),
             'dashicons-car',
             30
         );
 
         add_submenu_page(
-            'rtg-tires',
+            'rtg-dashboard',
+            'Dashboard',
+            'Dashboard',
+            'manage_options',
+            'rtg-dashboard',
+            array( $this, 'render_dashboard_page' )
+        );
+
+        add_submenu_page(
+            'rtg-dashboard',
             'All Tires',
             'All Tires',
             'manage_options',
@@ -76,7 +85,7 @@ class RTG_Admin {
         );
 
         add_submenu_page(
-            'rtg-tires',
+            'rtg-dashboard',
             'Add New Tire',
             'Add New',
             'manage_options',
@@ -85,7 +94,7 @@ class RTG_Admin {
         );
 
         add_submenu_page(
-            'rtg-tires',
+            'rtg-dashboard',
             'Ratings',
             'Ratings',
             'manage_options',
@@ -100,7 +109,7 @@ class RTG_Admin {
             : '';
 
         add_submenu_page(
-            'rtg-tires',
+            'rtg-dashboard',
             'Reviews',
             'Reviews' . $badge,
             'manage_options',
@@ -109,7 +118,7 @@ class RTG_Admin {
         );
 
         add_submenu_page(
-            'rtg-tires',
+            'rtg-dashboard',
             'Stock Wheels',
             'Stock Wheels',
             'manage_options',
@@ -127,7 +136,7 @@ class RTG_Admin {
         );
 
         add_submenu_page(
-            'rtg-tires',
+            'rtg-dashboard',
             'Affiliate Links',
             'Affiliate Links',
             'manage_options',
@@ -136,7 +145,7 @@ class RTG_Admin {
         );
 
         add_submenu_page(
-            'rtg-tires',
+            'rtg-dashboard',
             'Import / Export',
             'Import / Export',
             'manage_options',
@@ -145,7 +154,7 @@ class RTG_Admin {
         );
 
         add_submenu_page(
-            'rtg-tires',
+            'rtg-dashboard',
             'Settings',
             'Settings',
             'manage_options',
@@ -398,6 +407,13 @@ class RTG_Admin {
             return;
         }
         require_once RTG_PLUGIN_DIR . 'admin/views/settings.php';
+    }
+
+    public function render_dashboard_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        require_once RTG_PLUGIN_DIR . 'admin/views/dashboard.php';
     }
 
     // --- Action Handlers ---

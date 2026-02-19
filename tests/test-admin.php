@@ -22,13 +22,14 @@ class Test_RTG_Admin extends WP_UnitTestCase {
         $this->admin->register_menu();
 
         global $submenu;
-        $this->assertArrayHasKey( 'rtg-tires', $submenu );
+        $this->assertArrayHasKey( 'rtg-dashboard', $submenu );
 
         // Check expected submenu slugs.
         $slugs = array_map( function ( $item ) {
             return $item[2]; // menu slug is index 2
-        }, $submenu['rtg-tires'] );
+        }, $submenu['rtg-dashboard'] );
 
+        $this->assertContains( 'rtg-dashboard', $slugs );
         $this->assertContains( 'rtg-tires', $slugs );
         $this->assertContains( 'rtg-tire-edit', $slugs );
         $this->assertContains( 'rtg-ratings', $slugs );
