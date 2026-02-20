@@ -2452,19 +2452,3 @@ a.rtg-user-review-tire-link:hover {
   width: 1px;
   word-wrap: normal !important;
 }
-/* Skip-to-content link for keyboard users */
-.rtg-skip-link {
-  position: absolute;
-  top: -40px;
-  left: 0;
-  background: var(--rtg-accent);
-  color: #000;
-  padding: 8px 16px;
-  z-index: 10001;
-  font-weight: 600;
-  border-radius: 0 0 6px 0;
-  transition: top 0.2s ease;
-}
-.rtg-skip-link:focus {
-  top: 0;
-}

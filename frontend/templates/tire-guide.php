@@ -3,7 +3,6 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 ?>
-<a class="rtg-skip-link" href="#tireCards">Skip to tire results</a>
 <button id="toggleFilters" class="toggle-filters-btn" aria-expanded="false" aria-controls="mobileFilterContent">
   <i class="fa-solid fa-sliders" aria-hidden="true"></i>&nbsp; Show Filters
 </button>
