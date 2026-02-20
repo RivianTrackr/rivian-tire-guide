@@ -180,6 +180,7 @@ function initializeUI() {
   }
 
   const inputsToWatch = [
+    { id: "searchInput", listener: debouncedFilterFn },
     { id: "filterSize", listener: filterFn },
     { id: "filterBrand", listener: filterFn },
     { id: "filterCategory", listener: filterFn },
