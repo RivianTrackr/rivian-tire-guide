@@ -16,6 +16,10 @@
   --rtg-star-empty: #2d3a49;
 }
 
+/* Force scrollbar visible so content loading doesn't shift the page */
+html:has(#tireCards) {
+  overflow-y: scroll;
+}
 body.modal-open {
   overflow: hidden;
 }
