@@ -62,9 +62,7 @@
 
 /* === AI Tire Advisor (inside filter panel) === */
 .rtg-ai-section {
-  border-top: 1px solid var(--rtg-border);
-  padding-top: 16px;
-  margin-bottom: 4px;
+  margin-bottom: 20px;
 }
 
 /* Extra right padding to make room for the submit button inside the input */
