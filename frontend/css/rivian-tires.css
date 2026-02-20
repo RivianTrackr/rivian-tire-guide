@@ -16,14 +16,6 @@
   --rtg-star-empty: #2d3a49;
 }
 
-/* Force scrollbar visible so content loading doesn't shift the page */
-html:has(#tireCards) {
-  overflow-y: scroll;
-}
-body.modal-open {
-  overflow: hidden;
-}
-
 /* === Mobile Filter Toggle === */
 .toggle-filters-btn {
   display: none;
@@ -2088,7 +2080,6 @@ a.rtg-review-card-title-link:hover {
 
 /* === Print Styles === */
 @media print {
-  body { background: #fff; color: #1a1a1a; }
   .filter-wrapper, .sort-wrapper, .compare-bar, .toggle-filters-btn, .active-filters { display: none !important; }
   .tire-card { border-color: #ddd; break-inside: avoid; }
   .tire-card-brand { color: #333; }
