@@ -4,6 +4,17 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.18.0] - 2026-02-20
+
+### Added
+- **AI Tire Advisor** — New natural-language search powered by Anthropic's Claude API. Visitors can type queries like "best winter tire for my Rivian with 20 inch wheels" and receive AI-ranked recommendations drawn from the tire catalog data (specs, ratings, reviews, efficiency grades). The AI search bar lives inside the Filter, Sort, and Compare panel alongside the existing search and filters.
+- **Admin AI settings** — New "AI Tire Recommendations" settings card with enable/disable toggle, Anthropic API key input, model selector (Claude Haiku 4.5 or Claude Sonnet 4), and configurable per-visitor rate limit.
+- **AI rate limiting** — Per-IP rate limiting via WordPress transients to control API costs (default: 10 queries/minute/visitor).
+- **AI response caching** — Identical queries are cached for 1 hour to reduce API calls and speed up repeated questions.
+
+### Changed
+- **Plugin version** — Bumped to 1.18.0.
+
 ## [1.17.2] - 2026-02-20
 
 ### Changed
