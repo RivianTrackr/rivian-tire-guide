@@ -67,64 +67,40 @@
   margin-bottom: 4px;
 }
 
-.rtg-ai-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--rtg-accent);
-  margin-bottom: 8px;
-}
-
-.rtg-ai-label i {
-  font-size: 14px;
-}
-
-.rtg-ai-search {
-  display: flex;
-  gap: 8px;
-  align-items: stretch;
-}
-
+/* Extra right padding to make room for the submit button inside the input */
 .rtg-ai-input {
-  flex: 1;
-  width: 100%;
-  padding: 12px 16px;
-  border-radius: 8px;
-  border: 2px solid transparent;
-  background-color: var(--rtg-bg-input);
-  color: var(--rtg-text-primary);
-  font-size: 15px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  outline: none;
+  padding-right: 52px !important;
 }
 
-.rtg-ai-input::placeholder {
-  color: #9ca3af;
-}
-
+/* Override the focus border-radius so it stays rounded (no autocomplete dropdown) */
 .rtg-ai-input:focus {
-  outline: none;
-  background-color: #1f2937;
-  box-shadow: 0 0 0 2px var(--rtg-accent);
-  border-color: var(--rtg-accent);
+  border-radius: 8px !important;
 }
 
+/* Accent-colored wand icon */
+.rtg-ai-icon {
+  color: var(--rtg-accent) !important;
+}
+
+/* Submit button positioned inside the search-container, right side */
 .rtg-ai-submit {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  min-width: 44px;
+  width: 36px;
+  height: 36px;
   background: var(--rtg-accent);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 14px;
   transition: background-color 0.2s ease, transform 0.1s ease;
+  z-index: 11;
 }
 
 .rtg-ai-submit:hover {
@@ -132,13 +108,12 @@
 }
 
 .rtg-ai-submit:active {
-  transform: scale(0.95);
+  transform: translateY(-50%) scale(0.93);
 }
 
 .rtg-ai-submit:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
 }
 
 /* AI Status / Loading */
@@ -247,10 +222,6 @@
 
 /* AI Responsive */
 @media (max-width: 600px) {
-  .rtg-ai-input::placeholder {
-    font-size: 12px;
-  }
-
   .rtg-ai-summary-content {
     flex-direction: column;
     gap: 8px;
