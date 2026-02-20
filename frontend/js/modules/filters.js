@@ -374,7 +374,7 @@ function applySorting(sortOption) {
       state.filteredRows.sort((a, b) => validateNumeric(a[8], NUMERIC_BOUNDS.weight, 0) - validateNumeric(b[8], NUMERIC_BOUNDS.weight, 0));
       break;
     case "newest":
-      state.filteredRows.sort((a, b) => safeString(b[24]).localeCompare(safeString(a[24])));
+      state.filteredRows.sort((a, b) => safeString(b[23]).localeCompare(safeString(a[23])));
       break;
   }
 }

@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.17.1] - 2026-02-20
+
+### Fixed
+- **"Newest Added" sort broken** — The client-side "Newest Added" sort option was reading from the wrong array index (24 instead of 23), causing it to compare empty values and effectively not sort at all. Tires now correctly sort by `created_at` descending.
+
 ## [1.17.0] - 2026-02-20
 
 ### Changed
