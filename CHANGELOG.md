@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.17.2] - 2026-02-20
+
+### Changed
+- **Plugin version** — Bumped to 1.17.2 to bust browser and CDN caches after the Newest Added sort fix.
+
 ## [1.17.1] - 2026-02-20
 
 ### Fixed
