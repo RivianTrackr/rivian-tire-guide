@@ -63,7 +63,7 @@ const COL = {
   price: 6, warranty: 7, weight: 8, threePms: 9, tread: 10,
   loadIndex: 11, maxLoad: 12, loadRange: 13, speedRating: 14,
   psi: 15, utqg: 16, tags: 17, link: 18, image: 19,
-  effScore: 20, effGrade: 21, bundleLink: 22, reviewLink: 23
+  effScore: 20, effGrade: 21, reviewLink: 22
 };
 
 // --- Efficiency badge colors ---
@@ -120,17 +120,12 @@ function renderTags(tagStr) {
 // --- Build CTA buttons ---
 function renderCTAs(tire) {
   const link = safeLinkURL(tire[COL.link]);
-  const bundle = safeLinkURL(tire[COL.bundleLink]);
   const review = safeReviewLinkURL(tire[COL.reviewLink]);
-  if (!link && !bundle && !review) return "-";
+  if (!link && !review) return "-";
   let html = '<div class="cmp-cta-wrap">';
   if (link) {
     html += `<a href="${escapeHTML(link)}" target="_blank" rel="noopener noreferrer" class="cmp-cta cmp-cta-primary">
       View Tire ${rtgIcon('arrow-up-right', 14)}</a>`;
-  }
-  if (bundle) {
-    html += `<a href="${escapeHTML(bundle)}" target="_blank" rel="noopener noreferrer" class="cmp-cta cmp-cta-bundle">
-      Wheel &amp; Tire Bundle ${rtgIcon('arrow-up-right', 14)}</a>`;
   }
   if (review) {
     const isVideo = review.includes('youtube.com') || review.includes('youtu.be') || review.includes('tiktok.com');

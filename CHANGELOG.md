@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.17.0] - 2026-02-20
+
+### Changed
+- **Analytics timezone** — Daily charts (Clicks Over Time, Search Volume) now group data by the WordPress site timezone instead of UTC, so dates on the analytics dashboard match the site owner's local time.
+- **Bar graph alignment** — Fixed "Most Used Filters" horizontal bar chart so bar tracks align consistently regardless of label length. Labels now use a fixed width with text truncation.
+- **Plugin version** — Bumped to 1.17.0.
+
+### Removed
+- **Bundle links** — Removed the bundle link feature from the entire plugin UI. The bundle link field has been removed from tire editing, the affiliate links dashboard, the comparison page, tire cards, analytics charts, and CSV import/export. The database column is retained for backwards compatibility but is no longer surfaced anywhere.
+
 ## [1.15.0] - 2026-02-19
 
 ### Added

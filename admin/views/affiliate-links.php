@@ -110,10 +110,6 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
             <div class="rtg-stat-label">Missing Links</div>
         </div>
         <div class="rtg-stat-card">
-            <div class="rtg-stat-value"><?php echo esc_html( $counts['has_bundle'] ); ?></div>
-            <div class="rtg-stat-label">Bundle Links</div>
-        </div>
-        <div class="rtg-stat-card">
             <div class="rtg-stat-value"><?php echo esc_html( $counts['has_review'] ); ?></div>
             <div class="rtg-stat-label">Review Links</div>
         </div>
@@ -127,7 +123,6 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
             'affiliate' => 'Affiliate (' . $total_affiliate . ')',
             'regular'   => 'Regular (' . $total_regular . ')',
             'missing'   => 'Missing Link (' . $total_missing . ')',
-            'no_bundle' => 'No Bundle (' . $counts['missing_bundle'] . ')',
             'no_review' => 'No Review (' . $counts['missing_review'] . ')',
         );
         foreach ( $tabs as $key => $label ) :
@@ -164,7 +159,6 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
                         <th style="width:180px;">Tire</th>
                         <th style="width:90px;">Status</th>
                         <th>Purchase Link</th>
-                        <th>Bundle Link</th>
                         <th>Review Link</th>
                         <th style="width:100px;">Actions</th>
                     </tr>
@@ -172,7 +166,7 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
                 <tbody>
                     <?php if ( empty( $tires ) ) : ?>
                         <tr>
-                            <td colspan="6">
+                            <td colspan="5">
                                 <div class="rtg-empty-state">
                                     <span class="dashicons dashicons-admin-links"></span>
                                     <h3>No tires match this filter</h3>
@@ -211,18 +205,6 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
                                     </div>
                                     <div class="rtg-link-edit" style="display:none;">
                                         <input type="url" class="rtg-link-input" value="<?php echo esc_attr( $tire['link'] ); ?>" placeholder="https://..." style="max-width:100%;width:100%;">
-                                    </div>
-                                </td>
-                                <td class="rtg-link-cell" data-field="bundle_link">
-                                    <div class="rtg-link-display">
-                                        <?php if ( ! empty( $tire['bundle_link'] ) ) : ?>
-                                            <a href="<?php echo esc_url( $tire['bundle_link'] ); ?>" target="_blank" rel="noopener noreferrer" class="rtg-link-url" title="<?php echo esc_attr( $tire['bundle_link'] ); ?>"><?php echo esc_html( rtg_truncate_url( $tire['bundle_link'] ) ); ?></a>
-                                        <?php else : ?>
-                                            <span class="rtg-link-empty">No link set</span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="rtg-link-edit" style="display:none;">
-                                        <input type="url" class="rtg-link-input" value="<?php echo esc_attr( $tire['bundle_link'] ); ?>" placeholder="https://..." style="max-width:100%;width:100%;">
                                     </div>
                                 </td>
                                 <td class="rtg-link-cell" data-field="review_link">
@@ -316,7 +298,6 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
         var tireId = $row.data('tire-id');
 
         var link       = $row.find('[data-field="link"] .rtg-link-input').val().trim();
-        var bundleLink = $row.find('[data-field="bundle_link"] .rtg-link-input').val().trim();
         var reviewLink = $row.find('[data-field="review_link"] .rtg-link-input').val().trim();
 
         $btn.prop('disabled', true).text('Saving...');
@@ -326,7 +307,7 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
             nonce:       nonce,
             tire_id:     tireId,
             link:        link,
-            bundle_link: bundleLink,
+            bundle_link: '',
             review_link: reviewLink
         }, function(response) {
             $btn.prop('disabled', false).text('Save');
@@ -334,7 +315,6 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
             if (response.success) {
                 // Update display values.
                 updateLinkCell($row.find('[data-field="link"]'), link);
-                updateLinkCell($row.find('[data-field="bundle_link"]'), bundleLink);
                 updateLinkCell($row.find('[data-field="review_link"]'), reviewLink);
 
                 // Update status badge.

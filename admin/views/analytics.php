@@ -40,14 +40,10 @@ if ( ! defined( 'ABSPATH' ) ) {
     </div>
 
     <!-- Click Breakdown Cards -->
-    <div class="rtg-stats-grid" id="rtgClickBreakdown" style="grid-template-columns: repeat(3, 1fr);">
+    <div class="rtg-stats-grid" id="rtgClickBreakdown" style="grid-template-columns: repeat(2, 1fr);">
         <div class="rtg-stat-card">
             <div class="rtg-stat-value" id="statPurchaseClicks">-</div>
             <div class="rtg-stat-label">Purchase Clicks</div>
-        </div>
-        <div class="rtg-stat-card">
-            <div class="rtg-stat-value" id="statBundleClicks">-</div>
-            <div class="rtg-stat-label">Bundle Clicks</div>
         </div>
         <div class="rtg-stat-card">
             <div class="rtg-stat-value" id="statReviewClicks">-</div>
@@ -169,7 +165,6 @@ document.addEventListener('DOMContentLoaded', function() {
             clickTotals[row.link_type] = parseInt(row.total) || 0;
         });
         setText('statPurchaseClicks', numberFormat(clickTotals.purchase || 0));
-        setText('statBundleClicks', numberFormat(clickTotals.bundle || 0));
         setText('statReviewClicks', numberFormat(clickTotals.review || 0));
 
         // Clicks daily chart.
@@ -206,13 +201,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Group by date and type.
         var dates = {};
         dailyData.forEach(function(row) {
-            if (!dates[row.date]) dates[row.date] = { purchase: 0, bundle: 0, review: 0 };
+            if (!dates[row.date]) dates[row.date] = { purchase: 0, review: 0 };
             dates[row.date][row.link_type] = parseInt(row.count) || 0;
         });
 
         var labels = Object.keys(dates).sort();
         var purchaseData = labels.map(function(d) { return dates[d].purchase; });
-        var bundleData = labels.map(function(d) { return dates[d].bundle; });
         var reviewData = labels.map(function(d) { return dates[d].review; });
 
         // Format labels as short dates.
@@ -233,14 +227,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         data: purchaseData,
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        fill: true,
-                        tension: 0.3,
-                    },
-                    {
-                        label: 'Bundle',
-                        data: bundleData,
-                        borderColor: '#22c55e',
-                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
                         fill: true,
                         tension: 0.3,
                     },

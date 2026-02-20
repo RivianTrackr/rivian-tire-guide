@@ -157,7 +157,6 @@ $skipped  = isset( $_GET['skipped'] ) ? intval( $_GET['skipped'] ) : 0;
                         <tr><td><code>tags</code></td><td>No</td><td>Text</td><td>EV Rated, RIV</td></tr>
                         <tr><td><code>link</code></td><td>No</td><td>URL</td><td>https://example.com/tire</td></tr>
                         <tr><td><code>image</code></td><td>No</td><td>URL</td><td>https://example.com/tire.jpg</td></tr>
-                        <tr><td><code>bundle_link</code></td><td>No</td><td>URL</td><td>https://example.com/bundle</td></tr>
                         <tr><td><code>sort_order</code></td><td>No</td><td>Integer</td><td>0</td></tr>
                     </tbody>
                 </table>

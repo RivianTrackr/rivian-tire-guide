@@ -333,11 +333,6 @@
       color: #0f172a;
     }
     .cmp-cta-primary:hover { background: var(--rtg-accent-hover); }
-    .cmp-cta-bundle {
-      background: #2563eb;
-      color: #fff;
-    }
-    .cmp-cta-bundle:hover { background: #1d4ed8; }
     .cmp-cta-review {
       background: #7c3aed;
       color: #fff;
