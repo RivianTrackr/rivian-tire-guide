@@ -65,14 +65,28 @@
   margin-bottom: 20px;
 }
 
-/* Extra right padding to make room for the submit button inside the input */
-.rtg-ai-input {
-  padding-right: 52px !important;
+/* Flex layout for AI search: icon + input + button in a row */
+.rtg-ai-search-container {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0 !important;
+  background-color: var(--rtg-bg-input) !important;
+  border-radius: 8px !important;
+  border: 2px solid transparent !important;
+  transition: all 0.2s ease !important;
 }
 
-/* Override the focus border-radius so it stays rounded (no autocomplete dropdown) */
-.rtg-ai-input:focus {
-  border-radius: 8px !important;
+.rtg-ai-search-container:focus-within {
+  border-color: var(--rtg-accent) !important;
+}
+
+/* The wand icon sits inside the flex row */
+.rtg-ai-search-container .search-icon {
+  position: static !important;
+  transform: none !important;
+  flex-shrink: 0 !important;
+  padding-left: 14px !important;
+  margin: 0 !important;
 }
 
 /* Accent-colored wand icon */
@@ -80,12 +94,27 @@
   color: var(--rtg-accent) !important;
 }
 
-/* Submit button positioned inside the search-container, right side */
+/* Input takes remaining space, no background/border of its own */
+.rtg-ai-search-container .rtg-ai-input {
+  flex: 1 !important;
+  min-width: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 12px 8px 12px 10px !important;
+  margin: 0 !important;
+}
+
+.rtg-ai-search-container .rtg-ai-input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+/* Submit button at end of the flex row */
 .rtg-ai-submit {
-  position: absolute !important;
-  top: 50% !important;
-  right: 6px !important;
-  transform: translateY(-50%) !important;
+  flex-shrink: 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -93,7 +122,7 @@
   height: 36px !important;
   min-width: 36px !important;
   padding: 0 !important;
-  margin: 0 !important;
+  margin: 0 6px 0 0 !important;
   background: var(--rtg-accent) !important;
   color: #fff !important;
   border: none !important;
@@ -102,7 +131,8 @@
   font-size: 14px !important;
   line-height: 1 !important;
   transition: background-color 0.2s ease, transform 0.1s ease;
-  z-index: 11;
+  position: static !important;
+  transform: none !important;
 }
 
 .rtg-ai-submit:hover {
@@ -110,7 +140,7 @@
 }
 
 .rtg-ai-submit:active {
-  transform: translateY(-50%) scale(0.93) !important;
+  transform: scale(0.93) !important;
 }
 
 .rtg-ai-submit:disabled {
