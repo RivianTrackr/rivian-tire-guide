@@ -344,51 +344,6 @@ function safeLinkURL(url) {
   }
 }
 
-// NEW: Bundle link validation function
-function safeBundleLinkURL(url) {
-  if (typeof url !== "string" || !url.trim()) return "";
-  
-  const trimmed = url.trim();
-  
-  const bundleLinkPattern = /^https:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}\/[a-zA-Z0-9\-\/_\.%&=?#:+]*$/;
-  
-  if (!bundleLinkPattern.test(trimmed)) {
-    return "";
-  }
-  
-  try {
-    const urlObj = new URL(trimmed);
-    
-    if (urlObj.protocol !== 'https:') return "";
-    
-    const allowedBundleDomains = [
-      'riviantrackr.com', 'evsportline.com', 'www.evsportline.com', 'tsportline.com',
-      'www.tsportline.com', 'tirerack.com', 'www.tirerack.com', 'discounttire.com',
-      'www.discounttire.com', 'costco.com', 'www.costco.com', 'walmart.com',
-      'www.walmart.com', 'amazon.com', 'www.amazon.com', 'amzn.to'
-    ];
-    
-    const hostname = urlObj.hostname.toLowerCase();
-    const isAllowed = allowedBundleDomains.some(domain => {
-      return hostname === domain || hostname.endsWith('.' + domain);
-    });
-    
-    if (!isAllowed) {
-      console.warn('Bundle link domain not in allowlist:', hostname);
-      return "";
-    }
-    
-    if (urlObj.pathname.includes('..')) {
-      return "";
-    }
-    
-    return trimmed;
-  } catch (e) {
-    console.warn('Invalid bundle link URL:', trimmed);
-    return "";
-  }
-}
-
 // Review link validation function
 function safeReviewLinkURL(url) {
   if (typeof url !== "string" || !url.trim()) return "";
@@ -2296,7 +2251,7 @@ function setupEventDelegation() {
   // Affiliate click tracking via event delegation.
   document.addEventListener('click', function(e) {
     const link = e.target.closest(
-      '.tire-card-cta-primary, .tire-card-cta-bundle, .tire-card-cta-review'
+      '.tire-card-cta-primary, .tire-card-cta-review'
     );
     if (!link) return;
 
@@ -2307,7 +2262,6 @@ function setupEventDelegation() {
     if (!tireId || !VALIDATION_PATTERNS.tireId.test(tireId)) return;
 
     let linkType = 'purchase';
-    if (link.classList.contains('tire-card-cta-bundle')) linkType = 'bundle';
     if (link.classList.contains('tire-card-cta-review')) linkType = 'review';
 
     RTG_ANALYTICS.trackClick(tireId, linkType);
@@ -2624,7 +2578,7 @@ function createSingleCard(row) {
   const [
     tireId, size, diameter, brand, model, category, price, warranty, weight, tpms,
     tread, loadIndex, maxLoad, loadRange, speed, psi, utqg, tags, link, image,
-    efficiencyScore, efficiencyGrade, bundleLink, reviewLink
+    efficiencyScore, efficiencyGrade, reviewLink
   ] = row;
   
   if (!VALIDATION_PATTERNS.tireId.test(tireId)) {
@@ -2640,7 +2594,6 @@ function createSingleCard(row) {
   
   const safeLink = safeLinkURL(link);
   const safeImage = safeImageURL(image);
-  const safeBundleLink = safeBundleLinkURL(bundleLink);
   const safeReviewLink = safeReviewLinkURL(reviewLink);
 
   const card = document.createElement("div");
@@ -2914,16 +2867,6 @@ function createSingleCard(row) {
     comingSoon.className = 'tire-card-cta tire-card-cta-disabled';
     comingSoon.textContent = 'Coming Soon';
     actionsContainer.appendChild(comingSoon);
-  }
-
-  if (safeBundleLink) {
-    const bundleButton = document.createElement('a');
-    bundleButton.href = safeBundleLink;
-    bundleButton.target = '_blank';
-    bundleButton.rel = 'noopener noreferrer';
-    bundleButton.className = 'tire-card-cta tire-card-cta-bundle';
-    bundleButton.innerHTML = 'Wheel & Tire from EV Sportline&nbsp;' + rtgIcon('arrow-up-right', 14);
-    actionsContainer.appendChild(bundleButton);
   }
 
   if (safeReviewLink) {

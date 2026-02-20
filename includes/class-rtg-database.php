@@ -79,7 +79,6 @@ class RTG_Database {
                 (string) $tire['image'],
                 (string) $tire['efficiency_score'],
                 (string) $tire['efficiency_grade'],
-                (string) $tire['bundle_link'],
                 (string) $tire['review_link'],
                 (string) $tire['created_at'],
             );
@@ -475,7 +474,6 @@ class RTG_Database {
                 (string) $tire['image'],
                 (string) $tire['efficiency_score'],
                 (string) $tire['efficiency_grade'],
-                (string) $tire['bundle_link'],
                 (string) $tire['review_link'],
                 (string) $tire['created_at'],
             );
@@ -1376,9 +1374,6 @@ class RTG_Database {
                 }
                 $where[] = '( ' . implode( ' AND ', $not_clauses ) . ' )';
                 break;
-            case 'no_bundle':
-                $where[] = "bundle_link = ''";
-                break;
             case 'no_review':
                 $where[] = "review_link = ''";
                 break;
@@ -1554,6 +1549,13 @@ class RTG_Database {
         $days   = max( 1, min( 365, intval( $days ) ) );
         $since  = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
 
+        // Use the WordPress site timezone for daily groupings so charts
+        // reflect the site owner's local dates instead of UTC.
+        $utc_offset = wp_timezone()->getOffset( new \DateTime( 'now', new \DateTimeZone( 'UTC' ) ) );
+        $sign       = $utc_offset >= 0 ? '+' : '-';
+        $abs        = abs( $utc_offset );
+        $tz_offset  = sprintf( '%s%02d:%02d', $sign, intdiv( $abs, 3600 ), ( $abs % 3600 ) / 60 );
+
         $data = array();
 
         // Click totals by type.
@@ -1577,13 +1579,13 @@ class RTG_Database {
             $since
         ), ARRAY_A );
 
-        // Clicks over time (daily).
+        // Clicks over time (daily, in site timezone).
         $data['clicks_daily'] = $wpdb->get_results( $wpdb->prepare(
-            "SELECT DATE(created_at) as date, link_type, COUNT(*) as count
+            "SELECT DATE(CONVERT_TZ(created_at, '+00:00', %s)) as date, link_type, COUNT(*) as count
              FROM {$clicks} WHERE created_at >= %s
-             GROUP BY DATE(created_at), link_type
+             GROUP BY DATE(CONVERT_TZ(created_at, '+00:00', %s)), link_type
              ORDER BY date ASC",
-            $since
+            $tz_offset, $since, $tz_offset
         ), ARRAY_A );
 
         // Top search queries (top 20).
@@ -1620,13 +1622,13 @@ class RTG_Database {
             $since
         ), ARRAY_A );
 
-        // Search volume daily.
+        // Search volume daily (in site timezone).
         $data['searches_daily'] = $wpdb->get_results( $wpdb->prepare(
-            "SELECT DATE(created_at) as date, COUNT(*) as count
+            "SELECT DATE(CONVERT_TZ(created_at, '+00:00', %s)) as date, COUNT(*) as count
              FROM {$search} WHERE created_at >= %s
-             GROUP BY DATE(created_at)
+             GROUP BY DATE(CONVERT_TZ(created_at, '+00:00', %s))
              ORDER BY date ASC",
-            $since
+            $tz_offset, $since, $tz_offset
         ), ARRAY_A );
 
         // Summary totals.

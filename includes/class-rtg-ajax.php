@@ -499,7 +499,7 @@ class RTG_Ajax {
             wp_send_json_error( 'Invalid tire ID.' );
         }
 
-        $allowed_types = array( 'purchase', 'bundle', 'review' );
+        $allowed_types = array( 'purchase', 'review' );
         if ( ! in_array( $link_type, $allowed_types, true ) ) {
             $link_type = 'purchase';
         }

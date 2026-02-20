@@ -666,15 +666,6 @@ body.modal-open {
   text-decoration: none;
   color: #0f172a;
 }
-.tire-card-cta-bundle {
-  background: #2563eb;
-  color: #fff;
-}
-.tire-card-cta-bundle:hover {
-  background: #1d4ed8;
-  text-decoration: none;
-  color: #fff;
-}
 .tire-card-cta-review {
   background: #7c3aed;
   color: #fff;

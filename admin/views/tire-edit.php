@@ -32,7 +32,6 @@ $defaults = array(
     'image'            => '',
     'efficiency_score' => '',
     'efficiency_grade' => '',
-    'bundle_link'      => '',
     'review_link'      => '',
     'sort_order'       => 0,
 );
@@ -280,12 +279,6 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                             <label class="rtg-field-label" for="link">Affiliate Link</label>
                         </div>
                         <input type="url" id="link" name="link" value="<?php echo esc_attr( $v['link'] ); ?>" class="rtg-input-wide">
-                    </div>
-                    <div class="rtg-field-row">
-                        <div class="rtg-field-label-row">
-                            <label class="rtg-field-label" for="bundle_link">Bundle Link</label>
-                        </div>
-                        <input type="url" id="bundle_link" name="bundle_link" value="<?php echo esc_attr( $v['bundle_link'] ); ?>" class="rtg-input-wide">
                     </div>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">

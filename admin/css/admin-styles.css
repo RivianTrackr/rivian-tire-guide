@@ -1206,11 +1206,14 @@
 }
 
 .rtg-bar-label {
-    min-width: 120px;
+    width: 180px;
+    min-width: 180px;
     font-size: 14px;
     font-weight: 500;
     color: var(--rtg-text-primary);
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .rtg-bar-track {
