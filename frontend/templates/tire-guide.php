@@ -15,10 +15,12 @@ if ( ! defined( 'ABSPATH' ) ) {
   <div class="filter-body">
     <?php if ( RTG_AI::is_enabled() ) : ?>
     <div id="rtgAiWrapper" class="rtg-ai-section">
-      <div class="search-container rtg-ai-search-container">
-        <label for="rtgAiInput" class="screen-reader-text">Ask AI for tire recommendations</label>
-        <i class="fa-solid fa-wand-magic-sparkles search-icon rtg-ai-icon" aria-hidden="true"></i>
-        <input id="rtgAiInput" type="text" class="search-input rtg-ai-input" placeholder="AI Advisor: &quot;Best winter tire for my Rivian with 20 inch wheels&quot;" maxlength="500" aria-label="Ask AI for tire recommendations" />
+      <div class="rtg-ai-row">
+        <div class="search-container">
+          <label for="rtgAiInput" class="screen-reader-text">Ask AI for tire recommendations</label>
+          <input id="rtgAiInput" type="text" class="search-input rtg-ai-input" placeholder="AI: &quot;Best winter tire for 20 inch wheels&quot;" maxlength="500" aria-label="Ask AI for tire recommendations" />
+          <i class="fa-solid fa-wand-magic-sparkles search-icon rtg-ai-icon" aria-hidden="true"></i>
+        </div>
         <button id="rtgAiSubmit" class="rtg-ai-submit" type="button" aria-label="Get AI recommendations">
           <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
         </button>
