@@ -156,6 +156,8 @@ class RTG_Frontend {
         }
 
         // Localize tire data.
+        $ai_enabled = RTG_AI::is_enabled();
+
         $localized = array(
             'settings' => array(
                 'rowsPerPage'     => intval( $settings['rows_per_page'] ?? 12 ),
@@ -165,6 +167,8 @@ class RTG_Frontend {
                 'ajaxurl'         => admin_url( 'admin-ajax.php' ),
                 'tireNonce'       => wp_create_nonce( 'rtg_tire_nonce' ),
                 'analyticsNonce'  => wp_create_nonce( 'rtg_analytics_nonce' ),
+                'aiEnabled'       => $ai_enabled,
+                'aiNonce'         => $ai_enabled ? wp_create_nonce( 'rtg_ai_nonce' ) : '',
             ),
         );
 

@@ -60,6 +60,210 @@
   }
 }
 
+/* === AI Tire Advisor === */
+.rtg-ai-wrapper {
+  background: var(--rtg-bg-card);
+  border: 1px solid var(--rtg-border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+}
+
+.rtg-ai-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--rtg-accent, #5ec095);
+  margin-bottom: 10px;
+}
+
+.rtg-ai-header i {
+  font-size: 15px;
+}
+
+.rtg-ai-search {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.rtg-ai-input {
+  flex: 1;
+  background: var(--rtg-bg-input, #374151);
+  border: 1px solid var(--rtg-border, #1e3044);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--rtg-text-primary, #e5e7eb);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.rtg-ai-input::placeholder {
+  color: var(--rtg-text-muted, #8493a5);
+  font-size: 13px;
+}
+
+.rtg-ai-input:focus {
+  border-color: var(--rtg-accent, #5ec095);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--rtg-accent, #5ec095) 20%, transparent);
+}
+
+.rtg-ai-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  min-width: 42px;
+  background: var(--rtg-accent, #5ec095);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.rtg-ai-submit:hover {
+  background: var(--rtg-accent-hover, #4db882);
+}
+
+.rtg-ai-submit:active {
+  transform: scale(0.95);
+}
+
+.rtg-ai-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* AI Status / Loading */
+.rtg-ai-status {
+  margin-top: 10px;
+}
+
+.rtg-ai-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--rtg-text-muted, #8493a5);
+  font-size: 13px;
+  padding: 8px 0;
+}
+
+.rtg-ai-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--rtg-border, #1e3044);
+  border-top-color: var(--rtg-accent, #5ec095);
+  border-radius: 50%;
+  animation: rtg-ai-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes rtg-ai-spin {
+  to { transform: rotate(360deg); }
+}
+
+.rtg-ai-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #ef4444;
+  font-size: 13px;
+  padding: 8px 0;
+}
+
+.rtg-ai-error i {
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+/* AI Summary Banner */
+.rtg-ai-summary {
+  margin-top: 10px;
+}
+
+.rtg-ai-summary-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: color-mix(in srgb, var(--rtg-accent, #5ec095) 8%, var(--rtg-bg-deep, #0c1620));
+  border: 1px solid color-mix(in srgb, var(--rtg-accent, #5ec095) 25%, transparent);
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+.rtg-ai-summary-icon {
+  color: var(--rtg-accent, #5ec095);
+  font-size: 16px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.rtg-ai-summary-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.rtg-ai-summary-text strong {
+  display: block;
+  color: var(--rtg-text-heading, #ffffff);
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.rtg-ai-summary-text p {
+  color: var(--rtg-text-primary, #e5e7eb);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.rtg-ai-clear {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 1px solid var(--rtg-border, #1e3044);
+  border-radius: 6px;
+  color: var(--rtg-text-muted, #8493a5);
+  font-size: 12px;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.rtg-ai-clear:hover {
+  color: var(--rtg-text-primary, #e5e7eb);
+  border-color: var(--rtg-text-muted, #8493a5);
+}
+
+/* AI Responsive */
+@media (max-width: 600px) {
+  .rtg-ai-wrapper {
+    padding: 12px 14px;
+  }
+
+  .rtg-ai-input::placeholder {
+    font-size: 12px;
+  }
+
+  .rtg-ai-summary-content {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .rtg-ai-clear {
+    align-self: flex-end;
+  }
+}
+
 /* === Filter Section — Card style matching compare page === */
 .filter-wrapper {
   background: var(--rtg-bg-card);

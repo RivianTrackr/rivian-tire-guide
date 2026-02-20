@@ -56,6 +56,10 @@ class RTG_Ajax {
 
         // Efficiency calculator — admin only.
         add_action( 'wp_ajax_rtg_calculate_efficiency', array( $this, 'calculate_efficiency' ) );
+
+        // AI tire recommendations — public.
+        add_action( 'wp_ajax_rtg_ai_recommend', array( $this, 'ai_recommend' ) );
+        add_action( 'wp_ajax_nopriv_rtg_ai_recommend', array( $this, 'ai_recommend' ) );
     }
 
     /**
@@ -563,6 +567,38 @@ class RTG_Ajax {
         );
 
         $result = RTG_Database::calculate_efficiency( $data );
+
+        wp_send_json_success( $result );
+    }
+
+    /**
+     * AI tire recommendation endpoint.
+     * Available to both logged-in and logged-out users.
+     */
+    public function ai_recommend() {
+        if ( ! check_ajax_referer( 'rtg_ai_nonce', 'nonce', false ) ) {
+            wp_send_json_error( 'Security check failed.' );
+        }
+
+        if ( ! RTG_AI::is_enabled() ) {
+            wp_send_json_error( 'AI recommendations are not available.' );
+        }
+
+        $query = sanitize_text_field( wp_unslash( $_POST['query'] ?? '' ) );
+
+        if ( empty( trim( $query ) ) ) {
+            wp_send_json_error( 'Please enter a search query.' );
+        }
+
+        if ( mb_strlen( $query ) > 500 ) {
+            wp_send_json_error( 'Query is too long. Please keep it under 500 characters.' );
+        }
+
+        $result = RTG_AI::get_recommendations( $query );
+
+        if ( is_wp_error( $result ) ) {
+            wp_send_json_error( $result->get_error_message() );
+        }
 
         wp_send_json_success( $result );
     }

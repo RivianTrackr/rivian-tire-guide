@@ -26,6 +26,7 @@ import {
   setUpdateCompareBar
 } from './modules/filters.js';
 import { isServerSide, fetchTiresFromServer, fetchDropdownOptions, serverSideFilterAndRender } from './modules/server.js';
+import { initAiRecommend } from './modules/ai-recommend.js';
 
 // Wire up the compare bar function to break the circular dependency
 setUpdateCompareBar(updateCompareBar);
@@ -203,6 +204,7 @@ function initializeUI() {
   setupSliderHandlers();
   setupEventDelegation();
   initializeSmartSearch();
+  initAiRecommend();
 
   if (ssMode) {
     const sliderIds = ["priceMax", "warrantyMax", "weightMax"];

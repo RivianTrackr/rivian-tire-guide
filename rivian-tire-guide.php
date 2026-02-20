@@ -30,6 +30,7 @@ require_once RTG_PLUGIN_DIR . 'includes/class-rtg-compare.php';
 require_once RTG_PLUGIN_DIR . 'includes/class-rtg-schema.php';
 require_once RTG_PLUGIN_DIR . 'includes/class-rtg-meta.php';
 require_once RTG_PLUGIN_DIR . 'includes/class-rtg-rest-api.php';
+require_once RTG_PLUGIN_DIR . 'includes/class-rtg-ai.php';
 
 // Activation / Deactivation hooks.
 register_activation_hook( __FILE__, array( 'RTG_Activator', 'activate' ) );
