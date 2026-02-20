@@ -62,9 +62,7 @@
 
 /* === AI Tire Advisor (inside filter panel) === */
 .rtg-ai-section {
-  border-top: 1px solid var(--rtg-border);
-  padding-top: 16px;
-  margin-bottom: 4px;
+  margin-bottom: 20px;
 }
 
 /* Extra right padding to make room for the submit button inside the input */
@@ -84,36 +82,40 @@
 
 /* Submit button positioned inside the search-container, right side */
 .rtg-ai-submit {
-  position: absolute;
-  top: 50%;
-  right: 6px;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  background: var(--rtg-accent);
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
+  position: absolute !important;
+  top: 50% !important;
+  right: 6px !important;
+  transform: translateY(-50%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: var(--rtg-accent) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
   transition: background-color 0.2s ease, transform 0.1s ease;
   z-index: 11;
 }
 
 .rtg-ai-submit:hover {
-  background: var(--rtg-accent-hover);
+  background: var(--rtg-accent-hover) !important;
 }
 
 .rtg-ai-submit:active {
-  transform: translateY(-50%) scale(0.93);
+  transform: translateY(-50%) scale(0.93) !important;
 }
 
 .rtg-ai-submit:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
 }
 
 /* AI Status / Loading */

@@ -13,13 +13,6 @@ if ( ! defined( 'ABSPATH' ) ) {
     Filter, Sort, and Compare
   </div>
   <div class="filter-body">
-    <div class="filter-search">
-      <div class="search-container">
-        <label for="searchInput" class="screen-reader-text">Search tires</label>
-        <input id="searchInput" type="text" placeholder="Search tires..." class="search-input" aria-label="Search tires"/>
-        <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
-      </div>
-    </div>
     <?php if ( RTG_AI::is_enabled() ) : ?>
     <div id="rtgAiWrapper" class="rtg-ai-section">
       <div class="search-container">
@@ -32,6 +25,14 @@ if ( ! defined( 'ABSPATH' ) ) {
       </div>
       <div id="rtgAiStatus" class="rtg-ai-status" style="display: none;" role="status" aria-live="polite"></div>
       <div id="rtgAiSummary" class="rtg-ai-summary" style="display: none;" role="region" aria-label="AI recommendations summary"></div>
+    </div>
+    <?php else : ?>
+    <div class="filter-search">
+      <div class="search-container">
+        <label for="searchInput" class="screen-reader-text">Search tires</label>
+        <input id="searchInput" type="text" placeholder="Search tires..." class="search-input" aria-label="Search tires"/>
+        <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
+      </div>
     </div>
     <?php endif; ?>
     <div id="mobileFilterContent" class="mobile-filter-content">
