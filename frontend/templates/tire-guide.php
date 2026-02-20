@@ -3,23 +3,6 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 ?>
-<?php if ( RTG_AI::is_enabled() ) : ?>
-<div id="rtgAiWrapper" class="rtg-ai-wrapper">
-  <div class="rtg-ai-header">
-    <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
-    <span>AI Tire Advisor</span>
-  </div>
-  <div class="rtg-ai-search">
-    <label for="rtgAiInput" class="screen-reader-text">Ask AI for tire recommendations</label>
-    <input id="rtgAiInput" type="text" class="rtg-ai-input" placeholder="Try: &quot;Best winter tire for my Rivian with 20 inch wheels&quot;" maxlength="500" aria-label="Ask AI for tire recommendations" />
-    <button id="rtgAiSubmit" class="rtg-ai-submit" type="button" aria-label="Get AI recommendations">
-      <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-    </button>
-  </div>
-  <div id="rtgAiStatus" class="rtg-ai-status" style="display: none;" role="status" aria-live="polite"></div>
-  <div id="rtgAiSummary" class="rtg-ai-summary" style="display: none;" role="region" aria-label="AI recommendations summary"></div>
-</div>
-<?php endif; ?>
 <button id="toggleFilters" class="toggle-filters-btn" aria-expanded="false" aria-controls="mobileFilterContent">
   <i class="fa-solid fa-sliders" aria-hidden="true"></i>&nbsp; Show Filters
 </button>
@@ -37,6 +20,23 @@ if ( ! defined( 'ABSPATH' ) ) {
         <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
       </div>
     </div>
+    <?php if ( RTG_AI::is_enabled() ) : ?>
+    <div id="rtgAiWrapper" class="rtg-ai-section">
+      <div class="rtg-ai-label">
+        <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+        <span>AI Tire Advisor</span>
+      </div>
+      <div class="rtg-ai-search">
+        <label for="rtgAiInput" class="screen-reader-text">Ask AI for tire recommendations</label>
+        <input id="rtgAiInput" type="text" class="rtg-ai-input" placeholder="Try: &quot;Best winter tire for my Rivian with 20 inch wheels&quot;" maxlength="500" aria-label="Ask AI for tire recommendations" />
+        <button id="rtgAiSubmit" class="rtg-ai-submit" type="button" aria-label="Get AI recommendations">
+          <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div id="rtgAiStatus" class="rtg-ai-status" style="display: none;" role="status" aria-live="polite"></div>
+      <div id="rtgAiSummary" class="rtg-ai-summary" style="display: none;" role="region" aria-label="AI recommendations summary"></div>
+    </div>
+    <?php endif; ?>
     <div id="mobileFilterContent" class="mobile-filter-content">
       <div class="filter-container">
         <div class="filter-group">
