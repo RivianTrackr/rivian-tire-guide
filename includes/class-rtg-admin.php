@@ -558,6 +558,23 @@ class RTG_Admin {
         $retention_days = intval( $_POST['analytics_retention_days'] ?? 90 );
         $retention_days = max( 7, min( 365, $retention_days ) );
 
+        // AI settings.
+        $ai_api_key    = sanitize_text_field( wp_unslash( $_POST['rtg_ai_api_key'] ?? '' ) );
+        $ai_model      = sanitize_text_field( $_POST['rtg_ai_model'] ?? 'claude-haiku-4-5-20251001' );
+        $ai_rate_limit = intval( $_POST['rtg_ai_rate_limit'] ?? 10 );
+        $ai_rate_limit = max( 1, min( 60, $ai_rate_limit ) );
+
+        $allowed_models = array( 'claude-haiku-4-5-20251001', 'claude-sonnet-4-20250514' );
+        if ( ! in_array( $ai_model, $allowed_models, true ) ) {
+            $ai_model = 'claude-haiku-4-5-20251001';
+        }
+
+        // Preserve existing API key if the field is left blank (masked).
+        $existing_settings = get_option( 'rtg_settings', array() );
+        if ( empty( $ai_api_key ) && ! empty( $existing_settings['ai_api_key'] ) ) {
+            $ai_api_key = $existing_settings['ai_api_key'];
+        }
+
         $settings = array(
             'rows_per_page'            => intval( $_POST['rows_per_page'] ?? 12 ),
             'cdn_prefix'               => esc_url_raw( $_POST['cdn_prefix'] ?? '' ),
@@ -566,6 +583,10 @@ class RTG_Admin {
             'server_side_pagination'   => ! empty( $_POST['server_side_pagination'] ),
             'theme_colors'             => $theme_colors,
             'analytics_retention_days' => $retention_days,
+            'ai_enabled'               => ! empty( $_POST['rtg_ai_enabled'] ),
+            'ai_api_key'               => $ai_api_key,
+            'ai_model'                 => $ai_model,
+            'ai_rate_limit'            => $ai_rate_limit,
         );
 
         update_option( 'rtg_settings', $settings );

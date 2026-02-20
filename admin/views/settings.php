@@ -249,6 +249,61 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
             </div>
         </div>
 
+        <!-- AI Recommendations -->
+        <?php
+        $ai_enabled    = ! empty( $settings['ai_enabled'] );
+        $ai_api_key    = $settings['ai_api_key'] ?? '';
+        $ai_model      = $settings['ai_model'] ?? 'claude-haiku-4-5-20251001';
+        $ai_rate_limit = $settings['ai_rate_limit'] ?? 10;
+        $ai_key_masked = $ai_api_key ? str_repeat( '*', max( 0, min( strlen( $ai_api_key ) - 8, 20 ) ) ) . substr( $ai_api_key, -8 ) : '';
+        ?>
+        <div class="rtg-card">
+            <div class="rtg-card-header">
+                <h2>AI Tire Recommendations</h2>
+                <p>Let visitors ask natural-language questions like "best winter tire for 20 inch wheels" and get AI-powered recommendations from your tire catalog. Powered by Anthropic's Claude API.</p>
+            </div>
+            <div class="rtg-card-body">
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="rtg_ai_enabled">Enable AI Recommendations</label>
+                    </div>
+                    <p class="rtg-field-description">When enabled, an AI search bar appears above the tire filters on the frontend. Requires a valid Anthropic API key.</p>
+                    <label class="rtg-toggle">
+                        <input type="checkbox" id="rtg_ai_enabled" name="rtg_ai_enabled" value="1" <?php checked( $ai_enabled ); ?>>
+                        <span class="rtg-toggle-track"></span>
+                        <span class="rtg-toggle-label">Enable AI-powered tire recommendations</span>
+                    </label>
+                </div>
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="rtg_ai_api_key">Anthropic API Key</label>
+                    </div>
+                    <p class="rtg-field-description">Your Anthropic API key. Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. The key is stored securely and never exposed to visitors.</p>
+                    <input type="password" id="rtg_ai_api_key" name="rtg_ai_api_key" value="" class="rtg-input-wide" placeholder="<?php echo $ai_key_masked ? esc_attr( $ai_key_masked ) : 'sk-ant-...'; ?>" autocomplete="off">
+                    <?php if ( $ai_api_key ) : ?>
+                        <p style="margin-top: 4px; font-size: 12px; color: var(--rtg-text-muted);">Key is set. Leave blank to keep the current key.</p>
+                    <?php endif; ?>
+                </div>
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="rtg_ai_model">AI Model</label>
+                    </div>
+                    <p class="rtg-field-description">Claude Haiku is fast and cost-effective (recommended). Claude Sonnet is more capable but slower and costs more per query.</p>
+                    <select id="rtg_ai_model" name="rtg_ai_model" style="min-width: 280px;">
+                        <option value="claude-haiku-4-5-20251001" <?php selected( $ai_model, 'claude-haiku-4-5-20251001' ); ?>>Claude Haiku 4.5 (Fast, Low Cost)</option>
+                        <option value="claude-sonnet-4-20250514" <?php selected( $ai_model, 'claude-sonnet-4-20250514' ); ?>>Claude Sonnet 4 (More Capable)</option>
+                    </select>
+                </div>
+                <div class="rtg-field-row" style="border-bottom: none;">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="rtg_ai_rate_limit">Rate Limit (per visitor per minute)</label>
+                    </div>
+                    <p class="rtg-field-description">Maximum AI queries a single visitor can make per minute. Helps control API costs. Default: 10.</p>
+                    <input type="number" id="rtg_ai_rate_limit" name="rtg_ai_rate_limit" value="<?php echo esc_attr( $ai_rate_limit ); ?>" min="1" max="60" step="1" class="rtg-input-small">
+                </div>
+            </div>
+        </div>
+
         <!-- Analytics Settings -->
         <div class="rtg-card">
             <div class="rtg-card-header">
