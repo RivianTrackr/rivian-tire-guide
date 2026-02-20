@@ -12,11 +12,13 @@ const jsDefaults = {
 
 /** All build targets. */
 const builds = [
-  // --- Frontend JS (main guide) ---
+  // --- Frontend JS (main guide) — bundled from ES modules ---
   {
     ...jsDefaults,
+    bundle: true,
     entryPoints: ['frontend/js/rivian-tires.js'],
     outfile: 'frontend/js/rivian-tires.min.js',
+    format: 'iife',
     minify: true,
     drop: ['console', 'debugger'],
   },
