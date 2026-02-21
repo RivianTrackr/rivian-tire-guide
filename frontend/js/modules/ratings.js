@@ -549,12 +549,12 @@ export function openReviewModal(tireId, preselectedRating = 0) {
 
     const registerLink = document.createElement('a');
     registerLink.href = tireRatingAjax.register_url || '/wp-login.php?action=register';
-    registerLink.textContent = 'sign up';
+    registerLink.textContent = 'Sign up';
 
-    bannerText.appendChild(loginLink);
-    bannerText.appendChild(document.createTextNode(' or '));
     bannerText.appendChild(registerLink);
-    bannerText.appendChild(document.createTextNode(' to save reviews and edit later.'));
+    bannerText.appendChild(document.createTextNode(' or '));
+    bannerText.appendChild(loginLink);
+    bannerText.appendChild(document.createTextNode(' to edit reviews and favorite tires.'));
 
     loginBanner.appendChild(bannerIcon);
     loginBanner.appendChild(bannerText);
@@ -851,7 +851,7 @@ function createReviewCard(review) {
 
   const userReviewsUrl = (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.userReviewsUrl) ? rtgData.settings.userReviewsUrl : '';
   let authorEl;
-  if (review.user_id && userReviewsUrl) {
+  if (review.user_id && parseInt(review.user_id) > 0 && userReviewsUrl) {
     authorEl = document.createElement('a');
     authorEl.href = userReviewsUrl + '?reviewer=' + encodeURIComponent(review.user_id);
     authorEl.className = 'rtg-review-author rtg-review-author-link';
