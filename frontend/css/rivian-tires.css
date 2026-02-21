@@ -1504,6 +1504,17 @@
   color: var(--rtg-accent-hover, #4daa80);
   text-decoration: none;
 }
+.rtg-review-pending-badge {
+  color: var(--rtg-text-muted, #86868b);
+  background: color-mix(in srgb, var(--rtg-text-muted, #86868b) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rtg-text-muted, #86868b) 20%, transparent);
+  border-radius: 6px;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  font-style: italic;
+  cursor: default;
+}
 
 /* === Review Modal === */
 .rtg-review-modal-overlay {

@@ -69,6 +69,95 @@ class RTG_Mailer {
     }
 
     /**
+     * Notify the site admin that a new guest review needs moderation.
+     *
+     * @param string $guest_name  Guest display name.
+     * @param string $guest_email Guest email address.
+     * @param array  $review      Review data (tire_id, rating, review_title, review_text).
+     * @return bool Whether the email was sent successfully.
+     */
+    public static function send_admin_guest_review_notification( $guest_name, $guest_email, $review ) {
+        $admin_email = get_option( 'admin_email' );
+        if ( ! $admin_email ) {
+            return false;
+        }
+
+        $tire_id   = $review['tire_id'] ?? '';
+        $tire      = RTG_Database::get_tire( $tire_id );
+        $tire_name = $tire ? trim( ( $tire['brand'] ?? '' ) . ' ' . ( $tire['model'] ?? '' ) ) : $tire_id;
+
+        $subject = 'New guest review pending approval — ' . $tire_name;
+
+        $stars_html = self::render_stars_html( (int) ( $review['rating'] ?? 0 ) );
+
+        $review_snippet = '';
+        if ( ! empty( $review['review_title'] ) ) {
+            $review_snippet .= '<p style="margin: 0 0 8px 0; font-weight: 600; color: #1d1d1f;">' . esc_html( $review['review_title'] ) . '</p>';
+        }
+        if ( ! empty( $review['review_text'] ) ) {
+            $text = mb_strlen( $review['review_text'] ) > 500
+                ? mb_substr( $review['review_text'], 0, 500 ) . '...'
+                : $review['review_text'];
+            $review_snippet .= '<p style="margin: 0; color: #6e6e73; font-size: 14px;">' . esc_html( $text ) . '</p>';
+        }
+
+        $reviews_admin_url = admin_url( 'admin.php?page=rivian-tire-guide-reviews' );
+
+        $site_name = esc_html( get_bloginfo( 'name' ) );
+
+        $body = '<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="margin: 0; padding: 0; background-color: #f5f5f7; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f7; padding: 40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+  <tr>
+    <td style="background-color: #1d1d1f; padding: 24px 32px; text-align: center;">
+      <h1 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 600;">' . $site_name . '</h1>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 32px;">
+      <h2 style="margin: 0 0 16px 0; color: #1d1d1f; font-size: 22px; font-weight: 600;">New guest review needs approval</h2>
+      <p style="margin: 0 0 20px 0; color: #6e6e73; font-size: 16px; line-height: 1.5;">
+        <strong style="color: #1d1d1f;">' . esc_html( $guest_name ) . '</strong> (' . esc_html( $guest_email ) . ') submitted a review for <strong style="color: #1d1d1f;">' . esc_html( $tire_name ) . '</strong>.
+      </p>
+      <div style="background-color: #f5f5f7; border-radius: 8px; padding: 20px; margin: 0 0 24px 0;">
+        <div style="margin-bottom: 12px;">' . $stars_html . '</div>
+        ' . $review_snippet . '
+      </div>
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td align="center">
+            <a href="' . esc_url( $reviews_admin_url ) . '" style="display: inline-block; background-color: #0071e3; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Review in Dashboard</a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 20px 32px; border-top: 1px solid #e5e5e5; text-align: center;">
+      <p style="margin: 0; color: #86868b; font-size: 12px;">
+        This email was sent because a guest submitted a tire review on ' . $site_name . '.
+      </p>
+    </td>
+  </tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>';
+
+        $headers = array( 'Content-Type: text/html; charset=UTF-8' );
+        if ( $site_name ) {
+            $headers[] = 'From: ' . $site_name . ' <' . $admin_email . '>';
+        }
+
+        return wp_mail( $admin_email, $subject, $body, $headers );
+    }
+
+    /**
      * Get the tire guide page URL with a tire parameter.
      *
      * @param string $tire_id Tire identifier for deep linking.
