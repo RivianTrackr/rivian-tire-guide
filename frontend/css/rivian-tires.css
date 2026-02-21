@@ -62,11 +62,13 @@
     flex-wrap: wrap !important;
   }
   .rtg-search-row .search-container {
-    flex: 1 1 100% !important;
+    flex-basis: 100% !important;
+    width: 100% !important;
   }
-  .rtg-search-btn,
-  .rtg-ai-submit {
+  .rtg-search-row .rtg-search-btn,
+  .rtg-search-row .rtg-ai-submit {
     flex: 1 1 0 !important;
+    min-width: 0 !important;
   }
 }
 

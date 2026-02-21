@@ -93,6 +93,6 @@ export function styleButton(button) {
   button.style.borderRadius = "6px";
   button.style.cursor = "pointer";
   button.style.fontWeight = "600";
-  button.onmouseover = () => button.style.backgroundColor = rtgColor('accent');
-  button.onmouseout = () => button.style.backgroundColor = rtgColor('bg-primary');
+  button.onmouseover = () => { button.style.backgroundColor = rtgColor('accent'); button.style.color = '#0f172a'; };
+  button.onmouseout = () => { button.style.backgroundColor = rtgColor('bg-primary'); button.style.color = rtgColor('text-primary'); };
 }
