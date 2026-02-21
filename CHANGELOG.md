@@ -4,14 +4,18 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.18.5] - 2026-02-21
+## [1.18.6] - 2026-02-21
 
 ### Added
 - **RivianTrackr search redirect** — When a search returns no matching tires, a "Search RivianTrackr" link now appears directing users to riviantrackr.com for non-tire topics. Applies to both the local search no-results view and the AI recommendation path.
 
 ### Changed
 - **AI error display** — When a query is present, the red AI error text is hidden and replaced with only the clean RivianTrackr search redirect link. The error message still appears for edge cases with no query.
-- **Plugin version** — Bumped to 1.18.5.
+- **RivianTrackr link hover** — Removed underline on hover for the RivianTrackr search redirect links.
+
+### Fixed
+- **Analytics tire list spacing** — Tire name and "unique visitors" text in the analytics dashboard now stack on separate lines instead of running together.
+- **Plugin version** — Bumped to 1.18.6.
 
 ## [1.18.3] - 2026-02-21
 
