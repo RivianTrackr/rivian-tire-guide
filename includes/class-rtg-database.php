@@ -88,6 +88,76 @@ class RTG_Database {
         return $result;
     }
 
+    /**
+     * Fetch multiple tires by their tire_id values and return them in frontend array format.
+     *
+     * @param array $tire_ids Array of tire_id strings.
+     * @return array Array of tire rows in the same format as get_tires_as_array().
+     */
+    public static function get_tires_by_ids( $tire_ids ) {
+        if ( empty( $tire_ids ) ) {
+            return array();
+        }
+
+        global $wpdb;
+        $table = self::tires_table();
+
+        // Sanitize and build placeholders.
+        $clean_ids    = array();
+        $placeholders = array();
+        foreach ( $tire_ids as $id ) {
+            $clean = sanitize_text_field( $id );
+            if ( preg_match( '/^[a-zA-Z0-9\-_]+$/', $clean ) && strlen( $clean ) <= 50 ) {
+                $clean_ids[]    = $clean;
+                $placeholders[] = '%s';
+            }
+        }
+
+        if ( empty( $clean_ids ) ) {
+            return array();
+        }
+
+        $placeholder_sql = implode( ',', $placeholders );
+        $sql = $wpdb->prepare(
+            "SELECT * FROM {$table} WHERE tire_id IN ({$placeholder_sql})",
+            ...$clean_ids
+        );
+        $rows = $wpdb->get_results( $sql, ARRAY_A );
+
+        // Convert to frontend array format.
+        $result = array();
+        foreach ( $rows as $tire ) {
+            $result[] = array(
+                (string) $tire['tire_id'],
+                (string) $tire['size'],
+                (string) $tire['diameter'],
+                (string) $tire['brand'],
+                (string) $tire['model'],
+                (string) $tire['category'],
+                (string) $tire['price'],
+                (string) $tire['mileage_warranty'],
+                (string) $tire['weight_lb'],
+                (string) $tire['three_pms'],
+                (string) $tire['tread'],
+                (string) $tire['load_index'],
+                (string) $tire['max_load_lb'],
+                (string) $tire['load_range'],
+                (string) $tire['speed_rating'],
+                (string) $tire['psi'],
+                (string) $tire['utqg'],
+                (string) $tire['tags'],
+                (string) $tire['link'],
+                (string) $tire['image'],
+                (string) $tire['efficiency_score'],
+                (string) $tire['efficiency_grade'],
+                (string) $tire['review_link'],
+                (string) $tire['created_at'],
+            );
+        }
+
+        return $result;
+    }
+
     public static function get_tire( $tire_id ) {
         global $wpdb;
         $table = self::tires_table();

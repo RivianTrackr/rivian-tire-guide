@@ -606,6 +606,11 @@ class RTG_Ajax {
             wp_send_json_error( $result->get_error_message() );
         }
 
+        // Include full tire row data so the frontend can render cards for
+        // tires that may not already be loaded (e.g. server-side pagination).
+        $rec_ids = array_column( $result['recommendations'], 'tire_id' );
+        $result['tire_rows'] = RTG_Database::get_tires_by_ids( $rec_ids );
+
         wp_send_json_success( $result );
     }
 
