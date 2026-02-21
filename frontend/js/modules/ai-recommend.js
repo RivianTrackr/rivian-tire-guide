@@ -14,8 +14,10 @@
 import { state } from './state.js';
 import { getDOMElement, debounce, escapeHTML, safeString } from './helpers.js';
 import { filterAndRender } from './filters.js';
+import { isServerSide, serverSideFilterAndRender } from './server.js';
 import { RTG_ANALYTICS } from './analytics.js';
 import { safeLinkURL } from './validation.js';
+import { loadTireRatings } from './ratings.js';
 
 let aiActive = false;
 let lastQuery = '';
@@ -181,7 +183,7 @@ export function submitAiQuery(query) {
         return;
       }
 
-      const { recommendations, summary } = result.data;
+      const { recommendations, summary, tire_rows } = result.data;
 
       if (!recommendations || recommendations.length === 0) {
         showAiError(summary || 'No matching tires found. Try a different query.');
@@ -191,8 +193,8 @@ export function submitAiQuery(query) {
       // Track the AI query.
       RTG_ANALYTICS.trackAiSearch(query, recommendations.length);
 
-      // Apply AI recommendations: filter allRows to show only recommended tires.
-      applyAiRecommendations(recommendations, summary);
+      // Apply AI recommendations using the full tire row data from the server.
+      applyAiRecommendations(recommendations, summary, tire_rows || []);
     })
     .catch(() => {
       if (submitBtn) submitBtn.disabled = false;
@@ -216,10 +218,11 @@ function showAiError(message) {
 /**
  * Apply AI recommendations: reorder and filter the tire grid.
  *
- * @param {Array} recommendations Array of {tire_id, reason}.
+ * @param {Array}  recommendations Array of {tire_id, reason}.
  * @param {string} summary AI summary text.
+ * @param {Array}  tireRows Full tire row data from the server for recommended tires.
  */
-function applyAiRecommendations(recommendations, summary) {
+function applyAiRecommendations(recommendations, summary, tireRows) {
   const statusEl = getDOMElement('rtgAiStatus');
   const summaryEl = getDOMElement('rtgAiSummary');
 
@@ -237,12 +240,24 @@ function applyAiRecommendations(recommendations, summary) {
     recOrder.push(rec.tire_id);
   });
 
-  // Filter state.allRows to only include recommended tires, in AI order.
+  // Build a lookup from the server-provided tire rows so we can find tires
+  // regardless of whether they are already in state.allRows.
+  const serverRowMap = new Map();
+  tireRows.forEach(row => {
+    if (row && row[0]) {
+      serverRowMap.set(row[0], row);
+    }
+  });
+
+  // Build ordered rows: prefer state.allRows (already loaded), fall back to
+  // server-provided tire rows for tires not yet loaded (server-side mode).
   const orderedRows = [];
   recOrder.forEach(tireId => {
-    const row = state.allRows.find(r => r[0] === tireId);
-    if (row) {
-      orderedRows.push(row);
+    const localRow = state.allRows.find(r => r[0] === tireId);
+    if (localRow) {
+      orderedRows.push(localRow);
+    } else if (serverRowMap.has(tireId)) {
+      orderedRows.push(serverRowMap.get(tireId));
     }
   });
 
@@ -333,9 +348,12 @@ function applyAiRecommendations(recommendations, summary) {
  * Render the AI-filtered tire cards and update the count.
  */
 function renderAiResults() {
+  // Load ratings for the AI-recommended tires, then render cards.
+  const tireIds = state.filteredRows.map(row => row[0]).filter(Boolean);
+
   // Import renderCards dynamically to avoid circular dependency.
-  import('./cards.js').then(({ renderCards }) => {
-    renderCards();
+  import('./cards.js').then(({ renderCards }) => loadTireRatings(tireIds).then(() => {
+    renderCards(state.filteredRows);
 
     // Update tire count.
     const countDisplay = getDOMElement('tireCount');
@@ -345,10 +363,19 @@ function renderAiResults() {
 
     // Hide no-results if we have results.
     const noResults = getDOMElement('noResults');
-    if (noResults) {
-      noResults.style.display = state.filteredRows.length > 0 ? 'none' : '';
+    const tireCards = getDOMElement('tireCards');
+    if (state.filteredRows.length > 0) {
+      if (noResults) noResults.style.display = 'none';
+      if (tireCards) tireCards.style.display = 'grid';
+    } else {
+      if (noResults) noResults.style.display = '';
+      if (tireCards) tireCards.style.display = 'none';
     }
-  });
+
+    // Hide normal pagination since AI results show all at once.
+    const paginationControls = getDOMElement('paginationControls');
+    if (paginationControls) paginationControls.innerHTML = '';
+  }));
 }
 
 /**
@@ -378,8 +405,12 @@ export function clearAiRecommendations(keepInput) {
     input.value = '';
   }
 
-  // Restore normal filtering.
-  filterAndRender();
+  // Restore normal filtering — use the appropriate mode.
+  if (isServerSide()) {
+    serverSideFilterAndRender();
+  } else {
+    filterAndRender();
+  }
 }
 
 /**
