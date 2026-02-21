@@ -216,7 +216,15 @@ $status_badge = function ( $status ) {
                                     </a>
                                     <div style="color: var(--rtg-text-muted, #86868b); font-size: 12px;"><?php echo esc_html( $r['tire_id'] ); ?></div>
                                 </td>
-                                <td><?php echo esc_html( $user_map[ $r['user_id'] ] ?? 'User #' . $r['user_id'] ); ?></td>
+                                <td>
+                                    <?php if ( (int) $r['user_id'] === 0 ) : ?>
+                                        <div style="font-weight: 600; color: var(--rtg-text-primary, #1d1d1f);"><?php echo esc_html( $r['guest_name'] ?? 'Guest' ); ?></div>
+                                        <div style="color: var(--rtg-text-muted, #86868b); font-size: 12px;"><?php echo esc_html( $r['guest_email'] ?? '' ); ?></div>
+                                        <span class="rtg-badge rtg-badge-warning" style="font-size: 10px; margin-top: 2px; display: inline-block;">Guest</span>
+                                    <?php else : ?>
+                                        <?php echo esc_html( $user_map[ $r['user_id'] ] ?? 'User #' . $r['user_id'] ); ?>
+                                    <?php endif; ?>
+                                </td>
                                 <td style="white-space: nowrap;"><?php echo $render_stars( intval( $r['rating'] ) ); ?></td>
                                 <td style="max-width: 340px;">
                                     <?php if ( ! empty( $r['review_title'] ) || ! empty( $r['review_text'] ) ) : ?>

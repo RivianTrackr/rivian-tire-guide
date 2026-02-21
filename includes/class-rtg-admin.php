@@ -691,6 +691,27 @@ class RTG_Admin {
 
         RTG_Database::update_review_status( $rating_id, $status );
 
+        // Send approval notification email to the reviewer.
+        if ( $status === 'approved' ) {
+            $review = RTG_Database::get_review_by_id( $rating_id );
+            if ( $review ) {
+                $user_id = (int) $review['user_id'];
+
+                if ( $user_id > 0 ) {
+                    $user  = get_user_by( 'ID', $user_id );
+                    $email = $user ? $user->user_email : '';
+                    $name  = $user ? $user->display_name : 'Reviewer';
+                } else {
+                    $email = $review['guest_email'] ?? '';
+                    $name  = $review['guest_name'] ?? 'Guest';
+                }
+
+                if ( $email ) {
+                    RTG_Mailer::send_approval_notification( $email, $name, $review, $review );
+                }
+            }
+        }
+
         // Preserve current tab in redirect.
         $redirect_args = array( 'page' => 'rtg-reviews', 'message' => $status );
         if ( ! empty( $_GET['status'] ) ) {

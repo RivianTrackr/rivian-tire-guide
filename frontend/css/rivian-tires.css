@@ -1698,6 +1698,15 @@
   color: var(--rtg-text-muted, #8493a5);
   margin-top: 4px;
 }
+.rtg-review-guest-notice {
+  font-size: 13px;
+  color: var(--rtg-text-muted, #8493a5);
+  background: var(--rtg-bg-secondary, #0d1b2a);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 10px;
+  line-height: 1.4;
+}
 
 /* Modal footer */
 .rtg-review-modal-footer {
