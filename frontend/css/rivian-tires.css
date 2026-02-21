@@ -58,18 +58,6 @@
   #wheelDrawerTrigger {
     padding-top: 20px !important;
   }
-  .rtg-search-row {
-    flex-wrap: wrap !important;
-  }
-  .rtg-search-row .search-container {
-    flex-basis: 100% !important;
-    width: 100% !important;
-  }
-  .rtg-search-row .rtg-search-btn,
-  .rtg-search-row .rtg-ai-submit {
-    flex: 1 1 0 !important;
-    min-width: 0 !important;
-  }
 }
 
 /* === Search Row (input + Search button + optional AI button) === */
@@ -163,6 +151,26 @@
 .rtg-ai-submit:disabled {
   opacity: 0.5 !important;
   cursor: not-allowed !important;
+}
+
+/* Mobile: stack buttons below search input */
+@media (max-width: 600px) {
+  .rtg-search-row {
+    flex-wrap: wrap !important;
+  }
+  .rtg-search-row .search-container {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+  .rtg-search-btn {
+    flex: 1 1 0 !important;
+    flex-shrink: 1 !important;
+  }
+  .rtg-ai-submit {
+    flex: 1 1 0 !important;
+    flex-shrink: 1 !important;
+  }
 }
 
 /* AI Status / Loading */
