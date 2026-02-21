@@ -94,12 +94,7 @@ export function submitTireRating(tireId, rating, reviewTitle = '', reviewText = 
   }
 
   if (!state.isLoggedIn) {
-    if (typeof tireRatingAjax !== 'undefined' && tireRatingAjax.login_url) {
-      window.location.href = tireRatingAjax.login_url;
-    } else {
-      alert('Please log in or sign up to review tires');
-    }
-    return Promise.reject('Not logged in');
+    return Promise.reject('Not logged in — use submitGuestTireRating instead');
   }
 
   if (typeof tireRatingAjax === 'undefined' || !tireRatingAjax.nonce) {
@@ -142,6 +137,63 @@ export function submitTireRating(tireId, rating, reviewTitle = '', reviewText = 
       return data.data;
     } else {
       throw new Error(data.data || 'Failed to save review');
+    }
+  });
+}
+
+export function submitGuestTireRating(tireId, rating, guestName, guestEmail, reviewTitle = '', reviewText = '', honeypot = '') {
+  if (!VALIDATION_PATTERNS.tireId.test(tireId)) {
+    return Promise.reject('Invalid tire ID');
+  }
+
+  const validRating = validateNumeric(rating, NUMERIC_BOUNDS.rating);
+  if (validRating !== rating) {
+    return Promise.reject('Invalid rating');
+  }
+
+  if (!guestName || !guestName.trim()) {
+    return Promise.reject('Name is required');
+  }
+
+  if (!guestEmail || !guestEmail.trim()) {
+    return Promise.reject('Email is required');
+  }
+
+  if (!reviewTitle.trim() && !reviewText.trim()) {
+    return Promise.reject('Please write a review title or body text');
+  }
+
+  if (typeof tireRatingAjax === 'undefined' || !tireRatingAjax.nonce) {
+    return Promise.reject('Security validation failed');
+  }
+
+  const formData = new FormData();
+  formData.append('action', 'submit_guest_tire_rating');
+  formData.append('tire_id', tireId);
+  formData.append('rating', validRating.toString());
+  formData.append('guest_name', guestName.trim().substring(0, 100));
+  formData.append('guest_email', guestEmail.trim().substring(0, 254));
+  formData.append('nonce', tireRatingAjax.nonce);
+
+  if (reviewTitle) {
+    formData.append('review_title', reviewTitle.substring(0, 200));
+  }
+  if (reviewText) {
+    formData.append('review_text', reviewText.substring(0, 5000));
+  }
+  // Honeypot field — should be empty for real users.
+  formData.append('website', honeypot);
+
+  return fetch(tireRatingAjax.ajaxurl, {
+    method: 'POST',
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      return data.data;
+    } else {
+      throw new Error(data.data || 'Failed to submit review');
     }
   });
 }
@@ -245,16 +297,12 @@ export function createRatingHTML(tireId, average = 0, count = 0, userRating = 0)
     writeBtn.textContent = hasReview ? 'Edit Review' : 'Write a Review';
     reviewActions.appendChild(writeBtn);
   } else {
-    const loginPrompt = document.createElement('a');
-    loginPrompt.className = 'login-prompt';
-    loginPrompt.href = typeof tireRatingAjax !== 'undefined' ? tireRatingAjax.login_url : '/wp-login.php';
-
-    const promptIcon = document.createElement('span');
-    promptIcon.innerHTML = rtgIcon('pen-to-square', 14);
-    promptIcon.style.display = 'inline-flex';
-    loginPrompt.appendChild(promptIcon);
-    loginPrompt.appendChild(document.createTextNode(' Log in to review this tire'));
-    reviewActions.appendChild(loginPrompt);
+    // Guest review button — opens modal with name/email fields.
+    const guestBtn = document.createElement('button');
+    guestBtn.className = 'review-action-link write-review-btn';
+    guestBtn.dataset.tireId = tireId;
+    guestBtn.textContent = 'Write a Review';
+    reviewActions.appendChild(guestBtn);
   }
 
   container.appendChild(reviewActions);
@@ -374,11 +422,66 @@ export function openReviewModal(tireId, preselectedRating = 0) {
     starsRow.querySelectorAll('.rtg-review-star').forEach(s => s.classList.remove('hovered'));
   }, true);
 
+  const isGuest = !state.isLoggedIn;
+
+  // Guest identity fields (name, email, honeypot) — created here, appended in order below.
+  let nameInput, emailInput, honeypotInput, guestNameSection, guestEmailSection;
+  if (isGuest) {
+    guestNameSection = document.createElement('div');
+    guestNameSection.className = 'rtg-review-field';
+
+    const nameLabel = document.createElement('label');
+    nameLabel.textContent = 'Your Name';
+    nameLabel.setAttribute('for', 'rtg-review-name');
+
+    nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.id = 'rtg-review-name';
+    nameInput.className = 'rtg-review-input';
+    nameInput.placeholder = 'John Doe';
+    nameInput.maxLength = 100;
+    nameInput.required = true;
+
+    guestNameSection.appendChild(nameLabel);
+    guestNameSection.appendChild(nameInput);
+
+    guestEmailSection = document.createElement('div');
+    guestEmailSection.className = 'rtg-review-field';
+
+    const emailLabel = document.createElement('label');
+    emailLabel.textContent = 'Your Email';
+    emailLabel.setAttribute('for', 'rtg-review-email');
+
+    emailInput = document.createElement('input');
+    emailInput.type = 'email';
+    emailInput.id = 'rtg-review-email';
+    emailInput.className = 'rtg-review-input';
+    emailInput.placeholder = 'you@example.com';
+    emailInput.maxLength = 254;
+    emailInput.required = true;
+
+    const emailNote = document.createElement('div');
+    emailNote.className = 'rtg-review-char-count';
+    emailNote.textContent = 'Your email will not be displayed publicly.';
+
+    guestEmailSection.appendChild(emailLabel);
+    guestEmailSection.appendChild(emailInput);
+    guestEmailSection.appendChild(emailNote);
+
+    // Honeypot field — hidden from real users, bots fill it.
+    honeypotInput = document.createElement('input');
+    honeypotInput.type = 'text';
+    honeypotInput.name = 'website';
+    honeypotInput.tabIndex = -1;
+    honeypotInput.autocomplete = 'off';
+    honeypotInput.style.cssText = 'position:absolute;left:-9999px;top:-9999px;opacity:0;height:0;width:0;';
+  }
+
   const titleSection = document.createElement('div');
   titleSection.className = 'rtg-review-field';
 
   const titleLabel = document.createElement('label');
-  titleLabel.textContent = 'Review Title (optional)';
+  titleLabel.textContent = isGuest ? 'Review Title' : 'Review Title (optional)';
   titleLabel.setAttribute('for', 'rtg-review-title');
 
   const titleInput = document.createElement('input');
@@ -396,7 +499,7 @@ export function openReviewModal(tireId, preselectedRating = 0) {
   textSection.className = 'rtg-review-field';
 
   const textLabel = document.createElement('label');
-  textLabel.textContent = 'Your Review (optional)';
+  textLabel.textContent = isGuest ? 'Your Review' : 'Your Review (optional)';
   textLabel.setAttribute('for', 'rtg-review-text');
 
   const textArea = document.createElement('textarea');
@@ -419,6 +522,14 @@ export function openReviewModal(tireId, preselectedRating = 0) {
   textSection.appendChild(textArea);
   textSection.appendChild(charCount);
 
+  // Guest notice about moderation.
+  if (isGuest) {
+    const notice = document.createElement('div');
+    notice.className = 'rtg-review-guest-notice';
+    notice.textContent = 'Your review will be visible after admin approval. You\u2019ll receive an email when it\u2019s approved.';
+    textSection.appendChild(notice);
+  }
+
   const footer = document.createElement('div');
   footer.className = 'rtg-review-modal-footer';
 
@@ -439,6 +550,11 @@ export function openReviewModal(tireId, preselectedRating = 0) {
 
   modal.appendChild(header);
   modal.appendChild(starSection);
+  if (isGuest) {
+    modal.appendChild(guestNameSection);
+    modal.appendChild(guestEmailSection);
+    modal.appendChild(honeypotInput);
+  }
   modal.appendChild(titleSection);
   modal.appendChild(textSection);
   modal.appendChild(footer);
@@ -446,7 +562,11 @@ export function openReviewModal(tireId, preselectedRating = 0) {
   document.body.appendChild(overlay);
 
   requestAnimationFrame(() => overlay.classList.add('active'));
-  titleInput.focus();
+  if (isGuest && nameInput) {
+    nameInput.focus();
+  } else {
+    titleInput.focus();
+  }
 
   function closeModal() {
     overlay.classList.remove('active');
@@ -471,6 +591,25 @@ export function openReviewModal(tireId, preselectedRating = 0) {
       return;
     }
 
+    // Guest-specific validation.
+    if (isGuest) {
+      if (!nameInput.value.trim()) {
+        errorMsg.textContent = 'Please enter your name.';
+        nameInput.focus();
+        return;
+      }
+      if (!emailInput.value.trim() || !emailInput.validity.valid) {
+        errorMsg.textContent = 'Please enter a valid email address.';
+        emailInput.focus();
+        return;
+      }
+      if (!titleInput.value.trim() && !textArea.value.trim()) {
+        errorMsg.textContent = 'Please write a review title or body text.';
+        titleInput.focus();
+        return;
+      }
+    }
+
     errorMsg.textContent = '';
     submitBtn.disabled = true;
     submitBtn.textContent = 'Submitting...';
@@ -478,10 +617,22 @@ export function openReviewModal(tireId, preselectedRating = 0) {
     const hasReviewContent = textArea.value.trim().length > 0 || titleInput.value.trim().length > 0;
     const isUpdate = !!currentText || !!currentTitle;
 
-    submitTireRating(tireId, selectedRating, titleInput.value.trim(), textArea.value.trim())
+    let submitPromise;
+    if (isGuest) {
+      submitPromise = submitGuestTireRating(
+        tireId, selectedRating,
+        nameInput.value.trim(), emailInput.value.trim(),
+        titleInput.value.trim(), textArea.value.trim(),
+        honeypotInput ? honeypotInput.value : ''
+      );
+    } else {
+      submitPromise = submitTireRating(tireId, selectedRating, titleInput.value.trim(), textArea.value.trim());
+    }
+
+    submitPromise
       .then((result) => {
         closeModal();
-        if (hasReviewContent && result && result.review_status === 'pending') {
+        if (isGuest || (hasReviewContent && result && result.review_status === 'pending')) {
           showToast('Thanks! Your review has been submitted and is pending approval.', 'info');
         } else if (isUpdate) {
           showToast('Your review has been updated.', 'success');
@@ -492,7 +643,7 @@ export function openReviewModal(tireId, preselectedRating = 0) {
       .catch(err => {
         submitBtn.disabled = false;
         submitBtn.textContent = currentText ? 'Update Review' : 'Submit Review';
-        errorMsg.textContent = typeof err === 'string' ? err : 'Failed to submit. Please try again.';
+        errorMsg.textContent = typeof err === 'string' ? err : (err.message || 'Failed to submit. Please try again.');
       });
   });
 }
@@ -600,20 +751,19 @@ function loadReviews(tireId, container, page) {
       emptyDiv.appendChild(headingEl);
       emptyDiv.appendChild(subEl);
 
-      if (state.isLoggedIn) {
-        const ctaBtn = document.createElement('button');
-        ctaBtn.className = 'rtg-reviews-empty-cta';
-        ctaBtn.textContent = 'Write a Review';
-        ctaBtn.addEventListener('click', () => {
-          const overlayEl = container.closest('.rtg-reviews-drawer-overlay');
-          if (overlayEl) {
-            overlayEl.classList.remove('active');
-            setTimeout(() => overlayEl.remove(), 200);
-          }
-          openReviewModal(tireId, state.userRatings[tireId] || 0);
-        });
-        emptyDiv.appendChild(ctaBtn);
-      }
+      // Show CTA for both logged-in users and guests.
+      const ctaBtn = document.createElement('button');
+      ctaBtn.className = 'rtg-reviews-empty-cta';
+      ctaBtn.textContent = 'Write a Review';
+      ctaBtn.addEventListener('click', () => {
+        const overlayEl = container.closest('.rtg-reviews-drawer-overlay');
+        if (overlayEl) {
+          overlayEl.classList.remove('active');
+          setTimeout(() => overlayEl.remove(), 200);
+        }
+        openReviewModal(tireId, state.userRatings[tireId] || 0);
+      });
+      emptyDiv.appendChild(ctaBtn);
 
       container.innerHTML = '';
       container.appendChild(emptyDiv);
@@ -785,3 +935,4 @@ export function showToast(message, type = 'success', duration = 4000) {
     setTimeout(() => toast.remove(), 300);
   }, duration);
 }
+

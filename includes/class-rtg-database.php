@@ -1089,6 +1089,80 @@ class RTG_Database {
     }
 
     /**
+     * Insert a guest review (user_id = 0, always pending).
+     *
+     * @param string $tire_id      Tire identifier.
+     * @param string $guest_name   Guest display name.
+     * @param string $guest_email  Guest email address.
+     * @param int    $rating       Star rating 1-5.
+     * @param string $review_title Optional review title.
+     * @param string $review_text  Review body text.
+     * @return int|false Rows inserted or false on failure.
+     */
+    public static function set_guest_rating( $tire_id, $guest_name, $guest_email, $rating, $review_title = '', $review_text = '' ) {
+        global $wpdb;
+        $table = self::ratings_table();
+
+        return $wpdb->insert(
+            $table,
+            array(
+                'tire_id'       => $tire_id,
+                'user_id'       => 0,
+                'rating'        => $rating,
+                'review_title'  => $review_title,
+                'review_text'   => $review_text,
+                'review_status' => 'pending',
+                'guest_name'    => $guest_name,
+                'guest_email'   => $guest_email,
+            ),
+            array( '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s' )
+        );
+    }
+
+    /**
+     * Get a single review by its ID (for email notifications).
+     *
+     * @param int $rating_id Rating row ID.
+     * @return array|null Review data with tire info, or null.
+     */
+    public static function get_review_by_id( $rating_id ) {
+        global $wpdb;
+        $ratings_table = self::ratings_table();
+        $tires_table   = self::tires_table();
+
+        return $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT r.*, t.brand, t.model
+                 FROM {$ratings_table} r
+                 LEFT JOIN {$tires_table} t ON r.tire_id = t.tire_id
+                 WHERE r.id = %d",
+                $rating_id
+            ),
+            ARRAY_A
+        );
+    }
+
+    /**
+     * Check if a guest has already reviewed a specific tire.
+     *
+     * @param string $guest_email Guest email address.
+     * @param string $tire_id     Tire identifier.
+     * @return bool True if a review exists.
+     */
+    public static function guest_review_exists( $guest_email, $tire_id ) {
+        global $wpdb;
+        $table = self::ratings_table();
+
+        return (bool) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$table} WHERE user_id = 0 AND guest_email = %s AND tire_id = %s",
+                $guest_email,
+                $tire_id
+            )
+        );
+    }
+
+    /**
      * Get reviews (all approved ratings) for a specific tire.
      *
      * @param string $tire_id Tire identifier.
@@ -1102,7 +1176,7 @@ class RTG_Database {
 
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT id, tire_id, user_id, rating, review_title, review_text, created_at, updated_at
+                "SELECT id, tire_id, user_id, rating, review_title, review_text, guest_name, created_at, updated_at
                  FROM {$table}
                  WHERE tire_id = %s AND review_status = 'approved'
                  ORDER BY updated_at DESC
@@ -1118,8 +1192,8 @@ class RTG_Database {
             return array();
         }
 
-        // Map user IDs to display names.
-        $user_ids = array_unique( array_column( $rows, 'user_id' ) );
+        // Map registered user IDs to display names (skip guest rows with user_id=0).
+        $user_ids = array_unique( array_filter( array_column( $rows, 'user_id' ) ) );
         $user_map = array();
         if ( ! empty( $user_ids ) ) {
             $users = get_users( array( 'include' => $user_ids, 'fields' => array( 'ID', 'display_name' ) ) );
@@ -1129,7 +1203,12 @@ class RTG_Database {
         }
 
         foreach ( $rows as &$row ) {
-            $row['display_name'] = $user_map[ $row['user_id'] ] ?? 'Anonymous';
+            if ( (int) $row['user_id'] === 0 ) {
+                $row['display_name'] = $row['guest_name'] ?: 'Guest';
+            } else {
+                $row['display_name'] = $user_map[ $row['user_id'] ] ?? 'Anonymous';
+            }
+            unset( $row['guest_name'] );
         }
 
         return $rows;
@@ -1197,7 +1276,9 @@ class RTG_Database {
 
         if ( ! empty( $search ) ) {
             $like     = '%' . $wpdb->esc_like( $search ) . '%';
-            $where[]  = '( r.tire_id LIKE %s OR t.brand LIKE %s OR t.model LIKE %s OR r.review_title LIKE %s OR r.review_text LIKE %s )';
+            $where[]  = '( r.tire_id LIKE %s OR t.brand LIKE %s OR t.model LIKE %s OR r.review_title LIKE %s OR r.review_text LIKE %s OR r.guest_name LIKE %s OR r.guest_email LIKE %s )';
+            $values[] = $like;
+            $values[] = $like;
             $values[] = $like;
             $values[] = $like;
             $values[] = $like;
@@ -1242,7 +1323,9 @@ class RTG_Database {
 
         if ( ! empty( $search ) ) {
             $like     = '%' . $wpdb->esc_like( $search ) . '%';
-            $where[]  = '( r.tire_id LIKE %s OR t.brand LIKE %s OR t.model LIKE %s OR r.review_title LIKE %s OR r.review_text LIKE %s )';
+            $where[]  = '( r.tire_id LIKE %s OR t.brand LIKE %s OR t.model LIKE %s OR r.review_title LIKE %s OR r.review_text LIKE %s OR r.guest_name LIKE %s OR r.guest_email LIKE %s )';
+            $values[] = $like;
+            $values[] = $like;
             $values[] = $like;
             $values[] = $like;
             $values[] = $like;

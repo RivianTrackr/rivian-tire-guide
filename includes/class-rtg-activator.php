@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 10;
+    const DB_VERSION = 11;
 
     public static function activate() {
         self::create_tables();
@@ -105,11 +105,14 @@ class RTG_Activator {
             review_title VARCHAR(200) NOT NULL DEFAULT '',
             review_text TEXT NOT NULL,
             review_status VARCHAR(20) NOT NULL DEFAULT 'approved',
+            guest_name VARCHAR(100) NOT NULL DEFAULT '',
+            guest_email VARCHAR(254) NOT NULL DEFAULT '',
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),
-            UNIQUE KEY user_tire (user_id, tire_id),
-            KEY idx_tire_id (tire_id)
+            UNIQUE KEY user_tire (user_id, tire_id, guest_email),
+            KEY idx_tire_id (tire_id),
+            KEY idx_guest_email (guest_email)
         ) $charset_collate;
 
         CREATE TABLE {$favorites_table} (
@@ -174,6 +177,7 @@ class RTG_Activator {
             8 => 'migrate_8_create_click_events_table',
             9 => 'migrate_9_create_search_events_table',
             10 => 'migrate_10_add_search_type_column',
+            11 => 'migrate_11_add_guest_review_columns',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -272,5 +276,25 @@ class RTG_Activator {
     private static function migrate_10_add_search_type_column() {
         // Column added by dbDelta above with DEFAULT 'search',
         // so all existing rows are automatically tagged as regular searches.
+    }
+
+    /**
+     * Migration 11: Add guest_name and guest_email columns for guest reviews,
+     * and update the unique key to allow multiple guests per tire.
+     *
+     * Columns added by dbDelta above. This migration handles the unique key
+     * change which dbDelta cannot do automatically.
+     */
+    private static function migrate_11_add_guest_review_columns() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'rtg_ratings';
+
+        // Drop the old unique key (user_id, tire_id) and add the new one
+        // that includes guest_email so different guests can review the same tire.
+        $indexes = $wpdb->get_results( "SHOW INDEX FROM {$table} WHERE Key_name = 'user_tire'" );
+        if ( ! empty( $indexes ) ) {
+            $wpdb->query( "ALTER TABLE {$table} DROP INDEX user_tire" );
+            $wpdb->query( "ALTER TABLE {$table} ADD UNIQUE KEY user_tire (user_id, tire_id, guest_email)" );
+        }
     }
 }

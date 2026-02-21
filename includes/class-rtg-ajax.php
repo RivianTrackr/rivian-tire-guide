@@ -19,6 +19,9 @@ class RTG_Ajax {
         // Submit review — logged-in users only.
         add_action( 'wp_ajax_submit_tire_rating', array( $this, 'submit_tire_rating' ) );
 
+        // Submit guest review — non-logged-in users only.
+        add_action( 'wp_ajax_nopriv_submit_guest_tire_rating', array( $this, 'submit_guest_tire_rating' ) );
+
         // Get reviews for a tire — public.
         add_action( 'wp_ajax_get_tire_reviews', array( $this, 'get_tire_reviews' ) );
         add_action( 'wp_ajax_nopriv_get_tire_reviews', array( $this, 'get_tire_reviews' ) );
@@ -194,6 +197,127 @@ class RTG_Ajax {
             'user_review'    => $review_text,
             'review_status'  => $review_status,
         ) );
+    }
+
+    /**
+     * Submit a guest tire review (non-logged-in users).
+     * Requires name, email, rating, and review content. Always pending.
+     */
+    public function submit_guest_tire_rating() {
+        // Verify nonce.
+        if ( ! check_ajax_referer( 'tire_rating_nonce', 'nonce', false ) ) {
+            wp_send_json_error( 'Security check failed.' );
+        }
+
+        // Honeypot: if the hidden website field has a value, it's a bot.
+        if ( ! empty( $_POST['website'] ) ) {
+            // Silently pretend success so bots don't know they were caught.
+            wp_send_json_success( array( 'review_status' => 'pending' ) );
+        }
+
+        // IP-based rate limiting for guests.
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        if ( $this->is_guest_rate_limited( $ip ) ) {
+            wp_send_json_error( 'Too many submissions. Please wait a moment and try again.' );
+        }
+
+        // Strip WordPress magic quotes before sanitizing.
+        $post = wp_unslash( $_POST );
+
+        $tire_id      = sanitize_text_field( $post['tire_id'] ?? '' );
+        $rating       = intval( $post['rating'] ?? 0 );
+        $guest_name   = sanitize_text_field( $post['guest_name'] ?? '' );
+        $guest_email  = sanitize_email( $post['guest_email'] ?? '' );
+        $review_title = sanitize_text_field( $post['review_title'] ?? '' );
+        $review_text  = sanitize_textarea_field( $post['review_text'] ?? '' );
+
+        // Validate tire_id format.
+        if ( ! preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) || strlen( $tire_id ) > 50 ) {
+            wp_send_json_error( 'Invalid tire ID.' );
+        }
+
+        // Validate rating range.
+        if ( $rating < 1 || $rating > 5 ) {
+            wp_send_json_error( 'Rating must be between 1 and 5.' );
+        }
+
+        // Validate guest name.
+        if ( empty( $guest_name ) || mb_strlen( $guest_name ) > 100 ) {
+            wp_send_json_error( 'Name is required (100 characters max).' );
+        }
+
+        // Validate guest email.
+        if ( empty( $guest_email ) || ! is_email( $guest_email ) ) {
+            wp_send_json_error( 'A valid email address is required.' );
+        }
+
+        // Validate review field lengths.
+        if ( mb_strlen( $review_title ) > 200 ) {
+            wp_send_json_error( 'Review title must be 200 characters or less.' );
+        }
+
+        if ( mb_strlen( $review_text ) > 5000 ) {
+            wp_send_json_error( 'Review text must be 5,000 characters or less.' );
+        }
+
+        // Guests must provide review content (not just a star rating).
+        if ( empty( $review_title ) && empty( $review_text ) ) {
+            wp_send_json_error( 'Please write a review title or body text.' );
+        }
+
+        // Verify the tire exists.
+        $tire = RTG_Database::get_tire( $tire_id );
+        if ( ! $tire ) {
+            wp_send_json_error( 'Tire not found.' );
+        }
+
+        // Check for duplicate guest review on same tire.
+        if ( RTG_Database::guest_review_exists( $guest_email, $tire_id ) ) {
+            wp_send_json_error( 'You have already reviewed this tire.' );
+        }
+
+        // Record rate limit hit.
+        $this->record_guest_rate_limit( $ip );
+
+        // Save the guest review (always pending).
+        RTG_Database::set_guest_rating( $tire_id, $guest_name, $guest_email, $rating, $review_title, $review_text );
+
+        wp_send_json_success( array(
+            'review_status' => 'pending',
+        ) );
+    }
+
+    /**
+     * Check if a guest IP has exceeded the rate limit.
+     *
+     * @param string $ip Client IP address.
+     * @return bool True if rate-limited.
+     */
+    private function is_guest_rate_limited( $ip ) {
+        $transient_key = 'rtg_rate_guest_' . md5( $ip );
+        $attempts      = get_transient( $transient_key );
+
+        if ( false === $attempts ) {
+            return false;
+        }
+
+        return (int) $attempts >= self::RATE_LIMIT_MAX;
+    }
+
+    /**
+     * Record a guest rate-limit hit.
+     *
+     * @param string $ip Client IP address.
+     */
+    private function record_guest_rate_limit( $ip ) {
+        $transient_key = 'rtg_rate_guest_' . md5( $ip );
+        $attempts      = get_transient( $transient_key );
+
+        if ( false === $attempts ) {
+            set_transient( $transient_key, 1, self::RATE_LIMIT_WINDOW );
+        } else {
+            set_transient( $transient_key, (int) $attempts + 1, self::RATE_LIMIT_WINDOW );
+        }
     }
 
     /**
