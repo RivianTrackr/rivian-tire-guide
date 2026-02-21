@@ -153,40 +153,6 @@
   cursor: not-allowed !important;
 }
 
-/* === "New" badge on AI button — TEMPORARY: remove when no longer needed === */
-.rtg-new-badge {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 1px 6px !important;
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
-  line-height: 1.4 !important;
-  background: #0f172a !important;
-  color: var(--rtg-accent) !important;
-  border-radius: 4px !important;
-  white-space: nowrap !important;
-  animation: rtgBadgeIn 0.4s ease both !important;
-}
-
-@keyframes rtgBadgeIn {
-  from { opacity: 0; transform: scale(0.8); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.rtg-ai-submit:disabled .rtg-new-badge {
-  display: none !important;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .rtg-new-badge {
-    animation: none !important;
-  }
-}
-/* === END "New" badge === */
-
 /* Mobile: stack buttons below search input */
 @media (max-width: 600px) {
   .rtg-search-row {
