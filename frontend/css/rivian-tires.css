@@ -240,6 +240,11 @@
   }
 }
 
+/* === Ask AI suggestion in search dropdown === */
+.search-suggestion-ai {
+  border-top: 1px solid var(--rtg-border) !important;
+}
+
 /* === Filter Section — Card style matching compare page === */
 .filter-wrapper {
   background: var(--rtg-bg-card);

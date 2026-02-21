@@ -8,6 +8,13 @@ import { state } from './state.js';
 import { rtgColor, rtgIcon, safeString, getDOMElement, debounce } from './helpers.js';
 import { filterAndRender } from './filters.js';
 
+/**
+ * Check whether the AI feature is enabled for this page load.
+ */
+function isAiEnabled() {
+  return typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.aiEnabled;
+}
+
 // Smart Search Variables
 let searchIndex = {
   brands: new Map(),
@@ -305,7 +312,10 @@ function showSearchSuggestions(suggestions, inputElement) {
     existingDropdown.remove();
   }
 
-  if (!suggestions.length) return;
+  // When AI is enabled we always show the dropdown (for the "Ask AI" row)
+  // even when there are no local search matches.
+  const hasAi = isAiEnabled() && inputElement.value.trim().length >= 2;
+  if (!suggestions.length && !hasAi) return;
 
   const dropdown = document.createElement('div');
   dropdown.className = 'search-suggestions-dropdown';
@@ -405,6 +415,72 @@ function showSearchSuggestions(suggestions, inputElement) {
 
     dropdown.appendChild(item);
   });
+
+  // Append an "Ask AI" suggestion when AI is enabled and there is a query.
+  if (isAiEnabled()) {
+    const currentQuery = inputElement.value.trim();
+    if (currentQuery.length >= 2) {
+      const aiItem = document.createElement('div');
+      aiItem.className = 'search-suggestion-item search-suggestion-ai';
+      aiItem.style.cssText = `
+        padding: 12px 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: background-color 0.2s ease;
+        border-top: 1px solid ${rtgColor('border')};
+        background: color-mix(in srgb, ${rtgColor('accent')} 6%, ${rtgColor('bg-primary')});
+      `;
+
+      const aiContent = document.createElement('div');
+      aiContent.style.cssText = 'display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;';
+
+      const aiIcon = document.createElement('span');
+      aiIcon.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>';
+      aiIcon.style.cssText = `color: ${rtgColor('accent')}; width: 16px; display: flex; align-items: center; font-size: 14px;`;
+
+      const aiText = document.createElement('div');
+      aiText.style.cssText = `color: ${rtgColor('text-light')}; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;`;
+      aiText.textContent = `Ask AI: "${currentQuery}"`;
+
+      aiContent.appendChild(aiIcon);
+      aiContent.appendChild(aiText);
+
+      const aiBadge = document.createElement('span');
+      aiBadge.style.cssText = `
+        background: color-mix(in srgb, ${rtgColor('accent')} 20%, ${rtgColor('bg-input')});
+        color: ${rtgColor('accent')};
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        text-transform: uppercase;
+        font-weight: 600;
+        flex-shrink: 0;
+      `;
+      aiBadge.textContent = 'AI';
+
+      aiItem.appendChild(aiContent);
+      aiItem.appendChild(aiBadge);
+
+      aiItem.addEventListener('mouseenter', () => {
+        aiItem.style.backgroundColor = `color-mix(in srgb, ${rtgColor('accent')} 15%, ${rtgColor('bg-primary')})`;
+      });
+
+      aiItem.addEventListener('mouseleave', () => {
+        aiItem.style.backgroundColor = `color-mix(in srgb, ${rtgColor('accent')} 6%, ${rtgColor('bg-primary')})`;
+      });
+
+      aiItem.addEventListener('click', () => {
+        hideSearchSuggestions();
+        import('./ai-recommend.js').then(({ submitAiQuery }) => {
+          submitAiQuery(currentQuery);
+        });
+      });
+
+      dropdown.appendChild(aiItem);
+    }
+  }
 
   const container = inputElement.closest('.search-container');
   if (container) {
