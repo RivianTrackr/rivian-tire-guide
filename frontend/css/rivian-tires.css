@@ -1139,7 +1139,7 @@
 .no-results-riviantrackr a:hover,
 .rtg-ai-riviantrackr a:hover {
   color: var(--rtg-accent-hover);
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 /* === Pagination === */
