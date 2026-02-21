@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - **AI summary tire names** — Removed underline/highlight styling from tire names in the AI recommendation summary text. Tire chips below the summary already provide clickable navigation to each recommended tire.
 - **Button text color** — Changed Ask AI and Search button text color to dark (`#0f172a`) to match the affiliate "View Tire" buttons on tire cards, improving visual consistency across the plugin.
+- **Mobile search layout** — Search and Ask AI buttons now wrap below the search input on mobile (≤600px) instead of cramming all three elements on one row.
 - **Plugin version** — Bumped to 1.18.1.
 
 ## [1.18.0] - 2026-02-20

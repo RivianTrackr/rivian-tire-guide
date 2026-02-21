@@ -58,6 +58,16 @@
   #wheelDrawerTrigger {
     padding-top: 20px !important;
   }
+  .rtg-search-row {
+    flex-wrap: wrap !important;
+  }
+  .rtg-search-row .search-container {
+    flex: 1 1 100% !important;
+  }
+  .rtg-search-btn,
+  .rtg-ai-submit {
+    flex: 1 1 0 !important;
+  }
 }
 
 /* === Search Row (input + Search button + optional AI button) === */
