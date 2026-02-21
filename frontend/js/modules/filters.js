@@ -10,7 +10,7 @@ import { VALIDATION_PATTERNS, NUMERIC_BOUNDS, ALLOWED_SORT_OPTIONS, sanitizeInpu
 import { RTG_ANALYTICS } from './analytics.js';
 import { renderCards, preloadNextPageImages } from './cards.js';
 import { loadTireRatings } from './ratings.js';
-import { isPreciseMatch, hideSearchSuggestions } from './search.js';
+import { isPreciseMatch } from './search.js';
 import { isServerSide, serverSideFilterAndRender } from './server.js';
 
 export function buildFilterIndexes() {
@@ -523,7 +523,6 @@ export function resetFilters() {
     if (slider) updateSliderBackground(slider);
   });
 
-  hideSearchSuggestions();
   delete state.domCache["searchInput"];
   state.lastFilterState = null;
 

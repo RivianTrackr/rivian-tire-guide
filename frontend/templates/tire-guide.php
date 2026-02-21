@@ -13,30 +13,26 @@ if ( ! defined( 'ABSPATH' ) ) {
     Filter, Sort, and Compare
   </div>
   <div class="filter-body">
-    <?php if ( RTG_AI::is_enabled() ) : ?>
-    <div id="rtgAiWrapper" class="rtg-ai-section">
-      <div class="rtg-ai-row">
+    <div class="rtg-search-section">
+      <div class="rtg-search-row">
         <div class="search-container">
-          <label for="searchInput" class="screen-reader-text">Search tires or ask AI for recommendations</label>
-          <input id="searchInput" type="text" class="search-input" placeholder="Search tires or ask AI a question..." maxlength="500" aria-label="Search tires or ask AI for recommendations" />
-          <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
+          <label for="searchInput" class="screen-reader-text">Search tires<?php if ( RTG_AI::is_enabled() ) echo ' or ask AI for recommendations'; ?></label>
+          <input id="searchInput" type="text" class="search-input" placeholder="<?php echo RTG_AI::is_enabled() ? 'Search tires or ask AI a question...' : 'Search tires...'; ?>" maxlength="500" aria-label="Search tires" />
         </div>
-        <button id="rtgAiSubmit" class="rtg-ai-submit" type="button" aria-label="Get AI recommendations">
-          <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+        <button id="rtgSearchSubmit" class="rtg-search-btn" type="button" aria-label="Search tires">
+          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Search
         </button>
+        <?php if ( RTG_AI::is_enabled() ) : ?>
+        <button id="rtgAiSubmit" class="rtg-ai-submit" type="button" aria-label="Get AI recommendations">
+          <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> AI
+        </button>
+        <?php endif; ?>
       </div>
+      <?php if ( RTG_AI::is_enabled() ) : ?>
       <div id="rtgAiStatus" class="rtg-ai-status" style="display: none;" role="status" aria-live="polite"></div>
       <div id="rtgAiSummary" class="rtg-ai-summary" style="display: none;" role="region" aria-label="AI recommendations summary"></div>
+      <?php endif; ?>
     </div>
-    <?php else : ?>
-    <div class="filter-search">
-      <div class="search-container">
-        <label for="searchInput" class="screen-reader-text">Search tires</label>
-        <input id="searchInput" type="text" placeholder="Search tires..." class="search-input" aria-label="Search tires"/>
-        <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
-      </div>
-    </div>
-    <?php endif; ?>
     <div id="mobileFilterContent" class="mobile-filter-content">
       <div class="filter-container">
         <div class="filter-group">
