@@ -262,6 +262,20 @@ function applyAiRecommendations(recommendations, summary) {
   if (summaryEl) {
     const linkedSummary = linkifyTireNames(escapeHTML(summary), orderedRows);
 
+    // Build clickable tire chips so users always have links to each tire.
+    let tireChipsHtml = '<div class="rtg-ai-tire-chips">';
+    orderedRows.forEach(row => {
+      const tireId = row[0];
+      const brand = safeString(row[3]).trim();
+      const model = safeString(row[4]).trim();
+      if (!model) return;
+      tireChipsHtml +=
+        '<a href="#" class="rtg-ai-tire-link rtg-ai-tire-chip" data-tire-id="' + escapeHTML(tireId) + '">' +
+          escapeHTML(brand + ' ' + model) +
+        '</a>';
+    });
+    tireChipsHtml += '</div>';
+
     summaryEl.style.display = 'block';
     summaryEl.innerHTML =
       '<div class="rtg-ai-summary-content">' +
@@ -269,6 +283,7 @@ function applyAiRecommendations(recommendations, summary) {
         '<div class="rtg-ai-summary-text">' +
           '<strong>AI Recommendation</strong>' +
           '<p>' + linkedSummary + '</p>' +
+          tireChipsHtml +
         '</div>' +
         '<button id="rtgAiClear" class="rtg-ai-clear" type="button" aria-label="Clear AI recommendations">' +
           '<i class="fa-solid fa-xmark" aria-hidden="true"></i> Clear' +

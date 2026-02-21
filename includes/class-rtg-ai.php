@@ -243,7 +243,7 @@ INSTRUCTIONS:
 4. Provide a brief reason for each recommendation.
 
 You MUST respond with valid JSON in this exact format and nothing else (no markdown, no code fences):
-{"recommendations":[{"tire_id":"<actual tire_id>","reason":"<1-2 sentence explanation>"}],"summary":"<1-2 sentence overview of recommendations>"}
+{"recommendations":[{"tire_id":"<actual tire_id>","reason":"<1-2 sentence explanation>"}],"summary":"<1-2 sentence overview that mentions each recommended tire by Brand and Model name>"}
 
 If no tires match the user\'s criteria, respond with:
 {"recommendations":[],"summary":"<explanation of why no tires match>"}';

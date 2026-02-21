@@ -256,7 +256,7 @@
   border-color: var(--rtg-text-muted);
 }
 
-/* AI tire links in summary */
+/* AI tire links in summary (inline within text) */
 .rtg-ai-tire-link {
   color: var(--rtg-accent) !important;
   text-decoration: underline !important;
@@ -269,6 +269,32 @@
 .rtg-ai-tire-link:hover {
   color: var(--rtg-accent-hover) !important;
   text-decoration-style: solid !important;
+}
+
+/* Clickable tire chips below the AI summary */
+.rtg-ai-tire-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.rtg-ai-tire-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 4px 10px !important;
+  background: color-mix(in srgb, var(--rtg-accent) 12%, var(--rtg-bg-deep, #0c1620)) !important;
+  border: 1px solid color-mix(in srgb, var(--rtg-accent) 30%, transparent) !important;
+  border-radius: 16px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+.rtg-ai-tire-chip:hover {
+  background: color-mix(in srgb, var(--rtg-accent) 25%, var(--rtg-bg-deep, #0c1620)) !important;
+  border-color: var(--rtg-accent) !important;
+  text-decoration: none !important;
 }
 
 /* Highlight animation when scrolling to a tire card */
