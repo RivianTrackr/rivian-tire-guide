@@ -58,6 +58,16 @@
   #wheelDrawerTrigger {
     padding-top: 20px !important;
   }
+  .rtg-search-row {
+    flex-wrap: wrap !important;
+  }
+  .rtg-search-row .search-container {
+    flex: 1 1 100% !important;
+  }
+  .rtg-search-btn,
+  .rtg-ai-submit {
+    flex: 1 1 0 !important;
+  }
 }
 
 /* === Search Row (input + Search button + optional AI button) === */
@@ -107,7 +117,7 @@
 
 .rtg-search-btn:hover {
   background: var(--rtg-accent) !important;
-  color: #fff !important;
+  color: #0f172a !important;
 }
 
 .rtg-search-btn:active {
@@ -126,7 +136,7 @@
   padding: 0 14px !important;
   margin: 0 !important;
   background: var(--rtg-accent) !important;
-  color: #fff !important;
+  color: #0f172a !important;
   border: none !important;
   border-radius: 8px !important;
   cursor: pointer !important;
@@ -141,6 +151,7 @@
 
 .rtg-ai-submit:hover {
   background: var(--rtg-accent-hover) !important;
+  color: #0f172a !important;
 }
 
 .rtg-ai-submit:active {
@@ -256,19 +267,17 @@
   border-color: var(--rtg-text-muted);
 }
 
-/* AI tire links in summary (inline within text) */
+/* AI tire links (used by tire chips) */
 .rtg-ai-tire-link {
   color: var(--rtg-accent) !important;
-  text-decoration: underline !important;
-  text-decoration-style: dotted !important;
-  text-underline-offset: 2px;
+  text-decoration: none !important;
   cursor: pointer !important;
   font-weight: 600;
   transition: color 0.15s;
 }
 .rtg-ai-tire-link:hover {
   color: var(--rtg-accent-hover) !important;
-  text-decoration-style: solid !important;
+  text-decoration: none !important;
 }
 
 /* Clickable tire chips below the AI summary */

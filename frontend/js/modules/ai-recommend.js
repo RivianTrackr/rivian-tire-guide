@@ -275,7 +275,7 @@ function applyAiRecommendations(recommendations, summary, tireRows) {
 
   // Show summary with clear button. Tire names become clickable links.
   if (summaryEl) {
-    const linkedSummary = linkifyTireNames(escapeHTML(summary), orderedRows);
+    const linkedSummary = escapeHTML(summary);
 
     // Build clickable tire chips that scroll to the corresponding card below.
     let tireChipsHtml = '<div class="rtg-ai-tire-chips">';
