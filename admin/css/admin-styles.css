@@ -1288,6 +1288,8 @@
 .rtg-mini-list-info {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .rtg-mini-list-name {
