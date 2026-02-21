@@ -5,6 +5,10 @@
  *
  * Handles the AI search bar interaction, AJAX calls to the backend,
  * and rendering of AI-recommended tires.
+ *
+ * In unified mode the shared #searchInput field is used for both local
+ * filtering and AI queries.  The AI submit button (#rtgAiSubmit) and the
+ * "Ask AI" suggestion in the search dropdown trigger AI explicitly.
  */
 
 import { state } from './state.js';
@@ -22,28 +26,29 @@ export function initAiRecommend() {
     return;
   }
 
-  const input = getDOMElement('rtgAiInput');
   const submitBtn = getDOMElement('rtgAiSubmit');
-
-  if (!input || !submitBtn) return;
+  if (!submitBtn) return;
 
   // Submit on button click.
   submitBtn.addEventListener('click', handleAiSubmit);
 
-  // Submit on Enter key.
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAiSubmit();
-    }
-  });
+  // When the user starts typing while AI results are displayed, auto-clear
+  // the AI state so the local search takes over immediately.
+  const input = getDOMElement('searchInput');
+  if (input) {
+    input.addEventListener('input', () => {
+      if (aiActive) {
+        clearAiRecommendations(true);
+      }
+    });
+  }
 }
 
 /**
  * Handle AI search form submission.
  */
 function handleAiSubmit() {
-  const input = getDOMElement('rtgAiInput');
+  const input = getDOMElement('searchInput');
   if (!input) return;
 
   const query = input.value.trim();
@@ -61,7 +66,7 @@ function handleAiSubmit() {
  *
  * @param {string} query User's natural language query.
  */
-function submitAiQuery(query) {
+export function submitAiQuery(query) {
   const statusEl = getDOMElement('rtgAiStatus');
   const summaryEl = getDOMElement('rtgAiSummary');
   const submitBtn = getDOMElement('rtgAiSubmit');
@@ -191,7 +196,7 @@ function applyAiRecommendations(recommendations, summary) {
     // Attach clear button handler.
     const clearBtn = document.getElementById('rtgAiClear');
     if (clearBtn) {
-      clearBtn.addEventListener('click', clearAiRecommendations);
+      clearBtn.addEventListener('click', () => clearAiRecommendations());
     }
   }
 
@@ -223,15 +228,18 @@ function renderAiResults() {
 
 /**
  * Clear AI recommendations and restore the normal tire view.
+ *
+ * @param {boolean} [keepInput=false] When true the input value is preserved
+ *   (used when auto-clearing as the user types a new query).
  */
-export function clearAiRecommendations() {
+export function clearAiRecommendations(keepInput) {
   aiActive = false;
   lastQuery = '';
   state.aiRecommendations = null;
 
   const summaryEl = getDOMElement('rtgAiSummary');
   const statusEl = getDOMElement('rtgAiStatus');
-  const input = getDOMElement('rtgAiInput');
+  const input = getDOMElement('searchInput');
 
   if (summaryEl) {
     summaryEl.style.display = 'none';
@@ -241,7 +249,7 @@ export function clearAiRecommendations() {
     statusEl.style.display = 'none';
     statusEl.innerHTML = '';
   }
-  if (input) {
+  if (input && !keepInput) {
     input.value = '';
   }
 

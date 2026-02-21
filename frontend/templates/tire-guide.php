@@ -15,14 +15,14 @@ if ( ! defined( 'ABSPATH' ) ) {
   <div class="filter-body">
     <?php if ( RTG_AI::is_enabled() ) : ?>
     <div id="rtgAiWrapper" class="rtg-ai-section">
-      <div class="rtg-ai-row" style="display: flex !important; align-items: center !important; gap: 8px !important;">
-        <div class="search-container" style="flex: 1 !important; min-width: 0 !important;">
-          <label for="rtgAiInput" class="screen-reader-text">Ask AI for tire recommendations</label>
-          <input id="rtgAiInput" type="text" class="search-input rtg-ai-input" placeholder="AI: &quot;Best winter tire for 20 inch wheels&quot;" maxlength="500" aria-label="Ask AI for tire recommendations" />
-          <i class="fa-solid fa-wand-magic-sparkles search-icon rtg-ai-icon" aria-hidden="true"></i>
+      <div class="rtg-ai-row">
+        <div class="search-container">
+          <label for="searchInput" class="screen-reader-text">Search tires or ask AI for recommendations</label>
+          <input id="searchInput" type="text" class="search-input" placeholder="Search tires or ask AI a question..." maxlength="500" aria-label="Search tires or ask AI for recommendations" />
+          <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
         </div>
-        <button id="rtgAiSubmit" class="rtg-ai-submit" type="button" aria-label="Get AI recommendations" style="flex-shrink: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important; width: 44px !important; height: 44px !important; min-width: 44px !important; padding: 0 !important; margin: 0 !important; position: static !important; transform: none !important;">
-          <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+        <button id="rtgAiSubmit" class="rtg-ai-submit" type="button" aria-label="Get AI recommendations">
+          <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
         </button>
       </div>
       <div id="rtgAiStatus" class="rtg-ai-status" style="display: none;" role="status" aria-live="polite"></div>
