@@ -210,11 +210,11 @@ export function submitAiQuery(query) {
 function showAiError(message) {
   const statusEl = getDOMElement('rtgAiStatus');
   if (statusEl) {
-    let html = '<div class="rtg-ai-error"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> ' + escapeHTML(message) + '</div>';
+    let html = '';
 
-    // If a query was submitted, offer to search RivianTrackr.
+    // If a query was submitted, skip the error text and show the RivianTrackr redirect instead.
     if (lastQuery) {
-      html +=
+      html =
         '<div class="rtg-ai-riviantrackr">' +
           '<span>Not looking for tires?</span> ' +
           '<a href="https://riviantrackr.com/?s=' + encodeURIComponent(lastQuery) + '" target="_blank" rel="noopener noreferrer">' +
@@ -222,6 +222,8 @@ function showAiError(message) {
             ' ' + rtgIcon('arrow-up-right', 11) +
           '</a>' +
         '</div>';
+    } else {
+      html = '<div class="rtg-ai-error"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> ' + escapeHTML(message) + '</div>';
     }
 
     statusEl.style.display = 'block';
