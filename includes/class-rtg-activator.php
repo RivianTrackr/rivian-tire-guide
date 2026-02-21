@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 9;
+    const DB_VERSION = 10;
 
     public static function activate() {
         self::create_tables();
@@ -143,11 +143,13 @@ class RTG_Activator {
             filters_json VARCHAR(1000) NOT NULL DEFAULT '',
             sort_by VARCHAR(30) NOT NULL DEFAULT '',
             result_count INT UNSIGNED NOT NULL DEFAULT 0,
+            search_type VARCHAR(10) NOT NULL DEFAULT 'search',
             session_hash VARCHAR(64) NOT NULL DEFAULT '',
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),
             KEY idx_created_at (created_at),
-            KEY idx_search_query (search_query(50))
+            KEY idx_search_query (search_query(50)),
+            KEY idx_search_type (search_type)
         ) $charset_collate;";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -171,6 +173,7 @@ class RTG_Activator {
             7 => 'migrate_7_create_favorites_table',
             8 => 'migrate_8_create_click_events_table',
             9 => 'migrate_9_create_search_events_table',
+            10 => 'migrate_10_add_search_type_column',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -260,5 +263,14 @@ class RTG_Activator {
      */
     private static function migrate_9_create_search_events_table() {
         // Table created by dbDelta above.
+    }
+
+    /**
+     * Migration 10: Add search_type column to distinguish regular searches from AI queries.
+     * Column added by dbDelta above; this marks the migration.
+     */
+    private static function migrate_10_add_search_type_column() {
+        // Column added by dbDelta above with DEFAULT 'search',
+        // so all existing rows are automatically tagged as regular searches.
     }
 }

@@ -526,6 +526,12 @@ class RTG_Ajax {
         $filters_json = sanitize_text_field( wp_unslash( $_POST['filters_json'] ?? '{}' ) );
         $sort_by      = sanitize_text_field( wp_unslash( $_POST['sort_by'] ?? '' ) );
         $result_count = intval( $_POST['result_count'] ?? 0 );
+        $search_type  = sanitize_text_field( $_POST['search_type'] ?? 'search' );
+
+        // Only allow known search types.
+        if ( ! in_array( $search_type, array( 'search', 'ai' ), true ) ) {
+            $search_type = 'search';
+        }
 
         // Validate filters JSON.
         if ( strlen( $filters_json ) > 1000 ) {
@@ -536,7 +542,7 @@ class RTG_Ajax {
             $filters_json = '{}';
         }
 
-        RTG_Database::insert_search_event( $search_query, $filters_json, $sort_by, $result_count );
+        RTG_Database::insert_search_event( $search_query, $filters_json, $sort_by, $result_count, $search_type );
 
         wp_send_json_success();
     }

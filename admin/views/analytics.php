@@ -34,6 +34,10 @@ if ( ! defined( 'ABSPATH' ) ) {
             <div class="rtg-stat-label">Total Searches</div>
         </div>
         <div class="rtg-stat-card">
+            <div class="rtg-stat-value" id="statTotalAiQueries">-</div>
+            <div class="rtg-stat-label">AI Queries</div>
+        </div>
+        <div class="rtg-stat-card">
             <div class="rtg-stat-value" id="statUniqueSearchers">-</div>
             <div class="rtg-stat-label">Unique Visitors (Search)</div>
         </div>
@@ -69,6 +73,16 @@ if ( ! defined( 'ABSPATH' ) ) {
         </div>
     </div>
 
+    <!-- Search vs AI Usage -->
+    <div class="rtg-dashboard-grid" style="grid-template-columns: 1fr;">
+        <div class="rtg-card">
+            <div class="rtg-card-header"><h2>Search vs AI Usage</h2></div>
+            <div class="rtg-card-body" id="searchVsAiContainer">
+                <p style="color: var(--rtg-text-muted);">Loading...</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Tables Row: Top Clicked + Top Searches -->
     <div class="rtg-dashboard-grid">
         <div class="rtg-card">
@@ -85,8 +99,17 @@ if ( ! defined( 'ABSPATH' ) ) {
         </div>
     </div>
 
-    <!-- Tables Row: Zero Results + Filter Usage -->
+    <!-- Tables Row: Top AI Queries + Zero Results -->
     <div class="rtg-dashboard-grid">
+        <div class="rtg-card">
+            <div class="rtg-card-header">
+                <h2>Top AI Queries</h2>
+                <p style="font-size: 13px; color: var(--rtg-text-muted); margin-top: 4px;">Most popular questions asked to the AI recommendation engine.</p>
+            </div>
+            <div class="rtg-card-body" id="topAiQueriesContainer">
+                <p style="color: var(--rtg-text-muted);">Loading...</p>
+            </div>
+        </div>
         <div class="rtg-card">
             <div class="rtg-card-header">
                 <h2>Zero-Result Searches</h2>
@@ -96,6 +119,10 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <p style="color: var(--rtg-text-muted);">Loading...</p>
             </div>
         </div>
+    </div>
+
+    <!-- Filter Usage -->
+    <div class="rtg-dashboard-grid" style="grid-template-columns: 1fr;">
         <div class="rtg-card">
             <div class="rtg-card-header"><h2>Most Used Filters</h2></div>
             <div class="rtg-card-body" id="filterUsageContainer">
@@ -157,6 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
         setText('statTotalClicks', numberFormat(s.total_clicks || 0));
         setText('statUniqueClickers', numberFormat(s.unique_clickers || 0));
         setText('statTotalSearches', numberFormat(s.total_searches || 0));
+        setText('statTotalAiQueries', numberFormat(s.total_ai_queries || 0));
         setText('statUniqueSearchers', numberFormat(s.unique_searchers || 0));
 
         // Click breakdown by type.
@@ -173,11 +201,17 @@ document.addEventListener('DOMContentLoaded', function() {
         // Searches daily chart.
         renderSearchesChart(data.searches_daily || []);
 
+        // Search vs AI usage breakdown.
+        renderSearchVsAi(s.total_searches || 0, s.total_ai_queries || 0);
+
         // Top clicked tires.
         renderTopClicked(data.top_clicked || []);
 
-        // Top search queries.
+        // Top search queries (regular only).
         renderTopSearches(data.top_searches || []);
+
+        // Top AI queries.
+        renderTopAiQueries(data.top_ai_queries || []);
 
         // Zero-result searches.
         renderZeroResults(data.zero_result_searches || []);
@@ -299,6 +333,47 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function renderSearchVsAi(totalSearches, totalAi) {
+        var container = document.getElementById('searchVsAiContainer');
+        var total = totalSearches + totalAi;
+
+        if (total === 0) {
+            container.innerHTML = '<p style="color: var(--rtg-text-muted);">No search or AI data for this period.</p>';
+            return;
+        }
+
+        var searchPct = Math.round((totalSearches / total) * 100);
+        var aiPct = 100 - searchPct;
+
+        var html = '<div style="display: flex; align-items: center; gap: 24px; flex-wrap: wrap;">';
+
+        // Bar visualization
+        html += '<div style="flex: 1; min-width: 200px;">' +
+            '<div style="display: flex; height: 32px; border-radius: 8px; overflow: hidden; background: var(--rtg-bg-deep, #0c1620);">';
+        if (searchPct > 0) {
+            html += '<div style="width: ' + searchPct + '%; background: #a78bfa; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; min-width: 40px;">' + searchPct + '%</div>';
+        }
+        if (aiPct > 0) {
+            html += '<div style="width: ' + aiPct + '%; background: #fba919; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #1a1a1a; min-width: 40px;">' + aiPct + '%</div>';
+        }
+        html += '</div></div>';
+
+        // Legend
+        html += '<div style="display: flex; gap: 20px;">' +
+            '<div style="display: flex; align-items: center; gap: 8px;">' +
+                '<span style="width: 12px; height: 12px; border-radius: 3px; background: #a78bfa; display: inline-block;"></span>' +
+                '<span style="color: var(--rtg-text-primary); font-size: 14px;">Search <strong>' + numberFormat(totalSearches) + '</strong></span>' +
+            '</div>' +
+            '<div style="display: flex; align-items: center; gap: 8px;">' +
+                '<span style="width: 12px; height: 12px; border-radius: 3px; background: #fba919; display: inline-block;"></span>' +
+                '<span style="color: var(--rtg-text-primary); font-size: 14px;">AI <strong>' + numberFormat(totalAi) + '</strong></span>' +
+            '</div>' +
+        '</div>';
+
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
     function renderTopClicked(items) {
         var container = document.getElementById('topClickedContainer');
         if (!items.length) {
@@ -327,6 +402,28 @@ document.addEventListener('DOMContentLoaded', function() {
         var container = document.getElementById('topSearchesContainer');
         if (!items.length) {
             container.innerHTML = '<p style="color: var(--rtg-text-muted);">No search data yet.</p>';
+            return;
+        }
+
+        var html = '<ul class="rtg-mini-list">';
+        items.forEach(function(row, i) {
+            html += '<li class="rtg-mini-list-item">' +
+                '<span class="rtg-mini-list-rank">' + (i + 1) + '</span>' +
+                '<span class="rtg-mini-list-info">' +
+                    '<span class="rtg-mini-list-name">&ldquo;' + escHtml(row.search_query) + '&rdquo;</span>' +
+                    '<span class="rtg-mini-list-meta">Avg ' + numberFormat(row.avg_results) + ' result' + (parseInt(row.avg_results) !== 1 ? 's' : '') + '</span>' +
+                '</span>' +
+                '<span class="rtg-mini-list-value">' + numberFormat(row.count) + '&times;</span>' +
+            '</li>';
+        });
+        html += '</ul>';
+        container.innerHTML = html;
+    }
+
+    function renderTopAiQueries(items) {
+        var container = document.getElementById('topAiQueriesContainer');
+        if (!items.length) {
+            container.innerHTML = '<p style="color: var(--rtg-text-muted);">No AI queries yet.</p>';
             return;
         }
 

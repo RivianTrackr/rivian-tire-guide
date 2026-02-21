@@ -256,6 +256,30 @@
   border-color: var(--rtg-text-muted);
 }
 
+/* AI tire links in summary */
+.rtg-ai-tire-link {
+  color: var(--rtg-accent) !important;
+  text-decoration: underline !important;
+  text-decoration-style: dotted !important;
+  text-underline-offset: 2px;
+  cursor: pointer !important;
+  font-weight: 600;
+  transition: color 0.15s;
+}
+.rtg-ai-tire-link:hover {
+  color: var(--rtg-accent-hover) !important;
+  text-decoration-style: solid !important;
+}
+
+/* Highlight animation when scrolling to a tire card */
+@keyframes rtgAiPulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+  15%, 85% { box-shadow: 0 0 0 3px var(--rtg-accent), 0 2px 16px rgba(251, 169, 25, 0.3); }
+}
+.rtg-ai-highlight {
+  animation: rtgAiPulse 2s ease !important;
+}
+
 /* AI Responsive */
 @media (max-width: 600px) {
   .rtg-ai-summary-content {

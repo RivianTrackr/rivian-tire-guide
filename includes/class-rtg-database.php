@@ -1507,9 +1507,10 @@ class RTG_Database {
      * @param string $filters_json JSON-encoded active filters.
      * @param string $sort_by      Sort option used.
      * @param int    $result_count Number of matching tires.
+     * @param string $search_type  'search' for regular searches, 'ai' for AI queries.
      * @return bool True on insert, false if deduplicated or failed.
      */
-    public static function insert_search_event( $search_query, $filters_json, $sort_by, $result_count ) {
+    public static function insert_search_event( $search_query, $filters_json, $sort_by, $result_count, $search_type = 'search' ) {
         global $wpdb;
         $table        = self::search_events_table();
         $session_hash = self::generate_session_hash();
@@ -1526,13 +1527,19 @@ class RTG_Database {
             return false;
         }
 
+        $allowed_types = array( 'search', 'ai' );
+        if ( ! in_array( $search_type, $allowed_types, true ) ) {
+            $search_type = 'search';
+        }
+
         return (bool) $wpdb->insert( $table, array(
             'search_query' => substr( $search_query, 0, 200 ),
             'filters_json' => $filters_json,
             'sort_by'      => $sort_by,
             'result_count' => max( 0, $result_count ),
+            'search_type'  => $search_type,
             'session_hash' => $session_hash,
-        ), array( '%s', '%s', '%s', '%d', '%s' ) );
+        ), array( '%s', '%s', '%s', '%d', '%s', '%s' ) );
     }
 
     /**
@@ -1588,23 +1595,37 @@ class RTG_Database {
             $tz_offset, $since, $tz_offset
         ), ARRAY_A );
 
-        // Top search queries (top 20).
+        // Top search queries (regular searches only, top 20).
         $data['top_searches'] = $wpdb->get_results( $wpdb->prepare(
             "SELECT search_query, COUNT(*) as count,
                     ROUND(AVG(result_count), 0) as avg_results
              FROM {$search}
              WHERE created_at >= %s AND search_query != ''
+               AND (search_type = 'search' OR search_type = '' OR search_type IS NULL)
              GROUP BY search_query
              ORDER BY count DESC
              LIMIT 20",
             $since
         ), ARRAY_A );
 
-        // Zero-result searches (top 10).
+        // Top AI queries (top 20).
+        $data['top_ai_queries'] = $wpdb->get_results( $wpdb->prepare(
+            "SELECT search_query, COUNT(*) as count,
+                    ROUND(AVG(result_count), 0) as avg_results
+             FROM {$search}
+             WHERE created_at >= %s AND search_query != '' AND search_type = 'ai'
+             GROUP BY search_query
+             ORDER BY count DESC
+             LIMIT 20",
+            $since
+        ), ARRAY_A );
+
+        // Zero-result searches (top 10, regular searches only).
         $data['zero_result_searches'] = $wpdb->get_results( $wpdb->prepare(
             "SELECT search_query, COUNT(*) as count
              FROM {$search}
              WHERE created_at >= %s AND result_count = 0 AND search_query != ''
+               AND (search_type = 'search' OR search_type = '' OR search_type IS NULL)
              GROUP BY search_query
              ORDER BY count DESC
              LIMIT 10",
@@ -1632,6 +1653,13 @@ class RTG_Database {
         ), ARRAY_A );
 
         // Summary totals.
+        $total_searches = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$search} WHERE created_at >= %s AND (search_type = 'search' OR search_type = '' OR search_type IS NULL)", $since
+        ) );
+        $total_ai = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$search} WHERE created_at >= %s AND search_type = 'ai'", $since
+        ) );
+
         $data['summary'] = array(
             'total_clicks'    => (int) $wpdb->get_var( $wpdb->prepare(
                 "SELECT COUNT(*) FROM {$clicks} WHERE created_at >= %s", $since
@@ -1639,9 +1667,8 @@ class RTG_Database {
             'unique_clickers' => (int) $wpdb->get_var( $wpdb->prepare(
                 "SELECT COUNT(DISTINCT session_hash) FROM {$clicks} WHERE created_at >= %s", $since
             ) ),
-            'total_searches'  => (int) $wpdb->get_var( $wpdb->prepare(
-                "SELECT COUNT(*) FROM {$search} WHERE created_at >= %s", $since
-            ) ),
+            'total_searches'  => $total_searches,
+            'total_ai_queries' => $total_ai,
             'unique_searchers' => (int) $wpdb->get_var( $wpdb->prepare(
                 "SELECT COUNT(DISTINCT session_hash) FROM {$search} WHERE created_at >= %s", $since
             ) ),
