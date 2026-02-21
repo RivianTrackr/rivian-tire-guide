@@ -4,6 +4,13 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.18.1] - 2026-02-21
+
+### Changed
+- **AI summary tire names** — Removed underline/highlight styling from tire names in the AI recommendation summary text. Tire chips below the summary already provide clickable navigation to each recommended tire.
+- **Button text color** — Changed Ask AI and Search button text color to dark (`#0f172a`) to match the affiliate "View Tire" buttons on tire cards, improving visual consistency across the plugin.
+- **Plugin version** — Bumped to 1.18.1.
+
 ## [1.18.0] - 2026-02-20
 
 ### Added
