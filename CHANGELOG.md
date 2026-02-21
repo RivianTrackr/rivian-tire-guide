@@ -4,6 +4,18 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.19.0] - 2026-02-21
+
+### Added
+- **Guest review localStorage pre-fill** — Name and email are saved after a successful guest review and auto-filled the next time the review modal opens, reducing friction for multi-tire reviewers.
+- **"Review Pending" badge** — After a guest submits a review, the card swaps the "Write a Review" button for a styled "Review Pending" indicator (session-only, resets on page reload).
+- **Admin email notification** — Site admin receives a styled HTML email with the guest's name, email, star rating, and review snippet whenever a new guest review is submitted, with a direct link to the reviews dashboard.
+
+### Changed
+- **Guest rate limit tightened** — Reduced from 10 submissions per minute to 3 per 5 minutes for better spam protection.
+- **Guest reviewer links** — Reviews from guests (user_id 0) no longer link to a profile page.
+- **Login banner reworded** — Modal banner for logged-out users now reads "Sign up or Log in to edit reviews and favorite tires."
+
 ## [1.18.6] - 2026-02-21
 
 ### Added
