@@ -13,7 +13,7 @@ import { getDOMElement, debounce, rtgIcon } from './modules/helpers.js';
 import { VALIDATION_PATTERNS, validateAndSanitizeCSVRow } from './modules/validation.js';
 import { RTG_ANALYTICS } from './modules/analytics.js';
 import { showTooltipModal, createFilterTooltip } from './modules/tooltips.js';
-import { initializeSmartSearch, hideSearchSuggestions } from './modules/search.js';
+import { initializeSmartSearch } from './modules/search.js';
 import { openReviewModal, openReviewsDrawer, loadTireRatings } from './modules/ratings.js';
 import { renderCards } from './modules/cards.js';
 import { loadFavorites } from './modules/favorites.js';
