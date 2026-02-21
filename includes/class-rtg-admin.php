@@ -893,11 +893,22 @@ class RTG_Admin {
 
         $file = $_FILES['rtg_csv_file'];
 
-        // Validate file type.
+        // Validate file type by extension and MIME type.
         $ext = strtolower( pathinfo( $file['name'], PATHINFO_EXTENSION ) );
         if ( $ext !== 'csv' ) {
             wp_redirect( admin_url( 'admin.php?page=rtg-import&message=invalid_type' ) );
             exit;
+        }
+
+        if ( function_exists( 'finfo_open' ) ) {
+            $finfo = finfo_open( FILEINFO_MIME_TYPE );
+            $mime  = finfo_file( $finfo, $file['tmp_name'] );
+            finfo_close( $finfo );
+            $allowed_mimes = array( 'text/csv', 'text/plain', 'application/csv', 'application/vnd.ms-excel' );
+            if ( ! in_array( $mime, $allowed_mimes, true ) ) {
+                wp_redirect( admin_url( 'admin.php?page=rtg-import&message=invalid_type' ) );
+                exit;
+            }
         }
 
         // Limit file size to 2MB.

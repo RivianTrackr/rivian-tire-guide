@@ -331,8 +331,15 @@ class RTG_Ajax {
     /**
      * Get reviews for a specific tire.
      * Available to both logged-in and logged-out users.
+     * Nonce verified for logged-in users to prevent CSRF.
      */
     public function get_tire_reviews() {
+        if ( is_user_logged_in() ) {
+            if ( ! check_ajax_referer( 'tire_rating_nonce', 'nonce', false ) ) {
+                wp_send_json_error( 'Security check failed.' );
+            }
+        }
+
         $tire_id = sanitize_text_field( $_POST['tire_id'] ?? '' );
 
         if ( ! preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) || strlen( $tire_id ) > 50 ) {
@@ -356,8 +363,15 @@ class RTG_Ajax {
 
     /**
      * Get all approved reviews by a specific user.
+     * Nonce verified for logged-in users to prevent CSRF.
      */
     public function get_user_reviews() {
+        if ( is_user_logged_in() ) {
+            if ( ! check_ajax_referer( 'tire_rating_nonce', 'nonce', false ) ) {
+                wp_send_json_error( 'Security check failed.' );
+            }
+        }
+
         $user_id = absint( $_POST['user_id'] ?? 0 );
 
         if ( ! $user_id ) {

@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.19.1] - 2026-02-21
+
+### Security
+- **AI rate limiter IP spoofing fix** — `get_client_ip()` now prioritizes `REMOTE_ADDR` over proxy headers (`X-Forwarded-For`, `X-Real-IP`). Proxy headers are only trusted when `REMOTE_ADDR` is a private/reserved IP, indicating the server is behind a reverse proxy. Previously, attackers could bypass AI rate limiting entirely by forging proxy headers.
+- **CSV import MIME validation** — Added `finfo`-based MIME type validation alongside the existing file extension check for defense-in-depth on CSV uploads.
+- **Nonce verification on public review endpoints** — `get_tire_reviews` and `get_user_reviews` AJAX endpoints now verify nonces for logged-in users, consistent with the existing `get_tire_ratings` pattern.
+
+### Changed
+- **Plugin version** — Bumped to 1.19.1.
+
 ## [1.19.0] - 2026-02-21
 
 ### Added

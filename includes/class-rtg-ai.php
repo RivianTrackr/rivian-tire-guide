@@ -327,21 +327,39 @@ If no tires match the user\'s criteria, respond with:
     /**
      * Get the client's IP address.
      *
+     * Uses REMOTE_ADDR as the primary source since it cannot be spoofed
+     * at the HTTP level. Only falls back to proxy headers when REMOTE_ADDR
+     * is a private/reserved IP (indicating the server is behind a reverse proxy).
+     *
      * @return string IP address.
      */
     private static function get_client_ip() {
-        // Check for common proxy headers, but don't blindly trust them.
-        $headers = array( 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'REMOTE_ADDR' );
+        $remote_addr = isset( $_SERVER['REMOTE_ADDR'] ) ? trim( $_SERVER['REMOTE_ADDR'] ) : '';
 
-        foreach ( $headers as $header ) {
-            if ( ! empty( $_SERVER[ $header ] ) ) {
-                // X-Forwarded-For can contain multiple IPs; take the first.
-                $ip = strtok( $_SERVER[ $header ], ',' );
-                $ip = trim( $ip );
-                if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
-                    return $ip;
+        if ( ! empty( $remote_addr ) && filter_var( $remote_addr, FILTER_VALIDATE_IP ) ) {
+            // Only trust proxy headers when REMOTE_ADDR is a private/reserved IP,
+            // which indicates the request came through a trusted reverse proxy.
+            $is_proxied = ! filter_var(
+                $remote_addr,
+                FILTER_VALIDATE_IP,
+                FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+            );
+
+            if ( $is_proxied ) {
+                $proxy_headers = array( 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP' );
+                foreach ( $proxy_headers as $header ) {
+                    if ( ! empty( $_SERVER[ $header ] ) ) {
+                        // X-Forwarded-For can contain multiple IPs; take the first.
+                        $ip = strtok( $_SERVER[ $header ], ',' );
+                        $ip = trim( $ip );
+                        if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+                            return $ip;
+                        }
+                    }
                 }
             }
+
+            return $remote_addr;
         }
 
         return '0.0.0.0';
