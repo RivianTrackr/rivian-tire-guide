@@ -88,7 +88,7 @@ function setupEventDelegation() {
 
   document.addEventListener('mouseenter', function(e) {
     const star = e.target.closest('.rating-stars.interactive .star');
-    if (!star || !state.isLoggedIn) return;
+    if (!star) return;
 
     const rating = parseInt(star.dataset.rating);
     if (!Number.isInteger(rating) || rating < 1 || rating > 5) return;

@@ -208,7 +208,7 @@ export function createRatingHTML(tireId, average = 0, count = 0, userRating = 0)
   const displayCount = validateNumeric(count, { min: 0, max: 10000 }, 0);
   const validUserRating = (userRating && userRating > 0) ? validateNumeric(userRating, NUMERIC_BOUNDS.rating, 0) : 0;
 
-  const isInteractive = state.isLoggedIn;
+  const isInteractive = true;
   const isHighRating = displayAverage >= 4.5 && displayCount >= 2;
 
   const container = document.createElement('div');
@@ -530,6 +530,36 @@ export function openReviewModal(tireId, preselectedRating = 0) {
     textSection.appendChild(notice);
   }
 
+  // Guest login/register prompt.
+  let loginBanner;
+  if (isGuest && typeof tireRatingAjax !== 'undefined') {
+    loginBanner = document.createElement('div');
+    loginBanner.className = 'rtg-review-login-banner';
+
+    const bannerIcon = document.createElement('span');
+    bannerIcon.className = 'rtg-review-login-banner-icon';
+    bannerIcon.innerHTML = rtgIcon('user', 14);
+
+    const bannerText = document.createElement('span');
+    bannerText.className = 'rtg-review-login-banner-text';
+
+    const loginLink = document.createElement('a');
+    loginLink.href = tireRatingAjax.login_url || '/wp-login.php';
+    loginLink.textContent = 'Log in';
+
+    const registerLink = document.createElement('a');
+    registerLink.href = tireRatingAjax.register_url || '/wp-login.php?action=register';
+    registerLink.textContent = 'sign up';
+
+    bannerText.appendChild(loginLink);
+    bannerText.appendChild(document.createTextNode(' or '));
+    bannerText.appendChild(registerLink);
+    bannerText.appendChild(document.createTextNode(' to save reviews and edit later.'));
+
+    loginBanner.appendChild(bannerIcon);
+    loginBanner.appendChild(bannerText);
+  }
+
   const footer = document.createElement('div');
   footer.className = 'rtg-review-modal-footer';
 
@@ -557,6 +587,9 @@ export function openReviewModal(tireId, preselectedRating = 0) {
   }
   modal.appendChild(titleSection);
   modal.appendChild(textSection);
+  if (loginBanner) {
+    modal.appendChild(loginBanner);
+  }
   modal.appendChild(footer);
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
