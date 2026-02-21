@@ -24,6 +24,9 @@ export const state = {
   // Favorites
   userFavorites: new Set(),
 
+  // Guest pending reviews (session-only, cleared on reload)
+  guestPendingReviews: new Set(),
+
   // Valid filter values (populated after data loads)
   VALID_SIZES: [],
   VALID_BRANDS: [],

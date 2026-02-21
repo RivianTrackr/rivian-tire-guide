@@ -297,12 +297,20 @@ export function createRatingHTML(tireId, average = 0, count = 0, userRating = 0)
     writeBtn.textContent = hasReview ? 'Edit Review' : 'Write a Review';
     reviewActions.appendChild(writeBtn);
   } else {
-    // Guest review button — opens modal with name/email fields.
-    const guestBtn = document.createElement('button');
-    guestBtn.className = 'review-action-link write-review-btn';
-    guestBtn.dataset.tireId = tireId;
-    guestBtn.textContent = 'Write a Review';
-    reviewActions.appendChild(guestBtn);
+    const hasPending = state.guestPendingReviews && state.guestPendingReviews.has(tireId);
+    if (hasPending) {
+      const pendingBadge = document.createElement('span');
+      pendingBadge.className = 'review-action-link rtg-review-pending-badge';
+      pendingBadge.textContent = 'Review Pending';
+      reviewActions.appendChild(pendingBadge);
+    } else {
+      // Guest review button — opens modal with name/email fields.
+      const guestBtn = document.createElement('button');
+      guestBtn.className = 'review-action-link write-review-btn';
+      guestBtn.dataset.tireId = tireId;
+      guestBtn.textContent = 'Write a Review';
+      reviewActions.appendChild(guestBtn);
+    }
   }
 
   container.appendChild(reviewActions);
@@ -441,6 +449,7 @@ export function openReviewModal(tireId, preselectedRating = 0) {
     nameInput.placeholder = 'John Doe';
     nameInput.maxLength = 100;
     nameInput.required = true;
+    try { nameInput.value = localStorage.getItem('rtg_guest_name') || ''; } catch (e) { /* private browsing */ }
 
     guestNameSection.appendChild(nameLabel);
     guestNameSection.appendChild(nameInput);
@@ -459,6 +468,7 @@ export function openReviewModal(tireId, preselectedRating = 0) {
     emailInput.placeholder = 'you@example.com';
     emailInput.maxLength = 254;
     emailInput.required = true;
+    try { emailInput.value = localStorage.getItem('rtg_guest_email') || ''; } catch (e) { /* private browsing */ }
 
     const emailNote = document.createElement('div');
     emailNote.className = 'rtg-review-char-count';
@@ -665,7 +675,18 @@ export function openReviewModal(tireId, preselectedRating = 0) {
     submitPromise
       .then((result) => {
         closeModal();
-        if (isGuest || (hasReviewContent && result && result.review_status === 'pending')) {
+        if (isGuest) {
+          // Remember guest info for next review.
+          try {
+            localStorage.setItem('rtg_guest_name', nameInput.value.trim());
+            localStorage.setItem('rtg_guest_email', emailInput.value.trim());
+          } catch (e) { /* private browsing */ }
+          // Track pending review so the card shows "Review Pending".
+          state.guestPendingReviews = state.guestPendingReviews || new Set();
+          state.guestPendingReviews.add(tireId);
+          updateRatingDisplay(tireId);
+          showToast('Thanks! Your review has been submitted and is pending approval.', 'info');
+        } else if (hasReviewContent && result && result.review_status === 'pending') {
           showToast('Thanks! Your review has been submitted and is pending approval.', 'info');
         } else if (isUpdate) {
           showToast('Your review has been updated.', 'success');

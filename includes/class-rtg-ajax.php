@@ -6,10 +6,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 class RTG_Ajax {
 
     /**
-     * Maximum review submissions per minute per user.
+     * Maximum review submissions per window per user/IP.
      */
-    const RATE_LIMIT_MAX    = 10;
-    const RATE_LIMIT_WINDOW = 60; // seconds
+    const RATE_LIMIT_MAX    = 3;
+    const RATE_LIMIT_WINDOW = 300; // seconds (5 minutes)
 
     public function __construct() {
         // Review handlers — available to both logged-in and logged-out users.
@@ -281,6 +281,14 @@ class RTG_Ajax {
 
         // Save the guest review (always pending).
         RTG_Database::set_guest_rating( $tire_id, $guest_name, $guest_email, $rating, $review_title, $review_text );
+
+        // Notify admin about the new guest review.
+        RTG_Mailer::send_admin_guest_review_notification( $guest_name, $guest_email, array(
+            'tire_id'      => $tire_id,
+            'rating'       => $rating,
+            'review_title' => $review_title,
+            'review_text'  => $review_text,
+        ) );
 
         wp_send_json_success( array(
             'review_status' => 'pending',
