@@ -12,7 +12,7 @@
  */
 
 import { state } from './state.js';
-import { getDOMElement, debounce, escapeHTML, safeString } from './helpers.js';
+import { getDOMElement, debounce, escapeHTML, safeString, rtgIcon } from './helpers.js';
 import { filterAndRender } from './filters.js';
 import { isServerSide, serverSideFilterAndRender } from './server.js';
 import { RTG_ANALYTICS } from './analytics.js';
@@ -203,14 +203,29 @@ export function submitAiQuery(query) {
 
 /**
  * Display an error/info message in the AI status area.
+ * When a query was provided, includes a link to search RivianTrackr.
  *
  * @param {string} message Error message.
  */
 function showAiError(message) {
   const statusEl = getDOMElement('rtgAiStatus');
   if (statusEl) {
+    let html = '<div class="rtg-ai-error"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> ' + escapeHTML(message) + '</div>';
+
+    // If a query was submitted, offer to search RivianTrackr.
+    if (lastQuery) {
+      html +=
+        '<div class="rtg-ai-riviantrackr">' +
+          '<span>Not looking for tires?</span> ' +
+          '<a href="https://riviantrackr.com/?s=' + encodeURIComponent(lastQuery) + '" target="_blank" rel="noopener noreferrer">' +
+            rtgIcon('magnifying-glass', 13) + ' Search RivianTrackr for "' + escapeHTML(safeString(lastQuery, 30)) + '"' +
+            ' ' + rtgIcon('arrow-up-right', 11) +
+          '</a>' +
+        '</div>';
+    }
+
     statusEl.style.display = 'block';
-    statusEl.innerHTML = '<div class="rtg-ai-error"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> ' + escapeHTML(message) + '</div>';
+    statusEl.innerHTML = html;
   }
 }
 

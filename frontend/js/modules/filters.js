@@ -751,6 +751,20 @@ export function renderSmartNoResults() {
 
     container.appendChild(suggestionsContainer);
   }
+
+  // If there's a search query, offer to search RivianTrackr for non-tire topics.
+  const searchQuery = searchEl?.value?.trim();
+  if (searchQuery) {
+    const rtLink = document.createElement('div');
+    rtLink.className = 'no-results-riviantrackr';
+    rtLink.innerHTML =
+      '<span>Not looking for tires?</span> ' +
+      '<a href="https://riviantrackr.com/?s=' + encodeURIComponent(searchQuery) + '" target="_blank" rel="noopener noreferrer">' +
+        rtgIcon('magnifying-glass', 13) + ' Search RivianTrackr for "' + escapeHTML(safeString(searchQuery, 30)) + '"' +
+        ' ' + rtgIcon('arrow-up-right', 11) +
+      '</a>';
+    container.appendChild(rtLink);
+  }
 }
 
 export function updateURLFromFilters() {
