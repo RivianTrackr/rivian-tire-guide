@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.18.4] - 2026-02-21
+
+### Added
+- **RivianTrackr search redirect** — When a search returns no matching tires, a "Search RivianTrackr" link now appears directing users to riviantrackr.com for non-tire topics. Applies to both local search no-results and AI recommendation errors.
+
+### Changed
+- **Plugin version** — Bumped to 1.18.4.
+
 ## [1.18.3] - 2026-02-21
 
 ### Changed
