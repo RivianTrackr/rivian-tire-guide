@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         </button>
         <?php if ( RTG_AI::is_enabled() ) : ?>
         <button id="rtgAiSubmit" class="rtg-ai-submit" type="button" aria-label="Get AI recommendations">
-          <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> AI
+          <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Ask AI
         </button>
         <?php endif; ?>
       </div>
