@@ -1451,29 +1451,6 @@
   color: var(--rtg-text-light, #f1f5f9);
   font-weight: 600;
 }
-.login-prompt {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--rtg-accent, #fba919);
-  background: color-mix(in srgb, var(--rtg-accent, #fba919) 8%, transparent);
-  border: 1px solid color-mix(in srgb, var(--rtg-accent, #fba919) 25%, transparent);
-  border-radius: 6px;
-  padding: 4px 10px;
-  text-decoration: none;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-.login-prompt:hover {
-  background: color-mix(in srgb, var(--rtg-accent, #fba919) 15%, transparent);
-  border-color: color-mix(in srgb, var(--rtg-accent, #fba919) 40%, transparent);
-  color: var(--rtg-accent-hover, #4daa80);
-}
-.login-prompt i {
-  font-size: 11px;
-}
-
 /* === Review Actions (below stars) === */
 .review-actions {
   display: flex;
@@ -1706,6 +1683,33 @@
   padding: 10px 12px;
   margin-top: 10px;
   line-height: 1.4;
+}
+.rtg-review-login-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--rtg-text-muted, #8493a5);
+  background: color-mix(in srgb, var(--rtg-accent, #fba919) 6%, var(--rtg-bg-secondary, #0d1b2a));
+  border: 1px solid color-mix(in srgb, var(--rtg-accent, #fba919) 20%, transparent);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+.rtg-review-login-banner-icon {
+  display: inline-flex;
+  color: var(--rtg-accent, #fba919);
+  flex-shrink: 0;
+}
+.rtg-review-login-banner-text a {
+  color: var(--rtg-accent, #fba919);
+  text-decoration: none;
+  font-weight: 600;
+}
+.rtg-review-login-banner-text a:hover {
+  text-decoration: underline;
+  color: var(--rtg-accent-hover, #4daa80);
 }
 
 /* Modal footer */
