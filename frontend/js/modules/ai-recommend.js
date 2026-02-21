@@ -16,7 +16,6 @@ import { getDOMElement, debounce, escapeHTML, safeString } from './helpers.js';
 import { filterAndRender } from './filters.js';
 import { isServerSide, serverSideFilterAndRender } from './server.js';
 import { RTG_ANALYTICS } from './analytics.js';
-import { safeLinkURL } from './validation.js';
 import { loadTireRatings } from './ratings.js';
 
 let aiActive = false;
@@ -278,25 +277,17 @@ function applyAiRecommendations(recommendations, summary, tireRows) {
   if (summaryEl) {
     const linkedSummary = linkifyTireNames(escapeHTML(summary), orderedRows);
 
-    // Build clickable tire chips that link to product pages when available.
+    // Build clickable tire chips that scroll to the corresponding card below.
     let tireChipsHtml = '<div class="rtg-ai-tire-chips">';
     orderedRows.forEach(row => {
       const tireId = row[0];
       const brand = safeString(row[3]).trim();
       const model = safeString(row[4]).trim();
       if (!model) return;
-      const productLink = safeLinkURL(safeString(row[18]));
-      if (productLink) {
-        tireChipsHtml +=
-          '<a href="' + escapeHTML(productLink) + '" class="rtg-ai-tire-link rtg-ai-tire-chip" data-tire-id="' + escapeHTML(tireId) + '" target="_blank" rel="noopener noreferrer">' +
-            escapeHTML(brand + ' ' + model) +
-          '</a>';
-      } else {
-        tireChipsHtml +=
-          '<a href="#" class="rtg-ai-tire-link rtg-ai-tire-chip" data-tire-id="' + escapeHTML(tireId) + '">' +
-            escapeHTML(brand + ' ' + model) +
-          '</a>';
-      }
+      tireChipsHtml +=
+        '<a href="#" class="rtg-ai-tire-link rtg-ai-tire-chip" data-tire-id="' + escapeHTML(tireId) + '">' +
+          escapeHTML(brand + ' ' + model) +
+        '</a>';
     });
     tireChipsHtml += '</div>';
 
@@ -320,21 +311,11 @@ function applyAiRecommendations(recommendations, summary, tireRows) {
       clearBtn.addEventListener('click', () => clearAiRecommendations());
     }
 
-    // Attach tire link click handlers.
+    // Attach tire link click handlers — all links scroll to the card below.
     summaryEl.addEventListener('click', (e) => {
       const link = e.target.closest('.rtg-ai-tire-link');
       if (!link) return;
 
-      const isChip = link.classList.contains('rtg-ai-tire-chip');
-      const hasProductLink = isChip && link.getAttribute('href') !== '#';
-
-      if (hasProductLink) {
-        // Let the browser open the product link in a new tab naturally.
-        scrollToTireCard(link.dataset.tireId);
-        return;
-      }
-
-      // For inline text links or chips without a product URL, scroll to card.
       e.preventDefault();
       scrollToTireCard(link.dataset.tireId);
     });
