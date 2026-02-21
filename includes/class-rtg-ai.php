@@ -241,6 +241,7 @@ INSTRUCTIONS:
 2. Select the most relevant tires from the catalog (up to 6 recommendations, ranked best to worst).
 3. Only recommend tires that match the user\'s criteria. If they specify a wheel size, only include tires with that size.
 4. Provide a brief reason for each recommendation.
+5. In your summary, always include a note reminding the user to verify the recommended tire size matches the size currently on their vehicle (e.g., "Make sure the tire size matches what\'s currently on your vehicle, or consult your owner\'s manual for compatible sizes.").
 
 You MUST respond with valid JSON in this exact format and nothing else (no markdown, no code fences):
 {"recommendations":[{"tire_id":"<actual tire_id>","reason":"<1-2 sentence explanation>"}],"summary":"<1-2 sentence overview that mentions each recommended tire by Brand and Model name>"}
