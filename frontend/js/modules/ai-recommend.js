@@ -12,11 +12,88 @@
  */
 
 import { state } from './state.js';
-import { getDOMElement, debounce, escapeHTML } from './helpers.js';
+import { getDOMElement, debounce, escapeHTML, safeString } from './helpers.js';
 import { filterAndRender } from './filters.js';
+import { RTG_ANALYTICS } from './analytics.js';
 
 let aiActive = false;
 let lastQuery = '';
+
+/**
+ * Turn tire brand/model names in the AI summary into clickable links.
+ * Clicking a link scrolls to and highlights the corresponding tire card.
+ *
+ * @param {string} escapedSummary HTML-escaped summary text.
+ * @param {Array}  orderedRows    Tire rows returned by AI (same order as cards).
+ * @returns {string} Summary HTML with tire names wrapped in links.
+ */
+function linkifyTireNames(escapedSummary, orderedRows) {
+  // Build tire info list sorted by name length descending (match longer names first).
+  const tires = orderedRows
+    .map(row => ({
+      id: row[0],
+      brand: safeString(row[3]).trim(),
+      model: safeString(row[4]).trim(),
+    }))
+    .filter(t => t.model)
+    .sort((a, b) => (b.brand + b.model).length - (a.brand + a.model).length);
+
+  // Find match positions in the text.
+  const matches = [];
+  const linked = new Set();
+
+  for (const tire of tires) {
+    if (linked.has(tire.id)) continue;
+
+    const fullName = tire.brand + ' ' + tire.model;
+    const textLower = escapedSummary.toLowerCase();
+
+    // Try brand+model first, then model only.
+    let idx = textLower.indexOf(fullName.toLowerCase());
+    let matchLen = fullName.length;
+
+    if (idx === -1) {
+      idx = textLower.indexOf(tire.model.toLowerCase());
+      matchLen = tire.model.length;
+    }
+
+    if (idx === -1) continue;
+
+    matches.push({ idx, len: matchLen, tireId: tire.id });
+    linked.add(tire.id);
+  }
+
+  if (!matches.length) return escapedSummary;
+
+  // Replace right-to-left so earlier positions stay valid.
+  matches.sort((a, b) => b.idx - a.idx);
+
+  let result = escapedSummary;
+  for (const m of matches) {
+    const original = result.substring(m.idx, m.idx + m.len);
+    const link = '<a href="#" class="rtg-ai-tire-link" data-tire-id="' + escapeHTML(m.tireId) + '">' + original + '</a>';
+    result = result.substring(0, m.idx) + link + result.substring(m.idx + m.len);
+  }
+
+  return result;
+}
+
+/**
+ * Scroll to a tire card and briefly highlight it.
+ *
+ * @param {string} tireId The tire ID to scroll to.
+ */
+function scrollToTireCard(tireId) {
+  const card = document.querySelector('.tire-card[data-tire-id="' + CSS.escape(tireId) + '"]');
+  if (!card) return;
+
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  card.classList.remove('rtg-ai-highlight');
+  // Force reflow to restart animation if already applied.
+  void card.offsetWidth;
+  card.classList.add('rtg-ai-highlight');
+  setTimeout(() => card.classList.remove('rtg-ai-highlight'), 2500);
+}
 
 /**
  * Initialize the AI recommendation UI if enabled.
@@ -110,6 +187,9 @@ export function submitAiQuery(query) {
         return;
       }
 
+      // Track the AI query.
+      RTG_ANALYTICS.trackAiSearch(query, recommendations.length);
+
       // Apply AI recommendations: filter allRows to show only recommended tires.
       applyAiRecommendations(recommendations, summary);
     })
@@ -178,15 +258,17 @@ function applyAiRecommendations(recommendations, summary) {
   state.currentPage = 1;
   aiActive = true;
 
-  // Show summary with clear button.
+  // Show summary with clear button. Tire names become clickable links.
   if (summaryEl) {
+    const linkedSummary = linkifyTireNames(escapeHTML(summary), orderedRows);
+
     summaryEl.style.display = 'block';
     summaryEl.innerHTML =
       '<div class="rtg-ai-summary-content">' +
         '<div class="rtg-ai-summary-icon"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i></div>' +
         '<div class="rtg-ai-summary-text">' +
           '<strong>AI Recommendation</strong>' +
-          '<p>' + escapeHTML(summary) + '</p>' +
+          '<p>' + linkedSummary + '</p>' +
         '</div>' +
         '<button id="rtgAiClear" class="rtg-ai-clear" type="button" aria-label="Clear AI recommendations">' +
           '<i class="fa-solid fa-xmark" aria-hidden="true"></i> Clear' +
@@ -198,6 +280,14 @@ function applyAiRecommendations(recommendations, summary) {
     if (clearBtn) {
       clearBtn.addEventListener('click', () => clearAiRecommendations());
     }
+
+    // Attach tire link click handlers (scroll to card).
+    summaryEl.addEventListener('click', (e) => {
+      const link = e.target.closest('.rtg-ai-tire-link');
+      if (!link) return;
+      e.preventDefault();
+      scrollToTireCard(link.dataset.tireId);
+    });
   }
 
   // Re-render cards with AI results.

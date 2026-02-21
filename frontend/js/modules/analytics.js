@@ -59,7 +59,18 @@ export const RTG_ANALYTICS = {
         filters_json: JSON.stringify(filters),
         sort_by: sortBy,
         result_count: String(resultCount),
+        search_type: 'search',
       });
     }, 2000);
+  },
+
+  trackAiSearch(query, resultCount) {
+    this.track('rtg_track_search', {
+      search_query: query,
+      filters_json: '{}',
+      sort_by: '',
+      result_count: String(resultCount),
+      search_type: 'ai',
+    });
   },
 };
