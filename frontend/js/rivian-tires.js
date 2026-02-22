@@ -326,6 +326,10 @@ document.addEventListener("DOMContentLoaded", () => {
             tooltipKey = 'Studded Available Filter';
             labelText = 'Studded Available';
             break;
+          case 'filterReviewed':
+            tooltipKey = 'Officially Reviewed Filter';
+            labelText = 'Officially Reviewed';
+            break;
         }
 
         if (tooltipKey) {
@@ -343,6 +347,7 @@ document.addEventListener("DOMContentLoaded", () => {
         { selector: 'filter3pms', label: '3PMS Rated', key: '3PMS Filter' },
         { selector: 'filterEVRated', label: 'EV Rated', key: 'EV Rated Filter' },
         { selector: 'filterStudded', label: 'Studded Available', key: 'Studded Available Filter' },
+        { selector: 'filterReviewed', label: 'Officially Reviewed', key: 'Officially Reviewed Filter' },
       ];
 
       tooltipConfig.forEach(({ selector, label, key }) => {
