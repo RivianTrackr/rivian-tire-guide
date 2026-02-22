@@ -4,6 +4,17 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.19.6] - 2026-02-22
+
+### Fixed
+- **Efficiency score info icon too small** — The info icon next to the efficiency score on tire cards was 12px in a 16×16 button, while all other info icons use 14px in a 20×20 button. Matched sizing, padding, and added missing `aria-label` and `type` attributes.
+- **Officially Reviewed filter icon wrong color** — The "Officially Reviewed" filter toggle was excluded from the JS tooltip replacement that runs on page load, so it kept the PHP-hardcoded `#94a3b8` color while the other three filter icons used `var(--rtg-text-muted)` (`#8493a5`). Added it to both `updateFilterTooltipsDirectly()` and `updateFilterTooltips()`.
+- **AI clear not resetting tire view** — Clicking "Clear" on the AI recommendation summary did not restore the default tire grid because `filterAndRender()` short-circuited on a matching `lastFilterState` cache key. Now clears `state.lastFilterState` before calling `filterAndRender()` so the full filter pipeline re-runs.
+
+### Changed
+- **Mobile review modal — bottom sheet** — The review modal on screens ≤640px now slides up from the bottom as a sheet with a drag-handle indicator, rounded top corners, sticky footer with action buttons, larger star touch targets (36px), 16px font inputs to prevent iOS auto-zoom, and `env(safe-area-inset-bottom)` padding for notched devices.
+- **Plugin version** — Bumped to 1.19.6.
+
 ## [1.19.5] - 2026-02-22
 
 ### Security
