@@ -2,7 +2,7 @@
 
 **Plugin:** Rivian Tire Guide v1.0.5
 **Reviewed:** 2026-02-15
-**Updated:** 2026-02-22 (v1.19.3 — Full audit: 36/41 items resolved)
+**Updated:** 2026-02-22 (v1.19.3 — Full audit: 35/41 items resolved)
 **Scope:** Security, enhancements, performance, code quality, and UX improvements
 
 ---
@@ -179,10 +179,11 @@
 **Status:** Resolved in v1.14.0.
 **Resolution:** The duplicate 95-line JS efficiency formula in `admin-scripts.js` was replaced with a debounced AJAX call to the canonical PHP `RTG_Database::calculate_efficiency()` via the `rtg_calculate_efficiency` action. The formula now exists only in PHP — a single source of truth.
 
-### 4.6 — ~~Add PHPDoc blocks to all public methods~~ ✅ Resolved
+### 4.6 — Add PHPDoc blocks to all public methods
 **Priority:** Low
-**Status:** Resolved across multiple versions.
-**Resolution:** `@param`, `@return`, and description blocks added to public methods across `RTG_Database`, `RTG_Admin`, `RTG_Activator`, and other classes. `class-rtg-database.php` alone contains 120+ PHPDoc annotations covering parameter types, return types, and method descriptions.
+**Issue:** Many public methods in `RTG_Database` and `RTG_Admin` lack PHPDoc blocks (e.g., `get_tire()`, `insert_tire()`, `delete_tire()`, `update_tire()`, `search_tires()`). Parameter types, return types, and descriptions are missing.
+**Recommendation:** Add `@param`, `@return`, and description blocks to all public methods for IDE support and documentation generation.
+**Progress:** Some methods have PHPDoc (e.g., `get_filtered_tires()`, `calculate_efficiency()`, `get_tires_by_ids()`), but 35+ public methods in `RTG_Database` and `RTG_Admin` still lack them.
 
 ---
 
@@ -285,6 +286,6 @@
 |----------|-------|-------|
 | **High** | 7 — **all resolved** | ~~Rate limiting (1.1)~~ ✅ v1.1.0, ~~Compare page XSS (1.7)~~ ✅ v1.1.0, ~~CSV Import/Export (2.1)~~ ✅ v1.2.0, ~~Server-side pagination (3.1)~~ ✅ v1.3.0, ~~URL filter persistence (5.1)~~ ✅ v1.10.0, ~~Accessibility (5.5)~~ ✅ v1.2.0+v1.14.0, ~~PHPUnit tests (7.1)~~ ✅ v1.3.0 |
 | **Medium** | 18 — **16 resolved, 2 open** | ~~Nonce on read endpoint (1.2)~~ ✅ v1.1.0, ~~Validate tire existence (1.3)~~ ✅ v1.1.0, ~~CSP headers (1.4)~~ ✅ v1.1.0, ~~Compare image escaping (1.6)~~ ✅ v1.1.0, ~~REST API (2.2)~~ ✅ v1.14.0, ~~User reviews (2.3)~~ ✅ v1.7.0, Delete own rating (2.4), ~~Schema.org (2.7)~~ ✅ v1.1.0, ~~DB migrations (3.2)~~ ✅ v1.3.0, ~~Query caching (3.3)~~ ✅ v1.2.0, ~~JS modules (4.1)~~ ✅ v1.15.0, ~~Duplicate URL validation (4.4)~~ ✅ v1.14.0, ~~Duplicate efficiency calc (4.5)~~ ✅ v1.14.0, ~~Mobile sliders (5.2)~~ ✅ v1.15.0, ~~Skeleton states (5.4)~~ ✅ v1.14.0, ~~Orphaned ratings (6.1)~~ ✅ v1.2.0, ~~JS tests (7.2)~~ ✅ v1.14.0, AJAX tests (7.3) |
-| **Low** | 16 — **13 resolved, 3 open** | ~~CSS re-validation (1.5)~~ ✅ v1.1.0, ~~Uninstall cleanup (1.8)~~ ✅ v1.1.0, ~~Shortcode attributes (2.5)~~ ✅ v1.14.0, Dashboard widget (2.6), ~~Email notifications (2.8)~~ ✅ v1.19.0, ~~Font Awesome subset (3.4)~~ ✅ v1.15.0, ~~Lazy images (3.5)~~ ✅ v1.10.0, ~~Console cleanup (4.2)~~ ✅ v1.15.0, Autoloader (4.3), ~~PHPDoc (4.6)~~ ✅, ~~Back link (5.3)~~ ✅ v1.7.8, ~~No results UX (5.6)~~ ✅ v1.10.0, ~~Print stylesheet (5.7)~~ ✅ v1.4.0, ~~DB table check (6.2)~~ ✅ v1.3.0, ~~Tire ID format (6.3)~~ ✅, PHP linting (7.4) |
+| **Low** | 16 — **12 resolved, 4 open** | ~~CSS re-validation (1.5)~~ ✅ v1.1.0, ~~Uninstall cleanup (1.8)~~ ✅ v1.1.0, ~~Shortcode attributes (2.5)~~ ✅ v1.14.0, Dashboard widget (2.6), ~~Email notifications (2.8)~~ ✅ v1.19.0, ~~Font Awesome subset (3.4)~~ ✅ v1.15.0, ~~Lazy images (3.5)~~ ✅ v1.10.0, ~~Console cleanup (4.2)~~ ✅ v1.15.0, Autoloader (4.3), PHPDoc (4.6), ~~Back link (5.3)~~ ✅ v1.7.8, ~~No results UX (5.6)~~ ✅ v1.10.0, ~~Print stylesheet (5.7)~~ ✅ v1.4.0, ~~DB table check (6.2)~~ ✅ v1.3.0, ~~Tire ID format (6.3)~~ ✅, PHP linting (7.4) |
 
-> **Status (audited 2026-02-22):** 36 of 41 items resolved (88%). 5 items remain open: Delete own rating (2.4), Dashboard widget (2.6), PHP autoloader (4.3), AJAX integration tests (7.3), PHP linting/coding standards (7.4).
+> **Status (audited 2026-02-22):** 35 of 41 items resolved (85%). 6 items remain open: Delete own rating (2.4), Dashboard widget (2.6), PHP autoloader (4.3), PHPDoc blocks (4.6), AJAX integration tests (7.3), PHP linting/coding standards (7.4).
