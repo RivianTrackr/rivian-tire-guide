@@ -546,28 +546,43 @@ export function openReviewModal(tireId, preselectedRating = 0) {
     loginBanner = document.createElement('div');
     loginBanner.className = 'rtg-review-login-banner';
 
-    const bannerIcon = document.createElement('span');
+    const bannerIcon = document.createElement('div');
     bannerIcon.className = 'rtg-review-login-banner-icon';
-    bannerIcon.innerHTML = rtgIcon('user', 14);
+    bannerIcon.innerHTML = rtgIcon('user', 18);
 
-    const bannerText = document.createElement('span');
+    const bannerContent = document.createElement('div');
+    bannerContent.className = 'rtg-review-login-banner-content';
+
+    const bannerText = document.createElement('p');
     bannerText.className = 'rtg-review-login-banner-text';
+    bannerText.textContent = 'Create an account to edit reviews and favorite tires.';
 
-    const loginLink = document.createElement('a');
-    loginLink.href = tireRatingAjax.login_url || '/wp-login.php';
-    loginLink.textContent = 'Log in';
+    const bannerActions = document.createElement('div');
+    bannerActions.className = 'rtg-review-login-banner-actions';
 
     const registerLink = document.createElement('a');
     registerLink.href = tireRatingAjax.register_url || '/wp-login.php?action=register';
+    registerLink.className = 'rtg-review-login-btn rtg-review-login-btn-primary';
     registerLink.textContent = 'Sign up';
 
-    bannerText.appendChild(registerLink);
-    bannerText.appendChild(document.createTextNode(' or '));
-    bannerText.appendChild(loginLink);
-    bannerText.appendChild(document.createTextNode(' to edit reviews and favorite tires.'));
+    const orSpan = document.createElement('span');
+    orSpan.className = 'rtg-review-login-or';
+    orSpan.textContent = 'or';
+
+    const loginLink = document.createElement('a');
+    loginLink.href = tireRatingAjax.login_url || '/wp-login.php';
+    loginLink.className = 'rtg-review-login-btn rtg-review-login-btn-secondary';
+    loginLink.textContent = 'Log in';
+
+    bannerActions.appendChild(registerLink);
+    bannerActions.appendChild(orSpan);
+    bannerActions.appendChild(loginLink);
+
+    bannerContent.appendChild(bannerText);
+    bannerContent.appendChild(bannerActions);
 
     loginBanner.appendChild(bannerIcon);
-    loginBanner.appendChild(bannerText);
+    loginBanner.appendChild(bannerContent);
   }
 
   const footer = document.createElement('div');

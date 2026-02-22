@@ -4,6 +4,12 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.19.8] - 2026-02-22
+
+### Changed
+- **Mobile auth banner redesign** — Redesigned the guest login/register banner in the review modal for mobile. The banner now displays as a centered card with the user icon in a circular accent-tinted badge, descriptive text ("Create an account to edit reviews and favorite tires"), and pill-shaped action buttons — "Sign up" as a filled primary button and "Log in" as an outlined secondary button. Desktop layout remains a compact inline banner.
+- **Plugin version** — Bumped to 1.19.8.
+
 ## [1.19.7] - 2026-02-22
 
 ### Changed
