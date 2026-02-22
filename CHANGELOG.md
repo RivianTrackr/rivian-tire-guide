@@ -4,6 +4,12 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.20.1] - 2026-02-22
+
+### Fixed
+- **Nonce passed to review endpoints** — `get_tire_reviews` and `rtg_get_user_reviews` AJAX calls now include the nonce for logged-in users, fixing "Security check failed" errors when authenticated users attempted to load reviews or view their review history.
+- **Plugin version** — Bumped to 1.20.1.
+
 ## [1.20.0] - 2026-02-22
 
 ### Added
