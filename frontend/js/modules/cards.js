@@ -481,7 +481,21 @@ export function createSingleCard(row) {
     reviewButton.target = '_blank';
     reviewButton.rel = 'noopener noreferrer';
     reviewButton.className = 'tire-card-cta tire-card-cta-review';
-    const isVideo = safeReviewLink.includes('youtube.com') || safeReviewLink.includes('youtu.be') || safeReviewLink.includes('tiktok.com');
+    let isVideo = false;
+    try {
+      const urlObj = new URL(safeReviewLink);
+      const hostname = urlObj.hostname.toLowerCase();
+      const isYouTube =
+        hostname === 'youtube.com' ||
+        hostname.endsWith('.youtube.com') ||
+        hostname === 'youtu.be';
+      const isTikTok =
+        hostname === 'tiktok.com' ||
+        hostname.endsWith('.tiktok.com');
+      isVideo = isYouTube || isTikTok;
+    } catch (e) {
+      isVideo = false;
+    }
     const iconName = isVideo ? 'circle-play' : 'newspaper';
     const label = isVideo ? 'Watch Official Review' : 'Read Official Review';
     reviewButton.innerHTML = `${label}&nbsp;${rtgIcon(iconName, 14)}`;
