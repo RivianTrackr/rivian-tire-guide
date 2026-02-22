@@ -1504,6 +1504,19 @@
   color: var(--rtg-accent-hover, #4daa80);
   text-decoration: none;
 }
+.delete-review-btn {
+  color: var(--rtg-text-muted, #86868b);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+.delete-review-btn:hover {
+  color: #ef4444;
+}
+.delete-review-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .rtg-review-pending-badge {
   color: var(--rtg-text-muted, #86868b);
   background: color-mix(in srgb, var(--rtg-text-muted, #86868b) 8%, transparent);
