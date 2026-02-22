@@ -198,6 +198,41 @@ export function submitGuestTireRating(tireId, rating, guestName, guestEmail, rev
   });
 }
 
+function deleteTireRating(tireId) {
+  if (!VALIDATION_PATTERNS.tireId.test(tireId)) {
+    return Promise.reject('Invalid tire ID');
+  }
+  if (!state.isLoggedIn || typeof tireRatingAjax === 'undefined' || !tireRatingAjax.nonce) {
+    return Promise.reject('Not logged in');
+  }
+
+  const formData = new FormData();
+  formData.append('action', 'delete_tire_rating');
+  formData.append('tire_id', tireId);
+  formData.append('nonce', tireRatingAjax.nonce);
+
+  return fetch(tireRatingAjax.ajaxurl, {
+    method: 'POST',
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      state.tireRatings[tireId] = {
+        average: validateNumeric(data.data.average_rating, { min: 0, max: 5 }),
+        count: validateNumeric(data.data.rating_count, { min: 0, max: 10000 }),
+        review_count: validateNumeric(data.data.review_count, { min: 0, max: 10000 })
+      };
+      delete state.userRatings[tireId];
+      delete state.userReviews[tireId];
+      updateRatingDisplay(tireId);
+      return data.data;
+    } else {
+      throw new Error(data.data || 'Failed to delete rating');
+    }
+  });
+}
+
 export function createRatingHTML(tireId, average = 0, count = 0, userRating = 0) {
   if (!VALIDATION_PATTERNS.tireId.test(tireId)) {
     console.error('Invalid tire ID in rating creation');
@@ -296,6 +331,27 @@ export function createRatingHTML(tireId, average = 0, count = 0, userRating = 0)
     writeBtn.dataset.tireId = tireId;
     writeBtn.textContent = hasReview ? 'Edit Review' : 'Write a Review';
     reviewActions.appendChild(writeBtn);
+
+    if (hasReview) {
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'review-action-link delete-review-btn';
+      deleteBtn.dataset.tireId = tireId;
+      deleteBtn.textContent = 'Delete';
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!confirm('Delete your rating for this tire?')) return;
+        deleteBtn.disabled = true;
+        deleteBtn.textContent = 'Deleting...';
+        deleteTireRating(tireId)
+          .then(() => showToast('Your rating has been deleted.', 'success'))
+          .catch(err => {
+            deleteBtn.disabled = false;
+            deleteBtn.textContent = 'Delete';
+            showToast(typeof err === 'string' ? err : (err.message || 'Failed to delete.'), 'error');
+          });
+      });
+      reviewActions.appendChild(deleteBtn);
+    }
   } else {
     const hasPending = state.guestPendingReviews && state.guestPendingReviews.has(tireId);
     if (hasPending) {
@@ -794,6 +850,9 @@ function loadReviews(tireId, container, page) {
   formData.append('action', 'get_tire_reviews');
   formData.append('tire_id', tireId);
   formData.append('page', page.toString());
+  if (tireRatingAjax.nonce) {
+    formData.append('nonce', tireRatingAjax.nonce);
+  }
 
   fetch(tireRatingAjax.ajaxurl, {
     method: 'POST',
