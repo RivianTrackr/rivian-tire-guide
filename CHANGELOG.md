@@ -4,6 +4,12 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.19.9] - 2026-02-22
+
+### Changed
+- **Auth banner margin** — Added consistent bottom, left, and right margins to the login/register banner so it aligns with the modal's field padding (24px on desktop, 16px on mobile).
+- **Plugin version** — Bumped to 1.19.9.
+
 ## [1.19.8] - 2026-02-22
 
 ### Changed
