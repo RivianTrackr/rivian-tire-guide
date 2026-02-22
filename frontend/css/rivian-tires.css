@@ -1705,7 +1705,7 @@
   border: 1px solid color-mix(in srgb, var(--rtg-accent, #fba919) 20%, transparent);
   border-radius: 8px;
   padding: 12px 14px;
-  margin-top: 6px;
+  margin: 6px 24px 16px;
   line-height: 1.4;
 }
 .rtg-review-login-banner-icon {
@@ -2140,7 +2140,7 @@ a.rtg-review-card-title-link:hover {
     flex-direction: column;
     text-align: center;
     padding: 20px 16px;
-    margin: 4px 16px 0;
+    margin: 4px 16px 14px;
     gap: 10px;
     border-radius: 12px;
   }
