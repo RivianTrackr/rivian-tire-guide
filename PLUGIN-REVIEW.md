@@ -2,7 +2,7 @@
 
 **Plugin:** Rivian Tire Guide v1.0.5
 **Reviewed:** 2026-02-15
-**Updated:** 2026-02-22 (v1.19.3 — Full audit: 35/41 items resolved)
+**Updated:** 2026-02-22 (v1.20.0 — Complete: 41/41 items resolved)
 **Scope:** Security, enhancements, performance, code quality, and UX improvements
 
 ---
@@ -88,20 +88,20 @@
 **Status:** Resolved in v1.7.0, moderation in v1.7.1, guest reviews in v1.19.0.
 **Resolution:** Full text review system with optional title (200 chars) and body (5,000 chars). Review modal for submission/editing. Admin moderation queue (Tire Guide > Reviews) with approve/reject/delete. Reviews drawer on each tire card. Schema.org `Review` objects in JSON-LD. Guest reviews with name/email added in v1.19.0.
 
-### 2.4 — Allow users to delete their own ratings
+### 2.4 — ~~Allow users to delete their own ratings~~ ✅ Resolved
 **Priority:** Medium
-**Issue:** Once a user submits a rating, they can only change it — they cannot remove it. Only admins can delete ratings.
-**Recommendation:** Add a `delete_tire_rating` AJAX endpoint that allows logged-in users to delete their own rating (matching `user_id`).
+**Status:** Resolved in v1.20.0.
+**Resolution:** New `delete_tire_rating` AJAX endpoint added for logged-in users. Backed by `RTG_Database::delete_user_rating()` which only deletes ratings matching the current `user_id`. Nonce-verified. Returns updated aggregate rating data after deletion. Integration tests cover success, no-rating, and cross-user deletion prevention.
 
 ### 2.5 — ~~Shortcode attributes for filtering~~ ✅ Resolved
 **Priority:** Low
 **Status:** Resolved in v1.14.0.
 **Resolution:** The `[rivian_tire_guide]` shortcode now accepts optional pre-filter attributes: `size`, `brand`, `category`, `sort`, and `3pms`. Example: `[rivian_tire_guide brand="Michelin" category="All-Season" sort="price-asc"]`. Attributes validated and passed to frontend via `shortcode_atts()`.
 
-### 2.6 — Admin dashboard widget with quick stats
+### 2.6 — ~~Admin dashboard widget with quick stats~~ ✅ Resolved
 **Priority:** Low
-**Issue:** Plugin stats (total tires, average rating, most-viewed tires) are only accessible from the plugin's own admin pages.
-**Recommendation:** Add a WordPress dashboard widget showing key metrics at a glance.
+**Status:** Resolved in v1.20.0.
+**Resolution:** WordPress dashboard widget (`rtg_dashboard_widget`) registered via `wp_dashboard_setup`. Shows total tires, average rating, total ratings, average price in a 2-column grid. Highlights pending reviews with link to moderation queue, missing links/images counts, and top-rated tire. Links to full plugin dashboard.
 
 ### 2.7 — ~~Schema.org structured data for tire products~~ ✅ Resolved
 **Priority:** Medium
@@ -161,11 +161,11 @@
 **Status:** Resolved in v1.15.0.
 **Resolution:** esbuild build pipeline automatically strips all `console` and `debugger` statements from production `.min.js` builds via the `drop` option. Source files retain console calls for development debugging; they never reach production output.
 
-### 4.3 — Use a PHP autoloader instead of manual `require_once`
-**File:** `rivian-tire-guide.php:23-29`
+### 4.3 — ~~Use a PHP autoloader instead of manual `require_once`~~ ✅ Resolved
+**File:** `rivian-tire-guide.php`
 **Priority:** Low
-**Issue:** All class files are manually required at the top of the main plugin file. As the plugin grows, this becomes error-prone.
-**Recommendation:** Implement a PSR-4 compatible autoloader or use `spl_autoload_register()` to automatically load classes from the `includes/` directory based on class name.
+**Status:** Resolved in v1.20.0.
+**Resolution:** 12 manual `require_once` calls replaced with `spl_autoload_register()`. Autoloader maps `RTG_` prefixed class names to `includes/class-rtg-*.php` files (e.g., `RTG_REST_API` → `class-rtg-rest-api.php`). New classes are loaded automatically without editing the main plugin file.
 
 ### 4.4 — ~~Consolidate duplicate URL validation logic~~ ✅ Resolved
 **Files:** `frontend/js/modules/validation.js`, `frontend/js/rtg-shared.js`
@@ -179,11 +179,10 @@
 **Status:** Resolved in v1.14.0.
 **Resolution:** The duplicate 95-line JS efficiency formula in `admin-scripts.js` was replaced with a debounced AJAX call to the canonical PHP `RTG_Database::calculate_efficiency()` via the `rtg_calculate_efficiency` action. The formula now exists only in PHP — a single source of truth.
 
-### 4.6 — Add PHPDoc blocks to all public methods
+### 4.6 — ~~Add PHPDoc blocks to all public methods~~ ✅ Resolved
 **Priority:** Low
-**Issue:** Many public methods in `RTG_Database` and `RTG_Admin` lack PHPDoc blocks (e.g., `get_tire()`, `insert_tire()`, `delete_tire()`, `update_tire()`, `search_tires()`). Parameter types, return types, and descriptions are missing.
-**Recommendation:** Add `@param`, `@return`, and description blocks to all public methods for IDE support and documentation generation.
-**Progress:** Some methods have PHPDoc (e.g., `get_filtered_tires()`, `calculate_efficiency()`, `get_tires_by_ids()`), but 35+ public methods in `RTG_Database` and `RTG_Admin` still lack them.
+**Status:** Resolved in v1.20.0.
+**Resolution:** PHPDoc blocks with `@param`, `@return`, and descriptions added to all public methods in `RTG_Database` (tire CRUD, ratings, wheels, analytics, favorites) and `RTG_Admin` (menu registration, asset enqueuing, action routing, all page renderers, dashboard widget). Orphaned dangling PHPDoc block cleaned up.
 
 ---
 
@@ -268,15 +267,15 @@
 **Status:** Resolved in v1.14.0.
 **Resolution:** 83-test suite in `tests/test-validation.js` covering `escapeHTML`, `sanitizeInput`, `validateNumeric`, `safeImageURL`, `safeLinkURL`, and `fuzzyMatch`. Standalone runner (no dependencies) via `node tests/test-validation.js`. Integrated into GitHub Actions CI in v1.15.0.
 
-### 7.3 — Add integration tests for AJAX endpoints
+### 7.3 — ~~Add integration tests for AJAX endpoints~~ ✅ Resolved
 **Priority:** Medium
-**Issue:** The AJAX rating endpoints (`get_tire_ratings`, `submit_tire_rating`) have no integration tests verifying correct responses, error handling, and nonce validation.
-**Recommendation:** Add integration tests that simulate AJAX requests with valid/invalid nonces, valid/invalid tire IDs, and various edge cases.
+**Status:** Resolved in v1.20.0.
+**Resolution:** New `tests/test-ajax.php` with 14 integration tests extending `WP_Ajax_UnitTestCase`. Covers `get_tire_ratings` (empty, valid, invalid IDs), `submit_tire_rating` (success, missing nonce, invalid rating, nonexistent tire, review text with pending status), `delete_tire_rating` (success, no rating, cross-user prevention), `get_tire_reviews` (approved reviews, invalid ID), and favorites lifecycle (add/get/remove cycle, nonexistent tire).
 
-### 7.4 — Add PHP linting and coding standards enforcement
+### 7.4 — ~~Add PHP linting and coding standards enforcement~~ ✅ Resolved
 **Priority:** Low
-**Issue:** No `.phpcs.xml` or linting configuration exists. Code style is consistent but not enforced.
-**Recommendation:** Add `phpcs.xml` configured for WordPress Coding Standards and integrate it into the development workflow (pre-commit hook or CI).
+**Status:** Resolved in v1.20.0.
+**Resolution:** `.phpcs.xml` configuration added targeting WordPress Coding Standards (WPCS 3.x). Scans `includes/`, `admin/`, main plugin file, and `uninstall.php`. Excludes vendor/node_modules/minified files/tests. Text domain set to `rivian-tire-guide`. Minimum WP version 5.8, PHP 7.4+. New `phpcs` CI job added to GitHub Actions workflow using `wp-coding-standards/wpcs` and `phpcompatibility-wp` with `cs2pr` for inline PR annotations.
 
 ---
 
@@ -285,7 +284,7 @@
 | Priority | Count | Items |
 |----------|-------|-------|
 | **High** | 7 — **all resolved** | ~~Rate limiting (1.1)~~ ✅ v1.1.0, ~~Compare page XSS (1.7)~~ ✅ v1.1.0, ~~CSV Import/Export (2.1)~~ ✅ v1.2.0, ~~Server-side pagination (3.1)~~ ✅ v1.3.0, ~~URL filter persistence (5.1)~~ ✅ v1.10.0, ~~Accessibility (5.5)~~ ✅ v1.2.0+v1.14.0, ~~PHPUnit tests (7.1)~~ ✅ v1.3.0 |
-| **Medium** | 18 — **16 resolved, 2 open** | ~~Nonce on read endpoint (1.2)~~ ✅ v1.1.0, ~~Validate tire existence (1.3)~~ ✅ v1.1.0, ~~CSP headers (1.4)~~ ✅ v1.1.0, ~~Compare image escaping (1.6)~~ ✅ v1.1.0, ~~REST API (2.2)~~ ✅ v1.14.0, ~~User reviews (2.3)~~ ✅ v1.7.0, Delete own rating (2.4), ~~Schema.org (2.7)~~ ✅ v1.1.0, ~~DB migrations (3.2)~~ ✅ v1.3.0, ~~Query caching (3.3)~~ ✅ v1.2.0, ~~JS modules (4.1)~~ ✅ v1.15.0, ~~Duplicate URL validation (4.4)~~ ✅ v1.14.0, ~~Duplicate efficiency calc (4.5)~~ ✅ v1.14.0, ~~Mobile sliders (5.2)~~ ✅ v1.15.0, ~~Skeleton states (5.4)~~ ✅ v1.14.0, ~~Orphaned ratings (6.1)~~ ✅ v1.2.0, ~~JS tests (7.2)~~ ✅ v1.14.0, AJAX tests (7.3) |
-| **Low** | 16 — **12 resolved, 4 open** | ~~CSS re-validation (1.5)~~ ✅ v1.1.0, ~~Uninstall cleanup (1.8)~~ ✅ v1.1.0, ~~Shortcode attributes (2.5)~~ ✅ v1.14.0, Dashboard widget (2.6), ~~Email notifications (2.8)~~ ✅ v1.19.0, ~~Font Awesome subset (3.4)~~ ✅ v1.15.0, ~~Lazy images (3.5)~~ ✅ v1.10.0, ~~Console cleanup (4.2)~~ ✅ v1.15.0, Autoloader (4.3), PHPDoc (4.6), ~~Back link (5.3)~~ ✅ v1.7.8, ~~No results UX (5.6)~~ ✅ v1.10.0, ~~Print stylesheet (5.7)~~ ✅ v1.4.0, ~~DB table check (6.2)~~ ✅ v1.3.0, ~~Tire ID format (6.3)~~ ✅, PHP linting (7.4) |
+| **Medium** | 18 — **all resolved** | ~~Nonce on read endpoint (1.2)~~ ✅ v1.1.0, ~~Validate tire existence (1.3)~~ ✅ v1.1.0, ~~CSP headers (1.4)~~ ✅ v1.1.0, ~~Compare image escaping (1.6)~~ ✅ v1.1.0, ~~REST API (2.2)~~ ✅ v1.14.0, ~~User reviews (2.3)~~ ✅ v1.7.0, ~~Delete own rating (2.4)~~ ✅ v1.20.0, ~~Schema.org (2.7)~~ ✅ v1.1.0, ~~DB migrations (3.2)~~ ✅ v1.3.0, ~~Query caching (3.3)~~ ✅ v1.2.0, ~~JS modules (4.1)~~ ✅ v1.15.0, ~~Duplicate URL validation (4.4)~~ ✅ v1.14.0, ~~Duplicate efficiency calc (4.5)~~ ✅ v1.14.0, ~~Mobile sliders (5.2)~~ ✅ v1.15.0, ~~Skeleton states (5.4)~~ ✅ v1.14.0, ~~Orphaned ratings (6.1)~~ ✅ v1.2.0, ~~JS tests (7.2)~~ ✅ v1.14.0, ~~AJAX tests (7.3)~~ ✅ v1.20.0 |
+| **Low** | 16 — **all resolved** | ~~CSS re-validation (1.5)~~ ✅ v1.1.0, ~~Uninstall cleanup (1.8)~~ ✅ v1.1.0, ~~Shortcode attributes (2.5)~~ ✅ v1.14.0, ~~Dashboard widget (2.6)~~ ✅ v1.20.0, ~~Email notifications (2.8)~~ ✅ v1.19.0, ~~Font Awesome subset (3.4)~~ ✅ v1.15.0, ~~Lazy images (3.5)~~ ✅ v1.10.0, ~~Console cleanup (4.2)~~ ✅ v1.15.0, ~~Autoloader (4.3)~~ ✅ v1.20.0, ~~PHPDoc (4.6)~~ ✅ v1.20.0, ~~Back link (5.3)~~ ✅ v1.7.8, ~~No results UX (5.6)~~ ✅ v1.10.0, ~~Print stylesheet (5.7)~~ ✅ v1.4.0, ~~DB table check (6.2)~~ ✅ v1.3.0, ~~Tire ID format (6.3)~~ ✅, ~~PHP linting (7.4)~~ ✅ v1.20.0 |
 
-> **Status (audited 2026-02-22):** 35 of 41 items resolved (85%). 6 items remain open: Delete own rating (2.4), Dashboard widget (2.6), PHP autoloader (4.3), PHPDoc blocks (4.6), AJAX integration tests (7.3), PHP linting/coding standards (7.4).
+> **Status (audited 2026-02-22):** 41 of 41 items resolved (100%). All items complete.

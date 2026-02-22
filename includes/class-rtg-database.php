@@ -34,6 +34,11 @@ class RTG_Database {
 
     // --- Tire CRUD ---
 
+    /**
+     * Get all tires, using transient cache for performance.
+     *
+     * @return array Array of tire rows (associative arrays).
+     */
     public static function get_all_tires() {
         $cached = get_transient( self::$cache_key );
         if ( false !== $cached ) {
@@ -158,6 +163,12 @@ class RTG_Database {
         return $result;
     }
 
+    /**
+     * Get a single tire by its string tire_id.
+     *
+     * @param string $tire_id Tire identifier (e.g. 'tire001').
+     * @return array|null Tire row as associative array, or null if not found.
+     */
     public static function get_tire( $tire_id ) {
         global $wpdb;
         $table = self::tires_table();
@@ -167,6 +178,12 @@ class RTG_Database {
         );
     }
 
+    /**
+     * Get a single tire by its numeric auto-increment ID.
+     *
+     * @param int $id Database row ID.
+     * @return array|null Tire row as associative array, or null if not found.
+     */
     public static function get_tire_by_id( $id ) {
         global $wpdb;
         $table = self::tires_table();
@@ -176,6 +193,12 @@ class RTG_Database {
         );
     }
 
+    /**
+     * Insert a new tire into the database.
+     *
+     * @param array $data Tire data (keys match column names). Missing keys use defaults.
+     * @return int|false The new row ID on success, or false on failure.
+     */
     public static function insert_tire( $data ) {
         global $wpdb;
         $table = self::tires_table();
@@ -227,6 +250,13 @@ class RTG_Database {
         return false;
     }
 
+    /**
+     * Update an existing tire by its string tire_id.
+     *
+     * @param string $tire_id Tire identifier.
+     * @param array  $data    Associative array of columns to update.
+     * @return int|false Number of rows updated, or false on error.
+     */
     public static function update_tire( $tire_id, $data ) {
         global $wpdb;
         $table = self::tires_table();
@@ -258,6 +288,12 @@ class RTG_Database {
         return $result;
     }
 
+    /**
+     * Delete a tire and its associated ratings.
+     *
+     * @param string $tire_id Tire identifier.
+     * @return int|false Number of rows deleted, or false on error.
+     */
     public static function delete_tire( $tire_id ) {
         global $wpdb;
         $table = self::tires_table();
@@ -271,6 +307,12 @@ class RTG_Database {
         return $result;
     }
 
+    /**
+     * Bulk delete tires and their associated ratings.
+     *
+     * @param array $tire_ids Array of tire_id strings to delete.
+     * @return int Number of tire rows deleted.
+     */
     public static function delete_tires( $tire_ids ) {
         global $wpdb;
         $table = self::tires_table();
@@ -294,6 +336,13 @@ class RTG_Database {
         return $result;
     }
 
+    /**
+     * Count tires matching an optional search term and admin filters.
+     *
+     * @param string $search        Free-text search (matches tire_id, brand, model, tags).
+     * @param array  $admin_filters Optional filters: 'brand', 'size', 'category'.
+     * @return int Number of matching tires.
+     */
     public static function get_tire_count( $search = '', $admin_filters = array() ) {
         global $wpdb;
         $table = self::tires_table();
@@ -336,6 +385,17 @@ class RTG_Database {
         return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}" );
     }
 
+    /**
+     * Search and paginate tires for the admin list table.
+     *
+     * @param string $search        Free-text search term.
+     * @param int    $per_page      Results per page.
+     * @param int    $page          Page number (1-based).
+     * @param string $orderby       Column to sort by.
+     * @param string $order         Sort direction: 'ASC' or 'DESC'.
+     * @param array  $admin_filters Optional filters: 'brand', 'size', 'category'.
+     * @return array Array of tire rows (associative arrays).
+     */
     public static function search_tires( $search = '', $per_page = 20, $page = 1, $orderby = 'id', $order = 'ASC', $admin_filters = array() ) {
         global $wpdb;
         $table = self::tires_table();
@@ -388,6 +448,13 @@ class RTG_Database {
         );
     }
 
+    /**
+     * Check whether a tire_id already exists in the database.
+     *
+     * @param string $tire_id    Tire identifier to check.
+     * @param int    $exclude_id Optional numeric ID to exclude (for update uniqueness checks).
+     * @return bool True if the tire_id exists.
+     */
     public static function tire_id_exists( $tire_id, $exclude_id = 0 ) {
         global $wpdb;
         $table = self::tires_table();
@@ -407,6 +474,11 @@ class RTG_Database {
         );
     }
 
+    /**
+     * Generate the next sequential tire_id (e.g. 'tire001', 'tire002').
+     *
+     * @return string Next available tire_id.
+     */
     public static function get_next_tire_id() {
         global $wpdb;
         $table = self::tires_table();
@@ -879,6 +951,12 @@ class RTG_Database {
 
     // --- Ratings ---
 
+    /**
+     * Get aggregate rating data (average, count, review_count) for multiple tires.
+     *
+     * @param array $tire_ids Array of tire_id strings.
+     * @return array Associative array keyed by tire_id, each with 'average', 'count', 'review_count'.
+     */
     public static function get_tire_ratings( $tire_ids ) {
         global $wpdb;
         $table = self::ratings_table();
@@ -908,6 +986,13 @@ class RTG_Database {
         return $ratings;
     }
 
+    /**
+     * Get a specific user's ratings for multiple tires.
+     *
+     * @param array $tire_ids Array of tire_id strings.
+     * @param int   $user_id  WordPress user ID.
+     * @return array Associative array keyed by tire_id, each with 'rating', 'review_title', 'review_text'.
+     */
     public static function get_user_ratings( $tire_ids, $user_id ) {
         global $wpdb;
         $table = self::ratings_table();
@@ -954,10 +1039,35 @@ class RTG_Database {
         );
     }
 
+    /**
+     * Delete a single rating by its numeric ID (admin use).
+     *
+     * @param int $id Rating row ID.
+     * @return int|false Number of rows deleted, or false on error.
+     */
     public static function delete_rating( $id ) {
         global $wpdb;
         $table = self::ratings_table();
         return $wpdb->delete( $table, array( 'id' => $id ), array( '%d' ) );
+    }
+
+    /**
+     * Delete a user's own rating for a specific tire.
+     *
+     * Only deletes if the rating belongs to the given user_id.
+     *
+     * @param string $tire_id Tire identifier.
+     * @param int    $user_id WordPress user ID.
+     * @return int|false Number of rows deleted, or false on failure.
+     */
+    public static function delete_user_rating( $tire_id, $user_id ) {
+        global $wpdb;
+        $table = self::ratings_table();
+        return $wpdb->delete(
+            $table,
+            array( 'tire_id' => $tire_id, 'user_id' => $user_id ),
+            array( '%s', '%d' )
+        );
     }
 
     // --- Wheels (Stock Wheel Guide) ---
@@ -967,12 +1077,23 @@ class RTG_Database {
         return $wpdb->prefix . 'rtg_wheels';
     }
 
+    /**
+     * Get all stock wheels ordered by sort_order.
+     *
+     * @return array Array of wheel rows (associative arrays).
+     */
     public static function get_all_wheels() {
         global $wpdb;
         $table = self::wheels_table();
         return $wpdb->get_results( "SELECT * FROM {$table} ORDER BY sort_order ASC, id ASC", ARRAY_A );
     }
 
+    /**
+     * Get a single wheel by its numeric ID.
+     *
+     * @param int $id Wheel row ID.
+     * @return array|null Wheel row as associative array, or null if not found.
+     */
     public static function get_wheel( $id ) {
         global $wpdb;
         $table = self::wheels_table();
@@ -982,6 +1103,12 @@ class RTG_Database {
         );
     }
 
+    /**
+     * Insert a new stock wheel.
+     *
+     * @param array $data Wheel data (name, stock_size, alt_sizes, image, vehicles, sort_order).
+     * @return int|false The new row ID on success, or false on failure.
+     */
     public static function insert_wheel( $data ) {
         global $wpdb;
         $table = self::wheels_table();
@@ -1006,6 +1133,13 @@ class RTG_Database {
         return $result !== false ? $wpdb->insert_id : false;
     }
 
+    /**
+     * Update an existing stock wheel.
+     *
+     * @param int   $id   Wheel row ID.
+     * @param array $data Associative array of columns to update.
+     * @return int|false Number of rows updated, or false on error.
+     */
     public static function update_wheel( $id, $data ) {
         global $wpdb;
         $table = self::wheels_table();
@@ -1020,18 +1154,42 @@ class RTG_Database {
         return $wpdb->update( $table, $data, array( 'id' => $id ), $formats, array( '%d' ) );
     }
 
+    /**
+     * Delete a stock wheel by its numeric ID.
+     *
+     * @param int $id Wheel row ID.
+     * @return int|false Number of rows deleted, or false on error.
+     */
     public static function delete_wheel( $id ) {
         global $wpdb;
         $table = self::wheels_table();
         return $wpdb->delete( $table, array( 'id' => $id ), array( '%d' ) );
     }
 
+    /**
+     * Count total stock wheels in the database.
+     *
+     * @return int Wheel count.
+     */
     public static function get_wheel_count() {
         global $wpdb;
         $table = self::wheels_table();
         return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
     }
 
+    /**
+     * Create or update a logged-in user's rating (and optional review) for a tire.
+     *
+     * Upserts based on tire_id + user_id. Admin ratings auto-approve; others are
+     * set to 'pending' when review content is present.
+     *
+     * @param string $tire_id      Tire identifier.
+     * @param int    $user_id      WordPress user ID.
+     * @param int    $rating       Star rating (1-5).
+     * @param string $review_title Optional review title.
+     * @param string $review_text  Optional review body text.
+     * @return int|false Rows affected, or false on failure.
+     */
     public static function set_rating( $tire_id, $user_id, $rating, $review_title = '', $review_text = '' ) {
         global $wpdb;
         $table = self::ratings_table();
@@ -1232,13 +1390,6 @@ class RTG_Database {
         );
     }
 
-    /**
-     * Get the current user's review for a specific tire (if any).
-     *
-     * @param string $tire_id Tire identifier.
-     * @param int    $user_id WordPress user ID.
-     * @return array|null Review data or null.
-     */
     // --- Admin Review Management ---
 
     /**
@@ -1396,6 +1547,13 @@ class RTG_Database {
         );
     }
 
+    /**
+     * Get a user's review for a specific tire.
+     *
+     * @param string $tire_id Tire identifier.
+     * @param int    $user_id WordPress user ID.
+     * @return array|null Review data (rating, review_title, review_text), or null if none.
+     */
     public static function get_user_review( $tire_id, $user_id ) {
         global $wpdb;
         $table = self::ratings_table();

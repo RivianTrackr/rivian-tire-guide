@@ -10,6 +10,7 @@ class RTG_Admin {
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
         add_action( 'admin_init', array( $this, 'handle_actions' ) );
         add_action( 'admin_notices', array( $this, 'pending_reviews_notice' ) );
+        add_action( 'wp_dashboard_setup', array( $this, 'register_dashboard_widget' ) );
     }
 
     /**
@@ -55,6 +56,105 @@ class RTG_Admin {
         );
     }
 
+    /**
+     * Register the Tire Guide dashboard widget.
+     */
+    public function register_dashboard_widget() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        wp_add_dashboard_widget(
+            'rtg_dashboard_widget',
+            'Tire Guide — Quick Stats',
+            array( $this, 'render_dashboard_widget' )
+        );
+    }
+
+    /**
+     * Render the Tire Guide dashboard widget content.
+     */
+    public function render_dashboard_widget() {
+        $stats = RTG_Database::get_dashboard_stats();
+
+        $total_tires    = intval( $stats['core']['total_tires'] ?? 0 );
+        $avg_rating     = floatval( $stats['ratings']['avg_rating'] ?? 0 );
+        $total_ratings  = intval( $stats['ratings']['total_ratings'] ?? 0 );
+        $pending        = intval( $stats['pending_reviews'] ?? 0 );
+        $avg_price      = floatval( $stats['core']['avg_price'] ?? 0 );
+        $missing_links  = intval( $stats['core']['missing_links'] ?? 0 );
+        $missing_images = intval( $stats['core']['missing_images'] ?? 0 );
+
+        echo '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:12px;">';
+
+        printf(
+            '<div><strong>%s</strong><br><span style="font-size:20px;font-weight:600;">%d</span></div>',
+            'Total Tires',
+            $total_tires
+        );
+
+        printf(
+            '<div><strong>%s</strong><br><span style="font-size:20px;font-weight:600;">%s / 5</span></div>',
+            'Avg Rating',
+            $avg_rating > 0 ? number_format( $avg_rating, 1 ) : '—'
+        );
+
+        printf(
+            '<div><strong>%s</strong><br><span style="font-size:20px;font-weight:600;">%d</span></div>',
+            'Total Ratings',
+            $total_ratings
+        );
+
+        printf(
+            '<div><strong>%s</strong><br><span style="font-size:20px;font-weight:600;">$%s</span></div>',
+            'Avg Price',
+            $avg_price > 0 ? number_format( $avg_price, 0 ) : '—'
+        );
+
+        echo '</div>';
+
+        if ( $pending > 0 ) {
+            printf(
+                '<p style="margin:8px 0;"><span class="dashicons dashicons-warning" style="color:#d63638;"></span> <a href="%s"><strong>%d pending %s</strong></a></p>',
+                esc_url( admin_url( 'admin.php?page=rtg-reviews&status=pending' ) ),
+                $pending,
+                $pending === 1 ? 'review' : 'reviews'
+            );
+        }
+
+        if ( $missing_links > 0 || $missing_images > 0 ) {
+            echo '<p style="margin:4px 0;color:#666;">';
+            $notices = array();
+            if ( $missing_links > 0 ) {
+                $notices[] = sprintf( '%d missing links', $missing_links );
+            }
+            if ( $missing_images > 0 ) {
+                $notices[] = sprintf( '%d missing images', $missing_images );
+            }
+            echo esc_html( implode( ' · ', $notices ) );
+            echo '</p>';
+        }
+
+        // Top rated tire.
+        if ( ! empty( $stats['top_rated'] ) ) {
+            $top = $stats['top_rated'][0];
+            printf(
+                '<p style="margin:8px 0 4px;"><strong>Top Rated:</strong> %s %s (%s★)</p>',
+                esc_html( $top['brand'] ),
+                esc_html( $top['model'] ),
+                esc_html( $top['avg_rating'] )
+            );
+        }
+
+        printf(
+            '<p style="margin:8px 0 0;"><a href="%s">View full dashboard →</a></p>',
+            esc_url( admin_url( 'admin.php?page=rtg-dashboard' ) )
+        );
+    }
+
+    /**
+     * Register admin menu pages and submenu items.
+     */
     public function register_menu() {
         add_menu_page(
             'Tire Guide',
@@ -163,6 +263,11 @@ class RTG_Admin {
         );
     }
 
+    /**
+     * Enqueue admin CSS and JavaScript assets on Tire Guide pages.
+     *
+     * @param string $hook Current admin page hook suffix.
+     */
     public function enqueue_assets( $hook ) {
         if ( strpos( $hook, 'rtg-' ) === false && strpos( $hook, 'rtg_' ) === false ) {
             return;
@@ -210,6 +315,9 @@ class RTG_Admin {
         }
     }
 
+    /**
+     * Route admin POST/GET actions to the appropriate handler.
+     */
     public function handle_actions() {
         // Handle tire save.
         if ( isset( $_POST['rtg_tire_save'] ) ) {
@@ -368,6 +476,9 @@ class RTG_Admin {
 
     // --- Page Renderers ---
 
+    /**
+     * Render the tire list admin page.
+     */
     public function render_list_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
@@ -375,6 +486,9 @@ class RTG_Admin {
         require_once RTG_PLUGIN_DIR . 'admin/views/tire-list.php';
     }
 
+    /**
+     * Render the tire add/edit admin page.
+     */
     public function render_edit_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
@@ -382,6 +496,9 @@ class RTG_Admin {
         require_once RTG_PLUGIN_DIR . 'admin/views/tire-edit.php';
     }
 
+    /**
+     * Render the stock wheels list admin page.
+     */
     public function render_wheels_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
@@ -389,6 +506,9 @@ class RTG_Admin {
         require_once RTG_PLUGIN_DIR . 'admin/views/wheel-list.php';
     }
 
+    /**
+     * Render the wheel add/edit admin page.
+     */
     public function render_wheel_edit_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
@@ -396,6 +516,9 @@ class RTG_Admin {
         require_once RTG_PLUGIN_DIR . 'admin/views/wheel-edit.php';
     }
 
+    /**
+     * Render the review moderation admin page.
+     */
     public function render_reviews_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
@@ -403,6 +526,9 @@ class RTG_Admin {
         require_once RTG_PLUGIN_DIR . 'admin/views/reviews-list.php';
     }
 
+    /**
+     * Render the affiliate links management admin page.
+     */
     public function render_affiliate_links_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
@@ -410,6 +536,9 @@ class RTG_Admin {
         require_once RTG_PLUGIN_DIR . 'admin/views/affiliate-links.php';
     }
 
+    /**
+     * Render the analytics dashboard admin page.
+     */
     public function render_analytics_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
@@ -417,6 +546,9 @@ class RTG_Admin {
         require_once RTG_PLUGIN_DIR . 'admin/views/analytics.php';
     }
 
+    /**
+     * Render the CSV import/export admin page.
+     */
     public function render_import_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
@@ -424,6 +556,9 @@ class RTG_Admin {
         require_once RTG_PLUGIN_DIR . 'admin/views/import-export.php';
     }
 
+    /**
+     * Render the plugin settings admin page.
+     */
     public function render_settings_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
@@ -431,6 +566,9 @@ class RTG_Admin {
         require_once RTG_PLUGIN_DIR . 'admin/views/settings.php';
     }
 
+    /**
+     * Render the main Tire Guide dashboard admin page.
+     */
     public function render_dashboard_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;

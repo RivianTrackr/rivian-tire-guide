@@ -19,6 +19,9 @@ class RTG_Ajax {
         // Submit review — logged-in users only.
         add_action( 'wp_ajax_submit_tire_rating', array( $this, 'submit_tire_rating' ) );
 
+        // Delete own rating — logged-in users only.
+        add_action( 'wp_ajax_delete_tire_rating', array( $this, 'delete_tire_rating' ) );
+
         // Submit guest review — non-logged-in users only.
         add_action( 'wp_ajax_nopriv_submit_guest_tire_rating', array( $this, 'submit_guest_tire_rating' ) );
 
@@ -293,6 +296,42 @@ class RTG_Ajax {
         wp_send_json_success( array(
             'review_status' => 'pending',
         ) );
+    }
+
+    /**
+     * Delete the current user's own rating for a tire.
+     * Logged-in users only, with nonce verification.
+     */
+    public function delete_tire_rating() {
+        if ( ! check_ajax_referer( 'tire_rating_nonce', 'nonce', false ) ) {
+            wp_send_json_error( 'Security check failed.' );
+        }
+
+        if ( ! is_user_logged_in() ) {
+            wp_send_json_error( 'You must be logged in to delete ratings.' );
+        }
+
+        $user_id = get_current_user_id();
+        $tire_id = sanitize_text_field( $_POST['tire_id'] ?? '' );
+
+        if ( ! preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) || strlen( $tire_id ) > 50 ) {
+            wp_send_json_error( 'Invalid tire ID.' );
+        }
+
+        $result = RTG_Database::delete_user_rating( $tire_id, $user_id );
+
+        if ( $result ) {
+            $ratings     = RTG_Database::get_tire_ratings( array( $tire_id ) );
+            $tire_rating = $ratings[ $tire_id ] ?? array( 'average' => 0, 'count' => 0, 'review_count' => 0 );
+
+            wp_send_json_success( array(
+                'average_rating' => $tire_rating['average'],
+                'rating_count'   => $tire_rating['count'],
+                'review_count'   => $tire_rating['review_count'],
+            ) );
+        } else {
+            wp_send_json_error( 'No rating found to delete.' );
+        }
     }
 
     /**
