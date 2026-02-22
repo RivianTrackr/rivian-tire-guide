@@ -4,6 +4,12 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.19.7] - 2026-02-22
+
+### Changed
+- **Mobile review modal — full-screen takeover** — Replaced the bottom-sheet pattern with a full-screen native-app-style page on screens ≤640px. The modal now covers the entire viewport with a sticky top nav bar (close button on left, centered title), scrollable body, and a full-width sticky "Submit Review" button at the bottom. Stars are 40px with 14px gap for fat-finger tapping. Inputs use 16px font to prevent iOS auto-zoom. Animation uses a spring-like `cubic-bezier(0.32, 0.72, 0, 1)` curve for smooth slide-up. Safe-area insets respect iPhone notch/Dynamic Island and home indicator.
+- **Plugin version** — Bumped to 1.19.7.
+
 ## [1.19.6] - 2026-02-22
 
 ### Fixed
