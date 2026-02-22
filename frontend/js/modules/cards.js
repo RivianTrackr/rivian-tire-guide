@@ -358,19 +358,21 @@ export function createSingleCard(row) {
       scoreText.textContent = `Efficiency (${escapeHTML(safeString(efficiencyScore))}/100)`;
 
       const infoButton = document.createElement('button');
-      infoButton.innerHTML = '' + rtgIcon('circle-info', 12) + '';
+      infoButton.innerHTML = '' + rtgIcon('circle-info', 14) + '';
       infoButton.className = 'info-tooltip-trigger';
       infoButton.dataset.tooltipKey = 'Efficiency Score';
+      infoButton.setAttribute('aria-label', 'More info about Efficiency Score');
+      infoButton.setAttribute('type', 'button');
       infoButton.style.cssText = `
         background: none;
         border: none;
         color: var(--rtg-text-muted);
-        font-size: 12px;
+        font-size: 14px;
         cursor: pointer;
-        padding: 1px;
+        padding: 2px;
         border-radius: 50%;
-        width: 16px;
-        height: 16px;
+        width: 20px;
+        height: 20px;
         display: flex;
         align-items: center;
         justify-content: center;

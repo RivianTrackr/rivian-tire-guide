@@ -403,6 +403,9 @@ export function clearAiRecommendations(keepInput) {
     input.value = '';
   }
 
+  // Force filterAndRender to re-evaluate by clearing the cached filter state.
+  state.lastFilterState = null;
+
   // Restore normal filtering — use the appropriate mode.
   if (isServerSide()) {
     serverSideFilterAndRender();
