@@ -35,7 +35,7 @@ function setupImageObserver() {
       }
     });
   }, {
-    rootMargin: '200px 0px',
+    rootMargin: '600px 0px',
     threshold: 0
   });
 }
@@ -294,8 +294,7 @@ export function createSingleCard(row) {
 
     const img = document.createElement('img');
     img.alt = `${escapeHTML(safeString(brand))} ${escapeHTML(safeString(model))}`;
-    img.loading = 'lazy';
-    img.fetchpriority = 'low';
+    img.decoding = 'async';
     img.className = 'rtg-lazy-img';
     if ('IntersectionObserver' in window) {
       img.dataset.src = safeImage;
