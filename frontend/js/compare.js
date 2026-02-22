@@ -128,7 +128,22 @@ function renderCTAs(tire) {
       View Tire ${rtgIcon('arrow-up-right', 14)}</a>`;
   }
   if (review) {
-    const isVideo = review.includes('youtube.com') || review.includes('youtu.be') || review.includes('tiktok.com');
+    let isVideo = false;
+    try {
+      const reviewUrl = new URL(review, window.location && window.location.origin ? window.location.origin : undefined);
+      const host = reviewUrl.hostname.toLowerCase();
+      isVideo =
+        host === 'youtube.com' ||
+        host === 'www.youtube.com' ||
+        host.endsWith('.youtube.com') ||
+        host === 'youtu.be' ||
+        host === 'www.youtu.be' ||
+        host === 'tiktok.com' ||
+        host === 'www.tiktok.com' ||
+        host.endsWith('.tiktok.com');
+    } catch (e) {
+      isVideo = false;
+    }
     const iconName = isVideo ? 'circle-play' : 'newspaper';
     const label = isVideo ? 'Watch Official Review' : 'Read Official Review';
     html += `<a href="${escapeHTML(review)}" target="_blank" rel="noopener noreferrer" class="cmp-cta cmp-cta-review">
