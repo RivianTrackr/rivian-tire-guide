@@ -4,8 +4,8 @@
 
 | Version | Supported |
 |---------|-----------|
-| 1.1.x   | Yes       |
-| < 1.1   | No        |
+| 1.19.x  | Yes       |
+| < 1.19  | No        |
 
 ## Reporting a Vulnerability
 
@@ -43,18 +43,21 @@ This plugin implements the following security practices:
 - **Authorization:** `current_user_can('manage_options')` checks on all admin actions.
 - **Input Sanitization:** `sanitize_text_field()`, `sanitize_textarea_field()`, `esc_url_raw()`, `intval()`, `floatval()` on all user input.
 - **Output Escaping:** `esc_html()`, `esc_url()`, `esc_attr()`, `esc_textarea()` on all output.
-- **Rate Limiting:** Transient-based rate limiter on rating submissions (10 per minute per user).
-- **Data Validation:** Tire existence checks before accepting ratings; regex validation on tire IDs.
+- **Rate Limiting:** Transient-based rate limiter on review submissions (3 per 5-minute window per user; IP-based for guests). REST API rate limiting (60 reads/min, 10 writes/min). AI query rate limiting (configurable per-IP).
+- **Data Validation:** Tire existence checks before accepting ratings; regex validation on tire IDs (`/^[a-zA-Z0-9\-_]+$/`, max 50 chars); review field length limits (title 200 chars, body 5,000 chars).
 - **CSS Injection Prevention:** `sanitize_hex_color()` re-validation at render time for theme color overrides.
+- **CSV Upload Security:** File extension check (.csv only), `finfo`-based MIME type validation, 2MB file size limit.
+- **Guest Review Spam Prevention:** Honeypot field, IP-based rate limiting, duplicate email+tire detection.
 - **Clean Uninstall:** All plugin data (tables, options) removed on uninstall.
 
 ### Client-Side (JavaScript)
 
 - **HTML Escaping:** `escapeHTML()` applied to all dynamic content before DOM insertion.
-- **URL Validation:** Domain allowlists for affiliate links, bundle links, and image URLs with protocol enforcement (HTTPS only).
+- **URL Validation:** Shared validation module (`rtg-shared.js`) with domain allowlists for affiliate links, review links, and image URLs with protocol enforcement (HTTPS only).
 - **Input Validation:** Regex patterns for search, tire IDs, numeric values, and URLs.
 - **Numeric Bounds:** Range clamping on price, warranty, weight, rating, and page values.
 - **Path Traversal Prevention:** Checks for `..` and `//` in URL paths.
+- **Analytics Privacy:** Session hashing via SHA-256(IP + User-Agent + date) — no persistent user tracking. Click and search deduplication windows prevent data inflation.
 
 ### HTTP Headers (Comparison Page)
 
