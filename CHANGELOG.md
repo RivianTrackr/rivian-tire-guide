@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.19.2] - 2026-02-22
+
+### Fixed
+- **Tire images loading too late** — Removed conflicting `loading="lazy"` and `fetchpriority="low"` attributes from tire card images. These were double-gating the IntersectionObserver-based lazy loading, causing images to appear blank or pop in on-screen. The IntersectionObserver is now the sole loading controller, with `decoding="async"` for non-blocking decode. Root margin increased from 200px to 600px so images load well before scrolling into view.
+
+### Changed
+- **Plugin version** — Bumped to 1.19.2.
+
 ## [1.19.1] - 2026-02-21
 
 ### Security
