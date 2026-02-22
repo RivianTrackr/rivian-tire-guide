@@ -4,6 +4,12 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.19.3] - 2026-02-22
+
+### Changed
+- **Plugin review audit** — Audited all 7 high-priority items from `PLUGIN-REVIEW.md` and confirmed each was resolved in prior versions: rate limiting (v1.1.0), compare page XSS (v1.1.0), CSV import/export (v1.2.0), server-side pagination (v1.3.0), URL filter persistence (v1.10.0), accessibility (v1.2.0 + v1.14.0), and PHPUnit/JS test suites (v1.3.0 + v1.14.0). Updated the review document with resolution details, version references, and a note on medium/low items also addressed.
+- **Plugin version** — Bumped to 1.19.3.
+
 ## [1.19.2] - 2026-02-22
 
 ### Fixed

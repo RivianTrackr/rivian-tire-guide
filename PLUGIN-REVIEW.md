@@ -2,6 +2,7 @@
 
 **Plugin:** Rivian Tire Guide v1.0.5
 **Reviewed:** 2026-02-15
+**Updated:** 2026-02-22 (v1.19.3 — High-priority audit)
 **Scope:** Security, enhancements, performance, code quality, and UX improvements
 
 ---
@@ -20,11 +21,11 @@
 
 ## 1. Security Updates
 
-### 1.1 — Rate-limit AJAX rating submissions
-**File:** `includes/class-rtg-ajax.php:58-93`
+### 1.1 — ~~Rate-limit AJAX rating submissions~~ ✅ Resolved
+**File:** `includes/class-rtg-ajax.php`
 **Priority:** High
-**Issue:** The `submit_tire_rating` endpoint has no rate limiting. A logged-in user could spam rating submissions rapidly, hammering the database.
-**Recommendation:** Add a WordPress transient-based rate limiter (e.g., max 10 rating submissions per minute per user) to prevent abuse.
+**Status:** Resolved in v1.1.0, tightened in v1.19.0.
+**Resolution:** Transient-based rate limiter added — logged-in users: 3 submissions per 5-minute window (`RATE_LIMIT_MAX = 3`, `RATE_LIMIT_WINDOW = 300`). Guest IP-based rate limiting also added in v1.19.0 via `is_guest_rate_limited()` / `record_guest_rate_limit()`.
 
 ### 1.2 — Add nonce verification to the `get_tire_ratings` AJAX endpoint
 **File:** `includes/class-rtg-ajax.php:21-52`
@@ -56,11 +57,11 @@
 **Issue:** The comparison table renders image URLs directly into `<img src="">` without using `safeImageURL()` for all cases. Lines 136-157 check `cellValue.startsWith("http")` but do not call `safeImageURL()` — the function exists in the file but isn't used for comparison image rendering.
 **Recommendation:** Route all image URLs through `safeImageURL()` before inserting into HTML, and apply `escapeHTML()` to any URL used in an `href` or `src` attribute.
 
-### 1.7 — Escape link URLs in `compare.js` to prevent XSS
-**File:** `frontend/js/compare.js:159-199`
+### 1.7 — ~~Escape link URLs in `compare.js` to prevent XSS~~ ✅ Resolved
+**File:** `frontend/js/compare.js`
 **Priority:** High
-**Issue:** Link and Bundle Link URLs are inserted into `href` attributes with only a `startsWith("http")` check. A stored URL like `https://evil.com" onclick="alert(1)` could execute JavaScript via attribute injection.
-**Recommendation:** Use `escapeHTML()` on all URLs before inserting them into HTML attributes, and validate against the existing domain allowlists (like `safeLinkURL()` and `safeBundleLinkURL()` from `rivian-tires.js`).
+**Status:** Resolved in v1.1.0, consolidated in v1.14.0.
+**Resolution:** All URLs routed through `safeLinkURL()`, `safeReviewLinkURL()`, and `safeImageURL()` from the shared `RTG_SHARED` module before insertion. `escapeHTML()` applied to all attribute values. Domain allowlists consolidated into `rtg-shared.js` (v1.14.0) to eliminate duplicate validation logic.
 
 ### 1.8 — Delete `rtg_dropdown_options` on uninstall
 **File:** `uninstall.php:11-13`
@@ -72,10 +73,10 @@
 
 ## 2. Feature Enhancements
 
-### 2.1 — CSV/JSON import and export for tire data
+### 2.1 — ~~CSV/JSON import and export for tire data~~ ✅ Resolved
 **Priority:** High
-**Issue:** Tires must be added one at a time via the admin form. Bulk data management is impractical for a large catalog.
-**Recommendation:** Add admin Import/Export functionality supporting CSV and/or JSON formats. Include field mapping, validation, and a dry-run preview before committing imports.
+**Status:** Resolved in v1.2.0, enhanced in v1.8.0.
+**Resolution:** Admin Import/Export page (Tire Guide > Import / Export) supports CSV import with duplicate handling (skip/update modes), auto-generated tire IDs, auto-calculated efficiency scores, and full catalog CSV export. MIME type validation added in v1.19.1. 21 columns supported including review_link.
 
 ### 2.2 — REST API for tire data
 **Priority:** Medium
@@ -116,11 +117,11 @@
 
 ## 3. Performance Improvements
 
-### 3.1 — Server-side pagination instead of loading all tires into JS
-**File:** `includes/class-rtg-frontend.php:94-100`
+### 3.1 — ~~Server-side pagination instead of loading all tires into JS~~ ✅ Resolved
+**File:** `includes/class-rtg-frontend.php`, `includes/class-rtg-ajax.php`
 **Priority:** High
-**Issue:** `get_tires_as_array()` loads the entire tire catalog into a JS variable via `wp_localize_script`. For a small catalog this is fine, but it embeds all data (including URLs and tags) as inline JSON in the HTML. With hundreds of tires, this significantly increases page weight and initial parse time.
-**Recommendation:** Implement a hybrid approach: load the first page of tires inline, then use AJAX pagination with server-side filtering for subsequent pages. Alternatively, move to a REST API approach for the frontend with client-side caching.
+**Status:** Resolved in v1.3.0.
+**Resolution:** Hybrid approach implemented — optional server-side pagination mode (Settings toggle). When enabled, `rtg_get_tires` AJAX endpoint provides full server-side filtering, sorting, and pagination. Client-side mode still available for smaller catalogs. Tire data only embedded inline when client-side mode is active (`class-rtg-frontend.php:180`).
 
 ### 3.2 — Add database version migration system
 **File:** `includes/class-rtg-activator.php`
@@ -188,10 +189,10 @@
 
 ## 5. UX / Frontend Improvements
 
-### 5.1 — Persist filter state in URL parameters
+### 5.1 — ~~Persist filter state in URL parameters~~ ✅ Resolved
 **Priority:** High
-**Issue:** If a user filters tires (e.g., by brand, size, category) and then refreshes the page or shares the link, all filter selections are lost.
-**Recommendation:** Sync active filters to URL query parameters (e.g., `?brand=Michelin&size=275/65R18`). On page load, parse URL params and restore the filter state. This also enables shareable filtered views.
+**Status:** Resolved in v1.10.0.
+**Resolution:** All filter state synced to URL query parameters via `updateURLFromFilters()` using `history.pushState()`. On page load, `applyFiltersFromURL()` parses URL params and restores all filter state (search, size, brand, category, 3PMS, EV, studded, reviewed, favorites, price/warranty/weight sliders, sort, page). `popstate` listener enables browser back/forward through filter history. Shareable filtered URLs fully functional (e.g., `?brand=Michelin&size=275/65R18&sort=price-asc`).
 
 ### 5.2 — Mobile-friendly range slider interaction
 **Priority:** Medium
@@ -209,15 +210,15 @@
 **Issue:** When the page loads, there's a brief flash of empty content while JavaScript processes and renders tire cards.
 **Recommendation:** Add CSS skeleton placeholders that display immediately and are replaced once the JS renders the actual cards. This improves perceived performance.
 
-### 5.5 — Accessibility (a11y) improvements
+### 5.5 — ~~Accessibility (a11y) improvements~~ ✅ Resolved
 **Priority:** High
-**Issue:** Several accessibility concerns exist:
-- Star rating system lacks keyboard navigation and ARIA labels
-- Filter toggle buttons lack `aria-expanded` state
-- Tooltips are not keyboard-accessible (hover-only)
-- Compare selection checkboxes lack proper labels
-- Color contrast may be insufficient on some theme color combinations
-**Recommendation:** Add ARIA attributes (`role`, `aria-label`, `aria-expanded`, `aria-live`), keyboard event handlers for interactive elements, and ensure WCAG 2.1 AA contrast ratios.
+**Status:** Resolved across v1.2.0 and v1.14.0.
+**Resolution:** All listed concerns addressed:
+- **Star ratings:** ARIA `role`, `aria-label`, `aria-checked` attributes + full keyboard navigation (arrow keys, Enter/Space) — v1.2.0.
+- **Filter toggles:** `aria-expanded` / `aria-controls` on mobile filter toggle and wheel drawer trigger — v1.2.0.
+- **Tooltips:** Clickable tooltip triggers with modal display (not hover-only) — v1.14.0.
+- **Compare checkboxes:** Descriptive `aria-label` attributes — v1.2.0.
+- **Additional a11y (v1.14.0):** Skip-to-content link, `aria-label` on all filter controls/search/sort, `role="status"` + `aria-live="polite"` on no-results, screen-reader-only labels, `focus-visible` outline styles on all interactive elements, `.screen-reader-text` utility class.
 
 ### 5.6 — Improve the "No results" state
 **Priority:** Low
@@ -254,15 +255,13 @@
 
 ## 7. Testing & Reliability
 
-### 7.1 — Add PHPUnit test suite
+### 7.1 — ~~Add PHPUnit test suite~~ ✅ Resolved
 **Priority:** High
-**Issue:** There are no automated tests of any kind. All validation of the efficiency formula, database operations, input sanitization, and admin handlers relies on manual testing.
-**Recommendation:** Add a PHPUnit test suite using `wp-browser` or `WP_UnitTestCase` covering:
-- Efficiency score calculation (edge cases, missing data, boundary values)
-- Database CRUD operations
-- Input sanitization and validation
-- Admin action handlers (nonce verification, permission checks)
-- Shortcode rendering
+**Status:** Resolved in v1.3.0 (PHP), v1.14.0 (JS).
+**Resolution:** Two test suites implemented:
+- **PHPUnit** (`tests/test-database.php`): 21 tests covering tire CRUD, ratings upsert, cascade deletes, cache invalidation, efficiency calculation, filtered pagination, and bulk operations. Bootstrap at `tests/bootstrap.php`.
+- **JavaScript** (`tests/test-validation.js`): 83 tests covering `escapeHTML`, `sanitizeInput`, `validateNumeric`, `safeImageURL`, `safeLinkURL`, and `fuzzyMatch`.
+- **CI:** GitHub Actions workflow runs JS tests, build verification, and PHP syntax linting (PHP 7.4, 8.0, 8.2) on every push/PR — v1.15.0.
 
 ### 7.2 — Add JavaScript unit tests
 **Priority:** Medium
@@ -285,6 +284,8 @@
 
 | Priority | Count | Items |
 |----------|-------|-------|
-| **High** | 6 | Rate limiting (1.1), Compare page XSS (1.7), CSV Import/Export (2.1), Server-side pagination (3.1), URL filter persistence (5.1), Accessibility (5.5), PHPUnit tests (7.1) |
+| **High** | 7 — **all resolved** | ~~Rate limiting (1.1)~~ ✅ v1.1.0, ~~Compare page XSS (1.7)~~ ✅ v1.1.0, ~~CSV Import/Export (2.1)~~ ✅ v1.2.0, ~~Server-side pagination (3.1)~~ ✅ v1.3.0, ~~URL filter persistence (5.1)~~ ✅ v1.10.0, ~~Accessibility (5.5)~~ ✅ v1.2.0+v1.14.0, ~~PHPUnit tests (7.1)~~ ✅ v1.3.0 |
 | **Medium** | 13 | Nonce on read endpoint (1.2), Validate tire existence (1.3), CSP headers (1.4), Compare image escaping (1.6), REST API (2.2), User reviews (2.3), Delete own rating (2.4), Schema.org (2.7), DB migrations (3.2), Query caching (3.3), JS modules (4.1), Duplicate URL validation (4.4), Duplicate efficiency calc (4.5), Mobile sliders (5.2), Skeleton states (5.4), Orphaned ratings (6.1), JS tests (7.2), AJAX tests (7.3) |
 | **Low** | 11 | CSS re-validation (1.5), Uninstall cleanup (1.8), Shortcode attributes (2.5), Dashboard widget (2.6), Email notifications (2.8), Font Awesome subset (3.4), Lazy images (3.5), Console cleanup (4.2), Autoloader (4.3), PHPDoc (4.6), Back link (5.3), No results UX (5.6), Print stylesheet (5.7), DB table check (6.2), Tire ID format (6.3), PHP linting (7.4) |
+
+> **Note:** Many medium and low priority items have also been addressed in subsequent versions (e.g., REST API in v1.14.0, user reviews in v1.7.0, Schema.org in v1.1.0, DB migrations in v1.3.0, query caching in v1.2.0, JS modules in v1.15.0, URL validation consolidation in v1.14.0, efficiency calc consolidation in v1.14.0, mobile sliders in v1.15.0, skeleton states in v1.14.0, orphaned ratings in v1.2.0, JS tests in v1.14.0). A full audit of medium/low items is recommended as a follow-up.
