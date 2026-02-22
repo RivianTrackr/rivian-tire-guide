@@ -1698,29 +1698,50 @@
 .rtg-review-login-banner {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-size: 13px;
   color: var(--rtg-text-muted, #8493a5);
   background: color-mix(in srgb, var(--rtg-accent, #fba919) 6%, var(--rtg-bg-secondary, #0d1b2a));
   border: 1px solid color-mix(in srgb, var(--rtg-accent, #fba919) 20%, transparent);
-  border-radius: 6px;
-  padding: 10px 12px;
+  border-radius: 8px;
+  padding: 12px 14px;
   margin-top: 6px;
   line-height: 1.4;
 }
 .rtg-review-login-banner-icon {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: var(--rtg-accent, #fba919);
   flex-shrink: 0;
 }
-.rtg-review-login-banner-text a {
+.rtg-review-login-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rtg-review-login-banner-text {
+  margin: 0;
+  font-size: 13px;
+}
+.rtg-review-login-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rtg-review-login-btn {
   color: var(--rtg-accent, #fba919);
   text-decoration: none;
   font-weight: 600;
 }
-.rtg-review-login-banner-text a:hover {
+.rtg-review-login-btn:hover {
   text-decoration: underline;
   color: var(--rtg-accent-hover, #4daa80);
+}
+.rtg-review-login-or {
+  color: var(--rtg-text-muted, #8493a5);
+  font-size: 13px;
 }
 
 /* Modal footer */
@@ -2114,6 +2135,61 @@ a.rtg-review-card-title-link:hover {
   }
   .rtg-reviews-drawer {
     max-width: 100%;
+  }
+  .rtg-review-login-banner {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px 16px;
+    margin: 4px 16px 0;
+    gap: 10px;
+    border-radius: 12px;
+  }
+  .rtg-review-login-banner-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--rtg-accent, #fba919) 12%, transparent);
+  }
+  .rtg-review-login-banner-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+  .rtg-review-login-banner-content {
+    flex-direction: column;
+    gap: 14px;
+  }
+  .rtg-review-login-banner-text {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .rtg-review-login-banner-actions {
+    gap: 10px;
+  }
+  .rtg-review-login-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 24px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: opacity 0.15s ease;
+  }
+  .rtg-review-login-btn:hover {
+    text-decoration: none;
+    opacity: 0.85;
+  }
+  .rtg-review-login-btn-primary {
+    background: var(--rtg-accent, #fba919);
+    color: #0d1b2a;
+  }
+  .rtg-review-login-btn-secondary {
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--rtg-accent, #fba919) 50%, transparent);
+    color: var(--rtg-accent, #fba919);
+  }
+  .rtg-review-login-or {
+    font-size: 12px;
   }
 }
 
