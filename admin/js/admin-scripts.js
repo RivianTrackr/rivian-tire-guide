@@ -20,9 +20,15 @@
                 var $preview = $('#image-preview');
                 var $container = $('#image-preview-container');
 
-                if (url && url.match(/^https?:\/\/.+\.(jpg|jpeg|png|webp|gif)/i)) {
+                try {
+                    var parsed = new URL(url);
+                } catch (e) {
+                    parsed = null;
+                }
+
+                if (parsed && /^https?:$/.test(parsed.protocol) && /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(parsed.pathname)) {
                     if ($preview.length) {
-                        $preview[0].src = url;
+                        $preview[0].src = parsed.href;
                         if ($container.length) {
                             $container.show();
                         }

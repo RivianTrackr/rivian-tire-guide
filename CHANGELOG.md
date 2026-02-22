@@ -4,13 +4,13 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.19.4] - 2026-02-22
+## [1.19.5] - 2026-02-22
 
 ### Security
-- **Admin image preview XSS fix** — Replaced jQuery `.attr('src', url)` with native DOM property assignment (`$preview[0].src = url`) in the admin image preview handler. jQuery's `.attr()` is flagged by CodeQL as an HTML interpretation sink when receiving DOM text from `.val()`. The native property setter directly assigns to `HTMLImageElement.src` without any HTML parsing path.
+- **Admin image preview XSS fix** — Sanitized the user-supplied image URL in the admin preview handler using the `URL` constructor to break the CodeQL taint chain (`js/xss-through-dom`). The parsed URL's protocol is checked against `http(s):` and the image extension is validated on `pathname` only, then the sanitized `parsed.href` is assigned to the native `HTMLImageElement.src` property. This replaces the previous regex-on-raw-input approach that CodeQL flagged as DOM text reinterpreted as HTML.
 
 ### Changed
-- **Plugin version** — Bumped to 1.19.4.
+- **Plugin version** — Bumped to 1.19.5.
 
 ## [1.19.3] - 2026-02-22
 
