@@ -44,3 +44,22 @@ jobs:
 
       - name: Lint PHP files
         run: find includes/ -name '*.php' -exec php -l {} \;
+
+  phpcs:
+    name: PHP Coding Standards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: cs2pr
+
+      - name: Install Composer dependencies
+        run: |
+          composer global config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+          composer global require --dev wp-coding-standards/wpcs:"^3.0" phpcompatibility/phpcompatibility-wp:"*" dealerdirect/phpcodesniffer-composer-installer:"^1.0"
+
+      - name: Run PHPCS
+        run: $(composer global config bin-dir --absolute)/phpcs --standard=.phpcs.xml --report=checkstyle | cs2pr

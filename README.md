@@ -14,7 +14,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Smart No Results** — When filters produce no matches, actionable suggestions help users relax specific filters.
 
 ### Ratings & Reviews
-- **Star Ratings** — SVG star ratings with half-star precision. Logged-in users rate tires 1-5 stars with keyboard navigation (arrow keys, Enter/Space).
+- **Star Ratings** — SVG star ratings with half-star precision. Logged-in users rate tires 1-5 stars with keyboard navigation (arrow keys, Enter/Space). Users can delete their own ratings.
 - **Text Reviews** — Optional review title and body alongside star ratings, with a slide-in reviews drawer for each tire.
 - **Guest Reviews** — Non-logged-in visitors can submit reviews with name and email. Includes honeypot spam prevention and IP-based rate limiting.
 - **Review Moderation** — Admin approval queue with pending/approved/rejected status tabs. Admin-submitted reviews auto-approve; user and guest reviews default to pending.
@@ -40,7 +40,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Wishlist System** — Logged-in users save tires to a personal favorites list via heart icon. "My Favorites" filter toggle with badge count. Optimistic UI updates.
 
 ### Admin
-- **Dashboard** — Overview cards (total tires, average price, efficiency, ratings), breakdowns by category/brand/size/grade, content health indicators (pending reviews, missing images/links).
+- **Dashboard** — Overview cards (total tires, average price, efficiency, ratings), breakdowns by category/brand/size/grade, content health indicators (pending reviews, missing images/links). A quick-stats dashboard widget also appears on the main WordPress dashboard.
 - **Tire Management** — Full CRUD with search, filters, bulk actions, tire duplication, and tag suggestions.
 - **CSV Import/Export** — Bulk import with duplicate handling (skip/update), auto-generated IDs, auto-calculated efficiency, MIME validation, and full catalog export.
 - **Reviews Management** — Pending/approved/rejected tabs with approve, reject, and delete actions.
@@ -199,9 +199,11 @@ rivian-tire-guide/
 │   ├── test-database.php            # PHP unit tests (21 tests)
 │   ├── test-activator.php           # Activator tests
 │   ├── test-admin.php               # Admin tests
+│   ├── test-ajax.php                # AJAX integration tests (14 tests)
 │   └── test-validation.js           # JS unit tests (83 tests)
+├── .phpcs.xml                       # PHP CodeSniffer config (WordPress standards)
 └── .github/
-    └── workflows/ci.yml             # CI: JS tests, build, PHP linting
+    └── workflows/ci.yml             # CI: JS tests, build, PHP linting, PHPCS
 ```
 
 ## Database Schema
@@ -256,7 +258,12 @@ npm test               # Run JS validation tests (83 tests)
 
 PHP tests require a WordPress test environment:
 ```bash
-phpunit                # Run PHP unit tests (21 tests)
+phpunit                # Run PHP unit & integration tests (35+ tests)
+```
+
+PHP coding standards:
+```bash
+phpcs --standard=.phpcs.xml    # Run WordPress Coding Standards checks
 ```
 
 ### CI
@@ -265,6 +272,7 @@ GitHub Actions runs on every push and PR:
 - JavaScript unit tests
 - esbuild build verification
 - PHP syntax linting (PHP 7.4, 8.0, 8.2)
+- PHP coding standards (WPCS via PHPCS)
 
 ## Security
 

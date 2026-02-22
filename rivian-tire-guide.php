@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Rivian Tire Guide
  * Description: Interactive tire guide for Rivian vehicles with filtering, comparison, and ratings.
- * Version: 1.19.9
+ * Version: 1.20.0
  * Author: RivianTrackr
  * Text Domain: rivian-tire-guide
  * Requires at least: 5.8
@@ -13,25 +13,28 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'RTG_VERSION', '1.19.9' );
+define( 'RTG_VERSION', '1.20.0' );
 define( 'RTG_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'RTG_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'RTG_PLUGIN_FILE', __FILE__ );
 define( 'RTG_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 
-// Include class files.
-require_once RTG_PLUGIN_DIR . 'includes/class-rtg-activator.php';
-require_once RTG_PLUGIN_DIR . 'includes/class-rtg-deactivator.php';
-require_once RTG_PLUGIN_DIR . 'includes/class-rtg-database.php';
-require_once RTG_PLUGIN_DIR . 'includes/class-rtg-admin.php';
-require_once RTG_PLUGIN_DIR . 'includes/class-rtg-frontend.php';
-require_once RTG_PLUGIN_DIR . 'includes/class-rtg-ajax.php';
-require_once RTG_PLUGIN_DIR . 'includes/class-rtg-compare.php';
-require_once RTG_PLUGIN_DIR . 'includes/class-rtg-schema.php';
-require_once RTG_PLUGIN_DIR . 'includes/class-rtg-meta.php';
-require_once RTG_PLUGIN_DIR . 'includes/class-rtg-rest-api.php';
-require_once RTG_PLUGIN_DIR . 'includes/class-rtg-ai.php';
-require_once RTG_PLUGIN_DIR . 'includes/class-rtg-mailer.php';
+// Autoload class files from includes/ directory.
+// Maps class names like RTG_Database to includes/class-rtg-database.php.
+spl_autoload_register( function ( $class ) {
+    // Only handle RTG_ prefixed classes.
+    if ( strpos( $class, 'RTG_' ) !== 0 ) {
+        return;
+    }
+
+    // Convert class name: RTG_REST_API → class-rtg-rest-api.php
+    $file = 'class-' . strtolower( str_replace( '_', '-', $class ) ) . '.php';
+    $path = RTG_PLUGIN_DIR . 'includes/' . $file;
+
+    if ( file_exists( $path ) ) {
+        require_once $path;
+    }
+} );
 
 // Activation / Deactivation hooks.
 register_activation_hook( __FILE__, array( 'RTG_Activator', 'activate' ) );
