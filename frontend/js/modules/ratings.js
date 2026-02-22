@@ -331,27 +331,6 @@ export function createRatingHTML(tireId, average = 0, count = 0, userRating = 0)
     writeBtn.dataset.tireId = tireId;
     writeBtn.textContent = hasReview ? 'Edit Review' : 'Write a Review';
     reviewActions.appendChild(writeBtn);
-
-    if (hasReview) {
-      const deleteBtn = document.createElement('button');
-      deleteBtn.className = 'review-action-link delete-review-btn';
-      deleteBtn.dataset.tireId = tireId;
-      deleteBtn.textContent = 'Delete';
-      deleteBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (!confirm('Delete your rating for this tire?')) return;
-        deleteBtn.disabled = true;
-        deleteBtn.textContent = 'Deleting...';
-        deleteTireRating(tireId)
-          .then(() => showToast('Your rating has been deleted.', 'success'))
-          .catch(err => {
-            deleteBtn.disabled = false;
-            deleteBtn.textContent = 'Delete';
-            showToast(typeof err === 'string' ? err : (err.message || 'Failed to delete.'), 'error');
-          });
-      });
-      reviewActions.appendChild(deleteBtn);
-    }
   } else {
     const hasPending = state.guestPendingReviews && state.guestPendingReviews.has(tireId);
     if (hasPending) {
@@ -656,6 +635,31 @@ export function openReviewModal(tireId, preselectedRating = 0) {
   errorMsg.className = 'rtg-review-error';
 
   footer.appendChild(errorMsg);
+
+  // Delete button for logged-in users editing an existing rating.
+  const isEditing = state.isLoggedIn && !isGuest && (existingReview.rating > 0);
+  if (isEditing) {
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'rtg-review-btn-delete';
+    deleteBtn.textContent = 'Delete Rating';
+    deleteBtn.addEventListener('click', () => {
+      if (!confirm('Delete your rating for this tire?')) return;
+      deleteBtn.disabled = true;
+      deleteBtn.textContent = 'Deleting...';
+      deleteTireRating(tireId)
+        .then(() => {
+          closeModal();
+          showToast('Your rating has been deleted.', 'success');
+        })
+        .catch(err => {
+          deleteBtn.disabled = false;
+          deleteBtn.textContent = 'Delete Rating';
+          errorMsg.textContent = typeof err === 'string' ? err : (err.message || 'Failed to delete.');
+        });
+    });
+    footer.appendChild(deleteBtn);
+  }
+
   footer.appendChild(cancelBtn);
   footer.appendChild(submitBtn);
 

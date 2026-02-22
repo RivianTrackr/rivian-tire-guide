@@ -1504,19 +1504,6 @@
   color: var(--rtg-accent-hover, #4daa80);
   text-decoration: none;
 }
-.delete-review-btn {
-  color: var(--rtg-text-muted, #86868b);
-  border-radius: 6px;
-  padding: 4px 10px;
-  font-size: 12px;
-}
-.delete-review-btn:hover {
-  color: #ef4444;
-}
-.delete-review-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
 .rtg-review-pending-badge {
   color: var(--rtg-text-muted, #86868b);
   background: color-mix(in srgb, var(--rtg-text-muted, #86868b) 8%, transparent);
@@ -1803,6 +1790,28 @@
 }
 .rtg-review-btn-submit:disabled {
   opacity: 0.6;
+  cursor: not-allowed;
+}
+.rtg-review-btn-delete {
+  background: none;
+  border: 1px solid color-mix(in srgb, #ef4444 30%, transparent);
+  border-radius: 8px;
+  padding: 10px 16px;
+  color: var(--rtg-text-muted, #86868b);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  margin-right: auto;
+}
+.rtg-review-btn-delete:hover {
+  color: #ef4444;
+  border-color: #ef4444;
+  background: color-mix(in srgb, #ef4444 8%, transparent);
+}
+.rtg-review-btn-delete:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
