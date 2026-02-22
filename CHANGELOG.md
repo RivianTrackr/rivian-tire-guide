@@ -4,6 +4,20 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.20.0] - 2026-02-22
+
+### Added
+- **Delete own rating** — Logged-in users can now delete their own tire rating via a new `delete_tire_rating` AJAX endpoint. Backed by `RTG_Database::delete_user_rating()` which only deletes ratings matching the current user. Returns updated aggregate rating data after deletion.
+- **Admin dashboard widget** — WordPress dashboard widget ("Tire Guide — Quick Stats") showing total tires, average rating, total ratings, average price, pending review count with link to moderation queue, missing links/images counts, and top-rated tire at a glance.
+- **AJAX integration tests** — New `tests/test-ajax.php` with 14 integration tests extending `WP_Ajax_UnitTestCase`. Covers `get_tire_ratings`, `submit_tire_rating` (success, missing nonce, invalid rating, nonexistent tire, review text with pending status), `delete_tire_rating` (success, no rating, cross-user prevention), `get_tire_reviews`, and favorites lifecycle (add/get/remove cycle, nonexistent tire).
+- **PHP coding standards enforcement** — `.phpcs.xml` configuration for WordPress Coding Standards (WPCS 3.x). Scans `includes/`, `admin/`, main plugin file, and `uninstall.php`. New `phpcs` CI job in GitHub Actions with `cs2pr` for inline PR annotations.
+
+### Changed
+- **PHP autoloader** — Replaced 12 manual `require_once` calls with `spl_autoload_register()`. Maps `RTG_` prefixed class names to `includes/class-rtg-*.php` files automatically. New classes are loaded without editing the main plugin file.
+- **PHPDoc blocks** — Added `@param`, `@return`, and description blocks to all public methods in `RTG_Database` and `RTG_Admin`. Cleaned up orphaned dangling PHPDoc block.
+- **PLUGIN-REVIEW.md** — All 41 of 41 review items now resolved (100%).
+- **Plugin version** — Bumped to 1.20.0.
+
 ## [1.19.9] - 2026-02-22
 
 ### Changed
