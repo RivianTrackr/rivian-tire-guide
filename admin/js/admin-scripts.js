@@ -22,7 +22,7 @@
 
                 if (url && url.match(/^https?:\/\/.+\.(jpg|jpeg|png|webp|gif)/i)) {
                     if ($preview.length) {
-                        $preview.prop('src', url);
+                        $preview[0].src = url;
                         if ($container.length) {
                             $container.show();
                         }
