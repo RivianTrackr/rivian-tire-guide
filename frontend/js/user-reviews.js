@@ -48,6 +48,9 @@
     fd.append("action", "rtg_get_user_reviews");
     fd.append("user_id", userId);
     fd.append("page", page);
+    if (rtgUserReviews.nonce) {
+      fd.append("nonce", rtgUserReviews.nonce);
+    }
 
     fetch(rtgUserReviews.ajaxurl, { method: "POST", body: fd })
       .then(function (r) { return r.json(); })
