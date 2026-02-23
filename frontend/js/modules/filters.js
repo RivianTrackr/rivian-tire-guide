@@ -123,7 +123,7 @@ function getFilteredIndexes(filters) {
     if (filters["3PMS"] && !safeString(row[9]).toLowerCase().includes("yes")) return false;
     if (filters["EVRated"] && !safeString(row[17]).toLowerCase().includes("ev rated")) return false;
     if (filters["Studded"] && !safeString(row[17]).toLowerCase().includes("studded available")) return false;
-    if (filters["Reviewed"] && !safeString(row[23])) return false;
+    if (filters["Reviewed"] && !safeString(row[22])) return false;
     if (filters["Favorites"] && !state.userFavorites.has(row[0])) return false;
 
     return true;
