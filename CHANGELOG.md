@@ -4,6 +4,12 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.20.2] - 2026-02-23
+
+### Fixed
+- **Officially Reviewed filter broken in server-side mode** — The "Officially Reviewed" checkbox had no effect when server-side pagination was enabled because the filter was never sent to the backend. Added the `reviewed` parameter to the AJAX request, accepted it in the PHP handler, and added a `review_link != ''` WHERE clause to the database query.
+- **Plugin version** — Bumped to 1.20.2.
+
 ## [1.20.1] - 2026-02-22
 
 ### Fixed
