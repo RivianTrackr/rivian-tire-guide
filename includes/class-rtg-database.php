@@ -550,6 +550,10 @@ class RTG_Database {
             $where[] = "LOWER(tags) LIKE '%studded available%'";
         }
 
+        if ( ! empty( $filters['reviewed'] ) ) {
+            $where[] = "review_link != ''";
+        }
+
         if ( isset( $filters['price_max'] ) && $filters['price_max'] < 600 ) {
             $where[]  = 'price <= %f';
             $values[] = floatval( $filters['price_max'] );

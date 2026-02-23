@@ -486,6 +486,7 @@ class RTG_Ajax {
             'three_pms'    => ! empty( $_POST['three_pms'] ),
             'ev_rated'     => ! empty( $_POST['ev_rated'] ),
             'studded'      => ! empty( $_POST['studded'] ),
+            'reviewed'     => ! empty( $_POST['reviewed'] ),
         );
 
         $price_max = isset( $_POST['price_max'] ) ? floatval( $_POST['price_max'] ) : 600;
