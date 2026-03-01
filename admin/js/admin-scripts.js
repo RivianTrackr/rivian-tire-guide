@@ -249,7 +249,7 @@
             var stats = [
                 { label: 'Total Tires',       value: String(data.totalTires) },
                 { label: 'Avg Price',          value: '$' + (data.avgPrice > 0 ? Math.round(data.avgPrice).toLocaleString() : '—') },
-                { label: 'Avg Efficiency',     value: String(data.avgEfficiency) },
+                { label: 'Avg Efficiency',     value: data.avgEfficiency + ' / 100' },
                 { label: 'Community Reviews',  value: String(data.totalReviews) },
             ];
 
@@ -393,7 +393,8 @@
 
                 ctx.fillStyle = colors.textHeading;
                 ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                ctx.fillText(data.topTire, 195, calloutY + 30);
+                var tireLabel = data.topTire + (data.topSize ? ' (' + data.topSize + ')' : '');
+                ctx.fillText(tireLabel, 195, calloutY + 30);
 
                 if (data.topRating) {
                     ctx.fillStyle = colors.accent;
