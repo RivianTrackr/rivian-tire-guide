@@ -300,7 +300,7 @@
             brands.forEach(function(b) { if (b.count > maxBrandCount) maxBrandCount = b.count; });
 
             brands.forEach(function(brand, i) {
-                var barY = rightY + 35 + i * 38;
+                var barY = rightY + 35 + i * 32;
                 var barMaxW = 380;
                 var barW = Math.max(40, (brand.count / maxBrandCount) * barMaxW);
                 var barH = 26;
@@ -332,21 +332,23 @@
             });
 
             // "Categories" section below brands.
-            var catY = rightY + 35 + Math.max(brands.length, 1) * 38 + 25;
+            var catY = rightY + 35 + Math.max(brands.length, 1) * 32 + 20;
             ctx.fillStyle = colors.textHeading;
             ctx.font = 'bold 18px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
             ctx.textBaseline = 'top';
             ctx.fillText('Categories', rightX, catY);
 
             var cats = (data.categories || []).slice(0, 4);
-            var catStartY = catY + 32;
+            var catStartY = catY + 28;
+            var catMaxRow = 0;
             cats.forEach(function(cat, i) {
                 var chipX = rightX + i * 130;
                 // Wrap to second row if needed.
                 var row = 0;
                 if (i >= 3) { row = 1; chipX = rightX + (i - 3) * 130; }
+                if (row > catMaxRow) catMaxRow = row;
 
-                var tagY = catStartY + row * 36;
+                var tagY = catStartY + row * 34;
                 var tagText = cat.name + ' (' + cat.count + ')';
 
                 // Pill background.
@@ -365,8 +367,13 @@
             });
 
             // --- Top rated tire callout ---
+            // Position dynamically below both the left stat cards and right categories.
+            var leftBottom = gridStartY + 2 * (cardH + cardGap) - cardGap;
+            var rightBottom = cats.length > 0 ? catStartY + catMaxRow * 34 + 26 : catY + 18;
+            var contentBottom = Math.max(leftBottom, rightBottom);
+
             if (data.topTire) {
-                var calloutY = 440;
+                var calloutY = contentBottom + 15;
                 roundRect(ctx, 60, calloutY, W - 120, 60, 10);
                 ctx.fillStyle = colors.bgCard;
                 ctx.fill();
