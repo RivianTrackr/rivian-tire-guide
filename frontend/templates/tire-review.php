@@ -705,7 +705,7 @@ if ( ! empty( $guide_pages ) ) {
 
     <!-- Tire search -->
     <div class="rv-search-wrap">
-      <i class="fa-solid fa-magnifying-glass rv-search-icon" aria-hidden="true"></i>
+      <svg class="rv-search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input type="text" class="rv-search" id="rvTireSearch" placeholder="Search by brand, model, or size..." autocomplete="off" />
       <div class="rv-dropdown" id="rvDropdown"></div>
     </div>

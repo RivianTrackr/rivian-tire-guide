@@ -84,9 +84,23 @@ class RTG_Tire_Review {
             $tire_guide_url = get_permalink( $guide_pages[0] );
         }
 
+        // Build lightweight tire list with named keys for the review page JS.
+        $raw_tires    = RTG_Database::get_tires_as_array();
+        $review_tires = array();
+        foreach ( $raw_tires as $row ) {
+            $review_tires[] = array(
+                'tire_id'  => $row[0],
+                'brand'    => $row[3],
+                'model'    => $row[4],
+                'size'     => $row[1],
+                'category' => $row[5],
+                'image'    => $row[19],
+            );
+        }
+
         // Localize tire data and review config for the review page.
         wp_localize_script( 'rtg-tire-review', 'rtgTireReview', array(
-            'tires'           => RTG_Database::get_tires_as_array(),
+            'tires'           => $review_tires,
             'ajaxurl'         => admin_url( 'admin-ajax.php' ),
             'nonce'           => wp_create_nonce( 'tire_rating_nonce' ),
             'is_logged_in'    => is_user_logged_in(),
