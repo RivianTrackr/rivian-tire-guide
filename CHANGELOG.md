@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.21.0] - 2026-03-01
+
+### Added
+- **Stats share image generator** — New admin page (Tire Guide > Share Image) that generates a branded 1200x630 social media image with top stats from the tire guide. The image uses the frontend dark theme colors (dark navy background, orange accent) and includes total tires, average price, average efficiency score, community reviews, top brands bar chart, category pills, and top-rated tire callout. Customizable title, subtitle, and footer text fields with live canvas preview. Download as PNG, copy to clipboard, or regenerate on demand.
+
+### Changed
+- **Plugin version** — Bumped to 1.21.0.
+
 ## [1.20.3] - 2026-02-23
 
 ### Fixed

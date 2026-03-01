@@ -246,6 +246,15 @@ class RTG_Admin {
 
         add_submenu_page(
             'rtg-dashboard',
+            'Share Image',
+            'Share Image',
+            'manage_options',
+            'rtg-share-image',
+            array( $this, 'render_share_image_page' )
+        );
+
+        add_submenu_page(
+            'rtg-dashboard',
             'Import / Export',
             'Import / Export',
             'manage_options',
@@ -574,6 +583,16 @@ class RTG_Admin {
             return;
         }
         require_once RTG_PLUGIN_DIR . 'admin/views/dashboard.php';
+    }
+
+    /**
+     * Render the Share Image generator page.
+     */
+    public function render_share_image_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        require_once RTG_PLUGIN_DIR . 'admin/views/share-image.php';
     }
 
     // --- Action Handlers ---
