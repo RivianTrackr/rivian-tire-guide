@@ -186,7 +186,7 @@ if ( ! empty( $guide_pages ) ) {
     }
     .rv-search {
       width: 100%;
-      padding: 12px 14px 12px 42px;
+      padding: 12px 14px 12px 42px !important;
       background: var(--rtg-bg-card);
       border: 1px solid var(--rtg-border);
       border-radius: 10px;
