@@ -4,6 +4,12 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.23.0] - 2026-03-01
+
+### Added
+- **Standalone tire review page** — New shareable page at `/tire-review/` where anyone can select a tire and submit a review without navigating the full catalog. Features a searchable tire dropdown, inline review form with star rating, and support for both logged-in and guest reviewers. Deep-link to a specific tire via `?tire=TIRE_ID` for social sharing with tire-specific OG/Twitter meta tags.
+- **Tire Review Page Slug setting** — Configurable URL slug for the review page in Settings > Display Settings (default: `tire-review`).
+
 ## [1.22.0] - 2026-03-01
 
 ### Changed
