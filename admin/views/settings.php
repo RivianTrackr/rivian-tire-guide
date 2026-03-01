@@ -10,6 +10,7 @@ $rows_per_page = $settings['rows_per_page'] ?? 12;
 $cdn_prefix = $settings['cdn_prefix'] ?? '';
 $compare_slug = $settings['compare_slug'] ?? 'tire-compare';
 $user_reviews_slug = $settings['user_reviews_slug'] ?? 'user-reviews';
+$tire_review_slug = $settings['tire_review_slug'] ?? 'tire-review';
 
 // Theme color defaults.
 $default_colors = array(
@@ -101,6 +102,13 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                     </div>
                     <p class="rtg-field-description">Page slug where the <code>[rivian_user_reviews]</code> shortcode is placed. Default: <code>user-reviews</code> (accessible at <code><?php echo esc_html( home_url( '/' . $user_reviews_slug . '/' ) ); ?></code>)</p>
                     <input type="text" id="user_reviews_slug" name="user_reviews_slug" value="<?php echo esc_attr( $user_reviews_slug ); ?>">
+                </div>
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="tire_review_slug">Tire Review Page Slug</label>
+                    </div>
+                    <p class="rtg-field-description">URL slug for the standalone tire review page. Default: <code>tire-review</code> (accessible at <code><?php echo esc_html( home_url( '/' . $tire_review_slug . '/' ) ); ?></code>)</p>
+                    <input type="text" id="tire_review_slug" name="tire_review_slug" value="<?php echo esc_attr( $tire_review_slug ); ?>">
                 </div>
             </div>
         </div>

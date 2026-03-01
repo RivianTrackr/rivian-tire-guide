@@ -737,6 +737,7 @@ class RTG_Admin {
             'cdn_prefix'               => esc_url_raw( $_POST['cdn_prefix'] ?? '' ),
             'compare_slug'             => sanitize_title( $_POST['compare_slug'] ?? 'tire-compare' ),
             'user_reviews_slug'        => sanitize_title( $_POST['user_reviews_slug'] ?? 'user-reviews' ),
+            'tire_review_slug'         => sanitize_title( $_POST['tire_review_slug'] ?? 'tire-review' ),
             'server_side_pagination'   => ! empty( $_POST['server_side_pagination'] ),
             'theme_colors'             => $theme_colors,
             'analytics_retention_days' => $retention_days,

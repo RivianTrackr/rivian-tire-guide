@@ -67,6 +67,9 @@ function rtg_init() {
     // Compare page rewrite rules.
     new RTG_Compare();
 
+    // Standalone tire review page.
+    new RTG_Tire_Review();
+
     // Schema.org structured data.
     new RTG_Schema();
 
