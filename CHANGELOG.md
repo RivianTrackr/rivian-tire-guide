@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.21.1] - 2026-03-01
+
+### Fixed
+- **Share image: category pills overlapping top-rated callout** — The category pills and top-rated tire banner occupied the same vertical space when 5 brands were present. The callout Y-position is now computed dynamically from the bottom of both the stat cards and the categories section, and brand bar spacing was tightened to give categories more room.
+
 ## [1.21.0] - 2026-03-01
 
 ### Added
