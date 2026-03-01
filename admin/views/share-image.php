@@ -34,10 +34,12 @@ foreach ( array_slice( $stats['by_brand'] ?? array(), 0, 5 ) as $row ) {
 // Top rated tire.
 $top_tire = '';
 $top_rating = '';
+$top_size = '';
 if ( ! empty( $stats['top_rated'] ) ) {
-	$top       = $stats['top_rated'][0];
-	$top_tire  = $top['brand'] . ' ' . $top['model'];
+	$top        = $stats['top_rated'][0];
+	$top_tire   = $top['brand'] . ' ' . $top['model'];
 	$top_rating = $top['avg_rating'];
+	$top_size   = $top['size'] ?? '';
 }
 
 $site_name = get_bloginfo( 'name' );
@@ -114,6 +116,7 @@ window.rtgShareData = {
 	categories: <?php echo wp_json_encode( $categories ); ?>,
 	brands: <?php echo wp_json_encode( $brands ); ?>,
 	topTire: <?php echo wp_json_encode( $top_tire ); ?>,
+	topSize: <?php echo wp_json_encode( $top_size ); ?>,
 	topRating: <?php echo wp_json_encode( $top_rating ); ?>,
 };
 </script>

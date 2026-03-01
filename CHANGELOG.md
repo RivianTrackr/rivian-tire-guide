@@ -4,6 +4,12 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.22.0] - 2026-03-01
+
+### Changed
+- **Share image: show tire size on top-rated callout** — The top-rated tire now displays the size in parentheses (e.g. "Michelin Defender LTX M/S (275/65R18)") so tires with the same name but different sizes can be distinguished.
+- **Share image: show Avg Efficiency out of 100** — The Avg Efficiency stat card now renders as "72 / 100" instead of just "72" for clearer context.
+
 ## [1.21.1] - 2026-03-01
 
 ### Fixed

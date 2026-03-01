@@ -730,7 +730,7 @@ class RTG_Database {
 
         // Top rated tires (top 5 by average rating, min 1 rating).
         $stats['top_rated'] = $wpdb->get_results(
-            "SELECT t.tire_id, t.brand, t.model, t.image,
+            "SELECT t.tire_id, t.brand, t.model, t.size, t.image,
                     ROUND(AVG(r.rating), 1) as avg_rating,
                     COUNT(r.id) as rating_count
              FROM {$ratings_table} r
