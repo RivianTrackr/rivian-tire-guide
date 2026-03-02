@@ -65,6 +65,9 @@ class RTG_Ajax {
 
         // Link health check — admin only.
         add_action( 'wp_ajax_rtg_check_links', array( $this, 'check_links' ) );
+        add_action( 'wp_ajax_rtg_check_links_start', array( $this, 'check_links_start' ) );
+        add_action( 'wp_ajax_rtg_check_links_batch', array( $this, 'check_links_batch' ) );
+        add_action( 'wp_ajax_rtg_check_links_finish', array( $this, 'check_links_finish' ) );
 
         // AI tire recommendations — public.
         add_action( 'wp_ajax_rtg_ai_recommend', array( $this, 'ai_recommend' ) );
@@ -820,6 +823,98 @@ class RTG_Ajax {
         set_time_limit( 300 );
 
         $results = RTG_Link_Checker::run();
+
+        wp_send_json_success( $results );
+    }
+
+    /**
+     * Start a batched link check — returns the list of tires to check.
+     */
+    public function check_links_start() {
+        if ( ! check_ajax_referer( 'rtg_affiliate_links_nonce', 'nonce', false ) ) {
+            wp_send_json_error( 'Security check failed.' );
+        }
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized.' );
+        }
+
+        $tires = RTG_Link_Checker::get_linkable_tires();
+
+        wp_send_json_success( array(
+            'tires'      => $tires,
+            'total'      => count( $tires ),
+            'batch_size' => RTG_Link_Checker::PROGRESS_BATCH_SIZE,
+        ) );
+    }
+
+    /**
+     * Check a single batch of links by tire IDs.
+     */
+    public function check_links_batch() {
+        if ( ! check_ajax_referer( 'rtg_affiliate_links_nonce', 'nonce', false ) ) {
+            wp_send_json_error( 'Security check failed.' );
+        }
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized.' );
+        }
+
+        $tires = isset( $_POST['tires'] ) ? $_POST['tires'] : array();
+        if ( ! is_array( $tires ) || empty( $tires ) ) {
+            wp_send_json_error( 'No tires provided.' );
+        }
+
+        // Sanitize the batch.
+        $batch = array();
+        foreach ( $tires as $tire ) {
+            $batch[] = array(
+                'tire_id' => sanitize_text_field( $tire['tire_id'] ?? '' ),
+                'brand'   => sanitize_text_field( $tire['brand'] ?? '' ),
+                'model'   => sanitize_text_field( $tire['model'] ?? '' ),
+                'link'    => esc_url_raw( $tire['link'] ?? '' ),
+            );
+        }
+
+        set_time_limit( 120 );
+
+        $result = RTG_Link_Checker::check_batch( $batch );
+
+        wp_send_json_success( $result );
+    }
+
+    /**
+     * Finalize a batched link check — save results and send notification.
+     */
+    public function check_links_finish() {
+        if ( ! check_ajax_referer( 'rtg_affiliate_links_nonce', 'nonce', false ) ) {
+            wp_send_json_error( 'Security check failed.' );
+        }
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized.' );
+        }
+
+        $total  = isset( $_POST['total'] ) ? absint( $_POST['total'] ) : 0;
+        $broken = isset( $_POST['broken'] ) ? $_POST['broken'] : array();
+
+        // Sanitize broken entries.
+        $clean_broken = array();
+        if ( is_array( $broken ) ) {
+            foreach ( $broken as $entry ) {
+                $clean_broken[] = array(
+                    'tire_id' => sanitize_text_field( $entry['tire_id'] ?? '' ),
+                    'brand'   => sanitize_text_field( $entry['brand'] ?? '' ),
+                    'model'   => sanitize_text_field( $entry['model'] ?? '' ),
+                    'url'     => esc_url_raw( $entry['url'] ?? '' ),
+                    'status'  => sanitize_text_field( $entry['status'] ?? '' ),
+                    'reason'  => sanitize_text_field( $entry['reason'] ?? '' ),
+                    'http'    => absint( $entry['http'] ?? 0 ),
+                );
+            }
+        }
+
+        $results = RTG_Link_Checker::save_results( $total, $clean_broken );
 
         wp_send_json_success( $results );
     }
