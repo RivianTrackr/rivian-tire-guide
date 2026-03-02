@@ -167,37 +167,24 @@ class RTG_Link_Checker {
      * @return string The effective URL.
      */
     private static function get_effective_url( $response, $original ) {
-        // Check for X-Redirect-By or Location in the last response.
+        // WordPress's HTTP API stores the final URL after following redirects
+        // in the transport response object — no second request needed.
+        if ( isset( $response['http_response'] ) && $response['http_response'] instanceof WP_HTTP_Requests_Response ) {
+            $effective = $response['http_response']->get_response_object()->url;
+            if ( ! empty( $effective ) ) {
+                return $effective;
+            }
+        }
+
+        // Fallback: check Location header (for edge cases where the transport
+        // doesn't expose the final URL).
         $location = wp_remote_retrieve_header( $response, 'location' );
         if ( ! empty( $location ) ) {
-            // If it's a relative URL, resolve it.
             if ( strpos( $location, 'http' ) !== 0 ) {
-                $parsed = wp_parse_url( $original );
+                $parsed   = wp_parse_url( $original );
                 $location = $parsed['scheme'] . '://' . $parsed['host'] . $location;
             }
             return $location;
-        }
-
-        // If wp_remote_head followed redirects transparently, we can try
-        // a non-following request to see where it leads.
-        $probe = wp_remote_head( $original, array(
-            'timeout'     => self::REQUEST_TIMEOUT,
-            'redirection' => 0,
-            'sslverify'   => false,
-        ) );
-
-        if ( ! is_wp_error( $probe ) ) {
-            $code = wp_remote_retrieve_response_code( $probe );
-            if ( $code >= 300 && $code < 400 ) {
-                $loc = wp_remote_retrieve_header( $probe, 'location' );
-                if ( ! empty( $loc ) ) {
-                    if ( strpos( $loc, 'http' ) !== 0 ) {
-                        $parsed = wp_parse_url( $original );
-                        $loc = $parsed['scheme'] . '://' . $parsed['host'] . $loc;
-                    }
-                    return $loc;
-                }
-            }
         }
 
         return $original;

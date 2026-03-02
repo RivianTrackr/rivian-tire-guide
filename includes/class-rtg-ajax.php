@@ -816,6 +816,9 @@ class RTG_Ajax {
             wp_send_json_error( 'Unauthorized.' );
         }
 
+        // Allow enough time for outbound HTTP requests (up to 50 links).
+        set_time_limit( 300 );
+
         $results = RTG_Link_Checker::run();
 
         wp_send_json_success( $results );
