@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.24.3] - 2026-03-02
+
+### Fixed
+- **Review email link broken** — The guest review notification email linked to a non-existent admin page (`rivian-tire-guide-reviews` instead of `rtg-reviews`), causing a "not allowed to access this page" error when clicking the link.
+
+### Changed
+- **Plugin version** — Bumped to 1.24.3.
+
 ## [1.24.2] - 2026-03-02
 
 ### Added

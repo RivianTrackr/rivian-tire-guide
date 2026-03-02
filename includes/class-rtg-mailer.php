@@ -101,7 +101,7 @@ class RTG_Mailer {
             $review_snippet .= '<p style="margin: 0; color: #6e6e73; font-size: 14px;">' . esc_html( $text ) . '</p>';
         }
 
-        $reviews_admin_url = admin_url( 'admin.php?page=rivian-tire-guide-reviews' );
+        $reviews_admin_url = admin_url( 'admin.php?page=rtg-reviews' );
 
         $site_name = esc_html( get_bloginfo( 'name' ) );
 
