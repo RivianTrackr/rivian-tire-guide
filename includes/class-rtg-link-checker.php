@@ -110,10 +110,13 @@ class RTG_Link_Checker {
      * @return array {status, reason, http_code}
      */
     public static function check_single_link( $url ) {
-        $response = wp_remote_head( $url, array(
-            'timeout'     => self::REQUEST_TIMEOUT,
-            'redirection' => 10,
-            'sslverify'   => false,
+        // Use GET instead of HEAD because many affiliate networks
+        // (CJ, ShareASale, etc.) only redirect GET requests.
+        $response = wp_remote_get( $url, array(
+            'timeout'             => self::REQUEST_TIMEOUT,
+            'redirection'         => 10,
+            'sslverify'           => false,
+            'limit_response_size' => 4096,
         ) );
 
         if ( is_wp_error( $response ) ) {
