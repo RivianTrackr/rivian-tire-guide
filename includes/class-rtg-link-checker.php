@@ -23,6 +23,9 @@ class RTG_Link_Checker {
     /** Maximum number of links to check per run (avoids timeouts). */
     const BATCH_SIZE = 50;
 
+    /** Number of links per batch when using the progress-based UI. */
+    const PROGRESS_BATCH_SIZE = 5;
+
     /** HTTP request timeout in seconds per link. */
     const REQUEST_TIMEOUT = 15;
 
@@ -97,6 +100,85 @@ class RTG_Link_Checker {
 
         // Send admin email if broken links were found.
         if ( ! empty( $results['broken'] ) ) {
+            RTG_Mailer::send_broken_links_notification( $results );
+        }
+
+        return $results;
+    }
+
+    /**
+     * Get the list of tires that have a non-empty purchase link.
+     *
+     * @return array[] Each element has tire_id, brand, model, link.
+     */
+    public static function get_linkable_tires() {
+        $tires    = RTG_Database::get_tires_for_link_management( 'all', '' );
+        $linkable = array();
+
+        foreach ( $tires as $tire ) {
+            if ( ! empty( $tire['link'] ) ) {
+                $linkable[] = array(
+                    'tire_id' => $tire['tire_id'],
+                    'brand'   => $tire['brand'],
+                    'model'   => $tire['model'],
+                    'link'    => $tire['link'],
+                );
+            }
+        }
+
+        return $linkable;
+    }
+
+    /**
+     * Check a batch of tires and return results for that batch only.
+     *
+     * @param array[] $tires Subset of tires to check (tire_id, brand, model, link).
+     * @return array { checked: int, broken: array[] }
+     */
+    public static function check_batch( $tires ) {
+        $broken  = array();
+        $checked = 0;
+
+        foreach ( $tires as $tire ) {
+            $checked++;
+            $status = self::check_single_link( $tire['link'] );
+
+            if ( 'ok' !== $status['status'] ) {
+                $broken[] = array(
+                    'tire_id' => $tire['tire_id'],
+                    'brand'   => $tire['brand'],
+                    'model'   => $tire['model'],
+                    'url'     => $tire['link'],
+                    'status'  => $status['status'],
+                    'reason'  => $status['reason'],
+                    'http'    => $status['http_code'],
+                );
+            }
+        }
+
+        return array(
+            'checked' => $checked,
+            'broken'  => $broken,
+        );
+    }
+
+    /**
+     * Save final results and send notification if needed.
+     *
+     * @param int   $total  Total links checked.
+     * @param array $broken All broken link entries.
+     * @return array The saved results array.
+     */
+    public static function save_results( $total, $broken ) {
+        $results = array(
+            'checked_at' => current_time( 'mysql' ),
+            'total'      => $total,
+            'broken'     => $broken,
+        );
+
+        update_option( self::RESULTS_OPTION, $results, false );
+
+        if ( ! empty( $broken ) ) {
             RTG_Mailer::send_broken_links_notification( $results );
         }
 

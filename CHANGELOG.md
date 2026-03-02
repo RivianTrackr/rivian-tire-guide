@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.24.1] - 2026-03-02
+
+### Added
+- **Link check progress bar** — The "Check Links Now" button now shows a live progress bar with status text ("Checking link 12 of 38...") and a running count of broken links found. Links are checked in batches of 5 via sequential AJAX calls, replacing the single long-running request. Page auto-reloads after 1.5 seconds with a summary message.
+
+### Changed
+- **Plugin version** — Bumped to 1.24.1.
+
 ## [1.24.0] - 2026-03-02
 
 ### Added

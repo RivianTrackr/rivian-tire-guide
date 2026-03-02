@@ -143,6 +143,15 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
             </div>
             <button type="button" id="rtg-check-links-btn" class="rtg-btn rtg-btn-secondary">Check Links Now</button>
         </div>
+        <div id="rtg-link-check-progress" style="display:none;padding:0 16px 16px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                <span id="rtg-link-check-status" style="font-size:13px;color:var(--rtg-text-muted);">Preparing...</span>
+                <span id="rtg-link-check-count" style="font-size:13px;color:var(--rtg-text-muted);margin-left:auto;"></span>
+            </div>
+            <div style="width:100%;height:8px;background:var(--rtg-border, #2a3548);border-radius:4px;overflow:hidden;">
+                <div id="rtg-link-check-bar" style="width:0%;height:100%;background:var(--rtg-accent, #fba919);border-radius:4px;transition:width 0.3s ease;"></div>
+            </div>
+        </div>
     </div>
 
     <!-- Filter Tabs + Search -->
@@ -403,59 +412,99 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
         return div.innerHTML;
     }
 
-    // Check Links Now button.
+    // Check Links Now button — batched with progress bar.
     $(document).on('click', '#rtg-check-links-btn', function() {
-        var $btn = $(this);
+        var $btn       = $(this);
+        var $progress  = $('#rtg-link-check-progress');
+        var $bar       = $('#rtg-link-check-bar');
+        var $status    = $('#rtg-link-check-status');
+        var $count     = $('#rtg-link-check-count');
+
         $btn.prop('disabled', true).text('Checking...');
+        $bar.css('width', '0%');
+        $status.text('Fetching link list...');
+        $count.text('');
+        $progress.slideDown(200);
 
-        $.post(ajaxUrl, {
-            action: 'rtg_check_links',
-            nonce:  nonce
-        }, function(response) {
-            $btn.prop('disabled', false).text('Check Links Now');
+        // Step 1: Get the list of tires to check.
+        $.post(ajaxUrl, { action: 'rtg_check_links_start', nonce: nonce }, function(startResp) {
+            if (!startResp.success) {
+                $btn.prop('disabled', false).text('Check Links Now');
+                $progress.slideUp(200);
+                alert('Error: ' + (startResp.data || 'Could not fetch link list.'));
+                return;
+            }
 
-            if (response.success) {
-                var data = response.data;
-                var brokenCount = (data.broken || []).length;
+            var allTires   = startResp.data.tires;
+            var total      = startResp.data.total;
+            var batchSize  = startResp.data.batch_size;
+            var checked    = 0;
+            var allBroken  = [];
 
-                if (brokenCount > 0) {
-                    // Mark broken rows.
-                    var brokenIds = {};
-                    for (var i = 0; i < data.broken.length; i++) {
-                        brokenIds[data.broken[i].tire_id] = data.broken[i].reason;
-                    }
+            if (total === 0) {
+                $btn.prop('disabled', false).text('Check Links Now');
+                $progress.slideUp(200);
+                alert('No tires with purchase links to check.');
+                return;
+            }
 
-                    $('tr[data-tire-id]').each(function() {
-                        var $row = $(this);
-                        var tireId = $row.data('tire-id');
-                        var $statusCell = $row.find('td:eq(1)');
+            // Step 2: Process batches sequentially.
+            function nextBatch(offset) {
+                if (offset >= total) {
+                    // Step 3: Finalize — save results and send notification.
+                    $status.text('Saving results...');
+                    $bar.css('width', '100%');
 
-                        // Remove any existing broken badge.
-                        $statusCell.find('.rtg-broken-badge').remove();
-
-                        if (brokenIds[tireId]) {
-                            $row.attr('data-broken', '1');
-                            $statusCell.append('<span class="rtg-badge rtg-badge-error rtg-broken-badge" title="' + escHtml(brokenIds[tireId]) + '" style="margin-top:4px;display:inline-block;background:#ef4444;color:#fff;font-size:11px;">Broken</span>');
+                    $.post(ajaxUrl, {
+                        action: 'rtg_check_links_finish',
+                        nonce:  nonce,
+                        total:  checked,
+                        broken: allBroken
+                    }, function() {
+                        $btn.prop('disabled', false).text('Check Links Now');
+                        var brokenCount = allBroken.length;
+                        if (brokenCount > 0) {
+                            $status.html('<span style="color:var(--rtg-error);font-weight:600;">Done — ' + brokenCount + ' broken link' + (brokenCount !== 1 ? 's' : '') + ' found</span>');
                         } else {
-                            $row.removeAttr('data-broken');
+                            $status.html('<span style="color:var(--rtg-success);font-weight:600;">Done — all ' + checked + ' links healthy!</span>');
                         }
+                        setTimeout(function() { location.reload(); }, 1500);
+                    }).fail(function() {
+                        $btn.prop('disabled', false).text('Check Links Now');
+                        $status.text('Error saving results.');
                     });
-
-                    alert('Check complete: ' + brokenCount + ' broken link' + (brokenCount !== 1 ? 's' : '') + ' found. An email notification has been sent.');
-                } else {
-                    // Remove all broken badges.
-                    $('tr[data-tire-id]').removeAttr('data-broken');
-                    $('.rtg-broken-badge').remove();
-                    alert('Check complete: All ' + data.total + ' links are healthy!');
+                    return;
                 }
 
-                // Reload page to update counts.
-                location.reload();
-            } else {
-                alert('Error: ' + (response.data || 'Link check failed.'));
+                var batch = allTires.slice(offset, offset + batchSize);
+                var pct   = Math.round((offset / total) * 100);
+                $bar.css('width', pct + '%');
+                $status.text('Checking link ' + (offset + 1) + ' of ' + total + '...');
+                $count.text(allBroken.length + ' broken so far');
+
+                $.post(ajaxUrl, {
+                    action: 'rtg_check_links_batch',
+                    nonce:  nonce,
+                    tires:  batch
+                }, function(batchResp) {
+                    if (batchResp.success) {
+                        checked += batchResp.data.checked;
+                        if (batchResp.data.broken.length) {
+                            allBroken = allBroken.concat(batchResp.data.broken);
+                            $count.text(allBroken.length + ' broken so far');
+                        }
+                    }
+                    nextBatch(offset + batchSize);
+                }).fail(function() {
+                    // Skip failed batch and continue.
+                    nextBatch(offset + batchSize);
+                });
             }
+
+            nextBatch(0);
         }).fail(function() {
             $btn.prop('disabled', false).text('Check Links Now');
+            $progress.slideUp(200);
             alert('Network error. Please try again.');
         });
     });
