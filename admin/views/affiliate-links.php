@@ -412,6 +412,17 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
         return div.innerHTML;
     }
 
+    // Track whether a link check is running and whether the page is unloading.
+    var linkCheckRunning = false;
+    var isUnloading      = false;
+
+    $(window).on('beforeunload', function() {
+        if (linkCheckRunning) {
+            isUnloading = true;
+            return 'A link check is still running. Are you sure you want to leave?';
+        }
+    });
+
     // Check Links Now button — batched with progress bar.
     $(document).on('click', '#rtg-check-links-btn', function() {
         var $btn       = $(this);
@@ -420,6 +431,7 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
         var $status    = $('#rtg-link-check-status');
         var $count     = $('#rtg-link-check-count');
 
+        linkCheckRunning = true;
         $btn.prop('disabled', true).text('Checking...');
         $bar.css('width', '0%');
         $status.text('Fetching link list...');
@@ -429,6 +441,7 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
         // Step 1: Get the list of tires to check.
         $.post(ajaxUrl, { action: 'rtg_check_links_start', nonce: nonce }, function(startResp) {
             if (!startResp.success) {
+                linkCheckRunning = false;
                 $btn.prop('disabled', false).text('Check Links Now');
                 $progress.slideUp(200);
                 alert('Error: ' + (startResp.data || 'Could not fetch link list.'));
@@ -442,6 +455,7 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
             var allBroken  = [];
 
             if (total === 0) {
+                linkCheckRunning = false;
                 $btn.prop('disabled', false).text('Check Links Now');
                 $progress.slideUp(200);
                 alert('No tires with purchase links to check.');
@@ -450,6 +464,8 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
 
             // Step 2: Process batches sequentially.
             function nextBatch(offset) {
+                if (isUnloading) { return; }
+
                 if (offset >= total) {
                     // Step 3: Finalize — save results and send notification.
                     $status.text('Saving results...');
@@ -461,6 +477,7 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
                         total:  checked,
                         broken: allBroken
                     }, function() {
+                        linkCheckRunning = false;
                         $btn.prop('disabled', false).text('Check Links Now');
                         var brokenCount = allBroken.length;
                         if (brokenCount > 0) {
@@ -470,6 +487,8 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
                         }
                         setTimeout(function() { location.reload(); }, 1500);
                     }).fail(function() {
+                        if (isUnloading) { return; }
+                        linkCheckRunning = false;
                         $btn.prop('disabled', false).text('Check Links Now');
                         $status.text('Error saving results.');
                     });
@@ -496,6 +515,7 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
                     }
                     nextBatch(offset + batchSize);
                 }).fail(function() {
+                    if (isUnloading) { return; }
                     // Skip failed batch and continue.
                     nextBatch(offset + batchSize);
                 });
@@ -503,6 +523,8 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
 
             nextBatch(0);
         }).fail(function() {
+            if (isUnloading) { return; }
+            linkCheckRunning = false;
             $btn.prop('disabled', false).text('Check Links Now');
             $progress.slideUp(200);
             alert('Network error. Please try again.');
