@@ -4,13 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.24.1] - 2026-03-02
+## [1.24.2] - 2026-03-02
 
 ### Added
 - **Link check progress bar** — The "Check Links Now" button now shows a live progress bar with status text ("Checking link 12 of 38...") and a running count of broken links found. Links are checked in batches of 5 via sequential AJAX calls, replacing the single long-running request. Page auto-reloads after 1.5 seconds with a summary message.
 
+### Fixed
+- **Network error alert on page leave** — Navigating away during a link check no longer shows a "Network error" alert. An `isUnloading` flag suppresses error callbacks from cancelled AJAX requests, and a `beforeunload` confirmation warns the user that a check is still running.
+
 ### Changed
-- **Plugin version** — Bumped to 1.24.1.
+- **Plugin version** — Bumped to 1.24.2.
 
 ## [1.24.0] - 2026-03-02
 
