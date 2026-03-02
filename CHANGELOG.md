@@ -16,6 +16,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Broken link email notification** — HTML email sent to the site admin when broken links are found, listing each affected tire with its status and failure details, plus a direct link to the admin dashboard.
 - **Dashboard health indicator** — Content Health section on the main dashboard now includes a broken affiliate links indicator with a link to the Affiliate Links page for remediation.
 
+### Fixed
+- **"Check Links Now" network error** — The AJAX handler could exceed PHP's `max_execution_time` when checking many links. Added `set_time_limit(300)` and eliminated a redundant second HTTP request per link in `get_effective_url()` by reading the final URL from WordPress's transport response object.
+- **Affiliate link checker missing broken CJ links** — `check_single_link()` used `wp_remote_head`, but affiliate networks like CJ (jdoqocy.com) only redirect GET requests, not HEAD. Switched to `wp_remote_get` with a 4 KB response size limit so the full redirect chain is followed.
+
 ## [1.23.0] - 2026-03-01
 
 ### Added
