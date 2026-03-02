@@ -32,6 +32,12 @@ $affiliate_pct   = $total_tires > 0 ? round( ( $affiliate_count / $total_tires )
 // Pending reviews.
 $pending_reviews = (int) ( $stats['pending_reviews'] ?? 0 );
 
+// Broken affiliate links.
+$broken_links       = RTG_Link_Checker::get_broken_tire_ids();
+$broken_link_count  = count( $broken_links );
+$link_check_results = RTG_Link_Checker::get_results();
+$last_link_check    = ! empty( $link_check_results['checked_at'] ) ? $link_check_results['checked_at'] : '';
+
 // Helper: find max count in a grouped result for bar widths.
 $max_of = function ( $rows ) {
     $max = 0;
@@ -336,6 +342,30 @@ $grade_colors = array(
                     <?php if ( $missing_links > 0 ) : ?>
                         <span class="rtg-health-action">
                             <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-affiliate-links&link_filter=missing' ) ); ?>" class="rtg-btn rtg-btn-secondary" style="text-decoration:none;">Fix Links</a>
+                        </span>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Broken Affiliate Links -->
+                <div class="rtg-health-item">
+                    <span class="rtg-health-icon <?php echo $broken_link_count > 0 ? 'rtg-health-icon-error' : 'rtg-health-icon-success'; ?>">
+                        <span class="dashicons <?php echo $broken_link_count > 0 ? 'dashicons-warning' : 'dashicons-yes-alt'; ?>"></span>
+                    </span>
+                    <span class="rtg-health-content">
+                        <strong><?php echo esc_html( $broken_link_count ); ?> Broken Affiliate <?php echo $broken_link_count !== 1 ? 'Links' : 'Link'; ?></strong>
+                        <p><?php
+                            if ( ! $last_link_check ) {
+                                echo 'No link check has run yet.';
+                            } elseif ( $broken_link_count > 0 ) {
+                                echo 'Links redirecting to homepage instead of product page.';
+                            } else {
+                                echo 'All affiliate links are working correctly.';
+                            }
+                        ?></p>
+                    </span>
+                    <?php if ( $broken_link_count > 0 ) : ?>
+                        <span class="rtg-health-action">
+                            <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-affiliate-links&link_filter=broken' ) ); ?>" class="rtg-btn rtg-btn-secondary" style="text-decoration:none;">Fix Links</a>
                         </span>
                     <?php endif; ?>
                 </div>

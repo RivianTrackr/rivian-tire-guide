@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Rivian Tire Guide
  * Description: Interactive tire guide for Rivian vehicles with filtering, comparison, and ratings.
- * Version: 1.23.0
+ * Version: 1.24.0
  * Author: RivianTrackr
  * Text Domain: rivian-tire-guide
  * Requires at least: 5.8
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'RTG_VERSION', '1.23.0' );
+define( 'RTG_VERSION', '1.24.0' );
 define( 'RTG_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'RTG_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'RTG_PLUGIN_FILE', __FILE__ );
@@ -40,6 +40,17 @@ spl_autoload_register( function ( $class ) {
 register_activation_hook( __FILE__, array( 'RTG_Activator', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'RTG_Deactivator', 'deactivate' ) );
 
+// Add a "weekly" cron schedule (WordPress only provides hourly, twicedaily, daily).
+add_filter( 'cron_schedules', function ( $schedules ) {
+    if ( ! isset( $schedules['weekly'] ) ) {
+        $schedules['weekly'] = array(
+            'interval' => WEEK_IN_SECONDS,
+            'display'  => 'Once Weekly',
+        );
+    }
+    return $schedules;
+} );
+
 // Initialize plugin components.
 add_action( 'plugins_loaded', 'rtg_init' );
 
@@ -52,6 +63,10 @@ function rtg_init() {
         wp_schedule_event( time(), 'daily', 'rtg_analytics_cleanup' );
     }
     add_action( 'rtg_analytics_cleanup', array( 'RTG_Database', 'cleanup_analytics' ) );
+
+    // Schedule weekly affiliate link health check.
+    RTG_Link_Checker::schedule();
+    add_action( RTG_Link_Checker::CRON_HOOK, array( 'RTG_Link_Checker', 'run' ) );
 
     // Admin panel.
     if ( is_admin() ) {

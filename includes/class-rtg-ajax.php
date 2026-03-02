@@ -63,6 +63,9 @@ class RTG_Ajax {
         // Efficiency calculator — admin only.
         add_action( 'wp_ajax_rtg_calculate_efficiency', array( $this, 'calculate_efficiency' ) );
 
+        // Link health check — admin only.
+        add_action( 'wp_ajax_rtg_check_links', array( $this, 'check_links' ) );
+
         // AI tire recommendations — public.
         add_action( 'wp_ajax_rtg_ai_recommend', array( $this, 'ai_recommend' ) );
         add_action( 'wp_ajax_nopriv_rtg_ai_recommend', array( $this, 'ai_recommend' ) );
@@ -798,6 +801,24 @@ class RTG_Ajax {
         $result['tire_rows'] = RTG_Database::get_tires_by_ids( $rec_ids );
 
         wp_send_json_success( $result );
+    }
+
+    /**
+     * Run the affiliate link health check on demand.
+     * Requires manage_options capability.
+     */
+    public function check_links() {
+        if ( ! check_ajax_referer( 'rtg_affiliate_links_nonce', 'nonce', false ) ) {
+            wp_send_json_error( 'Security check failed.' );
+        }
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized.' );
+        }
+
+        $results = RTG_Link_Checker::run();
+
+        wp_send_json_success( $results );
     }
 
     /**

@@ -158,6 +158,114 @@ class RTG_Mailer {
     }
 
     /**
+     * Notify the site admin about broken affiliate links detected during a health check.
+     *
+     * @param array $results Link check results from RTG_Link_Checker::run().
+     * @return bool Whether the email was sent successfully.
+     */
+    public static function send_broken_links_notification( $results ) {
+        $admin_email = get_option( 'admin_email' );
+        if ( ! $admin_email ) {
+            return false;
+        }
+
+        $broken = $results['broken'] ?? array();
+        if ( empty( $broken ) ) {
+            return false;
+        }
+
+        $count   = count( $broken );
+        $subject = sprintf( 'Tire Guide: %d broken affiliate %s detected', $count, $count === 1 ? 'link' : 'links' );
+
+        $site_name        = esc_html( get_bloginfo( 'name' ) );
+        $affiliate_admin  = admin_url( 'admin.php?page=rtg-affiliate-links' );
+
+        // Build the broken links table rows.
+        $rows_html = '';
+        foreach ( $broken as $entry ) {
+            $tire_name = esc_html( trim( ( $entry['brand'] ?? '' ) . ' ' . ( $entry['model'] ?? '' ) ) );
+            $reason    = esc_html( $entry['reason'] ?? 'Unknown' );
+            $status    = esc_html( $entry['status'] ?? '' );
+
+            $status_label = 'Error';
+            $status_color = '#ef4444';
+            if ( $status === 'redirect_homepage' ) {
+                $status_label = 'Redirect to Homepage';
+                $status_color = '#f59e0b';
+            } elseif ( $status === 'http_error' ) {
+                $status_label = 'HTTP Error';
+            }
+
+            $rows_html .= '<tr>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #1d1d1f;">' . $tire_name . '</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">
+                    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #fff; background: ' . $status_color . ';">' . $status_label . '</span>
+                </td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 13px; color: #6e6e73;">' . $reason . '</td>
+            </tr>';
+        }
+
+        $body = '<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="margin: 0; padding: 0; background-color: #f5f5f7; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f7; padding: 40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+  <tr>
+    <td style="background-color: #1d1d1f; padding: 24px 32px; text-align: center;">
+      <h1 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 600;">' . $site_name . '</h1>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 32px;">
+      <h2 style="margin: 0 0 16px 0; color: #1d1d1f; font-size: 22px; font-weight: 600;">Broken Affiliate Links Detected</h2>
+      <p style="margin: 0 0 20px 0; color: #6e6e73; font-size: 16px; line-height: 1.5;">
+        The weekly link health check found <strong style="color: #1d1d1f;">' . esc_html( $count ) . ' broken ' . ( $count === 1 ? 'link' : 'links' ) . '</strong> out of ' . esc_html( $results['total'] ?? 0 ) . ' checked. These links may be redirecting visitors to the supplier homepage instead of the product page.
+      </p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; margin: 0 0 24px 0;">
+        <thead>
+          <tr style="background-color: #f5f5f7;">
+            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1d1d1f; border-bottom: 1px solid #e5e5e5;">Tire</th>
+            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1d1d1f; border-bottom: 1px solid #e5e5e5;">Status</th>
+            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1d1d1f; border-bottom: 1px solid #e5e5e5;">Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          ' . $rows_html . '
+        </tbody>
+      </table>
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td align="center">
+            <a href="' . esc_url( $affiliate_admin ) . '" style="display: inline-block; background-color: #0071e3; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Update Links in Dashboard</a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 20px 32px; border-top: 1px solid #e5e5e5; text-align: center;">
+      <p style="margin: 0; color: #86868b; font-size: 12px;">
+        This automated check runs weekly. You can also run it manually from the Affiliate Links page in ' . $site_name . '.
+      </p>
+    </td>
+  </tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>';
+
+        $headers = array( 'Content-Type: text/html; charset=UTF-8' );
+        if ( $site_name ) {
+            $headers[] = 'From: ' . $site_name . ' <' . $admin_email . '>';
+        }
+
+        return wp_mail( $admin_email, $subject, $body, $headers );
+    }
+
+    /**
      * Get the tire guide page URL with a tire parameter.
      *
      * @param string $tire_id Tire identifier for deep linking.
