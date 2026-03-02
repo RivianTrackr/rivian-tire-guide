@@ -4,6 +4,18 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.24.0] - 2026-03-02
+
+### Added
+- **Affiliate link health checker** — New `RTG_Link_Checker` class that detects broken affiliate links by following redirects and flagging links that land on the supplier homepage instead of the product page. Also catches HTTP errors (4xx/5xx) and connection failures.
+- **Weekly automated checks** — WP-Cron runs the link health check once per week. A custom `weekly` cron schedule is registered for this purpose.
+- **"Check Links Now" button** — Manual trigger on the Affiliate Links admin page to run the health check on demand without waiting for the weekly schedule.
+- **Broken link badges** — Each broken tire row in the Affiliate Links table shows a red "Broken" badge with a tooltip explaining the failure reason (e.g. "Redirects to homepage").
+- **"Broken" filter tab** — New filter tab on the Affiliate Links page to show only tires with broken links, alongside the existing All/Affiliate/Regular/Missing/No Review tabs.
+- **Broken Links stat card** — New stat card in the Affiliate Links stats grid showing the count of broken links detected.
+- **Broken link email notification** — HTML email sent to the site admin when broken links are found, listing each affected tire with its status and failure details, plus a direct link to the admin dashboard.
+- **Dashboard health indicator** — Content Health section on the main dashboard now includes a broken affiliate links indicator with a link to the Affiliate Links page for remediation.
+
 ## [1.23.0] - 2026-03-01
 
 ### Added

@@ -9,5 +9,6 @@ class RTG_Deactivator {
         flush_rewrite_rules();
         delete_option( 'rtg_flush_rewrite' );
         wp_clear_scheduled_hook( 'rtg_analytics_cleanup' );
+        RTG_Link_Checker::unschedule();
     }
 }

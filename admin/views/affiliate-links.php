@@ -74,6 +74,12 @@ foreach ( $all_tires_for_counts as $t ) {
     }
 }
 
+// Link health check results.
+$link_check_results = RTG_Link_Checker::get_results();
+$broken_tire_ids    = RTG_Link_Checker::get_broken_tire_ids();
+$broken_count       = count( $broken_tire_ids );
+$last_checked       = ! empty( $link_check_results['checked_at'] ) ? $link_check_results['checked_at'] : '';
+
 // Success message.
 $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) : '';
 ?>
@@ -113,6 +119,30 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
             <div class="rtg-stat-value"><?php echo esc_html( $counts['has_review'] ); ?></div>
             <div class="rtg-stat-label">Review Links</div>
         </div>
+        <div class="rtg-stat-card">
+            <div class="rtg-stat-value" style="color: <?php echo $broken_count > 0 ? 'var(--rtg-error)' : 'var(--rtg-success)'; ?>;"><?php echo esc_html( $broken_count ); ?></div>
+            <div class="rtg-stat-label">Broken Links</div>
+        </div>
+    </div>
+
+    <!-- Link Health Check -->
+    <div class="rtg-card" style="margin-bottom:20px;">
+        <div class="rtg-card-body" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;">
+            <div>
+                <strong>Link Health Check</strong>
+                <?php if ( $last_checked ) : ?>
+                    <span style="color:var(--rtg-text-muted);margin-left:8px;">Last checked: <?php echo esc_html( date( 'M j, Y g:i A', strtotime( $last_checked ) ) ); ?></span>
+                <?php else : ?>
+                    <span style="color:var(--rtg-text-muted);margin-left:8px;">Never checked</span>
+                <?php endif; ?>
+                <?php if ( $broken_count > 0 ) : ?>
+                    <span style="color:var(--rtg-error);margin-left:8px;font-weight:600;"><?php echo esc_html( $broken_count ); ?> broken <?php echo $broken_count === 1 ? 'link' : 'links'; ?> found</span>
+                <?php elseif ( $last_checked ) : ?>
+                    <span style="color:var(--rtg-success);margin-left:8px;font-weight:600;">All links healthy</span>
+                <?php endif; ?>
+            </div>
+            <button type="button" id="rtg-check-links-btn" class="rtg-btn rtg-btn-secondary">Check Links Now</button>
+        </div>
     </div>
 
     <!-- Filter Tabs + Search -->
@@ -123,6 +153,7 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
             'affiliate' => 'Affiliate (' . $total_affiliate . ')',
             'regular'   => 'Regular (' . $total_regular . ')',
             'missing'   => 'Missing Link (' . $total_missing . ')',
+            'broken'    => 'Broken (' . $broken_count . ')',
             'no_review' => 'No Review (' . $counts['missing_review'] . ')',
         );
         foreach ( $tabs as $key => $label ) :
@@ -186,14 +217,24 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
                                 $badge_class = 'rtg-badge-warning';
                                 $badge_label = 'Regular';
                             }
+                            $is_broken    = isset( $broken_tire_ids[ $tire['tire_id'] ] );
+                            $broken_reason = $is_broken ? $broken_tire_ids[ $tire['tire_id'] ] : '';
+
+                            // Skip non-broken tires when "broken" filter is active.
+                            if ( $link_filter === 'broken' && ! $is_broken ) {
+                                continue;
+                            }
                         ?>
-                            <tr data-tire-id="<?php echo esc_attr( $tire['tire_id'] ); ?>">
+                            <tr data-tire-id="<?php echo esc_attr( $tire['tire_id'] ); ?>"<?php echo $is_broken ? ' data-broken="1"' : ''; ?>>
                                 <td>
                                     <strong><?php echo esc_html( $tire['brand'] . ' ' . $tire['model'] ); ?></strong>
                                     <div style="font-size:12px;color:var(--rtg-text-muted);"><?php echo esc_html( $tire['tire_id'] ); ?> &middot; <?php echo esc_html( $tire['size'] ); ?> &middot; <?php echo esc_html( $tire['category'] ); ?></div>
                                 </td>
                                 <td>
                                     <span class="rtg-badge <?php echo esc_attr( $badge_class ); ?> rtg-link-status-badge"><?php echo esc_html( $badge_label ); ?></span>
+                                    <?php if ( $is_broken ) : ?>
+                                        <span class="rtg-badge rtg-badge-error rtg-broken-badge" title="<?php echo esc_attr( $broken_reason ); ?>" style="margin-top:4px;display:inline-block;background:#ef4444;color:#fff;font-size:11px;">Broken</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="rtg-link-cell" data-field="link">
                                     <div class="rtg-link-display">
@@ -361,6 +402,63 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
         div.appendChild(document.createTextNode(str));
         return div.innerHTML;
     }
+
+    // Check Links Now button.
+    $(document).on('click', '#rtg-check-links-btn', function() {
+        var $btn = $(this);
+        $btn.prop('disabled', true).text('Checking...');
+
+        $.post(ajaxUrl, {
+            action: 'rtg_check_links',
+            nonce:  nonce
+        }, function(response) {
+            $btn.prop('disabled', false).text('Check Links Now');
+
+            if (response.success) {
+                var data = response.data;
+                var brokenCount = (data.broken || []).length;
+
+                if (brokenCount > 0) {
+                    // Mark broken rows.
+                    var brokenIds = {};
+                    for (var i = 0; i < data.broken.length; i++) {
+                        brokenIds[data.broken[i].tire_id] = data.broken[i].reason;
+                    }
+
+                    $('tr[data-tire-id]').each(function() {
+                        var $row = $(this);
+                        var tireId = $row.data('tire-id');
+                        var $statusCell = $row.find('td:eq(1)');
+
+                        // Remove any existing broken badge.
+                        $statusCell.find('.rtg-broken-badge').remove();
+
+                        if (brokenIds[tireId]) {
+                            $row.attr('data-broken', '1');
+                            $statusCell.append('<span class="rtg-badge rtg-badge-error rtg-broken-badge" title="' + escHtml(brokenIds[tireId]) + '" style="margin-top:4px;display:inline-block;background:#ef4444;color:#fff;font-size:11px;">Broken</span>');
+                        } else {
+                            $row.removeAttr('data-broken');
+                        }
+                    });
+
+                    alert('Check complete: ' + brokenCount + ' broken link' + (brokenCount !== 1 ? 's' : '') + ' found. An email notification has been sent.');
+                } else {
+                    // Remove all broken badges.
+                    $('tr[data-tire-id]').removeAttr('data-broken');
+                    $('.rtg-broken-badge').remove();
+                    alert('Check complete: All ' + data.total + ' links are healthy!');
+                }
+
+                // Reload page to update counts.
+                location.reload();
+            } else {
+                alert('Error: ' + (response.data || 'Link check failed.'));
+            }
+        }).fail(function() {
+            $btn.prop('disabled', false).text('Check Links Now');
+            alert('Network error. Please try again.');
+        });
+    });
 
     // Dismiss notices.
     $(document).on('click', '.rtg-notice-dismiss', function() {
