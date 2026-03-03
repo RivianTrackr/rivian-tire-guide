@@ -192,6 +192,18 @@ class RTG_Link_Checker {
      * @return array {status, reason, http_code}
      */
     public static function check_single_link( $url ) {
+        // Amazon short links (amzn.to) are excluded from broken link
+        // detection — they frequently time out or return misleading
+        // status codes, producing false positives.
+        $parsed_host = wp_parse_url( $url, PHP_URL_HOST );
+        if ( $parsed_host && 'amzn.to' === strtolower( $parsed_host ) ) {
+            return array(
+                'status'    => 'ok',
+                'reason'    => '',
+                'http_code' => 0,
+            );
+        }
+
         // Use GET instead of HEAD because many affiliate networks
         // (CJ, ShareASale, etc.) only redirect GET requests.
         $response = wp_remote_get( $url, array(
