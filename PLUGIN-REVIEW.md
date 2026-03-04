@@ -1,462 +1,255 @@
-# Rivian Tire Guide Plugin — Review & Enhancement Plan
+# Rivian Tire Guide — Enhancement Roadmap
 
-**Plugin:** Rivian Tire Guide v1.0.5
-**Reviewed:** 2026-02-15
-**Updated:** 2026-03-04 (v1.24.3 — Original 41/41 resolved + 35 future enhancements)
-**Scope:** Security, enhancements, performance, code quality, UX improvements, and future roadmap
+**Plugin:** Rivian Tire Guide v1.24.3
+**Updated:** 2026-03-04
+**Scope:** 35 planned enhancements across catalog, user features, admin tooling, and technical/SEO improvements
+
+> All 41 original review items (security, performance, code quality, UX, testing) were completed as of v1.20.0. This document tracks the **next phase** of development.
 
 ---
 
 ## Table of Contents
 
-1. [Security Updates](#1-security-updates)
-2. [Feature Enhancements](#2-feature-enhancements)
-3. [Performance Improvements](#3-performance-improvements)
-4. [Code Quality & Maintainability](#4-code-quality--maintainability)
-5. [UX / Frontend Improvements](#5-ux--frontend-improvements)
-6. [Database & Data Integrity](#6-database--data-integrity)
-7. [Testing & Reliability](#7-testing--reliability)
-8. [Future Enhancements — Catalog & Data](#8-future-enhancements--catalog--data)
-9. [Future Enhancements — User Features](#9-future-enhancements--user-features)
-10. [Future Enhancements — Admin & Backend](#10-future-enhancements--admin--backend)
-11. [Future Enhancements — Technical & SEO](#11-future-enhancements--technical--seo)
+1. [Catalog & Data](#1-catalog--data)
+2. [User Features](#2-user-features)
+3. [Admin & Backend](#3-admin--backend)
+4. [Technical & SEO](#4-technical--seo)
+5. [Priority Matrix](#priority-matrix)
 
 ---
 
-## 1. Security Updates
+## 1. Catalog & Data
 
-### 1.1 — ~~Rate-limit AJAX rating submissions~~ ✅ Resolved
-**File:** `includes/class-rtg-ajax.php`
-**Priority:** High
-**Status:** Resolved in v1.1.0, tightened in v1.19.0.
-**Resolution:** Transient-based rate limiter added — logged-in users: 3 submissions per 5-minute window (`RATE_LIMIT_MAX = 3`, `RATE_LIMIT_WINDOW = 300`). Guest IP-based rate limiting also added in v1.19.0 via `is_guest_rate_limited()` / `record_guest_rate_limit()`.
-
-### 1.2 — ~~Add nonce verification to the `get_tire_ratings` AJAX endpoint~~ ✅ Resolved
-**File:** `includes/class-rtg-ajax.php`
-**Priority:** Medium
-**Status:** Resolved in v1.1.0.
-**Resolution:** Nonce verification added for logged-in users via `check_ajax_referer( 'tire_rating_nonce', 'nonce', false )`. Guest (`nopriv`) read requests remain open. Also extended to `get_tire_reviews` and `get_user_reviews` endpoints in v1.19.1.
-
-### 1.3 — ~~Validate tire existence before accepting a rating~~ ✅ Resolved
-**File:** `includes/class-rtg-ajax.php`
-**Priority:** Medium
-**Status:** Resolved in v1.1.0.
-**Resolution:** `RTG_Database::get_tire( $tire_id )` check added before `set_rating()` in both `submit_tire_rating()` and `submit_guest_tire_rating()`. Returns `wp_send_json_error( 'Tire not found.' )` if the tire does not exist.
-
-### 1.4 — ~~Add Content-Security-Policy headers on the compare page~~ ✅ Resolved
-**File:** `includes/class-rtg-compare.php`
-**Priority:** Medium
-**Status:** Resolved in v1.1.0.
-**Resolution:** Security headers added before template output: `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Content-Security-Policy` (restricting script-src, style-src, img-src), and `Referrer-Policy: strict-origin-when-cross-origin`.
-
-### 1.5 — ~~Sanitize CSS custom property values more strictly~~ ✅ Resolved
-**File:** `includes/class-rtg-frontend.php`
-**Priority:** Low
-**Status:** Resolved in v1.1.0.
-**Resolution:** All theme color values are re-validated with `sanitize_hex_color()` at render time before being injected into the `:root{}` inline style declaration. Only valid hex colors are output.
-
-### 1.6 — ~~Escape image URL output in `compare.js`~~ ✅ Resolved
-**File:** `frontend/js/compare.js`
-**Priority:** Medium
-**Status:** Resolved in v1.1.0, consolidated in v1.14.0.
-**Resolution:** All image URLs routed through `safeImageURL()` (delegating to `RTG_SHARED` module) and `escapeHTML()` applied to all `src` and `alt` attribute values. Domain allowlists consolidated into `rtg-shared.js` in v1.14.0.
-
-### 1.7 — ~~Escape link URLs in `compare.js` to prevent XSS~~ ✅ Resolved
-**File:** `frontend/js/compare.js`
-**Priority:** High
-**Status:** Resolved in v1.1.0, consolidated in v1.14.0.
-**Resolution:** All URLs routed through `safeLinkURL()`, `safeReviewLinkURL()`, and `safeImageURL()` from the shared `RTG_SHARED` module before insertion. `escapeHTML()` applied to all attribute values. Domain allowlists consolidated into `rtg-shared.js` (v1.14.0) to eliminate duplicate validation logic.
-
-### 1.8 — ~~Delete `rtg_dropdown_options` on uninstall~~ ✅ Resolved
-**File:** `uninstall.php`
-**Priority:** Low
-**Status:** Resolved in v1.1.0.
-**Resolution:** `delete_option( 'rtg_dropdown_options' )` added to the uninstall handler alongside the other option deletions.
-
----
-
-## 2. Feature Enhancements
-
-### 2.1 — ~~CSV/JSON import and export for tire data~~ ✅ Resolved
-**Priority:** High
-**Status:** Resolved in v1.2.0, enhanced in v1.8.0.
-**Resolution:** Admin Import/Export page (Tire Guide > Import / Export) supports CSV import with duplicate handling (skip/update modes), auto-generated tire IDs, auto-calculated efficiency scores, and full catalog CSV export. MIME type validation added in v1.19.1. 21 columns supported including review_link.
-
-### 2.2 — ~~REST API for tire data~~ ✅ Resolved
-**Priority:** Medium
-**Status:** Resolved in v1.14.0, rate-limited in v1.15.0.
-**Resolution:** Full REST API under `rtg/v1` namespace with four endpoints: `GET /tires` (filtered, paginated listing), `GET /tires/{tire_id}` (single tire with ratings), `GET /tires/{tire_id}/reviews` (paginated reviews), and `POST /efficiency` (calculate efficiency score). All inputs validated and sanitized. Per-IP rate limiting (60 req/min reads, 10 req/min writes) added in v1.15.0.
-
-### 2.3 — ~~User review text alongside star ratings~~ ✅ Resolved
-**Priority:** Medium
-**Status:** Resolved in v1.7.0, moderation in v1.7.1, guest reviews in v1.19.0.
-**Resolution:** Full text review system with optional title (200 chars) and body (5,000 chars). Review modal for submission/editing. Admin moderation queue (Tire Guide > Reviews) with approve/reject/delete. Reviews drawer on each tire card. Schema.org `Review` objects in JSON-LD. Guest reviews with name/email added in v1.19.0.
-
-### 2.4 — ~~Allow users to delete their own ratings~~ ✅ Resolved
-**Priority:** Medium
-**Status:** Resolved in v1.20.0.
-**Resolution:** New `delete_tire_rating` AJAX endpoint added for logged-in users. Backed by `RTG_Database::delete_user_rating()` which only deletes ratings matching the current `user_id`. Nonce-verified. Returns updated aggregate rating data after deletion. Integration tests cover success, no-rating, and cross-user deletion prevention.
-
-### 2.5 — ~~Shortcode attributes for filtering~~ ✅ Resolved
-**Priority:** Low
-**Status:** Resolved in v1.14.0.
-**Resolution:** The `[rivian_tire_guide]` shortcode now accepts optional pre-filter attributes: `size`, `brand`, `category`, `sort`, and `3pms`. Example: `[rivian_tire_guide brand="Michelin" category="All-Season" sort="price-asc"]`. Attributes validated and passed to frontend via `shortcode_atts()`.
-
-### 2.6 — ~~Admin dashboard widget with quick stats~~ ✅ Resolved
-**Priority:** Low
-**Status:** Resolved in v1.20.0.
-**Resolution:** WordPress dashboard widget (`rtg_dashboard_widget`) registered via `wp_dashboard_setup`. Shows total tires, average rating, total ratings, average price in a 2-column grid. Highlights pending reviews with link to moderation queue, missing links/images counts, and top-rated tire. Links to full plugin dashboard.
-
-### 2.7 — ~~Schema.org structured data for tire products~~ ✅ Resolved
-**Priority:** Medium
-**Status:** Resolved in v1.1.0, enhanced in v1.7.0.
-**Resolution:** Automatic JSON-LD output (`Product` + `AggregateRating` + `ItemList`) on pages using the shortcode. Individual `Review` objects (up to 5 per tire) added in v1.7.0 for rich snippet eligibility. Guest author names handled in v1.19.0. Implemented in `class-rtg-schema.php`.
-
-### 2.8 — ~~Email notifications for new ratings (admin)~~ ✅ Resolved
-**Priority:** Low
-**Status:** Resolved in v1.19.0.
-**Resolution:** `RTG_Mailer` class sends styled HTML emails via `wp_mail()`: admin notification on guest review submission (with review details, star rating, and moderation link), and reviewer approval notification when reviews are approved. Respects site SMTP configuration.
-
----
-
-## 3. Performance Improvements
-
-### 3.1 — ~~Server-side pagination instead of loading all tires into JS~~ ✅ Resolved
-**File:** `includes/class-rtg-frontend.php`, `includes/class-rtg-ajax.php`
-**Priority:** High
-**Status:** Resolved in v1.3.0.
-**Resolution:** Hybrid approach implemented — optional server-side pagination mode (Settings toggle). When enabled, `rtg_get_tires` AJAX endpoint provides full server-side filtering, sorting, and pagination. Client-side mode still available for smaller catalogs. Tire data only embedded inline when client-side mode is active (`class-rtg-frontend.php:180`).
-
-### 3.2 — ~~Add database version migration system~~ ✅ Resolved
-**File:** `includes/class-rtg-activator.php`
-**Priority:** Medium
-**Status:** Resolved in v1.3.0.
-**Resolution:** Numbered migration system with `DB_VERSION` constant (currently 11) and `rtg_db_version` option. `run_migrations()` applies incremental schema changes sequentially. `maybe_upgrade()` runs on `plugins_loaded` to auto-apply pending migrations on plugin update. 11 migrations implemented covering schema additions, index creation, and column changes.
-
-### 3.3 — ~~Cache expensive database queries~~ ✅ Resolved
-**File:** `includes/class-rtg-database.php`
-**Priority:** Medium
-**Status:** Resolved in v1.2.0.
-**Resolution:** WordPress transient caching (`get_transient` / `set_transient`) with 1-hour TTL added to `get_all_tires()`. Cache automatically invalidated on tire insert, update, and delete operations.
-
-### 3.4 — ~~Lazy-load Font Awesome or use a subset~~ ✅ Resolved
-**File:** `includes/class-rtg-icons.php`, `frontend/js/modules/helpers.js`
-**Priority:** Low
-**Status:** Resolved in v1.15.0.
-**Resolution:** Font Awesome CDN dependency (~60 KB CSS + web fonts) completely replaced with lightweight inline SVGs. New `RTG_Icons` PHP class and `rtgIcon()` JS helper render icons from a shared map of ~35 SVG paths. CSP headers updated to remove the CDN allowance.
-
-### 3.5 — ~~Add lazy loading to tire card images~~ ✅ Resolved
-**Priority:** Low
-**Status:** Resolved in v1.10.0, refined in v1.19.2.
-**Resolution:** `IntersectionObserver`-based lazy loading with `data-src` pattern and shimmer placeholder animation. Images fade in smoothly on load. Root margin of 600px ensures images load well before scrolling into view. Compare page images use native `loading="lazy"`. `decoding="async"` added for non-blocking decode.
-
----
-
-## 4. Code Quality & Maintainability
-
-### 4.1 — ~~Split `rivian-tires.js` into ES modules~~ ✅ Resolved
-**File:** `frontend/js/modules/`
-**Priority:** Medium
-**Status:** Resolved in v1.15.0.
-**Resolution:** Main JS split into 14 focused ES modules: `state.js`, `helpers.js`, `validation.js`, `analytics.js`, `tooltips.js`, `search.js`, `ratings.js`, `cards.js`, `favorites.js`, `compare.js`, `filters.js`, `server.js`, `image-modal.js`, and `ai-recommend.js`. esbuild build pipeline bundles and minifies for production with tree-shaking.
-
-### 4.2 — ~~Remove `console.time` / `console.warn` calls from production~~ ✅ Resolved
-**Priority:** Low
-**Status:** Resolved in v1.15.0.
-**Resolution:** esbuild build pipeline automatically strips all `console` and `debugger` statements from production `.min.js` builds via the `drop` option. Source files retain console calls for development debugging; they never reach production output.
-
-### 4.3 — ~~Use a PHP autoloader instead of manual `require_once`~~ ✅ Resolved
-**File:** `rivian-tire-guide.php`
-**Priority:** Low
-**Status:** Resolved in v1.20.0.
-**Resolution:** 12 manual `require_once` calls replaced with `spl_autoload_register()`. Autoloader maps `RTG_` prefixed class names to `includes/class-rtg-*.php` files (e.g., `RTG_REST_API` → `class-rtg-rest-api.php`). New classes are loaded automatically without editing the main plugin file.
-
-### 4.4 — ~~Consolidate duplicate URL validation logic~~ ✅ Resolved
-**Files:** `frontend/js/modules/validation.js`, `frontend/js/rtg-shared.js`
-**Priority:** Medium
-**Status:** Resolved in v1.14.0.
-**Resolution:** Shared `escapeHTML`, `safeImageURL`, `safeLinkURL`, and `safeReviewLinkURL` extracted into `rtg-shared.js` with a single domain allowlist. The compare page delegates to `RTG_SHARED` module. Main tire guide imports from `modules/validation.js`. No duplicate implementations remain.
-
-### 4.5 — ~~Consolidate duplicate efficiency calculation logic~~ ✅ Resolved
-**Files:** `includes/class-rtg-database.php`, `admin/js/admin-scripts.js`
-**Priority:** Medium
-**Status:** Resolved in v1.14.0.
-**Resolution:** The duplicate 95-line JS efficiency formula in `admin-scripts.js` was replaced with a debounced AJAX call to the canonical PHP `RTG_Database::calculate_efficiency()` via the `rtg_calculate_efficiency` action. The formula now exists only in PHP — a single source of truth.
-
-### 4.6 — ~~Add PHPDoc blocks to all public methods~~ ✅ Resolved
-**Priority:** Low
-**Status:** Resolved in v1.20.0.
-**Resolution:** PHPDoc blocks with `@param`, `@return`, and descriptions added to all public methods in `RTG_Database` (tire CRUD, ratings, wheels, analytics, favorites) and `RTG_Admin` (menu registration, asset enqueuing, action routing, all page renderers, dashboard widget). Orphaned dangling PHPDoc block cleaned up.
-
----
-
-## 5. UX / Frontend Improvements
-
-### 5.1 — ~~Persist filter state in URL parameters~~ ✅ Resolved
-**Priority:** High
-**Status:** Resolved in v1.10.0.
-**Resolution:** All filter state synced to URL query parameters via `updateURLFromFilters()` using `history.pushState()`. On page load, `applyFiltersFromURL()` parses URL params and restores all filter state (search, size, brand, category, 3PMS, EV, studded, reviewed, favorites, price/warranty/weight sliders, sort, page). `popstate` listener enables browser back/forward through filter history. Shareable filtered URLs fully functional (e.g., `?brand=Michelin&size=275/65R18&sort=price-asc`).
-
-### 5.2 — ~~Mobile-friendly range slider interaction~~ ✅ Resolved
-**Priority:** Medium
-**Status:** Resolved in v1.15.0.
-**Resolution:** Editable number inputs alongside range sliders on mobile (visible below 600px breakpoint). Number inputs and sliders sync bidirectionally. Slider thumbs have larger 28px touch targets on mobile for easier interaction.
-
-### 5.3 — ~~"Back to guide" link on compare page~~ ✅ Resolved
-**File:** `frontend/templates/compare.php`
-**Priority:** Low
-**Status:** Resolved in v1.7.8.
-**Resolution:** "Back to Tire Guide" link with arrow icon added in the compare page top bar (`.cmp-topbar-left`), linking to the tire guide page via `home_url( '/rivian-tire-guide/' )`.
-
-### 5.4 — ~~Skeleton/loading state for tire cards~~ ✅ Resolved
-**Priority:** Medium
-**Status:** Resolved in v1.14.0.
-**Resolution:** CSS shimmer placeholder cards (`.rtg-skeleton-grid`, `.rtg-skeleton-card`) display immediately while tire data loads. Animated gradient shimmer effect via `@keyframes rtg-shimmer`. Respects `prefers-reduced-motion`. Skeleton includes image, title, subtitle, text, stars, and badge placeholders.
-
-### 5.5 — ~~Accessibility (a11y) improvements~~ ✅ Resolved
-**Priority:** High
-**Status:** Resolved across v1.2.0 and v1.14.0.
-**Resolution:** All listed concerns addressed:
-- **Star ratings:** ARIA `role`, `aria-label`, `aria-checked` attributes + full keyboard navigation (arrow keys, Enter/Space) — v1.2.0.
-- **Filter toggles:** `aria-expanded` / `aria-controls` on mobile filter toggle and wheel drawer trigger — v1.2.0.
-- **Tooltips:** Clickable tooltip triggers with modal display (not hover-only) — v1.14.0.
-- **Compare checkboxes:** Descriptive `aria-label` attributes — v1.2.0.
-- **Additional a11y (v1.14.0):** Skip-to-content link, `aria-label` on all filter controls/search/sort, `role="status"` + `aria-live="polite"` on no-results, screen-reader-only labels, `focus-visible` outline styles on all interactive elements, `.screen-reader-text` utility class.
-
-### 5.6 — ~~Improve the "No results" state~~ ✅ Resolved
-**Priority:** Low
-**Status:** Resolved in v1.10.0.
-**Resolution:** Smart no-results view lists the number and names of active filters, displays up to 4 actionable suggestion buttons to remove specific filters (e.g., "Remove size filter", "Show all brands", "Clear all filters"), and shows a fallback "Search RivianTrackr" link for non-tire queries.
-
-### 5.7 — ~~Add print stylesheet for comparison page~~ ✅ Resolved
-**Priority:** Low
-**Status:** Resolved in v1.4.0 (tire cards), compare page print styles added separately.
-**Resolution:** `@media print` styles switch to white background with dark text, hide interactive elements (top bar, CTA buttons, compare checkboxes), and use light-friendly border colors. Tire card print styles also added in v1.4.0.
-
----
-
-## 6. Database & Data Integrity
-
-### 6.1 — ~~Add cascade delete for orphaned ratings~~ ✅ Resolved
-**File:** `includes/class-rtg-database.php`
-**Priority:** Medium
-**Status:** Resolved in v1.2.0.
-**Resolution:** `delete_tire()` and `delete_tires()` now delete associated ratings before removing tires. PHPUnit tests in `test-database.php` verify cascade deletion behavior.
-
-### 6.2 — ~~Add database table existence check on plugin load~~ ✅ Resolved
-**Priority:** Low
-**Status:** Resolved in v1.3.0.
-**Resolution:** `RTG_Activator::maybe_upgrade()` runs on `plugins_loaded` and checks the stored `rtg_db_version` against `DB_VERSION`. If the installed version is behind, `create_tables()` (using idempotent `dbDelta()`) and `run_migrations()` are re-executed to repair or update the schema.
-
-### 6.3 — ~~Validate `tire_id` format consistency~~ ✅ Resolved
-**File:** `includes/class-rtg-database.php`, `frontend/js/modules/validation.js`
-**Priority:** Low
-**Status:** Resolved across multiple versions.
-**Resolution:** Tire ID format validation enforced in both PHP (`preg_match( '/^[a-zA-Z0-9\-_]+$/' )` with 50-char max length) and JavaScript (`VALIDATION_PATTERNS.tireId` regex: `/^[a-zA-Z0-9\-_]+$/`). CSV import rows with invalid tire IDs are rejected.
-
----
-
-## 7. Testing & Reliability
-
-### 7.1 — ~~Add PHPUnit test suite~~ ✅ Resolved
-**Priority:** High
-**Status:** Resolved in v1.3.0 (PHP), v1.14.0 (JS).
-**Resolution:** Two test suites implemented:
-- **PHPUnit** (`tests/test-database.php`): 21 tests covering tire CRUD, ratings upsert, cascade deletes, cache invalidation, efficiency calculation, filtered pagination, and bulk operations. Bootstrap at `tests/bootstrap.php`.
-- **JavaScript** (`tests/test-validation.js`): 83 tests covering `escapeHTML`, `sanitizeInput`, `validateNumeric`, `safeImageURL`, `safeLinkURL`, and `fuzzyMatch`.
-- **CI:** GitHub Actions workflow runs JS tests, build verification, and PHP syntax linting (PHP 7.4, 8.0, 8.2) on every push/PR — v1.15.0.
-
-### 7.2 — ~~Add JavaScript unit tests~~ ✅ Resolved
-**Priority:** Medium
-**Status:** Resolved in v1.14.0.
-**Resolution:** 83-test suite in `tests/test-validation.js` covering `escapeHTML`, `sanitizeInput`, `validateNumeric`, `safeImageURL`, `safeLinkURL`, and `fuzzyMatch`. Standalone runner (no dependencies) via `node tests/test-validation.js`. Integrated into GitHub Actions CI in v1.15.0.
-
-### 7.3 — ~~Add integration tests for AJAX endpoints~~ ✅ Resolved
-**Priority:** Medium
-**Status:** Resolved in v1.20.0.
-**Resolution:** New `tests/test-ajax.php` with 14 integration tests extending `WP_Ajax_UnitTestCase`. Covers `get_tire_ratings` (empty, valid, invalid IDs), `submit_tire_rating` (success, missing nonce, invalid rating, nonexistent tire, review text with pending status), `delete_tire_rating` (success, no rating, cross-user prevention), `get_tire_reviews` (approved reviews, invalid ID), and favorites lifecycle (add/get/remove cycle, nonexistent tire).
-
-### 7.4 — ~~Add PHP linting and coding standards enforcement~~ ✅ Resolved
-**Priority:** Low
-**Status:** Resolved in v1.20.0.
-**Resolution:** `.phpcs.xml` configuration added targeting WordPress Coding Standards (WPCS 3.x). Scans `includes/`, `admin/`, main plugin file, and `uninstall.php`. Excludes vendor/node_modules/minified files/tests. Text domain set to `rivian-tire-guide`. Minimum WP version 5.8, PHP 7.4+. New `phpcs` CI job added to GitHub Actions workflow using `wp-coding-standards/wpcs` and `phpcompatibility-wp` with `cs2pr` for inline PR annotations.
-
----
-
-## 8. Future Enhancements — Catalog & Data
-
-### 8.1 — Dark mode toggle for the frontend UI
+### 1.1 — Dark mode toggle for the frontend UI
 **Priority:** Medium
 **Status:** Pending
+**Scope:** Add a theme toggle (light/dark) to the tire guide frontend. The plugin already injects CSS custom properties via `:root{}` in `class-rtg-frontend.php` — extend the existing `sanitize_hex_color()` pipeline with a dark palette. Store preference in `localStorage`. Add a toggle button to the top bar. Update all card, filter, modal, and comparison styles to reference CSS variables instead of hard-coded colors.
+**Files:** `class-rtg-frontend.php`, `frontend/css/rivian-tires.css`, `frontend/js/modules/state.js`
 
-### 8.2 — Price history tracking with trend graphs
+### 1.2 — Price history tracking with trend graphs
 **Priority:** Medium
 **Status:** Pending
+**Scope:** New `wp_rtg_price_history` table with columns `tire_id`, `price`, `recorded_at`. Record a snapshot on every tire update via `RTG_Database::update_tire()`. Add a price chart (Chart.js is already loaded for Analytics) to the tire detail/review drawer showing 30/60/90-day trends. Include a "price dropped" badge on tire cards when current price is below the 30-day average.
+**Files:** `class-rtg-activator.php` (migration 12), `class-rtg-database.php`, `frontend/js/modules/cards.js`
 
-### 8.3 — Tire fitment validator (Rivian year/model/trim specific)
+### 1.3 — Tire fitment validator (Rivian year/model/trim specific)
 **Priority:** High
 **Status:** Pending
+**Scope:** Create a fitment lookup that maps Rivian models (R1T, R1S, R2, R3, R3X) with year and trim to compatible tire sizes, load ratings, and bolt patterns. The `wp_rtg_wheels` table already has `vehicles` and `stock_size`/`alt_sizes` columns — extend this data or add a new `wp_rtg_fitments` table. Surface a "Check Fitment" modal on tire cards that warns if a tire size doesn't match the user's selected vehicle. Persist vehicle selection in `localStorage` or user meta.
+**Files:** `class-rtg-activator.php`, `class-rtg-database.php`, `class-rtg-ajax.php`, new `frontend/js/modules/fitment.js`
 
-### 8.4 — Tire noise rating (dB) data field and filter
+### 1.4 — Tire noise rating (dB) data field and filter
 **Priority:** Low
 **Status:** Pending
+**Scope:** Add `noise_db` decimal column to `wp_rtg_tires` (migration 12+). Include in CSV import/export (column 22). Add a range slider filter alongside the existing price/warranty/weight sliders in `filters.js`. Display the dB value on tire cards with an icon from `RTG_Icons`.
+**Files:** `class-rtg-activator.php`, `class-rtg-database.php`, `class-rtg-admin.php` (add/edit form), `frontend/js/modules/filters.js`, `frontend/js/modules/cards.js`
 
-### 8.5 — Road hazard warranty details field
+### 1.5 — Road hazard warranty details field
 **Priority:** Low
 **Status:** Pending
+**Scope:** Add `road_hazard_warranty` text column to `wp_rtg_tires`. Display as a badge/tooltip on tire cards (similar to 3PMS badge). Include in CSV import/export and admin add/edit forms. Filter toggle: "Has road hazard warranty."
+**Files:** `class-rtg-activator.php`, `class-rtg-database.php`, `class-rtg-admin.php`, `frontend/js/modules/cards.js`, `frontend/js/modules/filters.js`
 
-### 8.6 — Tire image gallery (multiple images per tire)
+### 1.6 — Tire image gallery (multiple images per tire)
 **Priority:** Medium
 **Status:** Pending
+**Scope:** New `wp_rtg_tire_images` table (`tire_id`, `image_url`, `sort_order`, `alt_text`). Currently each tire has a single `image` column — keep that as the primary/thumbnail. Add a gallery lightbox to the existing `image-modal.js` module with swipe navigation. Admin UI: sortable image upload on the tire edit page.
+**Files:** `class-rtg-activator.php`, `class-rtg-database.php`, `class-rtg-admin.php`, `frontend/js/modules/image-modal.js`
 
-### 8.7 — Tire size calculator / plus-size converter
+### 1.7 — Tire size calculator / plus-size converter
 **Priority:** Low
 **Status:** Pending
+**Scope:** Standalone calculator widget (shortcode `[rtg_size_calculator]`) that converts between tire size formats (metric/imperial), calculates overall diameter, sidewall height, and shows speedometer error for plus-sizing. Pure frontend math — no backend needed. Link from tire cards to pre-fill the calculator with that tire's size.
+**Files:** New `frontend/js/modules/size-calculator.js`, `class-rtg-frontend.php` (shortcode registration)
 
-### 8.8 — Seasonal tire recommendations (based on date/location)
+### 1.8 — Seasonal tire recommendations (based on date/location)
 **Priority:** Low
 **Status:** Pending
+**Scope:** Use the existing `category` field (All-Season, All-Terrain, Winter, etc.) to surface seasonal suggestions. Show a banner or highlighted section based on current month (e.g., "Winter tire season — check these options"). Optional: use browser geolocation or a zip code input to tailor recommendations by climate zone. Could integrate with the existing AI recommendation engine in `class-rtg-ai.php`.
+**Files:** `class-rtg-frontend.php`, `frontend/js/modules/cards.js`, optionally `class-rtg-ai.php`
 
-### 8.9 — "Related tires" / "Customers also viewed" suggestions
+### 1.9 — "Related tires" / "Customers also viewed" suggestions
 **Priority:** Medium
 **Status:** Pending
+**Scope:** Query tires in the same category and size as the viewed tire. Can leverage the existing `wp_rtg_click_events` and `wp_rtg_search_events` tables for collaborative filtering (users who viewed X also viewed Y). Display a horizontal scroll row at the bottom of the tire detail drawer. Limit to 4-6 suggestions.
+**Files:** `class-rtg-database.php`, `class-rtg-ajax.php`, `frontend/js/modules/cards.js`
 
-### 8.10 — Tire brand info pages with logo and description
+### 1.10 — Tire brand info pages with logo and description
 **Priority:** Low
 **Status:** Pending
+**Scope:** New `wp_rtg_brands` table (`slug`, `name`, `logo_url`, `description`, `website_url`). Auto-populate from distinct `brand` values in `wp_rtg_tires`. Add brand detail pages via rewrite rules (similar to how `class-rtg-compare.php` handles `/compare/`). Link brand names on tire cards to brand pages. Include Schema.org `Brand` markup.
+**Files:** `class-rtg-activator.php`, `class-rtg-database.php`, new `class-rtg-brands.php`, `class-rtg-schema.php`
 
 ---
 
-## 9. Future Enhancements — User Features
+## 2. User Features
 
-### 9.1 — "I own this tire" user ownership tracking
+### 2.1 — "I own this tire" user ownership tracking
 **Priority:** Medium
 **Status:** Pending
+**Scope:** New `wp_rtg_ownership` table (`user_id`, `tire_id`, `purchase_date`, `purchase_price`, `vehicle`, `created_at`). Add an "I own this" button on tire cards for logged-in users (similar to the existing favorites heart icon in `favorites.js`). Show owned tire count on user profile. Surface an "Owners say..." section pulling reviews from verified owners.
+**Files:** `class-rtg-activator.php`, `class-rtg-database.php`, `class-rtg-ajax.php`, new `frontend/js/modules/ownership.js`
 
-### 9.2 — Tire wear / mileage logging for owned tires
+### 2.2 — Tire wear / mileage logging for owned tires
 **Priority:** Low
 **Status:** Pending
+**Scope:** Depends on 2.1 (ownership). New `wp_rtg_wear_logs` table (`ownership_id`, `odometer`, `tread_depth_32nds`, `logged_at`). Users log periodic tread measurements. Display a wear chart (Chart.js) and projected remaining mileage vs. the tire's `mileage_warranty`. Could surface aggregate wear data anonymously ("Average owner gets X miles").
+**Files:** `class-rtg-activator.php`, `class-rtg-database.php`, `class-rtg-ajax.php`, `frontend/js/modules/ownership.js`
 
-### 9.3 — Community Q&A threads on tire pages
+### 2.3 — Community Q&A threads on tire pages
 **Priority:** Medium
 **Status:** Pending
+**Scope:** New `wp_rtg_questions` and `wp_rtg_answers` tables. Q&A section below reviews on each tire. Questions have upvotes. Answers can be marked as "accepted" by the question author or admin. Admin moderation queue (extend existing Reviews page or add a Q&A tab). Email notifications via `RTG_Mailer` for new answers to your questions.
+**Files:** `class-rtg-activator.php`, `class-rtg-database.php`, `class-rtg-ajax.php`, `class-rtg-mailer.php`, `class-rtg-admin.php`
 
-### 9.4 — Comparison history (save/recall past comparisons)
+### 2.4 — Comparison history (save/recall past comparisons)
 **Priority:** Low
 **Status:** Pending
+**Scope:** Save comparison sets (tire IDs) to `localStorage` for guests or `wp_rtg_comparisons` table for logged-in users. Show a "Recent Comparisons" dropdown on the compare page (`class-rtg-compare.php`). Each entry stores the tire IDs and a timestamp. Limit to last 10 comparisons.
+**Files:** `class-rtg-compare.php`, `frontend/js/compare.js`
 
-### 9.5 — Export comparison to PDF
+### 2.5 — Export comparison to PDF
 **Priority:** Low
 **Status:** Pending
+**Scope:** Generate a PDF of the current comparison table. Use a lightweight JS library (e.g., jsPDF + html2canvas) to capture the comparison grid. Include tire images, specs, ratings, and efficiency scores. Add a "Download PDF" button to the compare page top bar.
+**Files:** `frontend/js/compare.js`, `frontend/templates/compare.php`
 
-### 9.6 — Social sharing buttons on tire cards
+### 2.6 — Social sharing buttons on tire cards
 **Priority:** Low
 **Status:** Pending
+**Scope:** Share buttons (copy link, X/Twitter, Facebook) on tire cards and comparison pages. The plugin already generates OG meta tags via `class-rtg-meta.php` — this extends that with share action buttons. Use native `navigator.share()` API where available with fallback buttons.
+**Files:** `frontend/js/modules/cards.js`, `frontend/css/rivian-tires.css`
 
-### 9.7 — Tire deal / sale price alerts (email notifications)
+### 2.7 — Tire deal / sale price alerts (email notifications)
 **Priority:** Medium
 **Status:** Pending
+**Scope:** Users subscribe to price drop alerts on specific tires. New `wp_rtg_price_alerts` table (`user_id`, `tire_id`, `target_price`, `email`, `active`). When a tire price is updated below the alert threshold (check in `RTG_Database::update_tire()`), send an email via `RTG_Mailer`. Admin settings for alert frequency limits.
+**Files:** `class-rtg-activator.php`, `class-rtg-database.php`, `class-rtg-mailer.php`, `class-rtg-ajax.php`
 
-### 9.8 — User profile page (reviews + favorites + owned tires)
+### 2.8 — User profile page (reviews + favorites + owned tires)
 **Priority:** Medium
 **Status:** Pending
+**Scope:** Frontend profile page (shortcode `[rtg_user_profile]`) showing a user's reviews (existing `get_user_reviews` endpoint), favorites (existing `wp_rtg_favorites` table), and owned tires (depends on 2.1). Tabbed layout. Users can edit their display name for reviews. Link from the review attribution to the profile page.
+**Files:** `class-rtg-frontend.php`, `class-rtg-ajax.php`, `class-rtg-database.php`
 
 ---
 
-## 10. Future Enhancements — Admin & Backend
+## 3. Admin & Backend
 
-### 10.1 — Bulk review actions (approve/reject multiple at once)
+### 3.1 — Bulk review actions (approve/reject multiple at once)
 **Priority:** High
 **Status:** Pending
+**Scope:** The Reviews admin page currently handles one review at a time. Add checkbox selection + bulk action dropdown (Approve Selected, Reject Selected, Delete Selected) similar to WordPress's native list table pattern. The admin already uses bulk actions for tires in `class-rtg-admin.php` — follow the same pattern with `handle_bulk_review_action()`.
+**Files:** `class-rtg-admin.php`, `admin/js/admin-scripts.js`, `admin/views/reviews.php`
 
-### 10.2 — Advanced analytics export to CSV
+### 3.2 — Advanced analytics export to CSV
 **Priority:** Medium
 **Status:** Pending
+**Scope:** Add CSV download buttons to the Analytics admin page for click events, search events, and rating trends. The CSV export pattern already exists in the Import/Export page — reuse `RTG_Admin::export_csv()` logic. Include date range filtering for exports.
+**Files:** `class-rtg-admin.php`, `admin/views/analytics.php`
 
-### 10.3 — Webhook notifications for plugin events
+### 3.3 — Webhook notifications for plugin events
 **Priority:** Low
 **Status:** Pending
+**Scope:** Admin settings to configure webhook URLs for events: new review submitted, tire added/updated/deleted, price changed. Fire `wp_remote_post()` with JSON payloads on these events. Add a webhook log table for debugging failed deliveries. Useful for Zapier/Discord/Slack integrations.
+**Files:** New `class-rtg-webhooks.php`, `class-rtg-admin.php` (settings page), `class-rtg-activator.php`
 
-### 10.4 — Multi-site network support
+### 3.4 — Multi-site network support
 **Priority:** Low
 **Status:** Pending
+**Scope:** Support WordPress multisite with network-wide activation. Each site gets its own tables (already prefixed with `$wpdb->prefix`). Add a network admin page for global settings (shared API keys, default configuration). Handle `switch_to_blog()` in cron jobs like the link checker.
+**Files:** `rivian-tire-guide.php`, `class-rtg-activator.php`, `class-rtg-admin.php`
 
-### 10.5 — Scheduled CSV auto-import from URL
+### 3.5 — Scheduled CSV auto-import from URL
 **Priority:** Medium
 **Status:** Pending
+**Scope:** Admin setting to configure a remote CSV URL and import schedule (daily/weekly). Use `wp_cron` to fetch and import tire data automatically. Reuse the existing CSV import logic in `class-rtg-admin.php`. Add import history log and email notification on success/failure via `RTG_Mailer`. Support HTTP basic auth and custom headers for authenticated feeds.
+**Files:** `class-rtg-admin.php`, `class-rtg-mailer.php`
 
-### 10.6 — Admin activity log / audit trail
+### 3.6 — Admin activity log / audit trail
 **Priority:** Medium
 **Status:** Pending
+**Scope:** New `wp_rtg_activity_log` table (`user_id`, `action`, `object_type`, `object_id`, `details_json`, `created_at`). Log all admin actions: tire CRUD, review moderation, settings changes, imports/exports, bulk operations. New admin page (Tire Guide > Activity Log) with filterable list. Auto-prune entries older than 90 days via cron.
+**Files:** `class-rtg-activator.php`, new `class-rtg-activity-log.php`, `class-rtg-admin.php`
 
-### 10.7 — Bulk tire price update tool
+### 3.7 — Bulk tire price update tool
 **Priority:** Medium
 **Status:** Pending
+**Scope:** Admin tool to update prices for multiple tires at once. Options: percentage increase/decrease across all tires, by brand, or by category. CSV upload for targeted price updates (tire_id + new price). Preview changes before applying. Integrates with price history (1.2) to record all changes.
+**Files:** `class-rtg-admin.php`, `admin/views/bulk-price.php`, `class-rtg-database.php`
 
 ---
 
-## 11. Future Enhancements — Technical & SEO
+## 4. Technical & SEO
 
-### 11.1 — Progressive Web App (PWA) support
+### 4.1 — Progressive Web App (PWA) support
 **Priority:** Low
 **Status:** Pending
+**Scope:** Add a `manifest.json` and service worker for offline-capable tire browsing. Cache the tire catalog, images, and static assets. The plugin already uses `IntersectionObserver` and lazy loading — extend with a service worker for offline fallback. Add "Install App" prompt on mobile.
+**Files:** New `frontend/sw.js`, `class-rtg-frontend.php` (manifest + SW registration)
 
-### 11.2 — Multi-language / i18n support (translation-ready)
+### 4.2 — Multi-language / i18n support (translation-ready)
 **Priority:** Medium
 **Status:** Pending
+**Scope:** Wrap all user-facing strings in `__()` / `esc_html__()` with text domain `rivian-tire-guide` (already set in `.phpcs.xml`). Generate `.pot` file. JS strings via `wp_localize_script()` (already used for AJAX data). Priority: frontend UI strings, admin labels, email templates in `RTG_Mailer`, validation error messages.
+**Files:** All PHP files in `includes/` and `admin/`, `frontend/js/modules/*.js`
 
-### 11.3 — Open Graph meta tags for comparison page URLs
+### 4.3 — Open Graph meta tags for comparison page URLs
 **Priority:** Medium
 **Status:** Pending
+**Scope:** The plugin already has `class-rtg-meta.php` for OG tags on the main guide page. Extend to generate dynamic OG tags for comparison URLs (`/compare/?tires=X,Y,Z`) with a title like "Compare: Tire A vs Tire B" and a description summarizing the compared tires. The compare page already has its own template via `class-rtg-compare.php`.
+**Files:** `class-rtg-meta.php`, `class-rtg-compare.php`
 
-### 11.4 — Admin bulk edit for tire fields (inline table editing)
+### 4.4 — Admin bulk edit for tire fields (inline table editing)
 **Priority:** High
 **Status:** Pending
+**Scope:** Make the All Tires admin list table cells editable inline (click to edit price, category, tags, etc.). The admin already has an All Tires table in `class-rtg-admin.php`. Add `contenteditable` cells or inline input fields with AJAX save on blur/Enter. Batch save button for multiple changes. Highlight unsaved changes.
+**Files:** `class-rtg-admin.php`, `admin/js/admin-scripts.js`, `admin/css/admin-styles.css`
 
-### 11.5 — Video reviews / YouTube embed support
+### 4.5 — Video reviews / YouTube embed support
 **Priority:** Low
 **Status:** Pending
+**Scope:** Add `video_url` column to `wp_rtg_ratings` for reviewers to attach a YouTube/Vimeo link. Validate URL format. Embed video in the review display using WordPress's `wp_oembed_get()`. Show a play button icon on reviews that include video. Optional: `video_review_url` field on `wp_rtg_tires` for official manufacturer/reviewer videos.
+**Files:** `class-rtg-activator.php`, `class-rtg-database.php`, `class-rtg-ajax.php`, `frontend/js/modules/ratings.js`
 
-### 11.6 — JWT authentication for REST API (mobile app ready)
+### 4.6 — JWT authentication for REST API (mobile app ready)
 **Priority:** Low
 **Status:** Pending
+**Scope:** Add JWT token generation endpoint (`POST /rtg/v1/auth/token`) to `class-rtg-rest-api.php`. Issue tokens on valid WordPress credentials. Validate JWT on protected endpoints (rating submission, favorites). Store signing secret in plugin settings. Token expiry and refresh flow. Enables native mobile app integration.
+**Files:** `class-rtg-rest-api.php`, `class-rtg-admin.php` (settings)
 
-### 11.7 — Image optimization / WebP conversion on upload
+### 4.7 — Image optimization / WebP conversion on upload
 **Priority:** Medium
 **Status:** Pending
+**Scope:** When admins upload tire images or import via CSV, auto-convert to WebP format using `imagecreatefromjpeg()`/`imagecreatefromping()` + `imagewebp()` (GD library). Store WebP alongside originals. Serve WebP with `<picture>` tag fallback. The existing lazy loading in `image-modal.js` already handles `data-src` swapping — extend to include `data-srcset` for format selection.
+**Files:** `class-rtg-admin.php`, `class-rtg-database.php`, `frontend/js/modules/cards.js`, `frontend/js/modules/image-modal.js`
 
-### 11.8 — A/B testing framework for affiliate link placement
+### 4.8 — A/B testing framework for affiliate link placement
 **Priority:** Low
 **Status:** Pending
+**Scope:** Test different CTA button text, colors, and positions on tire cards. Use the existing `wp_rtg_click_events` table to track conversion rates per variant. Admin UI to create experiments with control/variant groups. Assign users to groups via cookie. Report click-through rates per variant on the Analytics page.
+**Files:** `class-rtg-admin.php`, `class-rtg-database.php`, `frontend/js/modules/analytics.js`, `frontend/js/modules/cards.js`
 
-### 11.9 — Tire data JSON-LD for individual tire permalink pages
+### 4.9 — Tire data JSON-LD for individual tire permalink pages
 **Priority:** Medium
 **Status:** Pending
+**Scope:** The plugin already outputs `Product` + `AggregateRating` Schema.org markup via `class-rtg-schema.php` for the main listing. The standalone tire review page (`class-rtg-tire-review.php`) needs its own `Product` JSON-LD with full spec details, individual `Review` objects, `AggregateOffer` for pricing, and `Brand` entity. This improves individual tire page rich snippet eligibility.
+**Files:** `class-rtg-schema.php`, `class-rtg-tire-review.php`
 
-### 11.10 — RSS feed for new tire additions
+### 4.10 — RSS feed for new tire additions
 **Priority:** Low
 **Status:** Pending
+**Scope:** Custom RSS feed at `/feed/rtg-tires/` showing recently added tires with title, price, category, image, and link. Register via `add_feed()` in WordPress. Include `<enclosure>` for tire images. Useful for users who want to monitor new additions via RSS readers. Optional: separate feed for price changes (depends on 1.2).
+**Files:** `class-rtg-frontend.php` or new `class-rtg-feeds.php`
 
 ---
 
-## Summary Priority Matrix
-
-### Completed (Sections 1–7)
+## Priority Matrix
 
 | Priority | Count | Items |
 |----------|-------|-------|
-| **High** | 7 — **all resolved** | ~~Rate limiting (1.1)~~ ✅ v1.1.0, ~~Compare page XSS (1.7)~~ ✅ v1.1.0, ~~CSV Import/Export (2.1)~~ ✅ v1.2.0, ~~Server-side pagination (3.1)~~ ✅ v1.3.0, ~~URL filter persistence (5.1)~~ ✅ v1.10.0, ~~Accessibility (5.5)~~ ✅ v1.2.0+v1.14.0, ~~PHPUnit tests (7.1)~~ ✅ v1.3.0 |
-| **Medium** | 18 — **all resolved** | ~~Nonce on read endpoint (1.2)~~ ✅ v1.1.0, ~~Validate tire existence (1.3)~~ ✅ v1.1.0, ~~CSP headers (1.4)~~ ✅ v1.1.0, ~~Compare image escaping (1.6)~~ ✅ v1.1.0, ~~REST API (2.2)~~ ✅ v1.14.0, ~~User reviews (2.3)~~ ✅ v1.7.0, ~~Delete own rating (2.4)~~ ✅ v1.20.0, ~~Schema.org (2.7)~~ ✅ v1.1.0, ~~DB migrations (3.2)~~ ✅ v1.3.0, ~~Query caching (3.3)~~ ✅ v1.2.0, ~~JS modules (4.1)~~ ✅ v1.15.0, ~~Duplicate URL validation (4.4)~~ ✅ v1.14.0, ~~Duplicate efficiency calc (4.5)~~ ✅ v1.14.0, ~~Mobile sliders (5.2)~~ ✅ v1.15.0, ~~Skeleton states (5.4)~~ ✅ v1.14.0, ~~Orphaned ratings (6.1)~~ ✅ v1.2.0, ~~JS tests (7.2)~~ ✅ v1.14.0, ~~AJAX tests (7.3)~~ ✅ v1.20.0 |
-| **Low** | 16 — **all resolved** | ~~CSS re-validation (1.5)~~ ✅ v1.1.0, ~~Uninstall cleanup (1.8)~~ ✅ v1.1.0, ~~Shortcode attributes (2.5)~~ ✅ v1.14.0, ~~Dashboard widget (2.6)~~ ✅ v1.20.0, ~~Email notifications (2.8)~~ ✅ v1.19.0, ~~Font Awesome subset (3.4)~~ ✅ v1.15.0, ~~Lazy images (3.5)~~ ✅ v1.10.0, ~~Console cleanup (4.2)~~ ✅ v1.15.0, ~~Autoloader (4.3)~~ ✅ v1.20.0, ~~PHPDoc (4.6)~~ ✅ v1.20.0, ~~Back link (5.3)~~ ✅ v1.7.8, ~~No results UX (5.6)~~ ✅ v1.10.0, ~~Print stylesheet (5.7)~~ ✅ v1.4.0, ~~DB table check (6.2)~~ ✅ v1.3.0, ~~Tire ID format (6.3)~~ ✅, ~~PHP linting (7.4)~~ ✅ v1.20.0 |
+| **High** | 3 | Fitment validator (1.3), Bulk review actions (3.1), Inline bulk edit (4.4) |
+| **Medium** | 16 | Dark mode (1.1), Price history (1.2), Image gallery (1.6), Related tires (1.9), Ownership tracking (2.1), Q&A threads (2.3), Sale alerts (2.7), User profile (2.8), Analytics export (3.2), Scheduled import (3.5), Activity log (3.6), Bulk price update (3.7), i18n (4.2), OG meta for compare (4.3), WebP images (4.7), Tire JSON-LD (4.9) |
+| **Low** | 16 | Noise rating (1.4), Road hazard field (1.5), Size calculator (1.7), Seasonal recs (1.8), Brand pages (1.10), Mileage logging (2.2), Comparison history (2.4), PDF export (2.5), Social sharing (2.6), Webhooks (3.3), Multi-site (3.4), PWA (4.1), Video reviews (4.5), JWT auth (4.6), A/B testing (4.8), RSS feed (4.10) |
 
-> **Sections 1–7 (audited 2026-02-22):** 41 of 41 items resolved (100%).
-
-### Future Enhancements (Sections 8–11)
-
-| Priority | Count | Items |
-|----------|-------|-------|
-| **High** | 3 — pending | Fitment validator (8.3), Bulk review actions (10.1), Inline bulk edit (11.4) |
-| **Medium** | 14 — pending | Dark mode (8.1), Price history (8.2), Image gallery (8.6), Related tires (8.9), Ownership tracking (9.1), Q&A threads (9.3), Sale alerts (9.7), User profile (9.8), Analytics CSV export (10.2), Scheduled import (10.5), Activity log (10.6), Bulk price update (10.7), i18n (11.2), OG meta for compare (11.3), WebP images (11.7), Tire JSON-LD (11.9) |
-| **Low** | 18 — pending | Noise rating (8.4), Road hazard field (8.5), Size calculator (8.7), Seasonal recs (8.8), Brand pages (8.10), Mileage logging (9.2), Comparison history (9.4), PDF export (9.5), Social sharing (9.6), Webhooks (10.3), Multi-site (10.4), PWA (11.1), Video reviews (11.5), JWT auth (11.6), A/B testing (11.8), RSS feed (11.10) |
-
-> **Sections 8–11:** 0 of 35 items resolved (0%). Roadmap items for future development.
+> **Total:** 0 of 35 items resolved (0%)
