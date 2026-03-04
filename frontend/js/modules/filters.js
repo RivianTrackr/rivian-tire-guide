@@ -72,6 +72,22 @@ function binarySearchMax(arr, maxValue) {
   return new Set(arr.slice(0, right + 1).map(item => item.index));
 }
 
+function binarySearchMin(arr, minValue) {
+  let left = 0;
+  let right = arr.length - 1;
+
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    if (arr[mid].value >= minValue) {
+      right = mid - 1;
+    } else {
+      left = mid + 1;
+    }
+  }
+
+  return new Set(arr.slice(left).map(item => item.index));
+}
+
 function getFilteredIndexes(filters) {
   let candidateIndexes = new Set(state.allRows.map((_, i) => i));
 
@@ -95,8 +111,8 @@ function getFilteredIndexes(filters) {
     candidateIndexes = new Set([...candidateIndexes].filter(x => priceSet.has(x)));
   }
 
-  if (filters.WarrantyMax < 80000) {
-    const warrantySet = binarySearchMax(filterIndexes.warrantyIndex, filters.WarrantyMax);
+  if (filters.WarrantyMin > 0) {
+    const warrantySet = binarySearchMin(filterIndexes.warrantyIndex, filters.WarrantyMin);
     candidateIndexes = new Set([...candidateIndexes].filter(x => warrantySet.has(x)));
   }
 
@@ -229,7 +245,7 @@ function renderPaginationControls(totalRows) {
 export function filterAndRender() {
   const searchInput = document.querySelector('#searchInput');
   const priceMax = getDOMElement("priceMax");
-  const warrantyMax = getDOMElement("warrantyMax");
+  const warrantyMin = getDOMElement("warrantyMin");
   const weightMax = getDOMElement("weightMax");
   const filter3pms = getDOMElement("filter3pms");
   const filterEVRated = getDOMElement("filterEVRated");
@@ -243,13 +259,13 @@ export function filterAndRender() {
 
   const searchVal = searchInput ? sanitizeInput(searchInput.value, VALIDATION_PATTERNS.search) : "";
   const priceVal = priceMax ? validateNumeric(priceMax.value, NUMERIC_BOUNDS.price, 600) : 600;
-  const warrantyVal = warrantyMax ? validateNumeric(warrantyMax.value, NUMERIC_BOUNDS.warranty, 80000) : 80000;
+  const warrantyVal = warrantyMin ? validateNumeric(warrantyMin.value, NUMERIC_BOUNDS.warranty, 0) : 0;
   const weightVal = weightMax ? validateNumeric(weightMax.value, NUMERIC_BOUNDS.weight, 70) : 70;
 
   const f = {
     search: searchVal.toLowerCase(),
     PriceMax: priceVal,
-    WarrantyMax: warrantyVal,
+    WarrantyMin: warrantyVal,
     WeightMax: weightVal,
     "3PMS": filter3pms?.checked || false,
     "EVRated": filterEVRated?.checked || false,
@@ -286,7 +302,7 @@ export function filterAndRender() {
   if (f["EVRated"]) activeFilters.ev_rated = true;
   if (f["Studded"]) activeFilters.studded = true;
   if (f.PriceMax < 600) activeFilters.price_max = f.PriceMax;
-  if (f.WarrantyMax < 80000) activeFilters.warranty_max = f.WarrantyMax;
+  if (f.WarrantyMin > 0) activeFilters.warranty_min = f.WarrantyMin;
   if (f.WeightMax < 70) activeFilters.weight_max = f.WeightMax;
 
   if (f.search || Object.keys(activeFilters).length > 0) {
@@ -396,6 +412,83 @@ function finishFilterAndRender() {
   throttledRender();
   updateURLFromFilters();
   renderActiveFilterChips();
+  updateFilterResultCount();
+  updateMobileFilterBadge();
+  updateDropdownCounts();
+}
+
+function getActiveFilterCount() {
+  let count = 0;
+  if (getDOMElement("searchInput")?.value?.trim()) count++;
+  if (getDOMElement("filterSize")?.value) count++;
+  if (getDOMElement("filterBrand")?.value) count++;
+  if (getDOMElement("filterCategory")?.value) count++;
+  const priceEl = getDOMElement("priceMax");
+  if (priceEl && parseInt(priceEl.value) < 600) count++;
+  const warrantyEl = getDOMElement("warrantyMin");
+  if (warrantyEl && parseInt(warrantyEl.value) > 0) count++;
+  const weightEl = getDOMElement("weightMax");
+  if (weightEl && parseInt(weightEl.value) < 70) count++;
+  if (getDOMElement("filter3pms")?.checked) count++;
+  if (getDOMElement("filterEVRated")?.checked) count++;
+  if (getDOMElement("filterStudded")?.checked) count++;
+  if (getDOMElement("filterReviewed")?.checked) count++;
+  if (getDOMElement("filterFavorites")?.checked) count++;
+  return count;
+}
+
+function updateFilterResultCount() {
+  const el = getDOMElement("filterResultCount");
+  if (!el) return;
+  const count = getActiveFilterCount();
+  if (count > 0) {
+    el.textContent = `${state.filteredRows.length} tire${state.filteredRows.length === 1 ? "" : "s"} match${state.filteredRows.length === 1 ? "es" : ""} your filters`;
+    el.style.display = "block";
+  } else {
+    el.style.display = "none";
+  }
+}
+
+function updateMobileFilterBadge() {
+  const toggleBtn = getDOMElement("toggleFilters");
+  if (!toggleBtn) return;
+  const count = getActiveFilterCount();
+  const filterContent = getDOMElement("mobileFilterContent");
+  const isOpen = filterContent?.classList.contains("open");
+  if (count > 0) {
+    toggleBtn.innerHTML = `<i class="fa-solid fa-sliders" aria-hidden="true"></i>&nbsp; ${isOpen ? "Hide" : "Show"} Filters <span class="mobile-filter-badge">${count}</span>`;
+  } else {
+    toggleBtn.innerHTML = `<i class="fa-solid fa-sliders" aria-hidden="true"></i>&nbsp; ${isOpen ? "Hide" : "Show"} Filters`;
+  }
+}
+
+function updateDropdownCounts() {
+  updateSelectCounts("filterSize", 1);
+  updateSelectCounts("filterBrand", 3);
+  updateSelectCounts("filterCategory", 5);
+}
+
+function updateSelectCounts(selectId, rowIndex) {
+  const select = getDOMElement(selectId);
+  if (!select) return;
+
+  // Count how many filtered rows match each option value
+  const counts = new Map();
+  state.filteredRows.forEach(row => {
+    const val = safeString(row[rowIndex]).trim();
+    if (val) counts.set(val, (counts.get(val) || 0) + 1);
+  });
+
+  // Update option text with counts
+  const options = select.querySelectorAll("option, optgroup option");
+  options.forEach(opt => {
+    if (!opt.value) return; // skip "All X" option
+    const baseText = opt.dataset.baseText || opt.value;
+    opt.dataset.baseText = baseText;
+    const count = counts.get(baseText) || 0;
+    opt.textContent = `${baseText} (${count})`;
+    opt.disabled = count === 0 && opt.value !== select.value;
+  });
 }
 
 export function populateDropdown(id, values) {
@@ -411,6 +504,7 @@ export function populateDropdown(id, values) {
     const option = document.createElement("option");
     option.value = v;
     option.textContent = v;
+    option.dataset.baseText = v;
     select.appendChild(option);
   });
 }
@@ -450,6 +544,7 @@ export function populateSizeDropdownGrouped(id, rows) {
       const option = document.createElement("option");
       option.value = size;
       option.textContent = size;
+      option.dataset.baseText = size;
       optgroup.appendChild(option);
     });
 
@@ -459,9 +554,9 @@ export function populateSizeDropdownGrouped(id, rows) {
 
 export function setupSliderHandlers() {
   const sliders = [
-    { id: "priceMax", label: "priceVal", format: val => `$${val}`, bounds: NUMERIC_BOUNDS.price },
-    { id: "warrantyMax", label: "warrantyVal", format: val => `${Number(val).toLocaleString()} miles`, bounds: NUMERIC_BOUNDS.warranty },
-    { id: "weightMax", label: "weightVal", format: val => `${val} lb`, bounds: NUMERIC_BOUNDS.weight },
+    { id: "priceMax", label: "priceVal", format: val => `\u2264 $${val}`, bounds: NUMERIC_BOUNDS.price },
+    { id: "warrantyMin", label: "warrantyVal", format: val => `\u2265 ${Number(val).toLocaleString()} miles`, bounds: NUMERIC_BOUNDS.warranty },
+    { id: "weightMax", label: "weightVal", format: val => `\u2264 ${val} lbs`, bounds: NUMERIC_BOUNDS.weight },
   ];
 
   sliders.forEach(({ id, label, format, bounds }) => {
@@ -491,7 +586,7 @@ export function resetFilters() {
     { id: "filterBrand", value: "" },
     { id: "filterCategory", value: "" },
     { id: "priceMax", value: 600 },
-    { id: "warrantyMax", value: 80000 },
+    { id: "warrantyMin", value: 0 },
     { id: "weightMax", value: 70 },
     { id: "sortBy", value: "rating-desc" }
   ];
@@ -508,9 +603,9 @@ export function resetFilters() {
   });
 
   const displayUpdates = [
-    { id: "priceVal", text: "$600" },
-    { id: "warrantyVal", text: "80,000 miles" },
-    { id: "weightVal", text: "70 lb" }
+    { id: "priceVal", text: "\u2264 $600" },
+    { id: "warrantyVal", text: "\u2265 0 miles" },
+    { id: "weightVal", text: "\u2264 70 lbs" }
   ];
 
   displayUpdates.forEach(({ id, text }) => {
@@ -518,7 +613,7 @@ export function resetFilters() {
     if (el) el.textContent = text;
   });
 
-  ["priceMax", "warrantyMax", "weightMax"].forEach(id => {
+  ["priceMax", "warrantyMin", "weightMax"].forEach(id => {
     const slider = getDOMElement(id);
     if (slider) updateSliderBackground(slider);
   });
@@ -565,19 +660,19 @@ export function renderActiveFilterChips() {
   const priceEl = getDOMElement("priceMax");
   const priceVal = priceEl ? parseInt(priceEl.value) : 600;
   if (priceVal < 600) {
-    chips.push({ label: "Price", value: "\u2264 $" + priceVal, clear: () => { priceEl.value = 600; const lbl = getDOMElement("priceVal"); if (lbl) lbl.textContent = "$600"; updateSliderBackground(priceEl); } });
+    chips.push({ label: "Max Price", value: "\u2264 $" + priceVal, clear: () => { priceEl.value = 600; const lbl = getDOMElement("priceVal"); if (lbl) lbl.textContent = "\u2264 $600"; updateSliderBackground(priceEl); } });
   }
 
-  const warrantyEl = getDOMElement("warrantyMax");
-  const warrantyVal = warrantyEl ? parseInt(warrantyEl.value) : 80000;
-  if (warrantyVal < 80000) {
-    chips.push({ label: "Warranty", value: "\u2264 " + Number(warrantyVal).toLocaleString() + " mi", clear: () => { warrantyEl.value = 80000; const lbl = getDOMElement("warrantyVal"); if (lbl) lbl.textContent = "80,000 miles"; updateSliderBackground(warrantyEl); } });
+  const warrantyEl = getDOMElement("warrantyMin");
+  const warrantyVal = warrantyEl ? parseInt(warrantyEl.value) : 0;
+  if (warrantyVal > 0) {
+    chips.push({ label: "Min Warranty", value: "\u2265 " + Number(warrantyVal).toLocaleString() + " mi", clear: () => { warrantyEl.value = 0; const lbl = getDOMElement("warrantyVal"); if (lbl) lbl.textContent = "\u2265 0 miles"; updateSliderBackground(warrantyEl); } });
   }
 
   const weightEl = getDOMElement("weightMax");
   const weightVal = weightEl ? parseInt(weightEl.value) : 70;
   if (weightVal < 70) {
-    chips.push({ label: "Weight", value: "\u2264 " + weightVal + " lb", clear: () => { weightEl.value = 70; const lbl = getDOMElement("weightVal"); if (lbl) lbl.textContent = "70 lb"; updateSliderBackground(weightEl); } });
+    chips.push({ label: "Max Weight", value: "\u2264 " + weightVal + " lbs", clear: () => { weightEl.value = 70; const lbl = getDOMElement("weightVal"); if (lbl) lbl.textContent = "\u2264 70 lbs"; updateSliderBackground(weightEl); } });
   }
 
   if (getDOMElement("filter3pms")?.checked) {
@@ -641,7 +736,7 @@ export function renderSmartNoResults() {
   const brandEl = getDOMElement("filterBrand");
   const categoryEl = getDOMElement("filterCategory");
   const priceEl = getDOMElement("priceMax");
-  const warrantyEl = getDOMElement("warrantyMax");
+  const warrantyEl = getDOMElement("warrantyMin");
   const weightEl = getDOMElement("weightMax");
   const searchEl = getDOMElement("searchInput");
 
@@ -649,7 +744,7 @@ export function renderSmartNoResults() {
   if (brandEl?.value) activeFilterNames.push("Brand");
   if (categoryEl?.value) activeFilterNames.push("Category");
   if (priceEl && parseInt(priceEl.value) < 600) activeFilterNames.push("Price");
-  if (warrantyEl && parseInt(warrantyEl.value) < 80000) activeFilterNames.push("Warranty");
+  if (warrantyEl && parseInt(warrantyEl.value) > 0) activeFilterNames.push("Warranty");
   if (weightEl && parseInt(weightEl.value) < 70) activeFilterNames.push("Weight");
   if (getDOMElement("filter3pms")?.checked) activeFilterNames.push("3PMS");
   if (getDOMElement("filterEVRated")?.checked) activeFilterNames.push("EV Rated");
@@ -696,7 +791,7 @@ export function renderSmartNoResults() {
   if (priceEl && parseInt(priceEl.value) < 600) {
     suggestions.push({
       label: rtgIcon('dollar-sign', 14) + ' Increase price limit to max',
-      action: () => { priceEl.value = 600; getDOMElement("priceVal").textContent = "$600"; updateSliderBackground(priceEl); state.lastFilterState = null; filterAndRender(); }
+      action: () => { priceEl.value = 600; getDOMElement("priceVal").textContent = "\u2264 $600"; updateSliderBackground(priceEl); state.lastFilterState = null; filterAndRender(); }
     });
   }
 
@@ -812,8 +907,8 @@ export function updateURLFromFilters() {
     params.set("price", priceVal);
   }
 
-  const warrantyVal = parseInt(getVal("warrantyMax"));
-  if (warrantyVal && warrantyVal !== 80000 && warrantyVal >= 0 && warrantyVal <= 100000) {
+  const warrantyVal = parseInt(getVal("warrantyMin"));
+  if (warrantyVal && warrantyVal > 0 && warrantyVal <= 100000) {
     params.set("warranty", warrantyVal);
   }
 
@@ -899,8 +994,8 @@ export function applyFiltersFromURL() {
   }
 
   if (warranty) {
-    const validWarranty = validateNumeric(warranty, NUMERIC_BOUNDS.warranty, 80000);
-    const el = document.getElementById("warrantyMax");
+    const validWarranty = validateNumeric(warranty, NUMERIC_BOUNDS.warranty, 0);
+    const el = document.getElementById("warrantyMin");
     if (el) el.value = validWarranty;
   }
 

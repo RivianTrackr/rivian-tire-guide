@@ -473,6 +473,9 @@
   border-color: var(--rtg-accent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--rtg-accent) 25%, transparent);
 }
+.filter-group select option:disabled {
+  color: #6b7280;
+}
 
 /* === Range Sliders === */
 .filter-group input[type="range"] {
@@ -602,16 +605,82 @@
   align-items: center;
   gap: 4px;
 }
-.reset-white {
-  background-color: transparent !important;
-  color: var(--rtg-text-muted) !important;
+/* === Clear All Button === */
+.rtg-clear-filters-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 42px;
+  padding: 8px 16px;
+  font-size: 13px;
   font-weight: 600;
-  border: 1px dashed var(--rtg-border) !important;
+  color: #ef4444;
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, #ef4444 40%, transparent);
+  border-radius: 8px;
   cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
 }
-.reset-white:hover {
-  color: var(--rtg-accent) !important;
-  border-color: var(--rtg-accent) !important;
+.rtg-clear-filters-btn:hover {
+  background: color-mix(in srgb, #ef4444 10%, transparent);
+  border-color: #ef4444;
+  color: #f87171;
+}
+.rtg-clear-filters-btn i {
+  font-size: 13px;
+}
+
+/* === Info Tooltip Trigger === */
+.info-tooltip-trigger {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+.info-tooltip-trigger:hover,
+.info-tooltip-trigger:focus {
+  color: var(--rtg-accent, #5ec095);
+  background-color: color-mix(in srgb, var(--rtg-accent, #5ec095) 10%, transparent);
+}
+
+/* === Filter Result Count === */
+.filter-result-count {
+  display: none;
+  padding: 10px 16px;
+  margin-top: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--rtg-accent);
+  background: color-mix(in srgb, var(--rtg-accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rtg-accent) 20%, transparent);
+  border-radius: 8px;
+  text-align: center;
+}
+
+/* === Mobile Filter Badge === */
+.mobile-filter-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--rtg-accent);
+  border-radius: 10px;
+  margin-left: 6px;
 }
 
 /* === Slider Wrapper === */
