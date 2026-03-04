@@ -36,9 +36,9 @@ export function fetchTiresFromServer(page) {
   body.append('price_max', getDOMElement("priceMax")?.value || '600');
   body.append('weight_max', getDOMElement("weightMax")?.value || '70');
 
-  const warrantyMax = getDOMElement("warrantyMax");
-  const warVal = warrantyMax ? parseInt(warrantyMax.value) : 80000;
-  body.append('warranty_min', warVal < 80000 ? (80000 - warVal).toString() : '0');
+  const warrantyMin = getDOMElement("warrantyMin");
+  const warVal = warrantyMin ? parseInt(warrantyMin.value) : 0;
+  body.append('warranty_min', warVal > 0 ? warVal.toString() : '0');
 
   const sortBy = getDOMElement("sortBy");
   const sortVal = sortBy?.value || 'efficiency_score';

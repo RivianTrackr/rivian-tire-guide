@@ -207,7 +207,7 @@ function initializeUI() {
   initAiRecommend();
 
   if (ssMode) {
-    const sliderIds = ["priceMax", "warrantyMax", "weightMax"];
+    const sliderIds = ["priceMax", "warrantyMin", "weightMax"];
     sliderIds.forEach(id => {
       const input = getDOMElement(id);
       if (input) input.addEventListener("input", debounce(serverSideFilterAndRender, 500));
@@ -386,7 +386,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const sortDropdown = getDOMElement("sortBy");
   if (sortDropdown) {
-    sortDropdown.addEventListener("input", filterAndRender);
+    const ssMode = isServerSide();
+    sortDropdown.addEventListener("change", ssMode ? serverSideFilterAndRender : filterAndRender);
   }
 
   const toggleBtn = getDOMElement("toggleFilters");
@@ -396,8 +397,11 @@ document.addEventListener("DOMContentLoaded", () => {
     toggleBtn.setAttribute('aria-controls', 'mobileFilterContent');
     toggleBtn.addEventListener("click", () => {
       const isOpen = filterContent.classList.toggle("open");
-      toggleBtn.textContent = isOpen ? "Hide Filters" : "Show Filters";
       toggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      // Re-render badge with updated open/close text
+      const badge = toggleBtn.querySelector('.mobile-filter-badge');
+      const badgeHTML = badge ? ` <span class="mobile-filter-badge">${badge.textContent}</span>` : '';
+      toggleBtn.innerHTML = `<i class="fa-solid fa-sliders" aria-hidden="true"></i>&nbsp; ${isOpen ? "Hide" : "Show"} Filters${badgeHTML}`;
     });
   }
 

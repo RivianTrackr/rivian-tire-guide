@@ -56,15 +56,15 @@ if ( ! defined( 'ABSPATH' ) ) {
         </div>
         <div class="slider-row">
           <div class="filter-group slider-wrapper">
-            <label for="priceMax">Average Price: <span id="priceVal">$600</span></label>
+            <label for="priceMax">Max Price: <span id="priceVal">&le; $600</span></label>
             <input id="priceMax" class="range-slider" type="range" min="0" max="600" value="600" step="10" aria-label="Maximum Price"/>
           </div>
           <div class="filter-group slider-wrapper">
-            <label for="warrantyMax">Warranty: <span id="warrantyVal">80,000 miles</span></label>
-            <input id="warrantyMax" class="range-slider" type="range" min="0" max="80000" value="80000" step="1000" aria-label="Maximum Warranty in miles"/>
+            <label for="warrantyMin">Min Warranty: <span id="warrantyVal">&ge; 0 miles</span></label>
+            <input id="warrantyMin" class="range-slider" type="range" min="0" max="80000" value="0" step="1000" aria-label="Minimum Warranty in miles"/>
           </div>
           <div class="filter-group slider-wrapper">
-            <label for="weightMax">Weight: <span id="weightVal">70</span></label>
+            <label for="weightMax">Max Weight: <span id="weightVal">&le; 70 lbs</span></label>
             <input id="weightMax" class="range-slider" type="range" min="0" max="70" value="70" step="1" aria-label="Maximum Weight in pounds"/>
           </div>
         </div>
@@ -74,7 +74,7 @@ if ( ! defined( 'ABSPATH' ) ) {
           <span class="switch-text">
             <div style="display: flex; align-items: center; gap: 6px;">
               <span>3PMS Rated</span>
-              <button class="info-tooltip-trigger" data-tooltip-key="3PMS Filter" style="background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onmouseenter="this.style.color='var(--rtg-accent, #5ec095)'; this.style.backgroundColor='color-mix(in srgb, var(--rtg-accent, #5ec095) 10%, transparent)'" onmouseleave="this.style.color='#94a3b8'; this.style.backgroundColor='transparent'">
+              <button class="info-tooltip-trigger" data-tooltip-key="3PMS Filter">
                 <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
               </button>
             </div>
@@ -86,7 +86,7 @@ if ( ! defined( 'ABSPATH' ) ) {
           <span class="switch-text">
             <div style="display: flex; align-items: center; gap: 6px;">
               <span>EV Rated</span>
-              <button class="info-tooltip-trigger" data-tooltip-key="EV Rated Filter" style="background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onmouseenter="this.style.color='var(--rtg-accent, #5ec095)'; this.style.backgroundColor='color-mix(in srgb, var(--rtg-accent, #5ec095) 10%, transparent)'" onmouseleave="this.style.color='#94a3b8'; this.style.backgroundColor='transparent'">
+              <button class="info-tooltip-trigger" data-tooltip-key="EV Rated Filter">
                 <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
               </button>
             </div>
@@ -98,7 +98,7 @@ if ( ! defined( 'ABSPATH' ) ) {
           <span class="switch-text">
             <div style="display: flex; align-items: center; gap: 6px;">
               <span>Studded Available</span>
-              <button class="info-tooltip-trigger" data-tooltip-key="Studded Available Filter" style="background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onmouseenter="this.style.color='var(--rtg-accent, #5ec095)'; this.style.backgroundColor='color-mix(in srgb, var(--rtg-accent, #5ec095) 10%, transparent)'" onmouseleave="this.style.color='#94a3b8'; this.style.backgroundColor='transparent'">
+              <button class="info-tooltip-trigger" data-tooltip-key="Studded Available Filter">
                 <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
               </button>
             </div>
@@ -110,7 +110,7 @@ if ( ! defined( 'ABSPATH' ) ) {
           <span class="switch-text">
             <div style="display: flex; align-items: center; gap: 6px;">
               <span>Officially Reviewed</span>
-              <button class="info-tooltip-trigger" data-tooltip-key="Officially Reviewed Filter" style="background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" onmouseenter="this.style.color='var(--rtg-accent, #5ec095)'; this.style.backgroundColor='color-mix(in srgb, var(--rtg-accent, #5ec095) 10%, transparent)'" onmouseleave="this.style.color='#94a3b8'; this.style.backgroundColor='transparent'">
+              <button class="info-tooltip-trigger" data-tooltip-key="Officially Reviewed Filter">
                 <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
               </button>
             </div>
@@ -131,11 +131,9 @@ if ( ! defined( 'ABSPATH' ) ) {
           <span class="switch-slider" onclick="document.getElementById('filterFavorites').click()"></span>
         </div>
         <?php endif; ?>
-        <label class="switch-label reset-white" onclick="resetFilters()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resetFilters()}" role="button" tabindex="0">
-          <span class="switch-text">
-            <i class="fa-solid fa-trash-can" aria-hidden="true"></i> Clear All
-          </span>
-        </label>
+        <button class="rtg-clear-filters-btn" onclick="resetFilters()" type="button" aria-label="Clear all filters">
+          <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Clear All
+        </button>
       </div>
       <?php
       $rtg_wheels = RTG_Database::get_all_wheels();
@@ -181,13 +179,14 @@ if ( ! defined( 'ABSPATH' ) ) {
       </div>
       <?php endif; ?>
     </div>
+    <div id="filterResultCount" class="filter-result-count" aria-live="polite"></div>
   </div>
 </div>
 <div class="sort-wrapper">
   <span id="tireCount" class="tire-count" aria-live="polite">Showing 0 tires</span>
   <div style="flex: 1;"></div>
   <label for="sortBy" class="screen-reader-text">Sort tires by</label>
-  <select id="sortBy" aria-label="Sort tires by" onchange="filterAndRender()">
+  <select id="sortBy" aria-label="Sort tires by">
     <option value="efficiencyGrade">Efficiency Grade</option>
     <option value="most-reviewed">Most Reviewed</option>
     <option value="newest">Newest Added</option>

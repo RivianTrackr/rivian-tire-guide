@@ -4,6 +4,21 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.25.0] - 2026-03-04
+
+### Improved
+- **Slider labels show filtering direction** — Price and weight sliders now display "Max Price: ≤ $X" and "Max Weight: ≤ X lbs" to clarify they set an upper bound. Weight label now includes "lbs" unit.
+- **Warranty filter flipped to minimum threshold** — The warranty slider now filters for tires with *at least* the selected mileage (≥), matching user intent. Previously it filtered for tires *up to* a value which was counterintuitive.
+- **Mobile filter button shows active count** — On mobile, the collapsed filter toggle now displays a badge (e.g., "Filters (3)") showing how many filters are active, and properly toggles between "Show/Hide Filters".
+- **Live result count in filter panel** — A new inline count ("42 tires match your filters") appears inside the filter section when filters are active, giving immediate feedback without scrolling to results.
+- **Dropdown options show tire counts** — Size, Brand, and Category dropdowns now display the number of matching tires per option (e.g., "Continental (12)"). Options with zero matches are disabled to prevent dead-end selections.
+- **Clear All button restyled** — The reset button is now visually distinct from filter toggles, using a red outline style with a rotate icon so users recognize it as a destructive action.
+- **Tooltip button styles moved to CSS** — Inline styles and `onmouseenter`/`onmouseleave` handlers on info tooltip buttons have been replaced with a proper `.info-tooltip-trigger` CSS class, improving maintainability and touch device support.
+- **Sort dropdown handler fixed** — Removed inline `onchange` attribute from the sort dropdown. It now uses a proper event listener that correctly routes through server-side rendering when in server-side mode.
+
+### Changed
+- **Plugin version** — Bumped to 1.25.0.
+
 ## [1.24.3] - 2026-03-02
 
 ### Fixed
