@@ -2,8 +2,8 @@
 
 **Plugin:** Rivian Tire Guide v1.0.5
 **Reviewed:** 2026-02-15
-**Updated:** 2026-02-22 (v1.20.0 — Complete: 41/41 items resolved)
-**Scope:** Security, enhancements, performance, code quality, and UX improvements
+**Updated:** 2026-03-04 (v1.24.3 — Original 41/41 resolved + 35 future enhancements)
+**Scope:** Security, enhancements, performance, code quality, UX improvements, and future roadmap
 
 ---
 
@@ -16,6 +16,10 @@
 5. [UX / Frontend Improvements](#5-ux--frontend-improvements)
 6. [Database & Data Integrity](#6-database--data-integrity)
 7. [Testing & Reliability](#7-testing--reliability)
+8. [Future Enhancements — Catalog & Data](#8-future-enhancements--catalog--data)
+9. [Future Enhancements — User Features](#9-future-enhancements--user-features)
+10. [Future Enhancements — Admin & Backend](#10-future-enhancements--admin--backend)
+11. [Future Enhancements — Technical & SEO](#11-future-enhancements--technical--seo)
 
 ---
 
@@ -279,7 +283,165 @@
 
 ---
 
+## 8. Future Enhancements — Catalog & Data
+
+### 8.1 — Dark mode toggle for the frontend UI
+**Priority:** Medium
+**Status:** Pending
+
+### 8.2 — Price history tracking with trend graphs
+**Priority:** Medium
+**Status:** Pending
+
+### 8.3 — Tire fitment validator (Rivian year/model/trim specific)
+**Priority:** High
+**Status:** Pending
+
+### 8.4 — Tire noise rating (dB) data field and filter
+**Priority:** Low
+**Status:** Pending
+
+### 8.5 — Road hazard warranty details field
+**Priority:** Low
+**Status:** Pending
+
+### 8.6 — Tire image gallery (multiple images per tire)
+**Priority:** Medium
+**Status:** Pending
+
+### 8.7 — Tire size calculator / plus-size converter
+**Priority:** Low
+**Status:** Pending
+
+### 8.8 — Seasonal tire recommendations (based on date/location)
+**Priority:** Low
+**Status:** Pending
+
+### 8.9 — "Related tires" / "Customers also viewed" suggestions
+**Priority:** Medium
+**Status:** Pending
+
+### 8.10 — Tire brand info pages with logo and description
+**Priority:** Low
+**Status:** Pending
+
+---
+
+## 9. Future Enhancements — User Features
+
+### 9.1 — "I own this tire" user ownership tracking
+**Priority:** Medium
+**Status:** Pending
+
+### 9.2 — Tire wear / mileage logging for owned tires
+**Priority:** Low
+**Status:** Pending
+
+### 9.3 — Community Q&A threads on tire pages
+**Priority:** Medium
+**Status:** Pending
+
+### 9.4 — Comparison history (save/recall past comparisons)
+**Priority:** Low
+**Status:** Pending
+
+### 9.5 — Export comparison to PDF
+**Priority:** Low
+**Status:** Pending
+
+### 9.6 — Social sharing buttons on tire cards
+**Priority:** Low
+**Status:** Pending
+
+### 9.7 — Tire deal / sale price alerts (email notifications)
+**Priority:** Medium
+**Status:** Pending
+
+### 9.8 — User profile page (reviews + favorites + owned tires)
+**Priority:** Medium
+**Status:** Pending
+
+---
+
+## 10. Future Enhancements — Admin & Backend
+
+### 10.1 — Bulk review actions (approve/reject multiple at once)
+**Priority:** High
+**Status:** Pending
+
+### 10.2 — Advanced analytics export to CSV
+**Priority:** Medium
+**Status:** Pending
+
+### 10.3 — Webhook notifications for plugin events
+**Priority:** Low
+**Status:** Pending
+
+### 10.4 — Multi-site network support
+**Priority:** Low
+**Status:** Pending
+
+### 10.5 — Scheduled CSV auto-import from URL
+**Priority:** Medium
+**Status:** Pending
+
+### 10.6 — Admin activity log / audit trail
+**Priority:** Medium
+**Status:** Pending
+
+### 10.7 — Bulk tire price update tool
+**Priority:** Medium
+**Status:** Pending
+
+---
+
+## 11. Future Enhancements — Technical & SEO
+
+### 11.1 — Progressive Web App (PWA) support
+**Priority:** Low
+**Status:** Pending
+
+### 11.2 — Multi-language / i18n support (translation-ready)
+**Priority:** Medium
+**Status:** Pending
+
+### 11.3 — Open Graph meta tags for comparison page URLs
+**Priority:** Medium
+**Status:** Pending
+
+### 11.4 — Admin bulk edit for tire fields (inline table editing)
+**Priority:** High
+**Status:** Pending
+
+### 11.5 — Video reviews / YouTube embed support
+**Priority:** Low
+**Status:** Pending
+
+### 11.6 — JWT authentication for REST API (mobile app ready)
+**Priority:** Low
+**Status:** Pending
+
+### 11.7 — Image optimization / WebP conversion on upload
+**Priority:** Medium
+**Status:** Pending
+
+### 11.8 — A/B testing framework for affiliate link placement
+**Priority:** Low
+**Status:** Pending
+
+### 11.9 — Tire data JSON-LD for individual tire permalink pages
+**Priority:** Medium
+**Status:** Pending
+
+### 11.10 — RSS feed for new tire additions
+**Priority:** Low
+**Status:** Pending
+
+---
+
 ## Summary Priority Matrix
+
+### Completed (Sections 1–7)
 
 | Priority | Count | Items |
 |----------|-------|-------|
@@ -287,4 +449,14 @@
 | **Medium** | 18 — **all resolved** | ~~Nonce on read endpoint (1.2)~~ ✅ v1.1.0, ~~Validate tire existence (1.3)~~ ✅ v1.1.0, ~~CSP headers (1.4)~~ ✅ v1.1.0, ~~Compare image escaping (1.6)~~ ✅ v1.1.0, ~~REST API (2.2)~~ ✅ v1.14.0, ~~User reviews (2.3)~~ ✅ v1.7.0, ~~Delete own rating (2.4)~~ ✅ v1.20.0, ~~Schema.org (2.7)~~ ✅ v1.1.0, ~~DB migrations (3.2)~~ ✅ v1.3.0, ~~Query caching (3.3)~~ ✅ v1.2.0, ~~JS modules (4.1)~~ ✅ v1.15.0, ~~Duplicate URL validation (4.4)~~ ✅ v1.14.0, ~~Duplicate efficiency calc (4.5)~~ ✅ v1.14.0, ~~Mobile sliders (5.2)~~ ✅ v1.15.0, ~~Skeleton states (5.4)~~ ✅ v1.14.0, ~~Orphaned ratings (6.1)~~ ✅ v1.2.0, ~~JS tests (7.2)~~ ✅ v1.14.0, ~~AJAX tests (7.3)~~ ✅ v1.20.0 |
 | **Low** | 16 — **all resolved** | ~~CSS re-validation (1.5)~~ ✅ v1.1.0, ~~Uninstall cleanup (1.8)~~ ✅ v1.1.0, ~~Shortcode attributes (2.5)~~ ✅ v1.14.0, ~~Dashboard widget (2.6)~~ ✅ v1.20.0, ~~Email notifications (2.8)~~ ✅ v1.19.0, ~~Font Awesome subset (3.4)~~ ✅ v1.15.0, ~~Lazy images (3.5)~~ ✅ v1.10.0, ~~Console cleanup (4.2)~~ ✅ v1.15.0, ~~Autoloader (4.3)~~ ✅ v1.20.0, ~~PHPDoc (4.6)~~ ✅ v1.20.0, ~~Back link (5.3)~~ ✅ v1.7.8, ~~No results UX (5.6)~~ ✅ v1.10.0, ~~Print stylesheet (5.7)~~ ✅ v1.4.0, ~~DB table check (6.2)~~ ✅ v1.3.0, ~~Tire ID format (6.3)~~ ✅, ~~PHP linting (7.4)~~ ✅ v1.20.0 |
 
-> **Status (audited 2026-02-22):** 41 of 41 items resolved (100%). All items complete.
+> **Sections 1–7 (audited 2026-02-22):** 41 of 41 items resolved (100%).
+
+### Future Enhancements (Sections 8–11)
+
+| Priority | Count | Items |
+|----------|-------|-------|
+| **High** | 3 — pending | Fitment validator (8.3), Bulk review actions (10.1), Inline bulk edit (11.4) |
+| **Medium** | 14 — pending | Dark mode (8.1), Price history (8.2), Image gallery (8.6), Related tires (8.9), Ownership tracking (9.1), Q&A threads (9.3), Sale alerts (9.7), User profile (9.8), Analytics CSV export (10.2), Scheduled import (10.5), Activity log (10.6), Bulk price update (10.7), i18n (11.2), OG meta for compare (11.3), WebP images (11.7), Tire JSON-LD (11.9) |
+| **Low** | 18 — pending | Noise rating (8.4), Road hazard field (8.5), Size calculator (8.7), Seasonal recs (8.8), Brand pages (8.10), Mileage logging (9.2), Comparison history (9.4), PDF export (9.5), Social sharing (9.6), Webhooks (10.3), Multi-site (10.4), PWA (11.1), Video reviews (11.5), JWT auth (11.6), A/B testing (11.8), RSS feed (11.10) |
+
+> **Sections 8–11:** 0 of 35 items resolved (0%). Roadmap items for future development.
