@@ -35,10 +35,10 @@ if ( ! defined( 'ABSPATH' ) ) {
       <?php endif; ?>
     </div>
     <div id="mobileFilterContent" class="mobile-filter-content">
-      <div id="vehicleToggle" class="rtg-vehicle-toggle" role="radiogroup" aria-label="Filter by vehicle">
-        <button type="button" class="rtg-vehicle-btn active" data-vehicle="" aria-pressed="true">All</button>
-      </div>
       <div class="filter-container">
+        <div id="vehicleToggle" class="rtg-vehicle-toggle" role="radiogroup" aria-label="Filter by vehicle">
+          <button type="button" class="rtg-vehicle-btn active" data-vehicle="" aria-pressed="true">All</button>
+        </div>
         <div class="filter-group">
           <label for="filterSize" class="screen-reader-text">Filter by tire size</label>
           <select id="filterSize" aria-label="Filter by tire size">
