@@ -543,12 +543,17 @@ class RTG_Ajax {
         global $wpdb;
         $table = RTG_Database::tires_table_public();
 
-        $sizes      = $wpdb->get_col( "SELECT DISTINCT size FROM {$table} WHERE size != '' ORDER BY size ASC" );
+        $db_sizes   = $wpdb->get_col( "SELECT DISTINCT size FROM {$table} WHERE size != '' ORDER BY size ASC" );
         $brands     = $wpdb->get_col( "SELECT DISTINCT brand FROM {$table} WHERE brand != '' ORDER BY brand ASC" );
         $categories = $wpdb->get_col( "SELECT DISTINCT category FROM {$table} WHERE category != '' ORDER BY category ASC" );
 
+        // Merge admin-managed sizes with sizes found in the database.
+        $admin_sizes = RTG_Admin::get_dropdown_options( 'sizes' );
+        $merged_sizes = array_unique( array_merge( $admin_sizes, $db_sizes ) );
+        sort( $merged_sizes );
+
         wp_send_json_success( array(
-            'sizes'      => array_map( 'sanitize_text_field', $sizes ),
+            'sizes'      => array_map( 'sanitize_text_field', array_values( $merged_sizes ) ),
             'brands'     => array_map( 'sanitize_text_field', $brands ),
             'categories' => array_map( 'sanitize_text_field', $categories ),
         ) );

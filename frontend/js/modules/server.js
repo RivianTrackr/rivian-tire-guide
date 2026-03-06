@@ -162,6 +162,7 @@ export function fetchDropdownOptions() {
       if (!json.success) return;
       const d = json.data;
 
+      // Use admin-managed sizes merged with DB sizes (already merged server-side).
       state.VALID_SIZES = d.sizes || [];
       state.VALID_BRANDS = d.brands || [];
       state.VALID_CATEGORIES = d.categories || [];
