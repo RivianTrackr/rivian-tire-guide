@@ -21,6 +21,7 @@ import { updateCompareBar, openComparison, clearCompare, setupCompareCheckboxes 
 import {
   buildFilterIndexes, filterAndRender, setupSliderHandlers, resetFilters,
   populateDropdown, populateSizeDropdownGrouped,
+  populateVehicleToggle, getSelectedVehicle, setActiveVehicle, cascadeVehicleToSizes,
   applyFiltersFromURL, applyCompareFromURL, applyTireDeepLink,
   applyShortcodePrefilters, renderActiveFilterChips,
   setUpdateCompareBar
@@ -186,6 +187,27 @@ function initializeUI() {
     populateSizeDropdownGrouped("filterSize", state.VALID_SIZES);
     populateDropdown("filterBrand", state.allRows.map(r => r[3]));
     populateDropdown("filterCategory", state.allRows.map(r => r[5]));
+  }
+
+  // Initialize vehicle state from localized data (works for both modes before server-side overrides).
+  if (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.vehicleSizeMap) {
+    state.vehicleSizeMap = rtgData.settings.vehicleSizeMap;
+    state.VALID_VEHICLES = Object.keys(state.vehicleSizeMap).sort();
+    populateVehicleToggle(state.vehicleSizeMap);
+  }
+
+  // Wire vehicle toggle click handler.
+  const vehicleContainer = document.getElementById('vehicleToggle');
+  if (vehicleContainer) {
+    vehicleContainer.addEventListener('click', (e) => {
+      const btn = e.target.closest('.rtg-vehicle-btn');
+      if (!btn) return;
+      const vehicle = btn.dataset.vehicle || '';
+      setActiveVehicle(vehicle);
+      cascadeVehicleToSizes(vehicle, state.VALID_SIZES);
+      state.lastFilterState = null;
+      filterFn();
+    });
   }
 
   const inputsToWatch = [

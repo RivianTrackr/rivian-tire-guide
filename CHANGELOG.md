@@ -4,6 +4,19 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.26.0] - 2026-03-06
+
+### Added
+- **Vehicle filter toggle** — A segmented toggle (All / R1 / R2) now appears above the filter dropdowns, letting users instantly filter tires by Rivian vehicle. R1T and R1S are grouped as "R1" since they share the same tire sizes. Selecting a vehicle cascades to narrow the Size dropdown to only compatible sizes.
+- **Vehicle-to-size mapping from wheels** — Vehicle compatibility is automatically derived from the stock wheels database. Adding a wheel with a new vehicle (e.g., R2) in the Wheels admin makes it appear in the frontend toggle with no additional configuration.
+- **Vehicle shortcode attribute** — New `vehicle` attribute for the `[rivian_tire_guide]` shortcode: `[rivian_tire_guide vehicle="R2"]` pre-filters to that vehicle on page load.
+- **Vehicle URL parameter** — `?vehicle=R2` filter state is preserved in the URL for sharing and browser back/forward navigation.
+- **Vehicle filter chip** — Active vehicle filter appears as a dismissible chip alongside other active filter pills.
+- **Vehicle in smart no-results** — When no tires match, the smart suggestions include an option to remove the vehicle filter.
+
+### Changed
+- **Plugin version** — Bumped to 1.26.0.
+
 ## [1.25.1] - 2026-03-06
 
 ### Improved

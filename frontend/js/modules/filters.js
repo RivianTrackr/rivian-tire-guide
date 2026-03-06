@@ -13,13 +13,72 @@ import { loadTireRatings } from './ratings.js';
 import { isPreciseMatch } from './search.js';
 import { isServerSide, serverSideFilterAndRender } from './server.js';
 
+export function getSelectedVehicle() {
+  const active = document.querySelector('.rtg-vehicle-btn.active');
+  return active ? (active.dataset.vehicle || '') : '';
+}
+
+export function populateVehicleToggle(vehicleSizeMap) {
+  const container = document.getElementById('vehicleToggle');
+  if (!container) return;
+
+  // Remove existing vehicle buttons (keep the "All" button).
+  container.querySelectorAll('.rtg-vehicle-btn[data-vehicle]:not([data-vehicle=""])').forEach(btn => btn.remove());
+
+  const vehicles = Object.keys(vehicleSizeMap).sort();
+  vehicles.forEach(vehicle => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'rtg-vehicle-btn';
+    btn.dataset.vehicle = vehicle;
+    btn.setAttribute('aria-pressed', 'false');
+    btn.textContent = vehicle;
+    container.appendChild(btn);
+  });
+}
+
+export function setActiveVehicle(vehicle) {
+  document.querySelectorAll('.rtg-vehicle-btn').forEach(btn => {
+    const isActive = (btn.dataset.vehicle || '') === vehicle;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
+}
+
+export function cascadeVehicleToSizes(vehicle, allSizes) {
+  if (vehicle && state.vehicleSizeMap[vehicle]) {
+    const vehicleSizes = state.vehicleSizeMap[vehicle];
+    populateSizeDropdownGrouped("filterSize", vehicleSizes);
+  } else {
+    populateSizeDropdownGrouped("filterSize", allSizes);
+  }
+
+  // Clear size selection if it's no longer valid in the narrowed list.
+  const sizeEl = getDOMElement("filterSize");
+  if (sizeEl && sizeEl.value) {
+    const option = sizeEl.querySelector(`option[value="${CSS.escape(sizeEl.value)}"]`);
+    if (!option) sizeEl.value = '';
+  }
+}
+
 export function buildFilterIndexes() {
   filterIndexes.sizeIndex.clear();
   filterIndexes.brandIndex.clear();
   filterIndexes.categoryIndex.clear();
+  filterIndexes.vehicleIndex.clear();
   filterIndexes.priceIndex.length = 0;
   filterIndexes.warrantyIndex.length = 0;
   filterIndexes.weightIndex.length = 0;
+
+  // Build vehicle → row indexes map.
+  for (const [vehicle, sizes] of Object.entries(state.vehicleSizeMap)) {
+    const sizeSet = new Set(sizes.map(s => s.toLowerCase()));
+    const indexes = [];
+    state.allRows.forEach((row, index) => {
+      if (sizeSet.has(safeString(row[1]).toLowerCase())) indexes.push(index);
+    });
+    filterIndexes.vehicleIndex.set(vehicle, indexes);
+  }
 
   state.allRows.forEach((row, index) => {
     const [tireId, size, diameter, brand, model, category, price, warranty, weight] = row;
@@ -90,6 +149,11 @@ function binarySearchMin(arr, minValue) {
 
 function getFilteredIndexes(filters) {
   let candidateIndexes = new Set(state.allRows.map((_, i) => i));
+
+  if (filters.Vehicle) {
+    const vehicleSet = new Set(filterIndexes.vehicleIndex.get(filters.Vehicle) || []);
+    candidateIndexes = new Set([...candidateIndexes].filter(x => vehicleSet.has(x)));
+  }
 
   if (filters.Size) {
     const sizeSet = new Set(filterIndexes.sizeIndex.get(filters.Size.toLowerCase()) || []);
@@ -262,6 +326,8 @@ export function filterAndRender() {
   const warrantyVal = warrantyMin ? validateNumeric(warrantyMin.value, NUMERIC_BOUNDS.warranty, 0) : 0;
   const weightVal = weightMax ? validateNumeric(weightMax.value, NUMERIC_BOUNDS.weight, 70) : 70;
 
+  const vehicleVal = getSelectedVehicle();
+
   const f = {
     search: searchVal.toLowerCase(),
     PriceMax: priceVal,
@@ -272,6 +338,7 @@ export function filterAndRender() {
     "Studded": filterStudded?.checked || false,
     "Reviewed": filterReviewed?.checked || false,
     "Favorites": filterFavorites?.checked || false,
+    Vehicle: vehicleVal && state.VALID_VEHICLES.includes(vehicleVal) ? vehicleVal : "",
     Size: filterSize?.value && state.VALID_SIZES.includes(filterSize.value) ? filterSize.value : "",
     Brand: filterBrand?.value && state.VALID_BRANDS.includes(filterBrand.value) ? filterBrand.value : "",
     Category: filterCategory?.value && state.VALID_CATEGORIES.includes(filterCategory.value) ? filterCategory.value : ""
@@ -295,6 +362,7 @@ export function filterAndRender() {
   // Track search/filter usage when non-default filters are active.
   const activeFilters = {};
   if (f.search) activeFilters.search = f.search;
+  if (f.Vehicle) activeFilters.vehicle = f.Vehicle;
   if (f.Size) activeFilters.size = f.Size;
   if (f.Brand) activeFilters.brand = f.Brand;
   if (f.Category) activeFilters.category = f.Category;
@@ -420,6 +488,7 @@ function finishFilterAndRender() {
 function getActiveFilterCount() {
   let count = 0;
   if (getDOMElement("searchInput")?.value?.trim()) count++;
+  if (getSelectedVehicle()) count++;
   if (getDOMElement("filterSize")?.value) count++;
   if (getDOMElement("filterBrand")?.value) count++;
   if (getDOMElement("filterCategory")?.value) count++;
@@ -622,6 +691,10 @@ export function resetFilters() {
     if (slider) updateSliderBackground(slider);
   });
 
+  // Reset vehicle toggle to "All".
+  setActiveVehicle('');
+  cascadeVehicleToSizes('', state.VALID_SIZES);
+
   delete state.domCache["searchInput"];
   state.lastFilterState = null;
 
@@ -644,6 +717,11 @@ export function renderActiveFilterChips() {
   const searchVal = getDOMElement("searchInput")?.value?.trim();
   if (searchVal) {
     chips.push({ label: "Search", value: searchVal, clear: () => { const el = getDOMElement("searchInput"); if (el) el.value = ""; delete state.domCache["searchInput"]; } });
+  }
+
+  const vehicleVal = getSelectedVehicle();
+  if (vehicleVal) {
+    chips.push({ label: "Vehicle", value: vehicleVal, clear: () => { setActiveVehicle(''); cascadeVehicleToSizes('', state.VALID_SIZES); } });
   }
 
   const sizeEl = getDOMElement("filterSize");
@@ -744,6 +822,8 @@ export function renderSmartNoResults() {
   const weightEl = getDOMElement("weightMax");
   const searchEl = getDOMElement("searchInput");
 
+  const noResultsVehicle = getSelectedVehicle();
+  if (noResultsVehicle) activeFilterNames.push("Vehicle");
   if (sizeEl?.value) activeFilterNames.push("Size");
   if (brandEl?.value) activeFilterNames.push("Brand");
   if (categoryEl?.value) activeFilterNames.push("Category");
@@ -768,6 +848,13 @@ export function renderSmartNoResults() {
     suggestions.push({
       label: rtgIcon('heart-outline', 14) + ' Show all tires (not just favorites)',
       action: () => { getDOMElement("filterFavorites").checked = false; state.lastFilterState = null; filterAndRender(); }
+    });
+  }
+
+  if (noResultsVehicle) {
+    suggestions.push({
+      label: rtgIcon('car', 14) + ` Remove ${escapeHTML(noResultsVehicle)} filter`,
+      action: () => { setActiveVehicle(''); cascadeVehicleToSizes('', state.VALID_SIZES); state.lastFilterState = null; filterAndRender(); }
     });
   }
 
@@ -881,6 +968,11 @@ export function updateURLFromFilters() {
     params.set("search", searchVal);
   }
 
+  const vehicleUrlVal = getSelectedVehicle();
+  if (vehicleUrlVal && state.VALID_VEHICLES.includes(vehicleUrlVal)) {
+    params.set("vehicle", vehicleUrlVal);
+  }
+
   const sizeVal = getVal("filterSize");
   if (sizeVal && state.VALID_SIZES.includes(sizeVal)) {
     params.set("size", sizeVal);
@@ -955,6 +1047,13 @@ export function applyFiltersFromURL() {
   const searchParam = params.get("search");
   if (searchParam) {
     setVal("searchInput", searchParam);
+  }
+
+  // Vehicle must be applied before size so the cascade narrows the size dropdown first.
+  const vehicleParam = sanitizeInput(params.get("vehicle"));
+  if (vehicleParam && state.VALID_VEHICLES.includes(vehicleParam)) {
+    setActiveVehicle(vehicleParam);
+    cascadeVehicleToSizes(vehicleParam, state.VALID_SIZES);
   }
 
   const size = sanitizeInput(params.get("size"));
@@ -1094,6 +1193,11 @@ export function applyTireDeepLink() {
 export function applyShortcodePrefilters() {
   if (typeof rtgData === 'undefined' || !rtgData.settings || !rtgData.settings.prefilters) return;
   const pf = rtgData.settings.prefilters;
+  // Vehicle must be applied before size so the cascade narrows the size dropdown first.
+  if (pf.vehicle && state.VALID_VEHICLES.includes(pf.vehicle)) {
+    setActiveVehicle(pf.vehicle);
+    cascadeVehicleToSizes(pf.vehicle, state.VALID_SIZES);
+  }
   if (pf.size) {
     const el = document.getElementById('filterSize');
     if (el) el.value = pf.size;

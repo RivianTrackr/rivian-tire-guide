@@ -523,6 +523,18 @@ class RTG_Database {
             $values[] = $like;
         }
 
+        if ( ! empty( $filters['vehicle'] ) ) {
+            $vehicle_map   = self::get_vehicle_size_map();
+            $vehicle_sizes = $vehicle_map[ $filters['vehicle'] ] ?? array();
+            if ( ! empty( $vehicle_sizes ) ) {
+                $placeholders = implode( ', ', array_fill( 0, count( $vehicle_sizes ), '%s' ) );
+                $where[]      = "size IN ({$placeholders})";
+                $values       = array_merge( $values, $vehicle_sizes );
+            } else {
+                $where[] = '1=0';
+            }
+        }
+
         if ( ! empty( $filters['size'] ) ) {
             $where[]  = 'size = %s';
             $values[] = $filters['size'];
@@ -1090,6 +1102,43 @@ class RTG_Database {
         global $wpdb;
         $table = self::wheels_table();
         return $wpdb->get_results( "SELECT * FROM {$table} ORDER BY sort_order ASC, id ASC", ARRAY_A );
+    }
+
+    /**
+     * Build a vehicle → compatible tire sizes map from wheel data.
+     *
+     * Groups R1T and R1S under "R1" since they share tire sizes.
+     *
+     * @return array Associative array: { "R1": ["275/65R18", ...], "R2": ["255/45R21", ...] }
+     */
+    public static function get_vehicle_size_map() {
+        $wheels = self::get_all_wheels();
+        $map    = array();
+
+        foreach ( $wheels as $wheel ) {
+            $vehicles = array_filter( array_map( 'trim', explode( ',', $wheel['vehicles'] ) ) );
+            $sizes    = array_filter( array_map( 'trim', explode( ',', $wheel['stock_size'] . ',' . $wheel['alt_sizes'] ) ) );
+
+            foreach ( $vehicles as $vehicle ) {
+                // Group R1T and R1S under "R1".
+                $group = ( strpos( $vehicle, 'R1' ) === 0 ) ? 'R1' : $vehicle;
+
+                if ( ! isset( $map[ $group ] ) ) {
+                    $map[ $group ] = array();
+                }
+                $map[ $group ] = array_merge( $map[ $group ], $sizes );
+            }
+        }
+
+        // De-duplicate and sort each vehicle's sizes.
+        foreach ( $map as $vehicle => $sizes ) {
+            $map[ $vehicle ] = array_values( array_unique( $sizes ) );
+            sort( $map[ $vehicle ] );
+        }
+
+        ksort( $map );
+
+        return $map;
     }
 
     /**

@@ -18,6 +18,7 @@ class RTG_Frontend {
 
         // Parse shortcode attributes for pre-filtering.
         $atts = shortcode_atts( array(
+            'vehicle'  => '',
             'size'     => '',
             'brand'    => '',
             'category' => '',
@@ -135,6 +136,13 @@ class RTG_Frontend {
 
         // Build shortcode pre-filter overrides.
         $prefilters = array();
+        if ( ! empty( $shortcode_atts['vehicle'] ) ) {
+            $vehicle_val = sanitize_text_field( $shortcode_atts['vehicle'] );
+            $vehicle_map = RTG_Database::get_vehicle_size_map();
+            if ( isset( $vehicle_map[ $vehicle_val ] ) ) {
+                $prefilters['vehicle'] = $vehicle_val;
+            }
+        }
         if ( ! empty( $shortcode_atts['size'] ) ) {
             $prefilters['size'] = sanitize_text_field( $shortcode_atts['size'] );
         }
@@ -170,6 +178,7 @@ class RTG_Frontend {
                 'aiEnabled'       => $ai_enabled,
                 'aiNonce'         => $ai_enabled ? wp_create_nonce( 'rtg_ai_nonce' ) : '',
                 'adminSizes'      => array_values( RTG_Admin::get_dropdown_options( 'sizes' ) ),
+                'vehicleSizeMap'  => RTG_Database::get_vehicle_size_map(),
             ),
         );
 
