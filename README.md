@@ -239,7 +239,7 @@ The efficiency score helps Rivian owners identify range-friendly tires using a w
 
 **Grades:** A (80-100), B (65-79), C (50-64), D (35-49), F (0-19)
 
-> **Note:** This score is an estimate based on specifications. It does not reflect real-world range testing and should not be used as a measure of tire quality or safety.
+> **Note:** This score is an estimate based on specifications, calibrated for both R1 and R2 tire ranges. It does not reflect real-world range testing and should not be used as a measure of tire quality or safety.
 
 ## Development
 
