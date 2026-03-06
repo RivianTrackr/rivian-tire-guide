@@ -1,16 +1,16 @@
 /* === Theme Custom Properties === */
 :root {
   --rtg-accent: #fba919;
-  --rtg-accent-hover: #fdbe40;
+  --rtg-accent-hover: #fba919;
   --rtg-bg-primary: #121e2b;
-  --rtg-bg-card: #162231;
+  --rtg-bg-card: #121e2b;
   --rtg-bg-input: #374151;
-  --rtg-bg-deep: #0c1620;
+  --rtg-bg-deep: #0f1a26;
   --rtg-text-primary: #e5e7eb;
-  --rtg-text-light: #f1f5f9;
-  --rtg-text-muted: #8493a5;
-  --rtg-text-heading: #ffffff;
-  --rtg-border: #1e3044;
+  --rtg-text-light: #e5e7eb;
+  --rtg-text-muted: #e5e7eb;
+  --rtg-text-heading: #e5e7eb;
+  --rtg-border: #374151;
   --rtg-star-filled: #fba919;
   --rtg-star-user: #4ade80;
   --rtg-star-empty: #2d3a49;
@@ -466,7 +466,7 @@
 }
 .rtg-vehicle-btn.active {
   background: var(--rtg-accent);
-  color: #fff;
+  color: #0f172a;
 }
 .rtg-vehicle-btn.active:hover {
   background: var(--rtg-accent-hover);
@@ -731,7 +731,7 @@
   padding: 0 6px;
   font-size: 11px;
   font-weight: 700;
-  color: #fff;
+  color: #0f172a;
   background: var(--rtg-accent);
   border-radius: 10px;
   margin-left: 6px;
@@ -1901,7 +1901,7 @@
   border: none;
   border-radius: 8px;
   padding: 10px 24px;
-  color: #fff;
+  color: #0f172a;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
@@ -2069,7 +2069,7 @@
   margin-top: 16px;
   padding: 8px 20px;
   background: var(--rtg-accent, #fba919);
-  color: #fff;
+  color: #0f172a;
   border: none;
   border-radius: 6px;
   font-size: 13px;
