@@ -432,8 +432,10 @@ class RTG_Admin {
     private static $default_dropdowns = array(
         'brands'        => array( 'BFGoodrich', 'Continental', 'Cooper', 'Falken', 'Firestone', 'General', 'Goodyear', 'Hankook', 'Kumho', 'Michelin', 'Nitto', 'Pirelli', 'Toyo', 'Yokohama' ),
         'categories'    => array( 'All-Season', 'All-Terrain', 'Highway', 'Mud-Terrain', 'Performance', 'Rugged Terrain', 'Winter' ),
-        'sizes'         => array( '275/65R18', '275/60R20', '275/55R22' ),
+        'sizes'         => array( '255/60R20', '255/55R21', '275/65R18', '275/60R20', '275/55R22' ),
         'size_diameters' => array(
+            '255/60R20' => '32"',
+            '255/55R21' => '32"',
             '275/65R18' => '32.1"',
             '275/60R20' => '33"',
             '275/55R22' => '33.9"',

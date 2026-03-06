@@ -4,6 +4,13 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.26.1] - 2026-03-06
+
+### Changed
+- **Efficiency formula recalibration** — Recalibrated width and weight score baselines to produce fair scores across both R1 and R2 tire ranges. Added speed rating Y to the scoring map. Existing tire scores will shift minimally (~1-2 points). Run "Recalculate All" from the admin to update.
+- **R2 default tire sizes** — Added R2 tire sizes to the default sizes dropdown.
+- **Plugin version** — Bumped to 1.26.1.
+
 ## [1.26.0] - 2026-03-06
 
 ### Added

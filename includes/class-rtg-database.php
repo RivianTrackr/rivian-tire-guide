@@ -851,11 +851,11 @@ class RTG_Database {
         if ( ! empty( $size ) && strpos( $size, '/' ) !== false ) {
             $width_val = floatval( substr( $size, 0, strpos( $size, '/' ) ) );
         }
-        $width_score = $width_val > 0 ? ( 305 - $width_val ) / 30 : 0.5;
+        $width_score = $width_val > 0 ? ( 305 - $width_val ) / 50 : 0.5;
 
         // Weight score. Missing data defaults to 0.5 (neutral).
         $weight = floatval( $data['weight_lb'] ?? 0 );
-        $weight_score = $weight > 0 ? ( 70 - $weight ) / 40 : 0.5;
+        $weight_score = $weight > 0 ? ( 75 - $weight ) / 50 : 0.5;
 
         // Tread score: extract numerator from tread (e.g., "10/32" → 10).
         // Missing data defaults to 0.5 (neutral).
@@ -874,7 +874,7 @@ class RTG_Database {
         // Speed rating score (first character).
         $speed_raw = trim( $data['speed_rating'] ?? '' );
         $speed_char = ! empty( $speed_raw ) ? strtoupper( substr( $speed_raw, 0, 1 ) ) : '';
-        $speed_scores = array( 'P' => 1, 'Q' => 0.95, 'R' => 0.9, 'S' => 0.85, 'T' => 0.8, 'H' => 0.7, 'V' => 0.6 );
+        $speed_scores = array( 'P' => 1, 'Q' => 0.95, 'R' => 0.9, 'S' => 0.85, 'T' => 0.8, 'H' => 0.7, 'V' => 0.6, 'Y' => 0.4 );
         $speed_score = ! empty( $speed_char ) && isset( $speed_scores[ $speed_char ] ) ? $speed_scores[ $speed_char ] : 0.5;
 
         // UTQG score (first number from e.g., "620 A B").
