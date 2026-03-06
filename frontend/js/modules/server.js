@@ -10,7 +10,7 @@ import { validateAndSanitizeCSVRow } from './validation.js';
 import { RTG_ANALYTICS } from './analytics.js';
 import { renderCards } from './cards.js';
 import { loadTireRatings } from './ratings.js';
-import { updateURLFromFilters, renderSmartNoResults, renderActiveFilterChips, applyFiltersFromURL, populateDropdown } from './filters.js';
+import { updateURLFromFilters, renderSmartNoResults, renderActiveFilterChips, applyFiltersFromURL, populateDropdown, getSelectedVehicle, populateVehicleToggle } from './filters.js';
 
 export function isServerSide() {
   return state.serverSideMode && typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.ajaxurl;
@@ -26,6 +26,7 @@ export function fetchTiresFromServer(page) {
   body.append('nonce', rtgData.settings.tireNonce);
   body.append('page', page || state.currentPage);
   body.append('search', searchInput ? searchInput.value : '');
+  body.append('vehicle', getSelectedVehicle());
   body.append('size', getDOMElement("filterSize")?.value || '');
   body.append('brand', getDOMElement("filterBrand")?.value || '');
   body.append('category', getDOMElement("filterCategory")?.value || '');
@@ -90,6 +91,8 @@ export function fetchTiresFromServer(page) {
     const ssSearch = searchInput ? searchInput.value : '';
     const ssFilters = {};
     if (ssSearch) ssFilters.search = ssSearch;
+    const ssVehicle = getSelectedVehicle();
+    if (ssVehicle) ssFilters.vehicle = ssVehicle;
     const ssSize = getDOMElement("filterSize")?.value || '';
     const ssBrand = getDOMElement("filterBrand")?.value || '';
     const ssCat = getDOMElement("filterCategory")?.value || '';
@@ -166,6 +169,13 @@ export function fetchDropdownOptions() {
       state.VALID_SIZES = d.sizes || [];
       state.VALID_BRANDS = d.brands || [];
       state.VALID_CATEGORIES = d.categories || [];
+
+      // Update vehicle state from server response.
+      if (d.vehicleSizeMap) {
+        state.vehicleSizeMap = d.vehicleSizeMap;
+        state.VALID_VEHICLES = Object.keys(d.vehicleSizeMap).sort();
+        populateVehicleToggle(d.vehicleSizeMap);
+      }
 
       // Populate size dropdown grouped by rim diameter.
       const sizeSelect = getDOMElement("filterSize");

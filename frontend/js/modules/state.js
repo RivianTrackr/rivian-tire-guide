@@ -31,6 +31,8 @@ export const state = {
   VALID_SIZES: [],
   VALID_BRANDS: [],
   VALID_CATEGORIES: [],
+  VALID_VEHICLES: [],
+  vehicleSizeMap: {},
 
   // DOM cache
   domCache: {},
@@ -70,4 +72,5 @@ export const filterIndexes = {
   priceIndex: [],
   warrantyIndex: [],
   weightIndex: [],
+  vehicleIndex: new Map(),
 };

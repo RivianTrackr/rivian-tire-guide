@@ -486,6 +486,7 @@ class RTG_Ajax {
 
         $filters = array(
             'search'       => sanitize_text_field( wp_unslash( $_POST['search'] ?? '' ) ),
+            'vehicle'      => sanitize_text_field( $_POST['vehicle'] ?? '' ),
             'size'         => sanitize_text_field( $_POST['size'] ?? '' ),
             'brand'        => sanitize_text_field( $_POST['brand'] ?? '' ),
             'category'     => sanitize_text_field( $_POST['category'] ?? '' ),
@@ -553,9 +554,10 @@ class RTG_Ajax {
         sort( $merged_sizes );
 
         wp_send_json_success( array(
-            'sizes'      => array_map( 'sanitize_text_field', array_values( $merged_sizes ) ),
-            'brands'     => array_map( 'sanitize_text_field', $brands ),
-            'categories' => array_map( 'sanitize_text_field', $categories ),
+            'sizes'          => array_map( 'sanitize_text_field', array_values( $merged_sizes ) ),
+            'brands'         => array_map( 'sanitize_text_field', $brands ),
+            'categories'     => array_map( 'sanitize_text_field', $categories ),
+            'vehicleSizeMap' => RTG_Database::get_vehicle_size_map(),
         ) );
     }
 

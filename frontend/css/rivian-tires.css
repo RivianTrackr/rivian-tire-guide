@@ -432,6 +432,55 @@
   border-radius: 8px !important;
 }
 
+/* === Vehicle Toggle === */
+.rtg-vehicle-toggle {
+  display: flex;
+  gap: 0;
+  margin-bottom: 14px;
+  background: var(--rtg-bg-deep);
+  border-radius: 10px;
+  padding: 4px;
+  width: fit-content;
+}
+.rtg-vehicle-btn {
+  padding: 8px 22px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--rtg-text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--rtg-font-stack);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+.rtg-vehicle-btn:hover {
+  color: var(--rtg-text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+.rtg-vehicle-btn.active {
+  background: var(--rtg-accent);
+  color: #fff;
+}
+.rtg-vehicle-btn.active:hover {
+  background: var(--rtg-accent-hover);
+}
+.rtg-vehicle-toggle:empty {
+  display: none;
+}
+@media (max-width: 600px) {
+  .rtg-vehicle-toggle {
+    width: 100%;
+  }
+  .rtg-vehicle-btn {
+    flex: 1;
+    padding: 10px 12px;
+    font-size: 13px;
+    text-align: center;
+  }
+}
+
 /* === Filter Controls === */
 .filter-container {
   display: flex;
