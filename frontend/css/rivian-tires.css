@@ -436,14 +436,18 @@
 .rtg-vehicle-toggle {
   display: flex;
   gap: 0;
-  margin-bottom: 14px;
   background: var(--rtg-bg-deep);
   border-radius: 10px;
   padding: 4px;
   width: fit-content;
+  flex: 0 0 auto;
+  align-self: flex-end;
+  height: 40px;
+  box-sizing: border-box;
+  align-items: center;
 }
 .rtg-vehicle-btn {
-  padding: 8px 22px;
+  padding: 6px 20px;
   border: none;
   border-radius: 8px;
   background: transparent;
@@ -454,6 +458,7 @@
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
   white-space: nowrap;
+  line-height: 1;
 }
 .rtg-vehicle-btn:hover {
   color: var(--rtg-text-primary);

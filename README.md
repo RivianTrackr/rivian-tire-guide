@@ -5,6 +5,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 ## Features
 
 ### Tire Catalog
+- **Vehicle Filter** — Segmented toggle (All / R1 / R2) filters tires by Rivian vehicle. Vehicle-to-size compatibility is derived automatically from the stock wheels database — adding a wheel for a new vehicle makes it appear in the toggle with no extra configuration.
 - **Interactive Tire Cards** — Browse tires with real-time filtering by size, brand, category, price, weight, warranty, 3PMS, EV rated, and studded availability.
 - **Smart Search** — Fuzzy search with type-ahead suggestions for brands, models, categories, and sizes.
 - **Side-by-Side Comparison** — Select up to 4 tires and compare specs on a dedicated comparison page with best-value highlighting.
@@ -110,7 +111,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 
 With pre-filter attributes:
 ```
-[rivian_tire_guide brand="Michelin" category="All-Season" size="275/65R20" sort="price-asc" 3pms="yes"]
+[rivian_tire_guide vehicle="R1" brand="Michelin" category="All-Season" size="275/65R20" sort="price-asc" 3pms="yes"]
 ```
 
 **User Reviews** — Display all reviews by a specific user (via `?reviewer=ID` URL param):
