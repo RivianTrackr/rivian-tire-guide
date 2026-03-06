@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Vehicle in smart no-results** — When no tires match, the smart suggestions include an option to remove the vehicle filter.
 
 ### Changed
+- **Vehicle toggle layout** — Moved the vehicle toggle inline with the Size/Brand/Category dropdowns instead of floating alone above them. Matches dropdown height for a cleaner, more integrated look.
 - **Plugin version** — Bumped to 1.26.0.
 
 ## [1.25.1] - 2026-03-06
