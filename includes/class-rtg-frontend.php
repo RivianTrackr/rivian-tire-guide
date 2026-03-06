@@ -169,6 +169,7 @@ class RTG_Frontend {
                 'analyticsNonce'  => wp_create_nonce( 'rtg_analytics_nonce' ),
                 'aiEnabled'       => $ai_enabled,
                 'aiNonce'         => $ai_enabled ? wp_create_nonce( 'rtg_ai_nonce' ) : '',
+                'adminSizes'      => array_values( RTG_Admin::get_dropdown_options( 'sizes' ) ),
             ),
         );
 

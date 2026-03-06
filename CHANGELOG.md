@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.25.1] - 2026-03-06
+
+### Improved
+- **Frontend tire size filter managed from admin** — The size filter dropdown on the frontend is now sourced from the admin-managed sizes list in Settings → Dropdown Options, merged with sizes found in tire data. New tire sizes added in the admin panel immediately appear in the frontend filter without needing to first create a tire with that size.
+
+### Changed
+- **Plugin version** — Bumped to 1.25.1.
+
 ## [1.25.0] - 2026-03-04
 
 ### Improved

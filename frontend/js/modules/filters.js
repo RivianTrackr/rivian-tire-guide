@@ -509,11 +509,15 @@ export function populateDropdown(id, values) {
   });
 }
 
-export function populateSizeDropdownGrouped(id, rows) {
+export function populateSizeDropdownGrouped(id, sizesOrRows) {
   const select = getDOMElement(id);
   if (!select) return;
 
-  const sizes = [...new Set(rows.map(r => safeString(r[1])).filter(v => v))];
+  // Accept either an array of size strings or an array of row arrays.
+  const sizes = [...new Set(
+    sizesOrRows.map(item => typeof item === 'string' ? item : safeString(item[1]))
+      .filter(v => v)
+  )];
   const groups = {};
 
   sizes.forEach(size => {

@@ -170,11 +170,20 @@ function initializeUI() {
   const debouncedFilterFn = ssMode ? debounce(serverSideFilterAndRender, 500) : debounce(filterAndRender, 500);
 
   if (!ssMode) {
-    state.VALID_SIZES = [...new Set(state.allRows.map(r => String(r[1] || '').trim()))].filter(Boolean);
+    // Use admin-managed sizes if available, otherwise derive from tire data.
+    const adminSizes = (typeof rtgData !== 'undefined' && rtgData.settings && Array.isArray(rtgData.settings.adminSizes) && rtgData.settings.adminSizes.length > 0)
+      ? rtgData.settings.adminSizes
+      : null;
+
+    const dataSizes = [...new Set(state.allRows.map(r => String(r[1] || '').trim()))].filter(Boolean);
+    // Merge admin sizes with any sizes found in data to ensure all tires are filterable.
+    state.VALID_SIZES = adminSizes
+      ? [...new Set([...adminSizes, ...dataSizes])]
+      : dataSizes;
     state.VALID_BRANDS = [...new Set(state.allRows.map(r => String(r[3] || '').trim()))].filter(Boolean);
     state.VALID_CATEGORIES = [...new Set(state.allRows.map(r => String(r[5] || '').trim()))].filter(Boolean);
 
-    populateSizeDropdownGrouped("filterSize", state.allRows);
+    populateSizeDropdownGrouped("filterSize", state.VALID_SIZES);
     populateDropdown("filterBrand", state.allRows.map(r => r[3]));
     populateDropdown("filterCategory", state.allRows.map(r => r[5]));
   }
