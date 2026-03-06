@@ -4,6 +4,13 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.27.0] - 2026-03-06
+
+### Changed
+- **Dark theme color refresh** — Updated the default dark theme palette: unified accent hover with primary accent, matched card background to primary background, adjusted deep background, consolidated text colors for better readability, and updated border/divider color.
+- **Button text contrast** — Buttons with the accent background now use dark text (#0f172a) instead of white for improved readability.
+- **Plugin version** — Bumped to 1.27.0.
+
 ## [1.26.1] - 2026-03-06
 
 ### Changed
