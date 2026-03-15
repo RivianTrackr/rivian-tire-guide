@@ -4,6 +4,15 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.28.0] - 2026-03-15
+
+### Added
+- **JSON data feed endpoint** — New public REST API endpoint (`GET /wp-json/rtg/v1/feed`) returns the full tire catalog as a shareable JSON feed. Includes all tire specs, efficiency scores, and rating aggregates. The feed auto-updates whenever tires are added or modified. CORS-enabled for easy external consumption.
+- **JSON Feed URL in admin dashboard** — A new "JSON Data Feed" card on the admin dashboard displays the feed URL with a one-click copy button and a preview link, making it easy to share your tire data with others.
+
+### Changed
+- **Plugin version** — Bumped to 1.28.0.
+
 ## [1.27.0] - 2026-03-06
 
 ### Changed
