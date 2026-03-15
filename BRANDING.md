@@ -1,6 +1,6 @@
 # RivianTrackr — Branding & Design System
 
-Design tokens and conventions for RivianTrackr projects. All values sourced from the Rivian Tire Guide plugin (v1.27.0).
+Design tokens and conventions for RivianTrackr projects. All values sourced from the Rivian Tire Guide plugin (v1.28.0).
 
 ---
 

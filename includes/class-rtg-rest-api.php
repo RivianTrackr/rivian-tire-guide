@@ -106,6 +106,17 @@ class RTG_REST_API {
             )
         );
 
+        // GET /wp-json/rtg/v1/feed — Full tire data JSON feed.
+        register_rest_route(
+            self::NAMESPACE,
+            '/feed',
+            array(
+                'methods'             => WP_REST_Server::READABLE,
+                'callback'            => array( $this, 'get_feed' ),
+                'permission_callback' => '__return_true',
+            )
+        );
+
         // POST /wp-json/rtg/v1/efficiency — Calculate efficiency score.
         register_rest_route(
             self::NAMESPACE,
@@ -122,6 +133,80 @@ class RTG_REST_API {
     // ------------------------------------------------------------------
     // Endpoint callbacks
     // ------------------------------------------------------------------
+
+    /**
+     * GET /feed — Return the complete tire catalog as a shareable JSON feed.
+     *
+     * Returns all tires with ratings, plus metadata. This endpoint is
+     * designed for sharing — the URL stays stable and data auto-updates
+     * as tires are added or modified.
+     *
+     * @param WP_REST_Request $request Full request object.
+     * @return WP_REST_Response
+     */
+    public function get_feed( WP_REST_Request $request ) {
+        $rate_check = $this->check_rate_limit( 'read', self::RATE_LIMIT_READ );
+        if ( is_wp_error( $rate_check ) ) {
+            return $rate_check;
+        }
+
+        $tires    = RTG_Database::get_all_tires();
+        $tire_ids = wp_list_pluck( $tires, 'tire_id' );
+
+        // Batch-fetch ratings for all tires.
+        $all_ratings = ! empty( $tire_ids ) ? RTG_Database::get_tire_ratings( $tire_ids ) : array();
+
+        // Build clean tire objects.
+        $feed_tires = array();
+        foreach ( $tires as $tire ) {
+            $tid    = $tire['tire_id'];
+            $rating = isset( $all_ratings[ $tid ] ) ? $all_ratings[ $tid ] : null;
+
+            $feed_tires[] = array(
+                'tire_id'           => $tid,
+                'brand'             => $tire['brand'],
+                'model'             => $tire['model'],
+                'size'              => $tire['size'],
+                'diameter'          => $tire['diameter'],
+                'category'          => $tire['category'],
+                'price'             => floatval( $tire['price'] ),
+                'mileage_warranty'  => $tire['mileage_warranty'],
+                'weight_lb'         => floatval( $tire['weight_lb'] ),
+                'three_pms'         => $tire['three_pms'],
+                'tread'             => $tire['tread'],
+                'load_index'        => $tire['load_index'],
+                'max_load_lb'       => $tire['max_load_lb'],
+                'load_range'        => $tire['load_range'],
+                'speed_rating'      => $tire['speed_rating'],
+                'psi'               => $tire['psi'],
+                'utqg'              => $tire['utqg'],
+                'tags'              => $tire['tags'],
+                'image'             => $tire['image'],
+                'link'              => $tire['link'],
+                'review_link'       => $tire['review_link'],
+                'efficiency_score'  => floatval( $tire['efficiency_score'] ),
+                'efficiency_grade'  => $tire['efficiency_grade'],
+                'rating_average'    => $rating ? floatval( $rating['average'] ) : null,
+                'rating_count'      => $rating ? intval( $rating['count'] ) : 0,
+                'created_at'        => $tire['created_at'],
+            );
+        }
+
+        $response = new WP_REST_Response(
+            array(
+                'name'         => get_bloginfo( 'name' ) . ' — Tire Guide',
+                'generated_at' => gmdate( 'c' ),
+                'total_tires'  => count( $feed_tires ),
+                'tires'        => $feed_tires,
+            ),
+            200
+        );
+
+        // Allow CORS for easy external consumption.
+        $response->header( 'Access-Control-Allow-Origin', '*' );
+
+        return $response;
+    }
 
     /**
      * GET /tires — Return a paginated, filterable list of tires.
