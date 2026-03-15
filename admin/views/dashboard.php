@@ -375,6 +375,39 @@ $grade_colors = array(
     </div><!-- .rtg-dashboard-grid -->
 
     <!-- ================================================================
+         JSON Data Feed (full-width)
+         ================================================================ -->
+    <?php $feed_url = rest_url( 'rtg/v1/feed' ); ?>
+    <div class="rtg-card">
+        <div class="rtg-card-header"><h2>JSON Data Feed</h2></div>
+        <div class="rtg-card-body">
+            <p style="color: var(--rtg-text-secondary); margin: 0 0 12px;">
+                Share this URL to give others live access to your tire data. It updates automatically whenever you add or edit tires.
+            </p>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <input
+                    type="text"
+                    id="rtg-feed-url"
+                    value="<?php echo esc_url( $feed_url ); ?>"
+                    readonly
+                    class="rtg-input"
+                    style="flex: 1; font-family: var(--rtg-font-mono); font-size: 13px; cursor: text;"
+                    onclick="this.select();"
+                />
+                <button type="button" id="rtg-copy-feed-url" class="rtg-btn rtg-btn-primary" style="white-space: nowrap;">
+                    Copy URL
+                </button>
+                <a href="<?php echo esc_url( $feed_url ); ?>" target="_blank" class="rtg-btn rtg-btn-secondary" style="white-space: nowrap; text-decoration: none;">
+                    Preview
+                </a>
+            </div>
+            <p id="rtg-feed-copy-status" style="color: var(--rtg-success); margin: 8px 0 0; font-size: 13px; display: none;">
+                Copied to clipboard!
+            </p>
+        </div>
+    </div>
+
+    <!-- ================================================================
          Recently Added Tires (full-width)
          ================================================================ -->
     <div class="rtg-card">

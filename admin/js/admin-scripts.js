@@ -497,4 +497,24 @@
         }
     }
 
+    // --- JSON Feed URL copy button ---
+    $('#rtg-copy-feed-url').on('click', function() {
+        var $input = $('#rtg-feed-url');
+        var $status = $('#rtg-feed-copy-status');
+        var url = $input.val();
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(function() {
+                $status.stop(true).show().css('opacity', 1);
+                setTimeout(function() { $status.fadeOut(400); }, 2000);
+            });
+        } else {
+            // Fallback for older browsers.
+            $input[0].select();
+            document.execCommand('copy');
+            $status.stop(true).show().css('opacity', 1);
+            setTimeout(function() { $status.fadeOut(400); }, 2000);
+        }
+    });
+
 })(jQuery);
