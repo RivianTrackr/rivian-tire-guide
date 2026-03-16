@@ -4,6 +4,12 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.28.1] - 2026-03-16
+
+### Changed
+- **Minified assets verified** — Rebuilt all minified JS and CSS bundles (esbuild) to ensure production assets are up-to-date with source files.
+- **Plugin version** — Bumped to 1.28.1.
+
 ## [1.28.0] - 2026-03-15
 
 ### Added
