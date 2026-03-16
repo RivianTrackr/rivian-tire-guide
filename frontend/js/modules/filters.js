@@ -556,7 +556,7 @@ function updateSelectCounts(selectId, rowIndex) {
     opt.dataset.baseText = baseText;
     const count = counts.get(baseText) || 0;
     opt.textContent = `${baseText} (${count})`;
-    opt.disabled = count === 0 && opt.value !== select.value;
+    opt.disabled = false;
   });
 }
 
