@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.28.2] - 2026-03-16
+
+### Fixed
+- **Tire size dropdown no longer disables options** — Previously, selecting a tire size would disable all other size options with zero matches, forcing users to clear filters before switching. All dropdown options now stay enabled so users can freely change their selection.
+
+### Changed
+- **Plugin version** — Bumped to 1.28.2.
+
 ## [1.28.1] - 2026-03-16
 
 ### Changed
