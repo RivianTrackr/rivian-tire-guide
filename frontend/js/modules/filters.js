@@ -532,18 +532,56 @@ function updateMobileFilterBadge() {
 }
 
 function updateDropdownCounts() {
-  updateSelectCounts("filterSize", 1);
-  updateSelectCounts("filterBrand", 3);
-  updateSelectCounts("filterCategory", 5);
+  // Build current filter state once, then pass to each dropdown
+  // so counts can exclude the dropdown's own filter.
+  const filters = getCurrentFilters();
+  updateSelectCounts("filterSize", 1, "Size", filters);
+  updateSelectCounts("filterBrand", 3, "Brand", filters);
+  updateSelectCounts("filterCategory", 5, "Category", filters);
 }
 
-function updateSelectCounts(selectId, rowIndex) {
+function getCurrentFilters() {
+  const searchInput = document.querySelector('#searchInput');
+  const priceMax = getDOMElement("priceMax");
+  const warrantyMin = getDOMElement("warrantyMin");
+  const weightMax = getDOMElement("weightMax");
+  const filter3pms = getDOMElement("filter3pms");
+  const filterEVRated = getDOMElement("filterEVRated");
+  const filterStudded = getDOMElement("filterStudded");
+  const filterReviewed = getDOMElement("filterReviewed");
+  const filterFavorites = getDOMElement("filterFavorites");
+  const filterSize = getDOMElement("filterSize");
+  const filterBrand = getDOMElement("filterBrand");
+  const filterCategory = getDOMElement("filterCategory");
+  const searchVal = searchInput ? sanitizeInput(searchInput.value, VALIDATION_PATTERNS.search) : "";
+  const vehicleVal = getSelectedVehicle();
+  return {
+    search: searchVal.toLowerCase(),
+    PriceMax: priceMax ? validateNumeric(priceMax.value, NUMERIC_BOUNDS.price, 600) : 600,
+    WarrantyMin: warrantyMin ? validateNumeric(warrantyMin.value, NUMERIC_BOUNDS.warranty, 0) : 0,
+    WeightMax: weightMax ? validateNumeric(weightMax.value, NUMERIC_BOUNDS.weight, 70) : 70,
+    "3PMS": filter3pms?.checked || false,
+    "EVRated": filterEVRated?.checked || false,
+    "Studded": filterStudded?.checked || false,
+    "Reviewed": filterReviewed?.checked || false,
+    "Favorites": filterFavorites?.checked || false,
+    Vehicle: vehicleVal && state.VALID_VEHICLES.includes(vehicleVal) ? vehicleVal : "",
+    Size: filterSize?.value && state.VALID_SIZES.includes(filterSize.value) ? filterSize.value : "",
+    Brand: filterBrand?.value && state.VALID_BRANDS.includes(filterBrand.value) ? filterBrand.value : "",
+    Category: filterCategory?.value && state.VALID_CATEGORIES.includes(filterCategory.value) ? filterCategory.value : ""
+  };
+}
+
+function updateSelectCounts(selectId, rowIndex, filterKey, filters) {
   const select = getDOMElement(selectId);
   if (!select) return;
 
-  // Count how many filtered rows match each option value
+  // Count against rows filtered by everything EXCEPT this dropdown's filter
+  const excludedFilters = { ...filters, [filterKey]: "" };
+  const rows = getFilteredIndexes(excludedFilters);
+
   const counts = new Map();
-  state.filteredRows.forEach(row => {
+  rows.forEach(row => {
     const val = safeString(row[rowIndex]).trim();
     if (val) counts.set(val, (counts.get(val) || 0) + 1);
   });
