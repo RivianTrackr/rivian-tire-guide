@@ -182,8 +182,8 @@ class RTG_REST_API {
                 'utqg'              => $tire['utqg'],
                 'tags'              => $tire['tags'],
                 'image'             => $tire['image'],
-                'link'              => $tire['link'],
-                'review_link'       => $tire['review_link'],
+                'has_purchase_link' => ! empty( $tire['link'] ),
+                'has_review_link'   => ! empty( $tire['review_link'] ),
                 'efficiency_score'  => floatval( $tire['efficiency_score'] ),
                 'efficiency_grade'  => $tire['efficiency_grade'],
                 'rating_average'    => $rating ? floatval( $rating['average'] ) : null,
@@ -202,8 +202,8 @@ class RTG_REST_API {
             200
         );
 
-        // Allow CORS for easy external consumption.
-        $response->header( 'Access-Control-Allow-Origin', '*' );
+        // Cache for 1 hour to reduce repeated scraping load.
+        $response->header( 'Cache-Control', 'public, max-age=3600' );
 
         return $response;
     }
@@ -425,22 +425,7 @@ class RTG_REST_API {
      * @return true|WP_Error
      */
     private function check_rate_limit( $bucket, $limit, $window = 60 ) {
-        $ip  = preg_replace( '/[^a-fA-F0-9.:_]/', '', $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0' );
-        $key = 'rtg_rl_' . $bucket . '_' . md5( $ip );
-
-        $current = (int) get_transient( $key );
-
-        if ( $current >= $limit ) {
-            return new WP_Error(
-                'rtg_rate_limit',
-                'Rate limit exceeded. Please try again later.',
-                array( 'status' => 429 )
-            );
-        }
-
-        set_transient( $key, $current + 1, $window );
-
-        return true;
+        return RTG_Rate_Limiter::check( 'rest_' . $bucket, $limit, $window );
     }
 
     // ------------------------------------------------------------------

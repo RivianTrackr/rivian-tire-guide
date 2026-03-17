@@ -450,6 +450,10 @@
         <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
         <span>Share</span>
       </button>
+      <button type="button" class="cmp-btn" id="exportImageBtn">
+        <i class="fa-solid fa-image" aria-hidden="true"></i>
+        <span>Save Image</span>
+      </button>
       <button type="button" class="cmp-btn" onclick="window.print()">
         <i class="fa-solid fa-print" aria-hidden="true"></i>
         <span>Print</span>

@@ -65,6 +65,9 @@ export function buildFilterIndexes() {
   filterIndexes.sizeIndex.clear();
   filterIndexes.brandIndex.clear();
   filterIndexes.categoryIndex.clear();
+  filterIndexes.loadRangeIndex.clear();
+  filterIndexes.speedRatingIndex.clear();
+  filterIndexes.effGradeIndex.clear();
   filterIndexes.vehicleIndex.clear();
   filterIndexes.priceIndex.length = 0;
   filterIndexes.warrantyIndex.length = 0;
@@ -99,6 +102,24 @@ export function buildFilterIndexes() {
     if (categoryKey) {
       if (!filterIndexes.categoryIndex.has(categoryKey)) filterIndexes.categoryIndex.set(categoryKey, []);
       filterIndexes.categoryIndex.get(categoryKey).push(index);
+    }
+
+    const loadRangeKey = safeString(row[13]).trim().toUpperCase();
+    if (loadRangeKey) {
+      if (!filterIndexes.loadRangeIndex.has(loadRangeKey)) filterIndexes.loadRangeIndex.set(loadRangeKey, []);
+      filterIndexes.loadRangeIndex.get(loadRangeKey).push(index);
+    }
+
+    const speedRatingKey = safeString(row[14]).trim().toUpperCase();
+    if (speedRatingKey) {
+      if (!filterIndexes.speedRatingIndex.has(speedRatingKey)) filterIndexes.speedRatingIndex.set(speedRatingKey, []);
+      filterIndexes.speedRatingIndex.get(speedRatingKey).push(index);
+    }
+
+    const effGradeKey = safeString(row[21]).trim().toUpperCase();
+    if (effGradeKey && ['A','B','C','D','F'].includes(effGradeKey)) {
+      if (!filterIndexes.effGradeIndex.has(effGradeKey)) filterIndexes.effGradeIndex.set(effGradeKey, []);
+      filterIndexes.effGradeIndex.get(effGradeKey).push(index);
     }
 
     const priceVal = validateNumeric(price, NUMERIC_BOUNDS.price);
@@ -168,6 +189,21 @@ function getFilteredIndexes(filters) {
   if (filters.Category) {
     const categorySet = new Set(filterIndexes.categoryIndex.get(filters.Category.toLowerCase()) || []);
     candidateIndexes = new Set([...candidateIndexes].filter(x => categorySet.has(x)));
+  }
+
+  if (filters.LoadRange) {
+    const loadRangeSet = new Set(filterIndexes.loadRangeIndex.get(filters.LoadRange.toUpperCase()) || []);
+    candidateIndexes = new Set([...candidateIndexes].filter(x => loadRangeSet.has(x)));
+  }
+
+  if (filters.SpeedRating) {
+    const speedRatingSet = new Set(filterIndexes.speedRatingIndex.get(filters.SpeedRating.toUpperCase()) || []);
+    candidateIndexes = new Set([...candidateIndexes].filter(x => speedRatingSet.has(x)));
+  }
+
+  if (filters.EffGrade) {
+    const effGradeSet = new Set(filterIndexes.effGradeIndex.get(filters.EffGrade.toUpperCase()) || []);
+    candidateIndexes = new Set([...candidateIndexes].filter(x => effGradeSet.has(x)));
   }
 
   if (filters.PriceMax < 600) {
@@ -319,6 +355,9 @@ export function filterAndRender() {
   const filterSize = getDOMElement("filterSize");
   const filterBrand = getDOMElement("filterBrand");
   const filterCategory = getDOMElement("filterCategory");
+  const filterLoadRange = getDOMElement("filterLoadRange");
+  const filterSpeedRating = getDOMElement("filterSpeedRating");
+  const filterEffGrade = getDOMElement("filterEffGrade");
   const sortBy = getDOMElement("sortBy");
 
   const searchVal = searchInput ? sanitizeInput(searchInput.value, VALIDATION_PATTERNS.search) : "";
@@ -341,7 +380,10 @@ export function filterAndRender() {
     Vehicle: vehicleVal && state.VALID_VEHICLES.includes(vehicleVal) ? vehicleVal : "",
     Size: filterSize?.value && state.VALID_SIZES.includes(filterSize.value) ? filterSize.value : "",
     Brand: filterBrand?.value && state.VALID_BRANDS.includes(filterBrand.value) ? filterBrand.value : "",
-    Category: filterCategory?.value && state.VALID_CATEGORIES.includes(filterCategory.value) ? filterCategory.value : ""
+    Category: filterCategory?.value && state.VALID_CATEGORIES.includes(filterCategory.value) ? filterCategory.value : "",
+    LoadRange: filterLoadRange?.value && state.VALID_LOAD_RANGES.includes(filterLoadRange.value) ? filterLoadRange.value : "",
+    SpeedRating: filterSpeedRating?.value && state.VALID_SPEED_RATINGS.includes(filterSpeedRating.value) ? filterSpeedRating.value : "",
+    EffGrade: filterEffGrade?.value && ['A','B','C','D','F'].includes(filterEffGrade.value) ? filterEffGrade.value : ""
   };
 
   const sortOption = sortBy?.value && ALLOWED_SORT_OPTIONS.includes(sortBy.value) ? sortBy.value : "";
@@ -369,6 +411,9 @@ export function filterAndRender() {
   if (f["3PMS"]) activeFilters.three_pms = true;
   if (f["EVRated"]) activeFilters.ev_rated = true;
   if (f["Studded"]) activeFilters.studded = true;
+  if (f.LoadRange) activeFilters.load_range = f.LoadRange;
+  if (f.SpeedRating) activeFilters.speed_rating = f.SpeedRating;
+  if (f.EffGrade) activeFilters.eff_grade = f.EffGrade;
   if (f.PriceMax < 600) activeFilters.price_max = f.PriceMax;
   if (f.WarrantyMin > 0) activeFilters.warranty_min = f.WarrantyMin;
   if (f.WeightMax < 70) activeFilters.weight_max = f.WeightMax;
@@ -498,6 +543,9 @@ function getActiveFilterCount() {
   if (warrantyEl && parseInt(warrantyEl.value) > 0) count++;
   const weightEl = getDOMElement("weightMax");
   if (weightEl && parseInt(weightEl.value) < 70) count++;
+  if (getDOMElement("filterLoadRange")?.value) count++;
+  if (getDOMElement("filterSpeedRating")?.value) count++;
+  if (getDOMElement("filterEffGrade")?.value) count++;
   if (getDOMElement("filter3pms")?.checked) count++;
   if (getDOMElement("filterEVRated")?.checked) count++;
   if (getDOMElement("filterStudded")?.checked) count++;
@@ -553,6 +601,9 @@ function getCurrentFilters() {
   const filterSize = getDOMElement("filterSize");
   const filterBrand = getDOMElement("filterBrand");
   const filterCategory = getDOMElement("filterCategory");
+  const filterLoadRange = getDOMElement("filterLoadRange");
+  const filterSpeedRating = getDOMElement("filterSpeedRating");
+  const filterEffGrade = getDOMElement("filterEffGrade");
   const searchVal = searchInput ? sanitizeInput(searchInput.value, VALIDATION_PATTERNS.search) : "";
   const vehicleVal = getSelectedVehicle();
   return {
@@ -568,7 +619,10 @@ function getCurrentFilters() {
     Vehicle: vehicleVal && state.VALID_VEHICLES.includes(vehicleVal) ? vehicleVal : "",
     Size: filterSize?.value && state.VALID_SIZES.includes(filterSize.value) ? filterSize.value : "",
     Brand: filterBrand?.value && state.VALID_BRANDS.includes(filterBrand.value) ? filterBrand.value : "",
-    Category: filterCategory?.value && state.VALID_CATEGORIES.includes(filterCategory.value) ? filterCategory.value : ""
+    Category: filterCategory?.value && state.VALID_CATEGORIES.includes(filterCategory.value) ? filterCategory.value : "",
+    LoadRange: filterLoadRange?.value && state.VALID_LOAD_RANGES.includes(filterLoadRange.value) ? filterLoadRange.value : "",
+    SpeedRating: filterSpeedRating?.value && state.VALID_SPEED_RATINGS.includes(filterSpeedRating.value) ? filterSpeedRating.value : "",
+    EffGrade: filterEffGrade?.value && ['A','B','C','D','F'].includes(filterEffGrade.value) ? filterEffGrade.value : ""
   };
 }
 
@@ -696,6 +750,9 @@ export function resetFilters() {
     { id: "filterSize", value: "" },
     { id: "filterBrand", value: "" },
     { id: "filterCategory", value: "" },
+    { id: "filterLoadRange", value: "" },
+    { id: "filterSpeedRating", value: "" },
+    { id: "filterEffGrade", value: "" },
     { id: "priceMax", value: 600 },
     { id: "warrantyMin", value: 0 },
     { id: "weightMax", value: 70 },
@@ -775,6 +832,21 @@ export function renderActiveFilterChips() {
   const categoryEl = getDOMElement("filterCategory");
   if (categoryEl?.value) {
     chips.push({ label: "Category", value: categoryEl.value, clear: () => { categoryEl.value = ""; } });
+  }
+
+  const loadRangeEl = getDOMElement("filterLoadRange");
+  if (loadRangeEl?.value) {
+    chips.push({ label: "Load Range", value: loadRangeEl.value, clear: () => { loadRangeEl.value = ""; } });
+  }
+
+  const speedRatingEl = getDOMElement("filterSpeedRating");
+  if (speedRatingEl?.value) {
+    chips.push({ label: "Speed Rating", value: speedRatingEl.value, clear: () => { speedRatingEl.value = ""; } });
+  }
+
+  const effGradeEl = getDOMElement("filterEffGrade");
+  if (effGradeEl?.value) {
+    chips.push({ label: "Efficiency", value: "Grade " + effGradeEl.value, clear: () => { effGradeEl.value = ""; } });
   }
 
   const priceEl = getDOMElement("priceMax");
@@ -868,6 +940,9 @@ export function renderSmartNoResults() {
   if (priceEl && parseInt(priceEl.value) < 600) activeFilterNames.push("Price");
   if (warrantyEl && parseInt(warrantyEl.value) > 0) activeFilterNames.push("Warranty");
   if (weightEl && parseInt(weightEl.value) < 70) activeFilterNames.push("Weight");
+  if (getDOMElement("filterLoadRange")?.value) activeFilterNames.push("Load Range");
+  if (getDOMElement("filterSpeedRating")?.value) activeFilterNames.push("Speed Rating");
+  if (getDOMElement("filterEffGrade")?.value) activeFilterNames.push("Efficiency Grade");
   if (getDOMElement("filter3pms")?.checked) activeFilterNames.push("3PMS");
   if (getDOMElement("filterEVRated")?.checked) activeFilterNames.push("EV Rated");
   if (getDOMElement("filterStudded")?.checked) activeFilterNames.push("Studded");

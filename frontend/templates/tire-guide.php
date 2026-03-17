@@ -3,6 +3,16 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 ?>
+<div id="rtgSeasonalBanner" class="rtg-seasonal-banner" style="display:none;" role="complementary" aria-label="Seasonal tire recommendation">
+  <div class="rtg-seasonal-banner-content">
+    <span class="rtg-seasonal-banner-icon"><i class="fa-solid fa-snowflake" aria-hidden="true"></i></span>
+    <span id="rtgSeasonalText" class="rtg-seasonal-banner-text"></span>
+    <button id="rtgSeasonalAction" class="rtg-seasonal-banner-action" type="button"></button>
+  </div>
+  <button id="rtgSeasonalDismiss" class="rtg-seasonal-banner-dismiss" type="button" aria-label="Dismiss recommendation">
+    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+  </button>
+</div>
 <button id="toggleFilters" class="toggle-filters-btn" aria-expanded="false" aria-controls="mobileFilterContent">
   <i class="fa-solid fa-sliders" aria-hidden="true"></i>&nbsp; Show Filters
 </button>
@@ -55,6 +65,29 @@ if ( ! defined( 'ABSPATH' ) ) {
           <label for="filterCategory" class="screen-reader-text">Filter by category</label>
           <select id="filterCategory" aria-label="Filter by category">
             <option value="">All Categories</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filterLoadRange" class="screen-reader-text">Filter by load range</label>
+          <select id="filterLoadRange" aria-label="Filter by load range">
+            <option value="">All Load Ranges</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filterSpeedRating" class="screen-reader-text">Filter by speed rating</label>
+          <select id="filterSpeedRating" aria-label="Filter by speed rating">
+            <option value="">All Speed Ratings</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filterEffGrade" class="screen-reader-text">Filter by efficiency grade</label>
+          <select id="filterEffGrade" aria-label="Filter by efficiency grade">
+            <option value="">All Efficiency Grades</option>
+            <option value="A">Grade A</option>
+            <option value="B">Grade B</option>
+            <option value="C">Grade C</option>
+            <option value="D">Grade D</option>
+            <option value="F">Grade F</option>
           </select>
         </div>
         <div class="slider-row">
