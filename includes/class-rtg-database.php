@@ -164,6 +164,34 @@ class RTG_Database {
     }
 
     /**
+     * Get all tires with their rating aggregates pre-joined.
+     *
+     * Eliminates the N+1 query pattern by fetching tires and ratings
+     * in a single database query. Returns associative array format.
+     *
+     * @return array Array of tire rows with 'rating_average', 'rating_count', 'review_count' appended.
+     */
+    public static function get_tires_with_ratings() {
+        global $wpdb;
+        $tires_table   = self::tires_table();
+        $ratings_table = self::ratings_table();
+
+        $result = $wpdb->get_results(
+            "SELECT t.*,
+                    ROUND(AVG(r.rating), 1) as rating_average,
+                    COUNT(r.id) as rating_count,
+                    SUM(CASE WHEN r.review_status = 'approved' AND r.review_text != '' THEN 1 ELSE 0 END) as review_count
+             FROM {$tires_table} t
+             LEFT JOIN {$ratings_table} r ON t.tire_id = r.tire_id
+             GROUP BY t.id
+             ORDER BY t.sort_order ASC, t.id ASC",
+            ARRAY_A
+        );
+
+        return $result ?: array();
+    }
+
+    /**
      * Get a single tire by its string tire_id.
      *
      * @param string $tire_id Tire identifier (e.g. 'tire001').
@@ -245,6 +273,10 @@ class RTG_Database {
         $result = $wpdb->insert( $table, $data, $formats );
         if ( $result !== false ) {
             self::flush_cache();
+            // Record initial price in history.
+            if ( ! empty( $data['price'] ) && $data['price'] > 0 ) {
+                self::record_price( $data['tire_id'], $data['price'] );
+            }
             return $wpdb->insert_id;
         }
         return false;
@@ -285,6 +317,12 @@ class RTG_Database {
 
         $result = $wpdb->update( $table, $data, array( 'tire_id' => $tire_id ), $formats, array( '%s' ) );
         self::flush_cache();
+
+        // Record price change in history.
+        if ( $result !== false && isset( $data['price'] ) && $data['price'] > 0 ) {
+            self::record_price( $tire_id, $data['price'] );
+        }
+
         return $result;
     }
 
@@ -1804,6 +1842,171 @@ class RTG_Database {
         return $result;
     }
 
+    // --- Price History ---
+
+    private static function price_history_table() {
+        global $wpdb;
+        return $wpdb->prefix . 'rtg_price_history';
+    }
+
+    /**
+     * Record a price snapshot for a tire.
+     *
+     * Called automatically when a tire is created or when its price changes on edit.
+     *
+     * @param string $tire_id Tire identifier.
+     * @param float  $price   Current price.
+     * @return int|false Row ID on success, false on failure.
+     */
+    public static function record_price( $tire_id, $price ) {
+        global $wpdb;
+        $table = self::price_history_table();
+
+        $result = $wpdb->insert(
+            $table,
+            array(
+                'tire_id' => $tire_id,
+                'price'   => floatval( $price ),
+            ),
+            array( '%s', '%f' )
+        );
+
+        return $result !== false ? $wpdb->insert_id : false;
+    }
+
+    /**
+     * Get the price history for a tire (last N entries).
+     *
+     * @param string $tire_id Tire identifier.
+     * @param int    $limit   Maximum entries to return.
+     * @return array Array of {price, recorded_at} rows, oldest first.
+     */
+    public static function get_price_history( $tire_id, $limit = 30 ) {
+        global $wpdb;
+        $table = self::price_history_table();
+
+        return $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT price, recorded_at FROM {$table} WHERE tire_id = %s ORDER BY recorded_at DESC LIMIT %d",
+                $tire_id,
+                $limit
+            ),
+            ARRAY_A
+        );
+    }
+
+    /**
+     * Get the price trend for a tire: 'up', 'down', 'stable', or null.
+     *
+     * Compares the two most recent price entries.
+     *
+     * @param string $tire_id Tire identifier.
+     * @return string|null Trend direction or null if insufficient data.
+     */
+    public static function get_price_trend( $tire_id ) {
+        $history = self::get_price_history( $tire_id, 2 );
+
+        if ( count( $history ) < 2 ) {
+            return null;
+        }
+
+        $current  = floatval( $history[0]['price'] );
+        $previous = floatval( $history[1]['price'] );
+
+        if ( $current > $previous ) {
+            return 'up';
+        } elseif ( $current < $previous ) {
+            return 'down';
+        }
+        return 'stable';
+    }
+
+    // --- Review Votes (Helpfulness) ---
+
+    private static function review_votes_table() {
+        global $wpdb;
+        return $wpdb->prefix . 'rtg_review_votes';
+    }
+
+    /**
+     * Cast a helpfulness vote on a review.
+     *
+     * @param int    $review_id Review ID.
+     * @param int    $vote      1 for helpful, -1 for not helpful.
+     * @param int    $user_id   WordPress user ID (0 for anonymous).
+     * @return bool True on success, false on failure or duplicate.
+     */
+    public static function cast_review_vote( $review_id, $vote, $user_id = 0 ) {
+        global $wpdb;
+        $table = self::review_votes_table();
+
+        $ip_hash = $user_id ? '' : md5( RTG_Rate_Limiter::get_client_ip() );
+
+        // Check for existing vote.
+        $exists = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table} WHERE review_id = %d AND (user_id = %d AND ip_hash = %s)",
+            $review_id,
+            $user_id,
+            $ip_hash
+        ) );
+
+        if ( $exists > 0 ) {
+            return false;
+        }
+
+        $result = $wpdb->insert(
+            $table,
+            array(
+                'review_id' => $review_id,
+                'user_id'   => $user_id,
+                'ip_hash'   => $ip_hash,
+                'vote'      => intval( $vote ) > 0 ? 1 : -1,
+            ),
+            array( '%d', '%d', '%s', '%d' )
+        );
+
+        return $result !== false;
+    }
+
+    /**
+     * Get the vote tallies for one or more reviews.
+     *
+     * @param array $review_ids Array of review IDs.
+     * @return array Associative array keyed by review_id: { helpful: int, unhelpful: int }.
+     */
+    public static function get_review_votes( $review_ids ) {
+        global $wpdb;
+        $table = self::review_votes_table();
+
+        if ( empty( $review_ids ) ) {
+            return array();
+        }
+
+        $placeholders = implode( ', ', array_fill( 0, count( $review_ids ), '%d' ) );
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT review_id,
+                        SUM(CASE WHEN vote = 1 THEN 1 ELSE 0 END) as helpful,
+                        SUM(CASE WHEN vote = -1 THEN 1 ELSE 0 END) as unhelpful
+                 FROM {$table}
+                 WHERE review_id IN ({$placeholders})
+                 GROUP BY review_id",
+                ...$review_ids
+            ),
+            ARRAY_A
+        );
+
+        $votes = array();
+        foreach ( $rows as $row ) {
+            $votes[ $row['review_id'] ] = array(
+                'helpful'   => (int) $row['helpful'],
+                'unhelpful' => (int) $row['unhelpful'],
+            );
+        }
+
+        return $votes;
+    }
+
     // --- Analytics (Click & Search Tracking) ---
 
     private static function click_events_table() {
@@ -1823,10 +2026,7 @@ class RTG_Database {
      * @return string 64-character hex hash.
      */
     private static function generate_session_hash() {
-        $ip   = $_SERVER['REMOTE_ADDR'] ?? '';
-        $ua   = $_SERVER['HTTP_USER_AGENT'] ?? '';
-        $date = gmdate( 'Y-m-d' );
-        return hash( 'sha256', $ip . '|' . $ua . '|' . $date );
+        return RTG_Rate_Limiter::session_hash();
     }
 
     /**

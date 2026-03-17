@@ -1,6 +1,6 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 /**
@@ -11,220 +11,252 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class RTG_AI {
 
-    /**
-     * Default rate limit: requests per window per visitor.
-     */
-    const DEFAULT_RATE_LIMIT = 10;
+	/**
+	 * Default rate limit: requests per window per visitor.
+	 */
+	const DEFAULT_RATE_LIMIT = 10;
 
-    /**
-     * Rate limit window in seconds.
-     */
-    const RATE_LIMIT_WINDOW = 60;
+	/**
+	 * Rate limit window in seconds.
+	 */
+	const RATE_LIMIT_WINDOW = 60;
 
-    /**
-     * Response cache TTL in seconds (1 hour).
-     */
-    const CACHE_TTL = HOUR_IN_SECONDS;
+	/**
+	 * Response cache TTL in seconds (1 hour).
+	 */
+	const CACHE_TTL = HOUR_IN_SECONDS;
 
-    /**
-     * Maximum query length in characters.
-     */
-    const MAX_QUERY_LENGTH = 500;
+	/**
+	 * Maximum query length in characters.
+	 */
+	const MAX_QUERY_LENGTH = 500;
 
-    /**
-     * API request timeout in seconds.
-     */
-    const API_TIMEOUT = 30;
+	/**
+	 * API request timeout in seconds.
+	 */
+	const API_TIMEOUT = 30;
 
-    /**
-     * Anthropic Messages API endpoint.
-     */
-    const API_URL = 'https://api.anthropic.com/v1/messages';
+	/**
+	 * Anthropic Messages API endpoint.
+	 */
+	const API_URL = 'https://api.anthropic.com/v1/messages';
 
-    /**
-     * Default model to use.
-     */
-    const DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
+	/**
+	 * Default model to use.
+	 */
+	const DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
 
-    /**
-     * Check whether AI recommendations are enabled and configured.
-     *
-     * @return bool
-     */
-    public static function is_enabled() {
-        $settings = get_option( 'rtg_settings', array() );
-        return ! empty( $settings['ai_enabled'] ) && ! empty( $settings['ai_api_key'] );
-    }
+	/**
+	 * Check whether AI recommendations are enabled and configured.
+	 *
+	 * @return bool
+	 */
+	public static function is_enabled() {
+		$settings = get_option( 'rtg_settings', array() );
+		return ! empty( $settings['ai_enabled'] ) && ! empty( $settings['ai_api_key'] );
+	}
 
-    /**
-     * Get tire recommendations for a natural-language query.
-     *
-     * @param string $query User's search query.
-     * @return array|WP_Error Structured recommendations or error.
-     */
-    public static function get_recommendations( $query ) {
-        $settings = get_option( 'rtg_settings', array() );
+	/**
+	 * Retrieve the decrypted API key from settings.
+	 *
+	 * Handles both legacy plaintext and new encrypted values transparently.
+	 *
+	 * @return string The API key, or empty string if not configured.
+	 */
+	public static function get_api_key() {
+		$settings = get_option( 'rtg_settings', array() );
+		$raw_key  = $settings['ai_api_key'] ?? '';
+		return RTG_Security::decrypt( $raw_key );
+	}
 
-        if ( empty( $settings['ai_api_key'] ) ) {
-            return new WP_Error( 'no_api_key', 'AI recommendations are not configured.' );
-        }
+	/**
+	 * Get tire recommendations for a natural-language query.
+	 *
+	 * @param string $query User's search query.
+	 * @return array|WP_Error Structured recommendations or error.
+	 */
+	public static function get_recommendations( $query ) {
+		$api_key = self::get_api_key();
 
-        // Sanitize and validate query.
-        $query = sanitize_text_field( $query );
-        $query = mb_substr( $query, 0, self::MAX_QUERY_LENGTH );
+		if ( empty( $api_key ) ) {
+			return new WP_Error( 'no_api_key', 'AI recommendations are not configured.' );
+		}
 
-        if ( empty( trim( $query ) ) ) {
-            return new WP_Error( 'empty_query', 'Please enter a search query.' );
-        }
+		// Sanitize and validate query.
+		$query = sanitize_text_field( $query );
+		$query = mb_substr( $query, 0, self::MAX_QUERY_LENGTH );
 
-        // Check rate limit.
-        if ( self::is_rate_limited() ) {
-            return new WP_Error( 'rate_limited', 'Too many requests. Please wait a moment and try again.' );
-        }
+		if ( empty( trim( $query ) ) ) {
+			return new WP_Error( 'empty_query', 'Please enter a search query.' );
+		}
 
-        // Check cache first.
-        $cache_key = 'rtg_ai_' . md5( strtolower( trim( $query ) ) );
-        $cached    = get_transient( $cache_key );
-        if ( false !== $cached ) {
-            return $cached;
-        }
+		// Check rate limit using the shared rate limiter.
+		$settings = get_option( 'rtg_settings', array() );
+		$max      = intval( $settings['ai_rate_limit'] ?? self::DEFAULT_RATE_LIMIT );
+		if ( RTG_Rate_Limiter::is_limited( 'ai', $max, self::RATE_LIMIT_WINDOW ) ) {
+			return new WP_Error( 'rate_limited', 'Too many requests. Please wait a moment and try again.' );
+		}
 
-        // Record rate limit hit.
-        self::record_rate_limit();
+		// Check cache first.
+		$cache_key = 'rtg_ai_' . md5( strtolower( trim( $query ) ) );
+		$cached    = get_transient( $cache_key );
+		if ( false !== $cached ) {
+			return $cached;
+		}
 
-        // Build context and call API.
-        $tire_context = self::build_tire_context();
-        $model        = $settings['ai_model'] ?? self::DEFAULT_MODEL;
-        $api_key      = $settings['ai_api_key'];
+		// Record rate limit hit.
+		RTG_Rate_Limiter::record( 'ai', self::RATE_LIMIT_WINDOW );
 
-        $result = self::call_anthropic_api( $api_key, $model, $tire_context, $query );
+		// Build context and call API.
+		$tire_context = self::build_tire_context( $query );
+		$model        = $settings['ai_model'] ?? self::DEFAULT_MODEL;
 
-        if ( is_wp_error( $result ) ) {
-            return $result;
-        }
+		$result = self::call_anthropic_api( $api_key, $model, $tire_context, $query );
 
-        // Cache successful response.
-        set_transient( $cache_key, $result, self::CACHE_TTL );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
 
-        return $result;
-    }
+		// Cache successful response.
+		set_transient( $cache_key, $result, self::CACHE_TTL );
 
-    /**
-     * Build a compact text representation of all tires for Claude's context.
-     *
-     * @return string Formatted tire catalog.
-     */
-    private static function build_tire_context() {
-        $tires = RTG_Database::get_all_tires();
-        $ratings = RTG_Database::get_tire_ratings( array_column( $tires, 'tire_id' ) );
+		return $result;
+	}
 
-        $lines = array();
-        foreach ( $tires as $tire ) {
-            $tid         = $tire['tire_id'];
-            $avg_rating  = isset( $ratings[ $tid ]['average'] ) ? round( $ratings[ $tid ]['average'], 1 ) : 'N/A';
-            $review_count = $ratings[ $tid ]['count'] ?? 0;
+	/**
+	 * Build a compact text representation of tires for Claude's context.
+	 *
+	 * Optimized for token efficiency: omits fields rarely useful for
+	 * recommendations (PSI, image, links) and uses a compact format.
+	 * When the query mentions a specific diameter, pre-filters tires
+	 * to only include matching sizes.
+	 *
+	 * @param string $query User query for optional pre-filtering.
+	 * @return string Formatted tire catalog.
+	 */
+	private static function build_tire_context( $query = '' ) {
+		$tires   = RTG_Database::get_all_tires();
+		$ratings = RTG_Database::get_tire_ratings( array_column( $tires, 'tire_id' ) );
 
-            $parts = array(
-                'ID: ' . $tid,
-                'Brand: ' . $tire['brand'],
-                'Model: ' . $tire['model'],
-                'Size: ' . $tire['size'],
-                'Diameter: ' . $tire['diameter'] . '"',
-                'Category: ' . $tire['category'],
-                'Price: $' . $tire['price'],
-                'Warranty: ' . ( $tire['mileage_warranty'] ? $tire['mileage_warranty'] . 'mi' : 'N/A' ),
-                'Weight: ' . $tire['weight_lb'] . 'lb',
-                '3PMS: ' . ( $tire['three_pms'] === 'Yes' ? 'Yes' : 'No' ),
-                'Tread: ' . $tire['tread'] . '/32"',
-                'Load: ' . $tire['load_index'] . ' (' . $tire['max_load_lb'] . 'lb)',
-                'Speed: ' . $tire['speed_rating'],
-                'UTQG: ' . $tire['utqg'],
-                'Efficiency: ' . $tire['efficiency_grade'] . ' (' . $tire['efficiency_score'] . ')',
-                'Rating: ' . $avg_rating . '/5 (' . $review_count . ' reviews)',
-                'Tags: ' . ( $tire['tags'] ?: 'None' ),
-            );
+		// Pre-filter by diameter if the query mentions a specific size.
+		$diameter_filter = '';
+		if ( preg_match( '/\b(20|21|22)\s*(?:inch|in|"|\'\')\b/i', $query, $m ) ) {
+			$diameter_filter = $m[1];
+		}
 
-            $lines[] = implode( ' | ', $parts );
-        }
+		$lines = array();
+		foreach ( $tires as $tire ) {
+			// Skip tires that don't match the diameter filter.
+			if ( $diameter_filter && $tire['diameter'] !== $diameter_filter ) {
+				continue;
+			}
 
-        return implode( "\n", $lines );
-    }
+			$tid         = $tire['tire_id'];
+			$avg_rating  = isset( $ratings[ $tid ]['average'] ) ? round( $ratings[ $tid ]['average'], 1 ) : 'N/A';
+			$review_count = $ratings[ $tid ]['count'] ?? 0;
 
-    /**
-     * Call the Anthropic Messages API.
-     *
-     * @param string $api_key      Anthropic API key.
-     * @param string $model        Model ID.
-     * @param string $tire_context Formatted tire catalog.
-     * @param string $query        User query.
-     * @return array|WP_Error Parsed recommendations or error.
-     */
-    private static function call_anthropic_api( $api_key, $model, $tire_context, $query ) {
-        $system_prompt = self::build_system_prompt( $tire_context );
+			// Compact format — omit PSI, image, links, sort_order, created_at.
+			$parts = array(
+				$tid,
+				$tire['brand'],
+				$tire['model'],
+				$tire['size'],
+				$tire['category'],
+				'$' . $tire['price'],
+				$tire['mileage_warranty'] ? $tire['mileage_warranty'] . 'mi' : '-',
+				$tire['weight_lb'] . 'lb',
+				$tire['three_pms'] === 'Yes' ? '3PMS' : '',
+				$tire['tread'],
+				$tire['load_index'] . '/' . $tire['load_range'],
+				$tire['speed_rating'],
+				$tire['utqg'] ?: '-',
+				$tire['efficiency_grade'] . $tire['efficiency_score'],
+				$avg_rating . '/5(' . $review_count . ')',
+				$tire['tags'] ?: '',
+			);
 
-        $body = array(
-            'model'      => $model,
-            'max_tokens' => 1024,
-            'system'     => $system_prompt,
-            'messages'   => array(
-                array(
-                    'role'    => 'user',
-                    'content' => $query,
-                ),
-            ),
-        );
+			$lines[] = implode( '|', array_filter( $parts, function( $v ) { return $v !== ''; } ) );
+		}
 
-        $response = wp_remote_post( self::API_URL, array(
-            'timeout' => self::API_TIMEOUT,
-            'headers' => array(
-                'Content-Type'      => 'application/json',
-                'x-api-key'         => $api_key,
-                'anthropic-version' => '2023-06-01',
-            ),
-            'body'    => wp_json_encode( $body ),
-        ) );
+		return implode( "\n", $lines );
+	}
 
-        if ( is_wp_error( $response ) ) {
-            error_log( 'RTG AI API error: ' . $response->get_error_message() );
-            return new WP_Error( 'api_error', 'Unable to reach the AI service. Please try again later.' );
-        }
+	/**
+	 * Call the Anthropic Messages API.
+	 *
+	 * @param string $api_key      Anthropic API key.
+	 * @param string $model        Model ID.
+	 * @param string $tire_context Formatted tire catalog.
+	 * @param string $query        User query.
+	 * @return array|WP_Error Parsed recommendations or error.
+	 */
+	private static function call_anthropic_api( $api_key, $model, $tire_context, $query ) {
+		$system_prompt = self::build_system_prompt( $tire_context );
 
-        $status_code = wp_remote_retrieve_response_code( $response );
-        $body_raw    = wp_remote_retrieve_body( $response );
+		$body = array(
+			'model'      => $model,
+			'max_tokens' => 1024,
+			'system'     => $system_prompt,
+			'messages'   => array(
+				array(
+					'role'    => 'user',
+					'content' => $query,
+				),
+			),
+		);
 
-        if ( $status_code !== 200 ) {
-            error_log( 'RTG AI API HTTP ' . $status_code . ': ' . $body_raw );
+		$response = wp_remote_post( self::API_URL, array(
+			'timeout' => self::API_TIMEOUT,
+			'headers' => array(
+				'Content-Type'      => 'application/json',
+				'x-api-key'         => $api_key,
+				'anthropic-version' => '2024-10-22',
+			),
+			'body'    => wp_json_encode( $body ),
+		) );
 
-            if ( $status_code === 401 ) {
-                return new WP_Error( 'api_auth', 'AI service authentication failed. Please check the API key in settings.' );
-            }
-            if ( $status_code === 429 ) {
-                return new WP_Error( 'api_rate_limit', 'AI service rate limit exceeded. Please try again in a moment.' );
-            }
+		if ( is_wp_error( $response ) ) {
+			error_log( 'RTG AI API error: ' . $response->get_error_message() );
+			return new WP_Error( 'api_error', 'Unable to reach the AI service. Please try again later.' );
+		}
 
-            return new WP_Error( 'api_error', 'AI service returned an error. Please try again later.' );
-        }
+		$status_code = wp_remote_retrieve_response_code( $response );
+		$body_raw    = wp_remote_retrieve_body( $response );
 
-        $data = json_decode( $body_raw, true );
+		if ( $status_code !== 200 ) {
+			error_log( 'RTG AI API HTTP ' . $status_code . ': ' . $body_raw );
 
-        if ( ! $data || empty( $data['content'][0]['text'] ) ) {
-            error_log( 'RTG AI API: unexpected response format: ' . $body_raw );
-            return new WP_Error( 'parse_error', 'Received an unexpected response from the AI service.' );
-        }
+			if ( $status_code === 401 ) {
+				return new WP_Error( 'api_auth', 'AI service authentication failed. Please check the API key in settings.' );
+			}
+			if ( $status_code === 429 ) {
+				return new WP_Error( 'api_rate_limit', 'AI service rate limit exceeded. Please try again in a moment.' );
+			}
 
-        return self::parse_response( $data['content'][0]['text'] );
-    }
+			return new WP_Error( 'api_error', 'AI service returned an error. Please try again later.' );
+		}
 
-    /**
-     * Build the system prompt that instructs Claude how to respond.
-     *
-     * @param string $tire_context Formatted tire catalog data.
-     * @return string System prompt.
-     */
-    private static function build_system_prompt( $tire_context ) {
-        return 'You are a Rivian tire recommendation expert. You help Rivian vehicle owners find the best tires based on their needs.
+		$data = json_decode( $body_raw, true );
 
-You have access to the following tire catalog data. Each line represents one tire with its specifications:
+		if ( ! $data || empty( $data['content'][0]['text'] ) ) {
+			error_log( 'RTG AI API: unexpected response format: ' . $body_raw );
+			return new WP_Error( 'parse_error', 'Received an unexpected response from the AI service.' );
+		}
+
+		return self::parse_response( $data['content'][0]['text'] );
+	}
+
+	/**
+	 * Build the system prompt that instructs Claude how to respond.
+	 *
+	 * @param string $tire_context Formatted tire catalog data.
+	 * @return string System prompt.
+	 */
+	private static function build_system_prompt( $tire_context ) {
+		return 'You are a Rivian tire recommendation expert. You help Rivian vehicle owners find the best tires based on their needs.
+
+You have access to the following tire catalog data. Each line is a pipe-delimited tire record:
+Format: ID|Brand|Model|Size|Category|Price|Warranty|Weight|3PMS|Tread|Load/Range|Speed|UTQG|EfficiencyGradeScore|Rating/5(count)|Tags
 
 ' . $tire_context . '
 
@@ -233,7 +265,7 @@ IMPORTANT CONTEXT:
 - The "Size" field (e.g., 275/55R20) indicates the tire dimensions. The last two digits indicate the wheel diameter (20 = 20" wheels, 21 = 21" wheels, 22 = 22" wheels).
 - "3PMS" (Three-Peak Mountain Snowflake) means the tire is certified for severe snow conditions.
 - "EV Rated" in tags means the tire is specifically designed for electric vehicles.
-- "Efficiency Grade" rates how well the tire preserves range/efficiency (A is best, F is worst).
+- Efficiency grades: A is best, F is worst for range preservation.
 - Category types: All-Season, Winter, Performance, All-Terrain, Highway, Rugged Terrain, Mud-Terrain.
 
 INSTRUCTIONS:
@@ -248,131 +280,56 @@ You MUST respond with valid JSON in this exact format and nothing else (no markd
 
 If no tires match the user\'s criteria, respond with:
 {"recommendations":[],"summary":"<explanation of why no tires match>"}';
-    }
+	}
 
-    /**
-     * Parse Claude's JSON response into a structured array.
-     *
-     * @param string $text Raw text response from Claude.
-     * @return array|WP_Error Parsed recommendations.
-     */
-    private static function parse_response( $text ) {
-        // Strip any markdown code fences if present.
-        $text = trim( $text );
-        $text = preg_replace( '/^```(?:json)?\s*/i', '', $text );
-        $text = preg_replace( '/\s*```$/i', '', $text );
-        $text = trim( $text );
+	/**
+	 * Parse Claude's JSON response into a structured array.
+	 *
+	 * @param string $text Raw text response from Claude.
+	 * @return array|WP_Error Parsed recommendations.
+	 */
+	private static function parse_response( $text ) {
+		// Strip any markdown code fences if present.
+		$text = trim( $text );
+		$text = preg_replace( '/^```(?:json)?\s*/i', '', $text );
+		$text = preg_replace( '/\s*```$/i', '', $text );
+		$text = trim( $text );
 
-        $data = json_decode( $text, true );
+		$data = json_decode( $text, true );
 
-        if ( ! is_array( $data ) || ! isset( $data['recommendations'] ) ) {
-            error_log( 'RTG AI: failed to parse response: ' . $text );
-            return new WP_Error( 'parse_error', 'Unable to parse AI recommendations. Please try rephrasing your query.' );
-        }
+		if ( ! is_array( $data ) || ! isset( $data['recommendations'] ) ) {
+			error_log( 'RTG AI: failed to parse response: ' . $text );
+			return new WP_Error( 'parse_error', 'Unable to parse AI recommendations. Please try rephrasing your query.' );
+		}
 
-        // Validate tire IDs exist in the database.
-        $all_tires   = RTG_Database::get_all_tires();
-        $valid_ids   = array_column( $all_tires, 'tire_id' );
-        $valid_recs  = array();
+		// Validate tire IDs exist in the database.
+		$all_tires   = RTG_Database::get_all_tires();
+		$valid_ids   = array_column( $all_tires, 'tire_id' );
+		$valid_recs  = array();
 
-        foreach ( $data['recommendations'] as $rec ) {
-            if ( ! empty( $rec['tire_id'] ) && in_array( $rec['tire_id'], $valid_ids, true ) ) {
-                $valid_recs[] = array(
-                    'tire_id' => sanitize_text_field( $rec['tire_id'] ),
-                    'reason'  => sanitize_text_field( $rec['reason'] ?? '' ),
-                );
-            }
-        }
+		foreach ( $data['recommendations'] as $rec ) {
+			if ( ! empty( $rec['tire_id'] ) && in_array( $rec['tire_id'], $valid_ids, true ) ) {
+				$valid_recs[] = array(
+					'tire_id' => sanitize_text_field( $rec['tire_id'] ),
+					'reason'  => sanitize_text_field( $rec['reason'] ?? '' ),
+				);
+			}
+		}
 
-        return array(
-            'recommendations' => $valid_recs,
-            'summary'         => sanitize_text_field( $data['summary'] ?? '' ),
-        );
-    }
+		return array(
+			'recommendations' => $valid_recs,
+			'summary'         => sanitize_text_field( $data['summary'] ?? '' ),
+		);
+	}
 
-    /**
-     * Check whether the current visitor is rate-limited.
-     *
-     * @return bool
-     */
-    private static function is_rate_limited() {
-        $settings  = get_option( 'rtg_settings', array() );
-        $max       = intval( $settings['ai_rate_limit'] ?? self::DEFAULT_RATE_LIMIT );
-        $ip_hash   = md5( self::get_client_ip() );
-        $key       = 'rtg_ai_rl_' . $ip_hash;
-        $attempts  = get_transient( $key );
-
-        if ( false === $attempts ) {
-            return false;
-        }
-
-        return (int) $attempts >= $max;
-    }
-
-    /**
-     * Record a rate limit hit for the current visitor.
-     */
-    private static function record_rate_limit() {
-        $ip_hash  = md5( self::get_client_ip() );
-        $key      = 'rtg_ai_rl_' . $ip_hash;
-        $attempts = get_transient( $key );
-
-        if ( false === $attempts ) {
-            set_transient( $key, 1, self::RATE_LIMIT_WINDOW );
-        } else {
-            set_transient( $key, (int) $attempts + 1, self::RATE_LIMIT_WINDOW );
-        }
-    }
-
-    /**
-     * Get the client's IP address.
-     *
-     * Uses REMOTE_ADDR as the primary source since it cannot be spoofed
-     * at the HTTP level. Only falls back to proxy headers when REMOTE_ADDR
-     * is a private/reserved IP (indicating the server is behind a reverse proxy).
-     *
-     * @return string IP address.
-     */
-    private static function get_client_ip() {
-        $remote_addr = isset( $_SERVER['REMOTE_ADDR'] ) ? trim( $_SERVER['REMOTE_ADDR'] ) : '';
-
-        if ( ! empty( $remote_addr ) && filter_var( $remote_addr, FILTER_VALIDATE_IP ) ) {
-            // Only trust proxy headers when REMOTE_ADDR is a private/reserved IP,
-            // which indicates the request came through a trusted reverse proxy.
-            $is_proxied = ! filter_var(
-                $remote_addr,
-                FILTER_VALIDATE_IP,
-                FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
-            );
-
-            if ( $is_proxied ) {
-                $proxy_headers = array( 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP' );
-                foreach ( $proxy_headers as $header ) {
-                    if ( ! empty( $_SERVER[ $header ] ) ) {
-                        // X-Forwarded-For can contain multiple IPs; take the first.
-                        $ip = strtok( $_SERVER[ $header ], ',' );
-                        $ip = trim( $ip );
-                        if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
-                            return $ip;
-                        }
-                    }
-                }
-            }
-
-            return $remote_addr;
-        }
-
-        return '0.0.0.0';
-    }
-
-    /**
-     * Flush all AI response caches.
-     * Called when tire data changes (add/edit/delete).
-     */
-    public static function flush_cache() {
-        global $wpdb;
-        $wpdb->query(
-            "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_rtg_ai_%' OR option_name LIKE '_transient_timeout_rtg_ai_%'"
-        );
-    }
+	/**
+	 * Flush all AI response caches.
+	 * Called when tire data changes (add/edit/delete).
+	 */
+	public static function flush_cache() {
+		global $wpdb;
+		$wpdb->query(
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_rtg_ai_%' OR option_name LIKE '_transient_timeout_rtg_ai_%'"
+		);
+	}
 }
