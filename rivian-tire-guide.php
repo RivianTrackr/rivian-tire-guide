@@ -2,7 +2,11 @@
 /**
  * Plugin Name: Rivian Tire Guide
  * Description: Interactive tire guide for Rivian vehicles with filtering, comparison, and ratings.
+<<<<<<< HEAD
  * Version: 1.29.0
+=======
+ * Version: 1.28.2
+>>>>>>> parent of 3b8bad9 (Merge pull request #198 from RivianTrackr/claude/minify-assets-version-bump-3vi8e)
  * Author: RivianTrackr
  * Text Domain: rivian-tire-guide
  * Requires at least: 5.8
@@ -13,7 +17,11 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+<<<<<<< HEAD
 define( 'RTG_VERSION', '1.29.0' );
+=======
+define( 'RTG_VERSION', '1.28.2' );
+>>>>>>> parent of 3b8bad9 (Merge pull request #198 from RivianTrackr/claude/minify-assets-version-bump-3vi8e)
 define( 'RTG_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'RTG_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'RTG_PLUGIN_FILE', __FILE__ );

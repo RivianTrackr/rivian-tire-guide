@@ -4,6 +4,7 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+<<<<<<< HEAD
 ## [1.29.0] - 2026-03-17
 
 ### Added
@@ -37,13 +38,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **SSL certificate verification** enabled for link health checks.
 
 ## [1.28.3] - 2026-03-16
+=======
+## [1.28.2] - 2026-03-16
+>>>>>>> parent of 3b8bad9 (Merge pull request #198 from RivianTrackr/claude/minify-assets-version-bump-3vi8e)
 
 ### Fixed
-- **Dropdown counts exclude own filter** — Size, brand, and category dropdown counts now show how many tires match all *other* active filters, not including the dropdown's own selection. Previously, selecting a size showed (0) next to every other size because the count was filtered by the selected size itself.
-- **Dropdown options stay enabled** — All dropdown options remain selectable regardless of match count, so users can freely switch without clearing filters first.
+- **Tire size dropdown no longer disables options** — Previously, selecting a tire size would disable all other size options with zero matches, forcing users to clear filters before switching. All dropdown options now stay enabled so users can freely change their selection.
 
 ### Changed
-- **Plugin version** — Bumped to 1.28.3.
+- **Plugin version** — Bumped to 1.28.2.
 
 ## [1.28.1] - 2026-03-16
 

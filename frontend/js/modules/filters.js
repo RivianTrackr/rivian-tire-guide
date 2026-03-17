@@ -580,14 +580,12 @@ function updateMobileFilterBadge() {
 }
 
 function updateDropdownCounts() {
-  // Build current filter state once, then pass to each dropdown
-  // so counts can exclude the dropdown's own filter.
-  const filters = getCurrentFilters();
-  updateSelectCounts("filterSize", 1, "Size", filters);
-  updateSelectCounts("filterBrand", 3, "Brand", filters);
-  updateSelectCounts("filterCategory", 5, "Category", filters);
+  updateSelectCounts("filterSize", 1);
+  updateSelectCounts("filterBrand", 3);
+  updateSelectCounts("filterCategory", 5);
 }
 
+<<<<<<< HEAD
 function getCurrentFilters() {
   const searchInput = document.querySelector('#searchInput');
   const priceMax = getDOMElement("priceMax");
@@ -627,15 +625,15 @@ function getCurrentFilters() {
 }
 
 function updateSelectCounts(selectId, rowIndex, filterKey, filters) {
+=======
+function updateSelectCounts(selectId, rowIndex) {
+>>>>>>> parent of 3b8bad9 (Merge pull request #198 from RivianTrackr/claude/minify-assets-version-bump-3vi8e)
   const select = getDOMElement(selectId);
   if (!select) return;
 
-  // Count against rows filtered by everything EXCEPT this dropdown's filter
-  const excludedFilters = { ...filters, [filterKey]: "" };
-  const rows = getFilteredIndexes(excludedFilters);
-
+  // Count how many filtered rows match each option value
   const counts = new Map();
-  rows.forEach(row => {
+  state.filteredRows.forEach(row => {
     const val = safeString(row[rowIndex]).trim();
     if (val) counts.set(val, (counts.get(val) || 0) + 1);
   });
