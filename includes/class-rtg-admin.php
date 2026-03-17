@@ -732,9 +732,6 @@ class RTG_Admin {
         $existing_settings = get_option( 'rtg_settings', array() );
         if ( empty( $ai_api_key ) && ! empty( $existing_settings['ai_api_key'] ) ) {
             $ai_api_key = $existing_settings['ai_api_key'];
-        } elseif ( ! empty( $ai_api_key ) ) {
-            // Encrypt the API key at rest.
-            $ai_api_key = RTG_Security::encrypt( $ai_api_key );
         }
 
         $settings = array(

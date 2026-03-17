@@ -4,43 +4,7 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-<<<<<<< HEAD
-## [1.29.0] - 2026-03-17
-
-### Added
-- **API key encryption at rest** — AI API keys are now encrypted using AES-256-CBC with WordPress AUTH_KEY/AUTH_SALT before being stored in the database. Legacy plaintext keys are transparently decrypted on read.
-- **Content Security Policy headers** — X-Content-Type-Options, X-Frame-Options, and Referrer-Policy headers are now set on pages rendering plugin shortcodes.
-- **Origin validation for anonymous AJAX** — Public read-only AJAX endpoints now verify the Origin/Referer header matches the site URL to mitigate CSRF on anonymous requests.
-- **Centralized rate limiter** — Replaced three separate rate-limiting implementations (AI, reviews, guest reviews) with a shared `RTG_Rate_Limiter` class for consistent behavior across all endpoints.
-- **Peppered session hashing** — Analytics session hashes now use a server-side pepper (stored in `rtg_session_pepper` option) combined with SHA-256 for improved privacy.
-- **Out-of-stock link detection** — The weekly link health check now scans response bodies for common out-of-stock patterns (e.g. "sold out", "discontinued", "currently unavailable") and flags affected products.
-- **SSL verification for link checks** — Affiliate link health checks now verify SSL certificates (`sslverify: true`), catching expired or misconfigured certs.
-- **Review helpfulness voting** — Users can upvote or downvote reviews. Vote counts are displayed alongside reviews. New `rtg_review_votes` database table and AJAX endpoint.
-- **Price history tracking** — Tire prices are automatically recorded on insert and update. New `rtg_price_history` table tracks price changes over time with trend detection (rising/falling/stable). New AJAX endpoint returns price history for a given tire.
-- **Tire size compatibility warnings** — When a vehicle is selected, tire cards display a warning badge for non-stock tire sizes, helping users identify which tires are alternate fitments.
-- **Export comparison as image** — The compare page now has a "Save Image" button that exports the comparison as a PNG image (with print fallback).
-- **Email unsubscribe support** — All notification emails now include a List-Unsubscribe header and an unsubscribe link in the footer. Users and guests can opt out of future notifications via a one-click link.
-- **Advanced search filters** — New dropdown filters for Load Range, Speed Rating, and Efficiency Grade. All filters integrate with active filter chips, URL state, and the smart no-results system.
-- **Seasonal tire recommendation banner** — A dismissible banner on the tire guide page recommends seasonal tire choices based on the current month (winter: 3PMS, spring: all-season, summer: efficiency, fall: 3PMS prep). Dismissal is persisted per-season in localStorage.
-- **Integration test suite** — New PHPUnit tests for RTG_Security, RTG_Rate_Limiter, RTG_Link_Checker, and RTG_Mailer classes covering encryption, rate limiting, link detection, and email opt-out flows.
-
-### Changed
-- **REST API feed hardened** — The `/feed` endpoint no longer exposes affiliate links directly (replaced with boolean flags) and no longer sends `Access-Control-Allow-Origin: *`. Added `Cache-Control: public, max-age=3600`.
-- **AI context optimization** — `build_tire_context()` now accepts the user query for diameter-based pre-filtering, uses a compact pipe-delimited format, and omits low-value fields (PSI, image URLs, sort order, timestamps) to reduce token usage.
-- **AI API version** — Updated Anthropic Messages API version from `2023-06-01` to `2024-10-22`.
-- **Database schema** — Bumped to version 13 with migrations for `rtg_price_history` and `rtg_review_votes` tables.
-- **Plugin version** — Bumped to 1.29.0.
-
-### Security
-- **Encrypted API key storage** using AES-256-CBC with WordPress salts.
-- **CSP security headers** on plugin shortcode pages.
-- **Origin/Referer validation** for anonymous AJAX endpoints.
-- **SSL certificate verification** enabled for link health checks.
-
-## [1.28.3] - 2026-03-16
-=======
 ## [1.28.2] - 2026-03-16
->>>>>>> parent of 3b8bad9 (Merge pull request #198 from RivianTrackr/claude/minify-assets-version-bump-3vi8e)
 
 ### Fixed
 - **Tire size dropdown no longer disables options** — Previously, selecting a tire size would disable all other size options with zero matches, forcing users to clear filters before switching. All dropdown options now stay enabled so users can freely change their selection.

@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 13;
+    const DB_VERSION = 11;
 
     public static function activate() {
         self::create_tables();
@@ -42,8 +42,6 @@ class RTG_Activator {
         $favorites_table     = $wpdb->prefix . 'rtg_favorites';
         $click_events_table  = $wpdb->prefix . 'rtg_click_events';
         $search_events_table = $wpdb->prefix . 'rtg_search_events';
-        $price_history_table = $wpdb->prefix . 'rtg_price_history';
-        $review_votes_table  = $wpdb->prefix . 'rtg_review_votes';
 
         $sql = "CREATE TABLE {$wheels_table} (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -155,28 +153,6 @@ class RTG_Activator {
             KEY idx_created_at (created_at),
             KEY idx_search_query (search_query(50)),
             KEY idx_search_type (search_type)
-        ) $charset_collate;
-
-        CREATE TABLE {$price_history_table} (
-            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            tire_id VARCHAR(50) NOT NULL,
-            price DECIMAL(8,2) NOT NULL DEFAULT 0,
-            recorded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY  (id),
-            KEY idx_tire_id (tire_id),
-            KEY idx_recorded_at (recorded_at)
-        ) $charset_collate;
-
-        CREATE TABLE {$review_votes_table} (
-            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            review_id BIGINT(20) UNSIGNED NOT NULL,
-            user_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
-            ip_hash VARCHAR(64) NOT NULL DEFAULT '',
-            vote TINYINT NOT NULL DEFAULT 0,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY  (id),
-            UNIQUE KEY user_review (user_id, review_id, ip_hash),
-            KEY idx_review_id (review_id)
         ) $charset_collate;";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -202,8 +178,6 @@ class RTG_Activator {
             9 => 'migrate_9_create_search_events_table',
             10 => 'migrate_10_add_search_type_column',
             11 => 'migrate_11_add_guest_review_columns',
-            12 => 'migrate_12_create_price_history_table',
-            13 => 'migrate_13_create_review_votes_table',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -322,21 +296,5 @@ class RTG_Activator {
             $wpdb->query( "ALTER TABLE {$table} DROP INDEX user_tire" );
             $wpdb->query( "ALTER TABLE {$table} ADD UNIQUE KEY user_tire (user_id, tire_id, guest_email)" );
         }
-    }
-
-    /**
-     * Migration 12: Create price history table for tracking tire price changes over time.
-     * Table creation handled by dbDelta above; this marks the migration.
-     */
-    private static function migrate_12_create_price_history_table() {
-        // Table created by dbDelta above.
-    }
-
-    /**
-     * Migration 13: Create review votes table for helpfulness voting.
-     * Table creation handled by dbDelta above; this marks the migration.
-     */
-    private static function migrate_13_create_review_votes_table() {
-        // Table created by dbDelta above.
     }
 }

@@ -183,14 +183,10 @@ function initializeUI() {
       : dataSizes;
     state.VALID_BRANDS = [...new Set(state.allRows.map(r => String(r[3] || '').trim()))].filter(Boolean);
     state.VALID_CATEGORIES = [...new Set(state.allRows.map(r => String(r[5] || '').trim()))].filter(Boolean);
-    state.VALID_LOAD_RANGES = [...new Set(state.allRows.map(r => String(r[13] || '').trim().toUpperCase()))].filter(Boolean);
-    state.VALID_SPEED_RATINGS = [...new Set(state.allRows.map(r => String(r[14] || '').trim().toUpperCase()))].filter(Boolean);
 
     populateSizeDropdownGrouped("filterSize", state.VALID_SIZES);
     populateDropdown("filterBrand", state.allRows.map(r => r[3]));
     populateDropdown("filterCategory", state.allRows.map(r => r[5]));
-    populateDropdown("filterLoadRange", state.allRows.map(r => String(r[13] || '').trim().toUpperCase()));
-    populateDropdown("filterSpeedRating", state.allRows.map(r => String(r[14] || '').trim().toUpperCase()));
   }
 
   // Initialize vehicle state from localized data (works for both modes before server-side overrides).
@@ -219,9 +215,6 @@ function initializeUI() {
     { id: "filterSize", listener: filterFn },
     { id: "filterBrand", listener: filterFn },
     { id: "filterCategory", listener: filterFn },
-    { id: "filterLoadRange", listener: filterFn },
-    { id: "filterSpeedRating", listener: filterFn },
-    { id: "filterEffGrade", listener: filterFn },
     { id: "filter3pms", listener: filterFn },
     { id: "filterEVRated", listener: filterFn },
     { id: "filterStudded", listener: filterFn },
@@ -267,65 +260,6 @@ function initializeUI() {
 
   // Load favorites after UI is ready (non-blocking)
   loadFavorites();
-
-  // Seasonal tire recommendation banner
-  initSeasonalBanner();
-}
-
-function initSeasonalBanner() {
-  const banner = getDOMElement("rtgSeasonalBanner");
-  const textEl = getDOMElement("rtgSeasonalText");
-  const actionBtn = getDOMElement("rtgSeasonalAction");
-  const dismissBtn = getDOMElement("rtgSeasonalDismiss");
-  if (!banner || !textEl || !actionBtn || !dismissBtn) return;
-
-  // Check if user dismissed this season's banner
-  const month = new Date().getMonth(); // 0-11
-  const seasonKey = month >= 9 || month <= 1 ? 'winter' : (month >= 2 && month <= 4 ? 'spring' : (month >= 5 && month <= 7 ? 'summer' : 'fall'));
-  const dismissedKey = 'rtg_seasonal_dismissed_' + seasonKey;
-  if (localStorage.getItem(dismissedKey)) return;
-
-  let message = '';
-  let actionText = '';
-  let filterAction = null;
-  const iconEl = banner.querySelector('.rtg-seasonal-banner-icon i');
-
-  if (seasonKey === 'winter') {
-    message = 'Winter is here! Consider 3PMS-rated tires for safe cold-weather driving.';
-    actionText = 'Show 3PMS Tires';
-    filterAction = () => { const el = getDOMElement("filter3pms"); if (el) { el.checked = true; state.lastFilterState = null; filterAndRender(); } };
-    if (iconEl) iconEl.className = 'fa-solid fa-snowflake';
-  } else if (seasonKey === 'spring') {
-    message = 'Spring is the perfect time to check tire wear and switch to all-season tires.';
-    actionText = 'Show All-Season';
-    filterAction = () => { const el = getDOMElement("filterCategory"); if (el) { el.value = 'All-Season'; state.lastFilterState = null; filterAndRender(); } };
-    if (iconEl) iconEl.className = 'fa-solid fa-cloud-sun';
-  } else if (seasonKey === 'summer') {
-    message = 'Hot pavement ahead! Check your tire pressure and consider high-performance options.';
-    actionText = 'Sort by Efficiency';
-    filterAction = () => { const el = getDOMElement("sortBy"); if (el) { el.value = 'efficiencyGrade'; state.lastFilterState = null; filterAndRender(); } };
-    if (iconEl) iconEl.className = 'fa-solid fa-sun';
-  } else {
-    message = 'Fall weather is changing — it\'s a great time to prepare for winter with 3PMS-rated tires.';
-    actionText = 'Show 3PMS Tires';
-    filterAction = () => { const el = getDOMElement("filter3pms"); if (el) { el.checked = true; state.lastFilterState = null; filterAndRender(); } };
-    if (iconEl) iconEl.className = 'fa-solid fa-leaf';
-  }
-
-  textEl.textContent = message;
-  actionBtn.textContent = actionText;
-  banner.style.display = 'flex';
-
-  actionBtn.addEventListener('click', () => {
-    if (filterAction) filterAction();
-    banner.style.display = 'none';
-    localStorage.setItem(dismissedKey, '1');
-  });
-
-  dismissBtn.addEventListener('click', () => {
-    banner.style.display = 'none';
-    localStorage.setItem(dismissedKey, '1');
-  });
 }
 
 // --- Popstate handler for browser back/forward ---

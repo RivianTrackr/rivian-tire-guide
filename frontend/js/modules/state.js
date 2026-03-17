@@ -31,8 +31,6 @@ export const state = {
   VALID_SIZES: [],
   VALID_BRANDS: [],
   VALID_CATEGORIES: [],
-  VALID_LOAD_RANGES: [],
-  VALID_SPEED_RATINGS: [],
   VALID_VEHICLES: [],
   vehicleSizeMap: {},
 
@@ -71,9 +69,6 @@ export const filterIndexes = {
   sizeIndex: new Map(),
   brandIndex: new Map(),
   categoryIndex: new Map(),
-  loadRangeIndex: new Map(),
-  speedRatingIndex: new Map(),
-  effGradeIndex: new Map(),
   priceIndex: [],
   warrantyIndex: [],
   weightIndex: [],

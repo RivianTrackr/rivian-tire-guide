@@ -210,21 +210,6 @@ export function createSingleCard(row) {
   card.className = "tire-card";
   card.dataset.tireId = tireId;
 
-  // Tire size compatibility badge when a vehicle is selected
-  const activeVehicleBtn = document.querySelector('.rtg-vehicle-btn.active');
-  const selectedVehicle = activeVehicleBtn ? (activeVehicleBtn.dataset.vehicle || '') : '';
-  if (selectedVehicle && state.vehicleSizeMap[selectedVehicle]) {
-    const vehicleSizes = new Set(state.vehicleSizeMap[selectedVehicle].map(s => s.toLowerCase()));
-    const tireSize = safeString(size).toLowerCase();
-    const isCompatible = vehicleSizes.has(tireSize);
-    if (!isCompatible && tireSize) {
-      const compatBadge = document.createElement('div');
-      compatBadge.className = 'tire-card-compat-badge tire-card-compat-alt';
-      compatBadge.innerHTML = rtgIcon('triangle-exclamation', 12) + ' Non-stock size for ' + escapeHTML(selectedVehicle);
-      card.appendChild(compatBadge);
-    }
-  }
-
   if (safeString(tags).toLowerCase().includes("reviewed")) {
     const badge = document.createElement('div');
     badge.className = 'tire-card-badge';
