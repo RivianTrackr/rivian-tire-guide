@@ -304,89 +304,10 @@ function initShareButton() {
   });
 }
 
-// --- Export as Image ---
-function initExportButton() {
-  var btn = document.getElementById("exportImageBtn");
-  if (!btn) return;
-  btn.addEventListener("click", function() {
-    var content = document.getElementById("comparisonContent");
-    if (!content || !content.children.length) return;
-
-    var iconEl = btn.querySelector("i");
-    var spanEl = btn.querySelector("span");
-    var origIcon = iconEl ? iconEl.className : "";
-    if (spanEl) spanEl.textContent = "Saving...";
-
-    // Use the browser print-to-canvas approach via a temporary iframe
-    // to capture a clean screenshot of the comparison content.
-    try {
-      // Create a canvas that captures the comparison content
-      var rect = content.getBoundingClientRect();
-      var canvas = document.createElement("canvas");
-      var scale = 2; // Retina quality
-      canvas.width = rect.width * scale;
-      canvas.height = rect.height * scale;
-      var ctx = canvas.getContext("2d");
-      ctx.scale(scale, scale);
-
-      // Draw background
-      var bgColor = getComputedStyle(document.body).backgroundColor || "#111827";
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, rect.width, rect.height);
-
-      // Use SVG foreignObject to render HTML to canvas
-      var data = '<svg xmlns="http://www.w3.org/2000/svg" width="' + rect.width + '" height="' + rect.height + '">' +
-        '<foreignObject width="100%" height="100%">' +
-        '<div xmlns="http://www.w3.org/1999/xhtml">' +
-        content.outerHTML +
-        '</div></foreignObject></svg>';
-
-      var img = new Image();
-      var svgBlob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
-      var url = URL.createObjectURL(svgBlob);
-
-      img.onload = function() {
-        ctx.drawImage(img, 0, 0);
-        URL.revokeObjectURL(url);
-
-        canvas.toBlob(function(blob) {
-          if (!blob) {
-            fallbackPrintExport();
-            return;
-          }
-          var a = document.createElement("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = "tire-comparison.png";
-          a.click();
-          URL.revokeObjectURL(a.href);
-          if (spanEl) spanEl.textContent = "Saved!";
-          setTimeout(function() { if (spanEl) spanEl.textContent = "Save Image"; }, 2000);
-        }, "image/png");
-      };
-
-      img.onerror = function() {
-        URL.revokeObjectURL(url);
-        fallbackPrintExport();
-      };
-
-      img.src = url;
-    } catch (e) {
-      fallbackPrintExport();
-    }
-
-    function fallbackPrintExport() {
-      // Fallback: trigger print dialog which allows saving as PDF
-      if (spanEl) spanEl.textContent = "Save Image";
-      window.print();
-    }
-  });
-}
-
 // --- Init ---
-document.addEventListener("DOMContentLoaded", function() {
-  var indexes = getCompareIndexes();
+document.addEventListener("DOMContentLoaded", () => {
+  const indexes = getCompareIndexes();
   initShareButton();
-  initExportButton();
   if (!indexes.length) return;
 
   if (typeof rtgData !== 'undefined' && rtgData.tires && Array.isArray(rtgData.tires)) {

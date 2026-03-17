@@ -1,10 +1,6 @@
 {
   "name": "rivian-tire-guide",
-<<<<<<< HEAD
-  "version": "1.29.0",
-=======
   "version": "1.28.2",
->>>>>>> parent of 3b8bad9 (Merge pull request #198 from RivianTrackr/claude/minify-assets-version-bump-3vi8e)
   "private": true,
   "description": "Interactive tire guide for Rivian vehicles — WordPress plugin",
   "scripts": {

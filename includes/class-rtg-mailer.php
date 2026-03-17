@@ -27,10 +27,6 @@ class RTG_Mailer {
             return false;
         }
 
-        if ( self::is_opted_out( $to_email ) ) {
-            return false;
-        }
-
         $tire_name = trim( ( $tire['brand'] ?? '' ) . ' ' . ( $tire['model'] ?? '' ) );
         if ( empty( $tire_name ) ) {
             $tire_name = $review['tire_id'] ?? 'a tire';
@@ -67,13 +63,6 @@ class RTG_Mailer {
         if ( $site_name ) {
             $from_email = get_option( 'admin_email' );
             $headers[]  = 'From: ' . $site_name . ' <' . $from_email . '>';
-        }
-
-        // Add List-Unsubscribe header for email clients.
-        $unsubscribe_url = self::get_unsubscribe_url( $to_email );
-        if ( $unsubscribe_url ) {
-            $headers[] = 'List-Unsubscribe: <' . $unsubscribe_url . '>';
-            $headers[] = 'List-Unsubscribe-Post: List-Unsubscribe=One-Click';
         }
 
         return wp_mail( $to_email, $subject, $body, $headers );
@@ -329,79 +318,6 @@ class RTG_Mailer {
      * @param string $review_url     URL to the tire guide page (escaped).
      * @return string Full HTML email body.
      */
-    /**
-     * Check if a user has opted out of notifications.
-     *
-     * @param string $email Email address to check.
-     * @return bool True if the user has opted out.
-     */
-    public static function is_opted_out( $email ) {
-        if ( empty( $email ) ) {
-            return false;
-        }
-
-        // Check user meta for registered users.
-        $user = get_user_by( 'email', $email );
-        if ( $user ) {
-            return (bool) get_user_meta( $user->ID, 'rtg_email_optout', true );
-        }
-
-        // Check transient-based opt-out for guests.
-        $hash = hash( 'sha256', strtolower( trim( $email ) ) );
-        return (bool) get_option( 'rtg_optout_' . $hash, false );
-    }
-
-    /**
-     * Generate an unsubscribe URL for a given email.
-     *
-     * @param string $email Email address.
-     * @return string Unsubscribe URL.
-     */
-    public static function get_unsubscribe_url( $email = '' ) {
-        $token = wp_create_nonce( 'rtg_unsubscribe_' . $email );
-        return add_query_arg(
-            array(
-                'rtg_unsubscribe' => 1,
-                'email'           => rawurlencode( $email ),
-                'token'           => $token,
-            ),
-            home_url( '/' )
-        );
-    }
-
-    /**
-     * Handle unsubscribe requests from email links.
-     * Called on 'init' action.
-     */
-    public static function handle_unsubscribe() {
-        if ( empty( $_GET['rtg_unsubscribe'] ) ) {
-            return;
-        }
-
-        $email = isset( $_GET['email'] ) ? sanitize_email( wp_unslash( $_GET['email'] ) ) : '';
-        $token = isset( $_GET['token'] ) ? sanitize_text_field( wp_unslash( $_GET['token'] ) ) : '';
-
-        if ( ! wp_verify_nonce( $token, 'rtg_unsubscribe_' . $email ) ) {
-            wp_die( 'Invalid or expired unsubscribe link.', 'Unsubscribe', array( 'response' => 403 ) );
-        }
-
-        if ( ! empty( $email ) ) {
-            $user = get_user_by( 'email', $email );
-            if ( $user ) {
-                update_user_meta( $user->ID, 'rtg_email_optout', 1 );
-            } else {
-                $hash = hash( 'sha256', strtolower( trim( $email ) ) );
-                update_option( 'rtg_optout_' . $hash, 1, false );
-            }
-        }
-
-        wp_die(
-            'You have been unsubscribed from Rivian Tire Guide email notifications.',
-            'Unsubscribed',
-            array( 'response' => 200 )
-        );
-    }
-
     private static function build_html_email( $name, $tire_name, $stars_html, $review_snippet, $review_url ) {
         $site_name = esc_html( get_bloginfo( 'name' ) );
 
@@ -449,8 +365,7 @@ class RTG_Mailer {
   <tr>
     <td style="padding: 20px 32px; border-top: 1px solid #e5e5e5; text-align: center;">
       <p style="margin: 0; color: #86868b; font-size: 12px;">
-        This email was sent because you submitted a tire review on ' . $site_name . '.<br>
-        <a href="' . esc_url( self::get_unsubscribe_url( '' ) ) . '" style="color: #86868b; text-decoration: underline;">Unsubscribe from these notifications</a>
+        This email was sent because you submitted a tire review on ' . $site_name . '.
       </p>
     </td>
   </tr>

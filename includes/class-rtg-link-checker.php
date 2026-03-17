@@ -209,7 +209,7 @@ class RTG_Link_Checker {
         $response = wp_remote_get( $url, array(
             'timeout'             => self::REQUEST_TIMEOUT,
             'redirection'         => 10,
-            'sslverify'           => true,
+            'sslverify'           => false,
             'limit_response_size' => 4096,
         ) );
 
@@ -241,16 +241,6 @@ class RTG_Link_Checker {
             return array(
                 'status'    => 'redirect_homepage',
                 'reason'    => 'Redirects to homepage: ' . $redirect_url,
-                'http_code' => $http_code,
-            );
-        }
-
-        // Check for out-of-stock indicators in the response body.
-        $body = wp_remote_retrieve_body( $response );
-        if ( self::is_out_of_stock( $body ) ) {
-            return array(
-                'status'    => 'out_of_stock',
-                'reason'    => 'Product appears to be out of stock.',
                 'http_code' => $http_code,
             );
         }
@@ -328,40 +318,6 @@ class RTG_Link_Checker {
         // Flag short paths (1-3 chars) when the original was longer.
         if ( strlen( $effective_path ) <= 3 && strlen( $original_path ) > 3 ) {
             return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Check if the response body contains out-of-stock indicators.
-     *
-     * @param string $body Response HTML body (limited to 4096 bytes).
-     * @return bool True if out-of-stock patterns are found.
-     */
-    private static function is_out_of_stock( $body ) {
-        if ( empty( $body ) ) {
-            return false;
-        }
-
-        $body_lower = strtolower( $body );
-        $patterns   = array(
-            'out of stock',
-            'out-of-stock',
-            'sold out',
-            'sold-out',
-            'currently unavailable',
-            'no longer available',
-            'discontinued',
-            'back-order',
-            'backorder',
-            'notify me when available',
-        );
-
-        foreach ( $patterns as $pattern ) {
-            if ( strpos( $body_lower, $pattern ) !== false ) {
-                return true;
-            }
         }
 
         return false;
