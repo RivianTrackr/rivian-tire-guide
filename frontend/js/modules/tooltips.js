@@ -39,6 +39,10 @@ export const TOOLTIP_DATA = {
   'Efficiency Score': {
     title: 'Efficiency Score',
     content: 'This Efficiency Score is a calculated score RivianTrackr created to help assist Rivian owners in identifying which tires are likely to be the most range-friendly. It uses a custom formula that factors in weight, tread depth, tire width, load range, speed rating, UTQG, tire category, and winter certification (3PMS). Lighter tires with shallower tread and less aggressive construction typically score higher. <br><br> The score is an estimate only and does not reflect real-world testing. It should not be viewed as a measure of tire quality, safety, or brand reputation.'
+  },
+  'Real-World Efficiency': {
+    title: 'Real-World Efficiency (km/kWh)',
+    content: 'This is real-world energy efficiency data collected from Rivian owners via <strong>Rivian Roamer</strong>. It measures how many kilometers the vehicle travels per kilowatt-hour of battery energy while using these tires. <br><br> Higher values mean better range efficiency. The data is based on actual driving sessions and updates regularly. Session count and vehicle count indicate the sample size backing this number.'
   }
 };
 

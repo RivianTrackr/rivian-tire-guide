@@ -364,6 +364,60 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                 </div>
             </div>
 
+            <!-- Roamer Real-World Data -->
+            <div class="rtg-card">
+                <div class="rtg-card-header">
+                    <h2>Rivian Roamer — Real-World Data</h2>
+                </div>
+                <div class="rtg-card-body">
+                    <div class="rtg-field-row">
+                        <div class="rtg-field-label-row">
+                            <label class="rtg-field-label" for="roamer_tire_id">Roamer Tire ID</label>
+                        </div>
+                        <p class="rtg-field-description">Slug from Rivian Roamer (e.g. michelin-defender-ltx-275-65r20). Set manually or auto-assigned during sync.</p>
+                        <input type="text" id="roamer_tire_id" name="roamer_tire_id" value="<?php echo esc_attr( $v['roamer_tire_id'] ?? '' ); ?>" class="rtg-input-wide" placeholder="e.g. michelin-defender-ltx-275-65r20">
+                    </div>
+                    <?php
+                    $r_eff     = floatval( $v['roamer_efficiency'] ?? 0 );
+                    $r_sess    = intval( $v['roamer_session_count'] ?? 0 );
+                    $r_veh     = intval( $v['roamer_vehicle_count'] ?? 0 );
+                    $r_km      = floatval( $v['roamer_total_km'] ?? 0 );
+                    $r_synced  = $v['roamer_synced_at'] ?? '';
+                    ?>
+                    <?php if ( $r_eff > 0 ) : ?>
+                        <div class="rtg-field-row">
+                            <div class="rtg-field-label-row">
+                                <label class="rtg-field-label">Real-World Efficiency</label>
+                                <span class="rtg-badge rtg-badge-info">From Roamer</span>
+                            </div>
+                            <div style="display:flex;gap:24px;flex-wrap:wrap;margin-top:8px;">
+                                <div>
+                                    <span style="font-size:24px;font-weight:700;color:#1d1d1f;"><?php echo esc_html( number_format( $r_eff, 2 ) ); ?></span>
+                                    <span style="font-size:14px;color:#86868b;">km/kWh</span>
+                                </div>
+                                <div>
+                                    <span style="font-size:18px;font-weight:600;color:#1d1d1f;"><?php echo number_format( $r_sess ); ?></span>
+                                    <span style="font-size:14px;color:#86868b;">sessions</span>
+                                </div>
+                                <div>
+                                    <span style="font-size:18px;font-weight:600;color:#1d1d1f;"><?php echo intval( $r_veh ); ?></span>
+                                    <span style="font-size:14px;color:#86868b;">vehicles</span>
+                                </div>
+                                <div>
+                                    <span style="font-size:18px;font-weight:600;color:#1d1d1f;"><?php echo esc_html( number_format( $r_km, 1 ) ); ?></span>
+                                    <span style="font-size:14px;color:#86868b;">km tracked</span>
+                                </div>
+                            </div>
+                            <?php if ( $r_synced ) : ?>
+                                <p style="margin-top:8px;font-size:12px;color:#86868b;">Last synced: <?php echo esc_html( $r_synced ); ?></p>
+                            <?php endif; ?>
+                        </div>
+                    <?php else : ?>
+                        <p style="color:#86868b;margin-top:8px;">No Roamer data linked. Set a Roamer Tire ID above or run a sync from the <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-roamer-sync' ) ); ?>">Roamer Sync</a> page.</p>
+                    <?php endif; ?>
+                </div>
+            </div>
+
         </div>
 
         <div class="rtg-footer-actions">

@@ -72,6 +72,11 @@ class RTG_Ajax {
         // AI tire recommendations — public.
         add_action( 'wp_ajax_rtg_ai_recommend', array( $this, 'ai_recommend' ) );
         add_action( 'wp_ajax_nopriv_rtg_ai_recommend', array( $this, 'ai_recommend' ) );
+
+        // Roamer sync — admin only.
+        add_action( 'wp_ajax_rtg_roamer_sync_now', array( $this, 'roamer_sync_now' ) );
+        add_action( 'wp_ajax_rtg_roamer_assign', array( $this, 'roamer_assign' ) );
+        add_action( 'wp_ajax_rtg_roamer_unlink', array( $this, 'roamer_unlink' ) );
     }
 
     /**
@@ -514,7 +519,7 @@ class RTG_Ajax {
         $allowed_sorts = array(
             'efficiency_score', 'price-asc', 'price-desc',
             'warranty-desc', 'weight-asc',
-            'newest',
+            'newest', 'roamer-efficiency',
         );
         $sort = sanitize_text_field( $_POST['sort'] ?? 'efficiency_score' );
         if ( ! in_array( $sort, $allowed_sorts, true ) ) {
@@ -943,5 +948,84 @@ class RTG_Ajax {
         $data   = RTG_Database::get_analytics_data( $period );
 
         wp_send_json_success( $data );
+    }
+
+    /**
+     * Trigger a Roamer sync immediately.
+     */
+    public function roamer_sync_now() {
+        check_ajax_referer( 'rtg_admin_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized.' );
+        }
+
+        $result = RTG_Roamer_Sync::run();
+        wp_send_json_success( $result );
+    }
+
+    /**
+     * Manually assign a Roamer tire ID to a local tire.
+     */
+    public function roamer_assign() {
+        check_ajax_referer( 'rtg_admin_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized.' );
+        }
+
+        $tire_id        = sanitize_text_field( $_POST['tire_id'] ?? '' );
+        $roamer_tire_id = sanitize_text_field( $_POST['roamer_tire_id'] ?? '' );
+
+        if ( empty( $tire_id ) || empty( $roamer_tire_id ) ) {
+            wp_send_json_error( 'Missing tire_id or roamer_tire_id.' );
+        }
+
+        // Validate tire_id format.
+        if ( ! preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) ) {
+            wp_send_json_error( 'Invalid tire_id format.' );
+        }
+
+        $result = RTG_Database::update_tire( $tire_id, array(
+            'roamer_tire_id' => $roamer_tire_id,
+        ) );
+
+        if ( false === $result ) {
+            wp_send_json_error( 'Failed to update tire.' );
+        }
+
+        wp_send_json_success( array( 'updated' => $result ) );
+    }
+
+    /**
+     * Unlink a Roamer tire ID from a local tire.
+     */
+    public function roamer_unlink() {
+        check_ajax_referer( 'rtg_admin_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized.' );
+        }
+
+        $tire_id = sanitize_text_field( $_POST['tire_id'] ?? '' );
+
+        if ( empty( $tire_id ) ) {
+            wp_send_json_error( 'Missing tire_id.' );
+        }
+
+        $result = RTG_Database::update_tire( $tire_id, array(
+            'roamer_tire_id'       => '',
+            'roamer_efficiency'    => 0,
+            'roamer_session_count' => 0,
+            'roamer_total_km'      => 0,
+            'roamer_vehicle_count' => 0,
+            'roamer_synced_at'     => null,
+        ) );
+
+        if ( false === $result ) {
+            wp_send_json_error( 'Failed to unlink tire.' );
+        }
+
+        wp_send_json_success( array( 'unlinked' => $tire_id ) );
     }
 }

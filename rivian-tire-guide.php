@@ -68,6 +68,10 @@ function rtg_init() {
     RTG_Link_Checker::schedule();
     add_action( RTG_Link_Checker::CRON_HOOK, array( 'RTG_Link_Checker', 'run' ) );
 
+    // Schedule twicedaily Rivian Roamer efficiency data sync.
+    RTG_Roamer_Sync::schedule();
+    add_action( RTG_Roamer_Sync::CRON_HOOK, array( 'RTG_Roamer_Sync', 'run' ) );
+
     // Admin panel.
     if ( is_admin() ) {
         new RTG_Admin();

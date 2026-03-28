@@ -188,7 +188,8 @@ export function createSingleCard(row) {
   const [
     tireId, size, diameter, brand, model, category, price, warranty, weight, tpms,
     tread, loadIndex, maxLoad, loadRange, speed, psi, utqg, tags, link, image,
-    efficiencyScore, efficiencyGrade, reviewLink
+    efficiencyScore, efficiencyGrade, reviewLink, /* createdAt */ ,
+    roamerEfficiency, roamerSessionCount, roamerVehicleCount
   ] = row;
 
   if (!VALIDATION_PATTERNS.tireId.test(tireId)) {
@@ -396,6 +397,65 @@ export function createSingleCard(row) {
       gradeTag.appendChild(scoreSection);
       tagsContainer.appendChild(gradeTag);
     }
+  }
+
+  // Roamer real-world efficiency badge.
+  const roamerVal = parseFloat(roamerEfficiency);
+  if (roamerVal > 0) {
+    const roamerTag = document.createElement('span');
+    roamerTag.className = 'tire-card-eff tire-card-roamer-eff';
+
+    const roamerLabel = document.createElement('span');
+    roamerLabel.className = 'tire-card-eff-grade';
+    roamerLabel.style.backgroundColor = '#3b82f6';
+    roamerLabel.textContent = roamerVal.toFixed(2);
+
+    const roamerInfo = document.createElement('span');
+    roamerInfo.className = 'tire-card-eff-score';
+
+    const sessCount = parseInt(roamerSessionCount) || 0;
+    const vehCount = parseInt(roamerVehicleCount) || 0;
+    const roamerText = document.createElement('span');
+    roamerText.textContent = `Real-World km/kWh (${sessCount.toLocaleString()} sessions, ${vehCount} vehicle${vehCount !== 1 ? 's' : ''})`;
+
+    const roamerInfoBtn = document.createElement('button');
+    roamerInfoBtn.innerHTML = '' + rtgIcon('circle-info', 14) + '';
+    roamerInfoBtn.className = 'info-tooltip-trigger';
+    roamerInfoBtn.dataset.tooltipKey = 'Real-World Efficiency';
+    roamerInfoBtn.setAttribute('aria-label', 'More info about Real-World Efficiency');
+    roamerInfoBtn.setAttribute('type', 'button');
+    roamerInfoBtn.style.cssText = `
+      background: none;
+      border: none;
+      color: var(--rtg-text-muted);
+      font-size: 14px;
+      cursor: pointer;
+      padding: 2px;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    `;
+
+    roamerInfoBtn.addEventListener('mouseenter', () => {
+      roamerInfoBtn.style.color = rtgColor('accent');
+      roamerInfoBtn.style.backgroundColor = `color-mix(in srgb, ${rtgColor('accent')} 10%, transparent)`;
+    });
+
+    roamerInfoBtn.addEventListener('mouseleave', () => {
+      roamerInfoBtn.style.color = rtgColor('text-muted');
+      roamerInfoBtn.style.backgroundColor = 'transparent';
+    });
+
+    roamerInfo.appendChild(roamerText);
+    roamerInfo.appendChild(roamerInfoBtn);
+
+    roamerTag.appendChild(roamerLabel);
+    roamerTag.appendChild(roamerInfo);
+    tagsContainer.appendChild(roamerTag);
   }
 
   if (tags && safeString(tags).trim()) {

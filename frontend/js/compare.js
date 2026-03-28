@@ -63,7 +63,8 @@ const COL = {
   price: 6, warranty: 7, weight: 8, threePms: 9, tread: 10,
   loadIndex: 11, maxLoad: 12, loadRange: 13, speedRating: 14,
   psi: 15, utqg: 16, tags: 17, link: 18, image: 19,
-  effScore: 20, effGrade: 21, reviewLink: 22
+  effScore: 20, effGrade: 21, reviewLink: 22, createdAt: 23,
+  roamerEfficiency: 24, roamerSessionCount: 25, roamerVehicleCount: 26
 };
 
 // --- Efficiency badge colors ---
@@ -87,6 +88,9 @@ function findBestValues(tires) {
 
   const scores = tires.map(t => parseInt(t[COL.effScore])).filter(n => !isNaN(n) && n > 0);
   if (scores.length > 1) best.effScore = Math.max(...scores);
+
+  const roamerVals = tires.map(t => parseFloat(t[COL.roamerEfficiency])).filter(n => !isNaN(n) && n > 0);
+  if (roamerVals.length > 1) best.roamerEfficiency = Math.max(...roamerVals);
 
   return best;
 }
@@ -236,6 +240,13 @@ function renderComparison(rows, indexes) {
 
   html += specSection('gauge-high', 'Performance', [
     ['Efficiency', t => effBadge(t[COL.effScore], t[COL.effGrade]), 'effScore'],
+    ['Real-World Efficiency', t => {
+      const v = parseFloat(t[COL.roamerEfficiency]);
+      if (!v || v === 0) return '-';
+      const sess = parseInt(t[COL.roamerSessionCount]) || 0;
+      return '<span style="font-weight:700;color:#3b82f6;">' + v.toFixed(2) + ' km/kWh</span>' +
+        '<br><span style="font-size:11px;color:#94a3b8;">' + sess.toLocaleString() + ' sessions</span>';
+    }, 'roamerEfficiency'],
     ['Speed Rating', t => t[COL.speedRating] || "-"],
     ['UTQG', t => t[COL.utqg] || "None"],
     ['3PMS Rated', t => {

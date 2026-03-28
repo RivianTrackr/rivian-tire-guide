@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 11;
+    const DB_VERSION = 12;
 
     public static function activate() {
         self::create_tables();
@@ -83,6 +83,12 @@ class RTG_Activator {
             efficiency_grade CHAR(1) NOT NULL DEFAULT '',
             bundle_link TEXT NOT NULL,
             review_link TEXT NOT NULL,
+            roamer_tire_id VARCHAR(100) NOT NULL DEFAULT '',
+            roamer_efficiency DECIMAL(4,2) NOT NULL DEFAULT 0,
+            roamer_session_count INT UNSIGNED NOT NULL DEFAULT 0,
+            roamer_total_km DECIMAL(10,1) NOT NULL DEFAULT 0,
+            roamer_vehicle_count INT UNSIGNED NOT NULL DEFAULT 0,
+            roamer_synced_at DATETIME NULL DEFAULT NULL,
             sort_order INT UNSIGNED NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -94,7 +100,8 @@ class RTG_Activator {
             KEY idx_price (price),
             KEY idx_warranty (mileage_warranty),
             KEY idx_weight (weight_lb),
-            KEY idx_efficiency (efficiency_score)
+            KEY idx_efficiency (efficiency_score),
+            KEY idx_roamer_tire_id (roamer_tire_id)
         ) $charset_collate;
 
         CREATE TABLE {$ratings_table} (
@@ -178,6 +185,7 @@ class RTG_Activator {
             9 => 'migrate_9_create_search_events_table',
             10 => 'migrate_10_add_search_type_column',
             11 => 'migrate_11_add_guest_review_columns',
+            12 => 'migrate_12_add_roamer_columns',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -296,5 +304,13 @@ class RTG_Activator {
             $wpdb->query( "ALTER TABLE {$table} DROP INDEX user_tire" );
             $wpdb->query( "ALTER TABLE {$table} ADD UNIQUE KEY user_tire (user_id, tire_id, guest_email)" );
         }
+    }
+
+    /**
+     * Migration 12: Add Rivian Roamer real-world efficiency columns.
+     * Columns added by dbDelta above; this marks the migration.
+     */
+    private static function migrate_12_add_roamer_columns() {
+        // Columns added by dbDelta above.
     }
 }

@@ -10,5 +10,6 @@ class RTG_Deactivator {
         delete_option( 'rtg_flush_rewrite' );
         wp_clear_scheduled_hook( 'rtg_analytics_cleanup' );
         RTG_Link_Checker::unschedule();
+        RTG_Roamer_Sync::unschedule();
     }
 }
