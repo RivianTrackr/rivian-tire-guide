@@ -414,7 +414,40 @@ export function createSingleCard(row) {
         const roamerText = document.createElement('span');
         roamerText.textContent = 'mi/kWh';
 
+        const roamerInfoBtn = document.createElement('button');
+        roamerInfoBtn.innerHTML = '' + rtgIcon('circle-info', 14) + '';
+        roamerInfoBtn.className = 'info-tooltip-trigger';
+        roamerInfoBtn.dataset.tooltipKey = 'Real-World Efficiency';
+        roamerInfoBtn.setAttribute('aria-label', 'More info about Real-World Efficiency');
+        roamerInfoBtn.setAttribute('type', 'button');
+        roamerInfoBtn.style.cssText = `
+          background: none;
+          border: none;
+          color: var(--rtg-text-muted);
+          font-size: 14px;
+          cursor: pointer;
+          padding: 2px;
+          border-radius: 50%;
+          width: 20px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+        `;
+
+        roamerInfoBtn.addEventListener('mouseenter', () => {
+          roamerInfoBtn.style.color = rtgColor('accent');
+          roamerInfoBtn.style.backgroundColor = `color-mix(in srgb, ${rtgColor('accent')} 10%, transparent)`;
+        });
+
+        roamerInfoBtn.addEventListener('mouseleave', () => {
+          roamerInfoBtn.style.color = rtgColor('text-muted');
+          roamerInfoBtn.style.backgroundColor = 'transparent';
+        });
+
         roamerScore.appendChild(roamerText);
+        roamerScore.appendChild(roamerInfoBtn);
         roamerTag.appendChild(roamerLabel);
         roamerTag.appendChild(roamerScore);
         tagsContainer.appendChild(roamerTag);
