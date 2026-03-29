@@ -431,24 +431,6 @@ export function createSingleCard(row) {
     bodyEl.appendChild(tagsContainer);
   }
 
-  if (tags && safeString(tags).trim()) {
-    const tagList = safeString(tags).split(/[,|]/).map(tag => tag.trim()).filter(tag => tag && tag.toLowerCase() !== 'reviewed');
-
-    if (tagList.length > 0) {
-      const tagRow = document.createElement('div');
-      tagRow.className = 'tire-card-tags';
-
-      tagList.forEach(tag => {
-        const tagEl = document.createElement('span');
-        tagEl.className = 'tire-card-tag';
-        tagEl.textContent = safeString(tag, 30);
-        tagRow.appendChild(tagEl);
-      });
-
-      bodyEl.appendChild(tagRow);
-    }
-  }
-
   const specsContainer = document.createElement('div');
   specsContainer.className = 'tire-card-specs';
 
@@ -491,6 +473,35 @@ export function createSingleCard(row) {
     specRow.appendChild(valueEl);
     specsContainer.appendChild(specRow);
   });
+
+  // Tags row — at the bottom of specs as supplementary info.
+  if (tags && safeString(tags).trim()) {
+    const tagList = safeString(tags).split(/[,|]/).map(tag => tag.trim()).filter(tag => tag && tag.toLowerCase() !== 'reviewed');
+
+    if (tagList.length > 0) {
+      const tagSpecRow = document.createElement('div');
+      tagSpecRow.className = 'tire-card-spec';
+
+      const tagLabel = document.createElement('span');
+      tagLabel.className = 'tire-card-spec-label';
+      tagLabel.textContent = 'Tags';
+
+      const tagValue = document.createElement('span');
+      tagValue.className = 'tire-card-spec-value';
+      tagValue.style.cssText = 'display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end;';
+
+      tagList.forEach(tag => {
+        const tagEl = document.createElement('span');
+        tagEl.className = 'tire-card-tag';
+        tagEl.textContent = safeString(tag, 30);
+        tagValue.appendChild(tagEl);
+      });
+
+      tagSpecRow.appendChild(tagLabel);
+      tagSpecRow.appendChild(tagValue);
+      specsContainer.appendChild(tagSpecRow);
+    }
+  }
 
   bodyEl.appendChild(specsContainer);
   card.appendChild(bodyEl);
