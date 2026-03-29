@@ -264,6 +264,15 @@ class RTG_Admin {
 
         add_submenu_page(
             'rtg-dashboard',
+            'Roamer Sync',
+            'Roamer Sync',
+            'manage_options',
+            'rtg-roamer-sync',
+            array( $this, 'render_roamer_sync_page' )
+        );
+
+        add_submenu_page(
+            'rtg-dashboard',
             'Settings',
             'Settings',
             'manage_options',
@@ -306,6 +315,17 @@ class RTG_Admin {
             'ajaxurl' => admin_url( 'admin-ajax.php' ),
             'nonce'   => wp_create_nonce( 'rtg_admin_nonce' ),
         ) );
+
+        // Enqueue Roamer sync JS on the Roamer Sync page.
+        if ( strpos( $hook, 'rtg-roamer-sync' ) !== false ) {
+            wp_enqueue_script(
+                'rtg-roamer-sync',
+                RTG_PLUGIN_URL . 'admin/js/rtg-roamer.js',
+                array( 'jquery' ),
+                RTG_VERSION,
+                true
+            );
+        }
 
         // Enqueue Chart.js on the analytics page.
         if ( strpos( $hook, 'rtg-analytics' ) !== false ) {
@@ -597,6 +617,16 @@ class RTG_Admin {
         require_once RTG_PLUGIN_DIR . 'admin/views/share-image.php';
     }
 
+    /**
+     * Render the Roamer Sync management page.
+     */
+    public function render_roamer_sync_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        require_once RTG_PLUGIN_DIR . 'admin/views/roamer-sync.php';
+    }
+
     // --- Action Handlers ---
 
     private function handle_tire_save() {
@@ -633,6 +663,7 @@ class RTG_Admin {
             'link'             => esc_url_raw( $post['link'] ?? '' ),
             'image'            => $this->build_image_url( $post['image'] ?? '' ),
             'review_link'      => esc_url_raw( $post['review_link'] ?? '' ),
+            'roamer_tire_id'   => sanitize_text_field( $post['roamer_tire_id'] ?? '' ),
             'sort_order'       => intval( $post['sort_order'] ?? 0 ),
         );
 

@@ -460,6 +460,16 @@ function applySorting(sortOption) {
     case "newest":
       state.filteredRows.sort((a, b) => safeString(b[23]).localeCompare(safeString(a[23])));
       break;
+    case "roamer-efficiency":
+      state.filteredRows.sort((a, b) => {
+        const aVal = parseFloat(a[24]) || 0;
+        const bVal = parseFloat(b[24]) || 0;
+        // Tires without Roamer data go to bottom.
+        if (aVal > 0 && bVal === 0) return -1;
+        if (aVal === 0 && bVal > 0) return 1;
+        return bVal - aVal;
+      });
+      break;
   }
 }
 

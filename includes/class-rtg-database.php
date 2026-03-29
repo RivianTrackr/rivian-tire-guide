@@ -87,6 +87,9 @@ class RTG_Database {
                 (string) $tire['efficiency_grade'],
                 (string) $tire['review_link'],
                 (string) $tire['created_at'],
+                (string) $tire['roamer_efficiency'],
+                (string) $tire['roamer_session_count'],
+                (string) $tire['roamer_vehicle_count'],
             );
         }
 
@@ -157,6 +160,9 @@ class RTG_Database {
                 (string) $tire['efficiency_grade'],
                 (string) $tire['review_link'],
                 (string) $tire['created_at'],
+                (string) $tire['roamer_efficiency'],
+                (string) $tire['roamer_session_count'],
+                (string) $tire['roamer_vehicle_count'],
             );
         }
 
@@ -226,9 +232,15 @@ class RTG_Database {
             'image'            => '',
             'efficiency_score' => 0,
             'efficiency_grade' => '',
-            'bundle_link'      => '',
-            'review_link'      => '',
-            'sort_order'       => 0,
+            'bundle_link'          => '',
+            'review_link'          => '',
+            'roamer_tire_id'       => '',
+            'roamer_efficiency'    => 0,
+            'roamer_session_count' => 0,
+            'roamer_total_km'      => 0,
+            'roamer_vehicle_count' => 0,
+            'roamer_synced_at'     => null,
+            'sort_order'           => 0,
         );
 
         $data = wp_parse_args( $data, $defaults );
@@ -239,6 +251,7 @@ class RTG_Database {
             '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s',
             '%s', '%s',
             '%d', '%s', '%s', '%s',
+            '%s', '%f', '%d', '%f', '%d', '%s',
             '%d',
         );
 
@@ -269,12 +282,16 @@ class RTG_Database {
             switch ( $key ) {
                 case 'price':
                 case 'weight_lb':
+                case 'roamer_efficiency':
+                case 'roamer_total_km':
                     $formats[] = '%f';
                     break;
                 case 'mileage_warranty':
                 case 'max_load_lb':
                 case 'efficiency_score':
                 case 'sort_order':
+                case 'roamer_session_count':
+                case 'roamer_vehicle_count':
                     $formats[] = '%d';
                     break;
                 default:
@@ -585,12 +602,13 @@ class RTG_Database {
 
         // Determine ORDER BY.
         $sort_map = array(
-            'efficiency_score' => 'efficiency_score DESC',
-            'price-asc'        => 'price ASC',
-            'price-desc'       => 'price DESC',
-            'warranty-desc'    => 'mileage_warranty DESC',
-            'weight-asc'       => 'weight_lb ASC',
-            'newest'           => 'created_at DESC',
+            'efficiency_score'  => 'efficiency_score DESC',
+            'price-asc'         => 'price ASC',
+            'price-desc'        => 'price DESC',
+            'warranty-desc'     => 'mileage_warranty DESC',
+            'weight-asc'        => 'weight_lb ASC',
+            'newest'            => 'created_at DESC',
+            'roamer-efficiency' => 'roamer_efficiency DESC',
         );
         $order_sql = isset( $sort_map[ $sort ] ) ? $sort_map[ $sort ] : 'efficiency_score DESC';
 
@@ -635,6 +653,9 @@ class RTG_Database {
                 (string) $tire['efficiency_grade'],
                 (string) $tire['review_link'],
                 (string) $tire['created_at'],
+                (string) $tire['roamer_efficiency'],
+                (string) $tire['roamer_session_count'],
+                (string) $tire['roamer_vehicle_count'],
             );
         }
 
