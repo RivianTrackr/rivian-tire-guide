@@ -4,6 +4,21 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.29.0] - 2026-03-29
+
+### Added
+- **Rivian Roamer real-world efficiency data** — Integrates live tire efficiency data (km/kWh) collected from Rivian owners via Rivian Roamer. Data syncs automatically twice daily via WP-Cron and is displayed alongside the calculated efficiency score on tire cards, comparison pages, and the REST API feed.
+- **Roamer Sync admin page** — New admin page (Tire Guide > Roamer Sync) for managing the integration: sync status dashboard, settings (enable/disable, feed URL), linked tires table, ambiguous match resolution with dropdown assignment, unlinked guide tires list, and unmatched Roamer tires reference.
+- **Manual Roamer mapping** — Tires with the same name and size but different load ratings are flagged as ambiguous and skipped for manual review. Admins can assign Roamer data via the sync page or directly on the tire edit form.
+- **Real-World Efficiency sort** — New "Real-World Efficiency" option in the sort dropdown, ordering tires by km/kWh (tires without data sorted to bottom).
+- **Real-World Efficiency on compare page** — New row in the Performance section showing km/kWh with session count and best-value highlighting.
+- **Roamer fields in REST API** — The `/wp-json/rtg/v1/feed` endpoint now includes `roamer_efficiency`, `roamer_session_count`, `roamer_vehicle_count`, and `roamer_synced_at`.
+- **Tire edit form Roamer section** — New "Rivian Roamer — Real-World Data" card on the tire edit page showing linked Roamer ID, km/kWh, session count, vehicle count, and km tracked.
+
+### Changed
+- **Database schema** — Migration 12 adds 6 columns to `wp_rtg_tires`: `roamer_tire_id`, `roamer_efficiency`, `roamer_session_count`, `roamer_total_km`, `roamer_vehicle_count`, `roamer_synced_at`.
+- **Plugin version** — Bumped to 1.29.0.
+
 ## [1.28.2] - 2026-03-16
 
 ### Fixed

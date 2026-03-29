@@ -31,6 +31,12 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Proprietary Algorithm** — Weighted formula (0-100 score, A/B/C/D/F grade) estimating range-friendliness based on weight, tread depth, load range, speed rating, UTQG, category, width, and 3PMS certification.
 - **Single Source of Truth** — Calculation lives in `RTG_Database::calculate_efficiency()`. Admin form uses AJAX to call the PHP formula directly.
 
+### Real-World Efficiency (Rivian Roamer)
+- **Live Data Sync** — Integrates real-world km/kWh efficiency data from [Rivian Roamer](https://rivianroamer.com), collected from actual Rivian owner driving sessions. Syncs automatically twice daily via WP-Cron.
+- **Admin Mapping** — Auto-matches tires by brand + model + size. Ambiguous matches (same tire, different load ratings) are flagged for manual review on the Roamer Sync admin page.
+- **Tire Cards** — Blue "Real-World km/kWh" badge with session and vehicle count, displayed alongside the calculated efficiency score.
+- **Sort & Compare** — "Real-World Efficiency" sort option and comparison row in Performance section.
+
 ### Analytics
 - **Click Tracking** — Tracks affiliate link clicks (purchase, review) via `navigator.sendBeacon()` with 5-second server-side deduplication.
 - **Search Analytics** — Tracks search queries, active filters, sort options, and result counts with client-side debounce and server-side deduplication.
@@ -75,6 +81,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - `GET /wp-json/rtg/v1/tires/{tire_id}` — Single tire with ratings.
 - `GET /wp-json/rtg/v1/tires/{tire_id}/reviews` — Paginated reviews.
 - `POST /wp-json/rtg/v1/efficiency` — Calculate efficiency score from specs.
+- `GET /wp-json/rtg/v1/feed` — Full tire catalog JSON feed with ratings and Roamer real-world efficiency data.
 - **Rate Limiting** — 60 req/min for reads, 10 req/min for writes per IP.
 
 ## Requirements
@@ -166,12 +173,13 @@ rivian-tire-guide/
 │   ├── class-rtg-schema.php         # Schema.org JSON-LD structured data
 │   ├── class-rtg-meta.php           # Open Graph & Twitter Card meta tags
 │   ├── class-rtg-rest-api.php       # REST API endpoints
+│   ├── class-rtg-roamer-sync.php    # Rivian Roamer efficiency data sync
 │   ├── class-rtg-ai.php             # Claude API integration
 │   └── class-rtg-mailer.php         # HTML email notifications
 ├── admin/
-│   ├── views/                       # Admin page templates (10 views)
+│   ├── views/                       # Admin page templates (11 views)
 │   ├── css/                         # Admin stylesheets
-│   └── js/                          # Admin scripts
+│   └── js/                          # Admin scripts (incl. rtg-roamer.js)
 ├── frontend/
 │   ├── templates/                   # Frontend templates (tire-guide, compare, user-reviews)
 │   ├── css/                         # Frontend stylesheets
@@ -213,14 +221,14 @@ The plugin creates 6 tables (all prefixed with `wp_rtg_`):
 
 | Table | Purpose |
 |-------|---------|
-| `rtg_tires` | Main tire catalog (25 columns) |
+| `rtg_tires` | Main tire catalog (31 columns) |
 | `rtg_ratings` | User and guest reviews with moderation |
 | `rtg_wheels` | Stock wheel guide data |
 | `rtg_favorites` | User tire wishlist |
 | `rtg_click_events` | Affiliate link click tracking |
 | `rtg_search_events` | Search and filter analytics |
 
-Schema changes are managed via a numbered migration system (`rtg_db_version` option, currently v11).
+Schema changes are managed via a numbered migration system (`rtg_db_version` option, currently v12).
 
 ## Efficiency Score
 
