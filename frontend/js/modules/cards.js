@@ -400,7 +400,7 @@ export function createSingleCard(row) {
       // Roamer real-world efficiency — inline after efficiency badge.
       const roamerVal = parseFloat(roamerEfficiency);
       if (roamerVal > 0) {
-        const miPerKwh = (roamerVal * 0.621371).toFixed(3);
+        const miPerKwh = roamerVal.toFixed(3);
         const sessCount = parseInt(roamerSessionCount) || 0;
         const vehCount = parseInt(roamerVehicleCount) || 0;
 
@@ -428,7 +428,7 @@ export function createSingleCard(row) {
         roamerInfoBtn.innerHTML = '' + rtgIcon('circle-info', 14) + '';
         roamerInfoBtn.className = 'info-tooltip-trigger';
         roamerInfoBtn.dataset.tooltipKey = 'Real-World Efficiency';
-        roamerInfoBtn.dataset.tooltipExtra = `${miPerKwh} mi/kWh (${roamerVal.toFixed(2)} km/kWh) based on ${sessCount.toLocaleString()} driving sessions from ${vehCount} vehicle${vehCount !== 1 ? 's' : ''}.`;
+        roamerInfoBtn.dataset.tooltipExtra = `${miPerKwh} mi/kWh based on ${sessCount.toLocaleString()} driving sessions from ${vehCount} vehicle${vehCount !== 1 ? 's' : ''}.`;
         roamerInfoBtn.setAttribute('aria-label', 'More info about Real-World Efficiency');
         roamerInfoBtn.setAttribute('type', 'button');
         roamerInfoBtn.style.cssText = `
