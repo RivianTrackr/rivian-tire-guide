@@ -431,26 +431,37 @@ export function createSingleCard(row) {
     bodyEl.appendChild(tagsContainer);
   }
 
+  const specsContainer = document.createElement('div');
+  specsContainer.className = 'tire-card-specs';
+
+  // Tags row — rendered as a spec row with tag pills as the value.
   if (tags && safeString(tags).trim()) {
     const tagList = safeString(tags).split(/[,|]/).map(tag => tag.trim()).filter(tag => tag && tag.toLowerCase() !== 'reviewed');
 
     if (tagList.length > 0) {
-      const tagRow = document.createElement('div');
-      tagRow.className = 'tire-card-tags';
+      const tagSpecRow = document.createElement('div');
+      tagSpecRow.className = 'tire-card-spec';
+
+      const tagLabel = document.createElement('span');
+      tagLabel.className = 'tire-card-spec-label';
+      tagLabel.textContent = 'Tags';
+
+      const tagValue = document.createElement('span');
+      tagValue.className = 'tire-card-spec-value';
+      tagValue.style.cssText = 'display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end;';
 
       tagList.forEach(tag => {
         const tagEl = document.createElement('span');
         tagEl.className = 'tire-card-tag';
         tagEl.textContent = safeString(tag, 30);
-        tagRow.appendChild(tagEl);
+        tagValue.appendChild(tagEl);
       });
 
-      bodyEl.appendChild(tagRow);
+      tagSpecRow.appendChild(tagLabel);
+      tagSpecRow.appendChild(tagValue);
+      specsContainer.appendChild(tagSpecRow);
     }
   }
-
-  const specsContainer = document.createElement('div');
-  specsContainer.className = 'tire-card-specs';
 
   const specs = [
     ['Size', `${safeString(size)} (${safeString(diameter)}${safeString(diameter) && !safeString(diameter).includes('"') ? '"' : ''})`],
