@@ -243,9 +243,11 @@ function renderComparison(rows, indexes) {
     ['Real-World Efficiency', t => {
       const v = parseFloat(t[COL.roamerEfficiency]);
       if (!v || v === 0) return '-';
+      const miPerKwh = v.toFixed(3);
       const sess = parseInt(t[COL.roamerSessionCount]) || 0;
-      return '<span style="font-weight:700;color:#3b82f6;">' + v.toFixed(2) + ' km/kWh</span>' +
-        '<br><span style="font-size:11px;color:#94a3b8;">' + sess.toLocaleString() + ' sessions</span>';
+      const veh = parseInt(t[COL.roamerVehicleCount]) || 0;
+      return '<span style="font-weight:700;color:#60a5fa;">' + miPerKwh + ' mi/kWh</span>' +
+        '<br><span style="font-size:11px;color:#94a3b8;">' + sess.toLocaleString() + ' sessions, ' + veh + ' vehicle' + (veh !== 1 ? 's' : '') + '</span>';
     }, 'roamerEfficiency'],
     ['Speed Rating', t => t[COL.speedRating] || "-"],
     ['UTQG', t => t[COL.utqg] || "None"],

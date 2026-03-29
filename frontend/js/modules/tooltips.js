@@ -41,8 +41,8 @@ export const TOOLTIP_DATA = {
     content: 'This Efficiency Score is a calculated score RivianTrackr created to help assist Rivian owners in identifying which tires are likely to be the most range-friendly. It uses a custom formula that factors in weight, tread depth, tire width, load range, speed rating, UTQG, tire category, and winter certification (3PMS). Lighter tires with shallower tread and less aggressive construction typically score higher. <br><br> The score is an estimate only and does not reflect real-world testing. It should not be viewed as a measure of tire quality, safety, or brand reputation.'
   },
   'Real-World Efficiency': {
-    title: 'Real-World Efficiency (km/kWh)',
-    content: 'This is real-world energy efficiency data collected from Rivian owners via <strong>Rivian Roamer</strong>. It measures how many kilometers the vehicle travels per kilowatt-hour of battery energy while using these tires. <br><br> Higher values mean better range efficiency. The data is based on actual driving sessions and updates regularly. Session count and vehicle count indicate the sample size backing this number.'
+    title: 'Real-World Efficiency (mi/kWh)',
+    content: 'This is real-world energy efficiency data collected from Rivian owners via <strong>Rivian Roamer</strong>. It measures how many miles the vehicle travels per kilowatt-hour of battery energy while using these tires. <br><br> Higher values mean better range efficiency. The data is based on actual driving sessions and updates regularly. Session count and vehicle count indicate the sample size backing this number.'
   }
 };
 
@@ -137,11 +137,17 @@ export function createFilterTooltip(labelText, tooltipKey) {
   return container;
 }
 
-export function showTooltipModal(tooltipKey) {
+export function showTooltipModal(tooltipKey, triggerEl) {
   closeTooltipModal();
 
   const tooltipData = TOOLTIP_DATA[tooltipKey];
   if (!tooltipData) return;
+
+  // Append dynamic extra content from the trigger element (e.g. per-tire Roamer stats).
+  let extraContent = '';
+  if (triggerEl && triggerEl.dataset && triggerEl.dataset.tooltipExtra) {
+    extraContent = '<br><br><strong style="color:#60a5fa;">This tire:</strong> ' + triggerEl.dataset.tooltipExtra;
+  }
 
   const overlay = document.createElement('div');
   overlay.className = 'tooltip-modal-overlay';
@@ -186,7 +192,7 @@ export function showTooltipModal(tooltipKey) {
   `;
 
   const content = document.createElement('p');
-  content.innerHTML = tooltipData.content;
+  content.innerHTML = tooltipData.content + extraContent;
   content.style.cssText = `
     margin: 0 0 16px 0;
     line-height: 1.5;
