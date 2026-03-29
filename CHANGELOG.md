@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.29.2] - 2026-03-29
+
+### Improved
+- **Real-world efficiency display** — Redesigned the Roamer mi/kWh value to show inline on the same line as the efficiency badge with a cleaner design. Removed the separate info icon and merged its explanation into the Efficiency Score tooltip. Tire tags (EV Rated, etc.) now render on their own line below efficiency.
+
+### Changed
+- **Plugin version** — Bumped to 1.29.2.
+
 ## [1.29.0] - 2026-03-29
 
 ### Added

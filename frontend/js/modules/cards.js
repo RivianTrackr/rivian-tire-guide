@@ -397,13 +397,9 @@ export function createSingleCard(row) {
       gradeTag.appendChild(scoreSection);
       tagsContainer.appendChild(gradeTag);
 
-      // Roamer real-world efficiency — inline after efficiency badge.
+      // Roamer real-world efficiency — inline after efficiency badge, no extra info icon.
       const roamerVal = parseFloat(roamerEfficiency);
       if (roamerVal > 0) {
-        const miPerKwh = roamerVal.toFixed(3);
-        const sessCount = parseInt(roamerSessionCount) || 0;
-        const vehCount = parseInt(roamerVehicleCount) || 0;
-
         const roamerSpan = document.createElement('span');
         roamerSpan.className = 'tire-card-roamer';
         roamerSpan.style.cssText = `
@@ -422,62 +418,35 @@ export function createSingleCard(row) {
 
         const valueSpan = document.createElement('span');
         valueSpan.style.cssText = 'color: #60a5fa; font-weight: 700;';
-        valueSpan.textContent = `${miPerKwh} mi/kWh`;
-
-        const roamerInfoBtn = document.createElement('button');
-        roamerInfoBtn.innerHTML = '' + rtgIcon('circle-info', 14) + '';
-        roamerInfoBtn.className = 'info-tooltip-trigger';
-        roamerInfoBtn.dataset.tooltipKey = 'Real-World Efficiency';
-        roamerInfoBtn.dataset.tooltipExtra = `${miPerKwh} mi/kWh based on ${sessCount.toLocaleString()} driving sessions from ${vehCount} vehicle${vehCount !== 1 ? 's' : ''}.`;
-        roamerInfoBtn.setAttribute('aria-label', 'More info about Real-World Efficiency');
-        roamerInfoBtn.setAttribute('type', 'button');
-        roamerInfoBtn.style.cssText = `
-          background: none;
-          border: none;
-          color: var(--rtg-text-muted);
-          font-size: 14px;
-          cursor: pointer;
-          padding: 2px;
-          border-radius: 50%;
-          width: 20px;
-          height: 20px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s ease;
-        `;
-
-        roamerInfoBtn.addEventListener('mouseenter', () => {
-          roamerInfoBtn.style.color = rtgColor('accent');
-          roamerInfoBtn.style.backgroundColor = `color-mix(in srgb, ${rtgColor('accent')} 10%, transparent)`;
-        });
-
-        roamerInfoBtn.addEventListener('mouseleave', () => {
-          roamerInfoBtn.style.color = rtgColor('text-muted');
-          roamerInfoBtn.style.backgroundColor = 'transparent';
-        });
+        valueSpan.textContent = `${roamerVal.toFixed(2)} mi/kWh`;
 
         roamerSpan.appendChild(separator);
         roamerSpan.appendChild(valueSpan);
-        roamerSpan.appendChild(roamerInfoBtn);
         gradeTag.appendChild(roamerSpan);
       }
     }
   }
 
+  if (tagsContainer.children.length > 0) {
+    bodyEl.appendChild(tagsContainer);
+  }
+
   if (tags && safeString(tags).trim()) {
     const tagList = safeString(tags).split(/[,|]/).map(tag => tag.trim()).filter(tag => tag && tag.toLowerCase() !== 'reviewed');
 
-    tagList.forEach(tag => {
-      const tagEl = document.createElement('span');
-      tagEl.className = 'tire-card-tag';
-      tagEl.textContent = safeString(tag, 30);
-      tagsContainer.appendChild(tagEl);
-    });
-  }
+    if (tagList.length > 0) {
+      const tagRow = document.createElement('div');
+      tagRow.className = 'tire-card-tags';
 
-  if (tagsContainer.children.length > 0) {
-    bodyEl.appendChild(tagsContainer);
+      tagList.forEach(tag => {
+        const tagEl = document.createElement('span');
+        tagEl.className = 'tire-card-tag';
+        tagEl.textContent = safeString(tag, 30);
+        tagRow.appendChild(tagEl);
+      });
+
+      bodyEl.appendChild(tagRow);
+    }
   }
 
   const specsContainer = document.createElement('div');

@@ -243,7 +243,7 @@ function renderComparison(rows, indexes) {
     ['Real-World Efficiency', t => {
       const v = parseFloat(t[COL.roamerEfficiency]);
       if (!v || v === 0) return '-';
-      const miPerKwh = v.toFixed(3);
+      const miPerKwh = v.toFixed(2);
       const sess = parseInt(t[COL.roamerSessionCount]) || 0;
       const veh = parseInt(t[COL.roamerVehicleCount]) || 0;
       return '<span style="font-weight:700;color:#60a5fa;">' + miPerKwh + ' mi/kWh</span>' +
