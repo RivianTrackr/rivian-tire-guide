@@ -465,19 +465,26 @@ export function createSingleCard(row) {
     }
   }
 
+  if (tagsContainer.children.length > 0) {
+    bodyEl.appendChild(tagsContainer);
+  }
+
   if (tags && safeString(tags).trim()) {
     const tagList = safeString(tags).split(/[,|]/).map(tag => tag.trim()).filter(tag => tag && tag.toLowerCase() !== 'reviewed');
 
-    tagList.forEach(tag => {
-      const tagEl = document.createElement('span');
-      tagEl.className = 'tire-card-tag';
-      tagEl.textContent = safeString(tag, 30);
-      tagsContainer.appendChild(tagEl);
-    });
-  }
+    if (tagList.length > 0) {
+      const tagRow = document.createElement('div');
+      tagRow.className = 'tire-card-tags';
 
-  if (tagsContainer.children.length > 0) {
-    bodyEl.appendChild(tagsContainer);
+      tagList.forEach(tag => {
+        const tagEl = document.createElement('span');
+        tagEl.className = 'tire-card-tag';
+        tagEl.textContent = safeString(tag, 30);
+        tagRow.appendChild(tagEl);
+      });
+
+      bodyEl.appendChild(tagRow);
+    }
   }
 
   const specsContainer = document.createElement('div');
