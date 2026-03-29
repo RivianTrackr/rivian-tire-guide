@@ -397,32 +397,27 @@ export function createSingleCard(row) {
       gradeTag.appendChild(scoreSection);
       tagsContainer.appendChild(gradeTag);
 
-      // Roamer real-world efficiency — inline after efficiency badge, no extra info icon.
+      // Roamer real-world efficiency — separate pill matching efficiency badge style.
       const roamerVal = parseFloat(roamerEfficiency);
       if (roamerVal > 0) {
-        const roamerSpan = document.createElement('span');
-        roamerSpan.className = 'tire-card-roamer';
-        roamerSpan.style.cssText = `
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-          font-size: 12px;
-          color: var(--rtg-text-muted);
-          font-weight: 500;
-          margin-left: 2px;
-        `;
+        const roamerTag = document.createElement('span');
+        roamerTag.className = 'tire-card-eff';
 
-        const separator = document.createElement('span');
-        separator.textContent = '·';
-        separator.style.cssText = 'color: var(--rtg-text-muted); font-weight: 400;';
+        const roamerLabel = document.createElement('span');
+        roamerLabel.className = 'tire-card-eff-grade';
+        roamerLabel.style.backgroundColor = '#3b82f6';
+        roamerLabel.textContent = roamerVal.toFixed(2);
 
-        const valueSpan = document.createElement('span');
-        valueSpan.style.cssText = 'color: #60a5fa; font-weight: 700;';
-        valueSpan.textContent = `${roamerVal.toFixed(2)} mi/kWh`;
+        const roamerScore = document.createElement('span');
+        roamerScore.className = 'tire-card-eff-score';
 
-        roamerSpan.appendChild(separator);
-        roamerSpan.appendChild(valueSpan);
-        gradeTag.appendChild(roamerSpan);
+        const roamerText = document.createElement('span');
+        roamerText.textContent = 'mi/kWh';
+
+        roamerScore.appendChild(roamerText);
+        roamerTag.appendChild(roamerLabel);
+        roamerTag.appendChild(roamerScore);
+        tagsContainer.appendChild(roamerTag);
       }
     }
   }
