@@ -137,11 +137,17 @@ export function createFilterTooltip(labelText, tooltipKey) {
   return container;
 }
 
-export function showTooltipModal(tooltipKey) {
+export function showTooltipModal(tooltipKey, triggerEl) {
   closeTooltipModal();
 
   const tooltipData = TOOLTIP_DATA[tooltipKey];
   if (!tooltipData) return;
+
+  // Append dynamic extra content from the trigger element (e.g. per-tire Roamer stats).
+  let extraContent = '';
+  if (triggerEl && triggerEl.dataset && triggerEl.dataset.tooltipExtra) {
+    extraContent = '<br><br><strong style="color:#60a5fa;">This tire:</strong> ' + triggerEl.dataset.tooltipExtra;
+  }
 
   const overlay = document.createElement('div');
   overlay.className = 'tooltip-modal-overlay';
@@ -186,7 +192,7 @@ export function showTooltipModal(tooltipKey) {
   `;
 
   const content = document.createElement('p');
-  content.innerHTML = tooltipData.content;
+  content.innerHTML = tooltipData.content + extraContent;
   content.style.cssText = `
     margin: 0 0 16px 0;
     line-height: 1.5;
