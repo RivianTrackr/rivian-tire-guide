@@ -259,21 +259,36 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
     </div>
 
     <!-- Unmatched Roamer Tires (from last sync) -->
-    <?php if ( $stats && ! empty( $stats['unmatched_list'] ) ) : ?>
+    <?php if ( $stats && ! empty( $stats['unmatched_list'] ) ) :
+        $all_tires = RTG_Database::get_all_tires();
+    ?>
         <div class="rtg-card" style="margin-top:20px;">
-            <div class="rtg-card-header">
+            <div class="rtg-card-header" style="display:flex;align-items:center;justify-content:space-between;">
                 <h2>Unmatched Roamer Tires (<?php echo count( $stats['unmatched_list'] ); ?>)</h2>
+                <div id="rtg-unmatched-assign-bar" style="display:none;align-items:center;gap:8px;">
+                    <span id="rtg-unmatched-selected-count" style="font-size:13px;color:#86868b;">0 selected</span>
+                    <select id="rtg-unmatched-assign-tire" class="regular-text" style="max-width:350px;">
+                        <option value="">Assign selected to...</option>
+                        <?php foreach ( $all_tires as $t ) : ?>
+                            <option value="<?php echo esc_attr( $t['tire_id'] ); ?>">
+                                <?php echo esc_html( $t['brand'] . ' ' . $t['model'] . ' — ' . $t['size'] . ( $t['load_range'] ? ' (' . $t['load_range'] . ')' : '' ) ); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="button" id="rtg-unmatched-assign-btn" class="button button-primary" disabled>Assign</button>
+                </div>
             </div>
             <div class="rtg-card-body" style="padding:0;">
                 <p style="padding:16px 16px 0;color:#86868b;">
-                    These tires exist on Rivian Roamer but aren't in your guide. For reference only.
+                    These tires exist on Rivian Roamer but aren't in your guide. Select one or more to manually assign to a guide tire. When multiple are selected, efficiency is averaged weighted by session count.
                 </p>
                 <table class="wp-list-table widefat striped" style="border:none;">
                     <thead>
                         <tr>
+                            <th style="width:30px;"><input type="checkbox" id="rtg-unmatched-select-all"></th>
                             <th>Tire</th>
                             <th>Size</th>
-                            <th>km/kWh</th>
+                            <th>mi/kWh</th>
                             <th>Sessions</th>
                             <th>Roamer ID</th>
                         </tr>
@@ -281,6 +296,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                     <tbody>
                         <?php foreach ( $stats['unmatched_list'] as $tire ) : ?>
                             <tr>
+                                <td><input type="checkbox" class="rtg-unmatched-cb" value="<?php echo esc_attr( $tire['roamer_tire_id'] ); ?>"></td>
                                 <td><strong><?php echo esc_html( $tire['name'] ); ?></strong></td>
                                 <td><?php echo esc_html( $tire['size'] ); ?></td>
                                 <td><?php echo esc_html( number_format( $tire['efficiency'], 2 ) ); ?></td>
