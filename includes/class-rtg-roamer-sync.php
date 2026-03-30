@@ -112,7 +112,13 @@ class RTG_Roamer_Sync {
 
         foreach ( $local_tires as $tire ) {
             if ( ! empty( $tire['roamer_tire_id'] ) ) {
-                $linked_map[ $tire['roamer_tire_id'] ] = $tire['tire_id'];
+                // Support comma-separated roamer_tire_ids (from multi-assign).
+                $ids = array_map( 'trim', explode( ',', $tire['roamer_tire_id'] ) );
+                foreach ( $ids as $rid ) {
+                    if ( ! empty( $rid ) ) {
+                        $linked_map[ $rid ] = $tire['tire_id'];
+                    }
+                }
             }
 
             $key = self::normalize_key( $tire['brand'], $tire['model'], $tire['size'] );
