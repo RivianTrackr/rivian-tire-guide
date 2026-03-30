@@ -221,6 +221,10 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
     <!-- Unmatched Roamer Tires (from last sync) -->
     <?php if ( $stats && ! empty( $stats['unmatched_list'] ) ) :
         $all_tires = RTG_Database::get_all_tires();
+        usort( $all_tires, function ( $a, $b ) {
+            $cmp = strcasecmp( $a['brand'], $b['brand'] );
+            return $cmp !== 0 ? $cmp : strcasecmp( $a['model'], $b['model'] );
+        } );
     ?>
         <div class="rtg-card" style="margin-top:20px;">
             <div class="rtg-card-header" style="display:flex;align-items:center;justify-content:space-between;">
@@ -271,12 +275,20 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
     <?php endif; ?>
 
     <!-- Unlinked Guide Tires -->
+    <?php
+    $unlinked_total    = count( $mapping['unlinked'] );
+    $unlinked_per_page = 20;
+    $unlinked_page     = isset( $_GET['unlinked_page'] ) ? max( 1, intval( $_GET['unlinked_page'] ) ) : 1;
+    $unlinked_pages    = max( 1, ceil( $unlinked_total / $unlinked_per_page ) );
+    $unlinked_offset   = ( $unlinked_page - 1 ) * $unlinked_per_page;
+    $unlinked_slice    = array_slice( $mapping['unlinked'], $unlinked_offset, $unlinked_per_page );
+    ?>
     <div class="rtg-card" style="margin-top:20px;">
         <div class="rtg-card-header">
-            <h2>Unlinked Guide Tires (<?php echo count( $mapping['unlinked'] ); ?>)</h2>
+            <h2>Unlinked Guide Tires (<?php echo $unlinked_total; ?>)</h2>
         </div>
         <div class="rtg-card-body" style="padding:0;">
-            <?php if ( ! empty( $mapping['unlinked'] ) ) : ?>
+            <?php if ( $unlinked_total > 0 ) : ?>
                 <p style="padding:16px 16px 0;color:#86868b;">
                     These tires in your guide don't have Roamer data linked. They may not have data available, or you can manually assign a Roamer ID on the tire edit page.
                 </p>
@@ -290,7 +302,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ( $mapping['unlinked'] as $tire ) : ?>
+                        <?php foreach ( $unlinked_slice as $tire ) : ?>
                             <tr>
                                 <td>
                                     <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit&id=' . $tire['tire_id'] ) ); ?>">
@@ -304,6 +316,24 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                <?php if ( $unlinked_pages > 1 ) : ?>
+                    <div style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(51,65,85,0.4);">
+                        <span style="font-size:13px;color:#86868b;">
+                            Showing <?php echo $unlinked_offset + 1; ?>–<?php echo min( $unlinked_offset + $unlinked_per_page, $unlinked_total ); ?> of <?php echo $unlinked_total; ?>
+                        </span>
+                        <div style="display:flex;gap:4px;">
+                            <?php for ( $p = 1; $p <= $unlinked_pages; $p++ ) :
+                                $url = add_query_arg( 'unlinked_page', $p, admin_url( 'admin.php?page=rtg-roamer-sync' ) ) . '#unlinked-tires';
+                            ?>
+                                <?php if ( $p === $unlinked_page ) : ?>
+                                    <span style="padding:4px 10px;background:#3b82f6;color:#fff;border-radius:4px;font-size:13px;font-weight:600;"><?php echo $p; ?></span>
+                                <?php else : ?>
+                                    <a href="<?php echo esc_url( $url ); ?>" style="padding:4px 10px;background:rgba(51,65,85,0.4);color:#e2e8f0;border-radius:4px;font-size:13px;text-decoration:none;"><?php echo $p; ?></a>
+                                <?php endif; ?>
+                            <?php endfor; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
             <?php else : ?>
                 <p style="padding:16px;color:#5ec095;">All tires in your guide have Roamer data linked.</p>
             <?php endif; ?>
