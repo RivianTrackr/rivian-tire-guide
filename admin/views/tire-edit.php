@@ -393,7 +393,7 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                             <div style="display:flex;gap:24px;flex-wrap:wrap;margin-top:8px;">
                                 <div>
                                     <span style="font-size:24px;font-weight:700;color:#1d1d1f;"><?php echo esc_html( number_format( $r_eff, 2 ) ); ?></span>
-                                    <span style="font-size:14px;color:#86868b;">km/kWh</span>
+                                    <span style="font-size:14px;color:#86868b;">mi/kWh</span>
                                 </div>
                                 <div>
                                     <span style="font-size:18px;font-weight:600;color:#1d1d1f;"><?php echo number_format( $r_sess ); ?></span>

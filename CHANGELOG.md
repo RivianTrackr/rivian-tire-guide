@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.31.0] - 2026-03-30
+
+### Fixed
+- **Roamer efficiency unit conversion** — Source data from Rivian Roamer (`efficiency_km_per_kwh`) is in km/kWh. Values are now correctly converted to mi/kWh (× 0.621371) during sync. Admin labels on the Roamer Sync page and tire edit form updated from "km/kWh" to "mi/kWh" for consistency.
+
+### Changed
+- **Plugin version** — Bumped to 1.31.0.
+
 ## [1.30.0] - 2026-03-30
 
 ### Added
