@@ -25,6 +25,16 @@ $avg_weight = floatval( $core['avg_weight'] ?? 0 );
 $missing_images = (int) ( $core['missing_images'] ?? 0 );
 $missing_links  = (int) ( $core['missing_links'] ?? 0 );
 
+// Roamer data.
+$roamer_linked       = (int) ( $core['roamer_linked'] ?? 0 );
+$avg_roamer_eff      = floatval( $core['avg_roamer_efficiency'] ?? 0 );
+$max_roamer_eff      = floatval( $core['max_roamer_efficiency'] ?? 0 );
+$min_roamer_eff      = floatval( $core['min_roamer_efficiency'] ?? 0 );
+$total_roamer_sess   = (int) ( $core['total_roamer_sessions'] ?? 0 );
+$total_roamer_veh    = (int) ( $core['total_roamer_vehicles'] ?? 0 );
+$roamer_pct          = $total_tires > 0 ? round( ( $roamer_linked / $total_tires ) * 100 ) : 0;
+$roamer_sync_stats   = RTG_Roamer_Sync::get_stats();
+
 // Affiliate link coverage.
 $affiliate_count = (int) ( $stats['affiliate_count'] ?? 0 );
 $affiliate_pct   = $total_tires > 0 ? round( ( $affiliate_count / $total_tires ) * 100 ) : 0;
@@ -373,6 +383,93 @@ $grade_colors = array(
         </div>
 
     </div><!-- .rtg-dashboard-grid -->
+
+    <!-- ================================================================
+         Rivian Roamer Sync
+         ================================================================ -->
+    <div class="rtg-dashboard-grid">
+
+        <!-- Roamer Overview -->
+        <div class="rtg-card">
+            <div class="rtg-card-header">
+                <h2>Rivian Roamer — Real-World Efficiency</h2>
+            </div>
+            <div class="rtg-card-body">
+                <div class="rtg-stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 16px;">
+                    <div class="rtg-stat-card">
+                        <div class="rtg-stat-value"><?php echo esc_html( $roamer_linked ); ?><span style="font-size:14px;font-weight:400;color:var(--rtg-text-muted);">/<?php echo esc_html( $total_tires ); ?></span></div>
+                        <div class="rtg-stat-label">Tires Linked (<?php echo esc_html( $roamer_pct ); ?>%)</div>
+                    </div>
+                    <div class="rtg-stat-card">
+                        <div class="rtg-stat-value"><?php echo $avg_roamer_eff > 0 ? esc_html( number_format( $avg_roamer_eff, 2 ) ) : '—'; ?></div>
+                        <div class="rtg-stat-label">Avg mi/kWh</div>
+                    </div>
+                    <div class="rtg-stat-card">
+                        <div class="rtg-stat-value"><?php echo esc_html( number_format( $total_roamer_sess ) ); ?></div>
+                        <div class="rtg-stat-label">Total Sessions</div>
+                    </div>
+                </div>
+                <div class="rtg-stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 16px;">
+                    <div class="rtg-stat-card">
+                        <div class="rtg-stat-value"><?php echo $max_roamer_eff > 0 ? esc_html( number_format( $max_roamer_eff, 2 ) ) : '—'; ?></div>
+                        <div class="rtg-stat-label">Best mi/kWh</div>
+                    </div>
+                    <div class="rtg-stat-card">
+                        <div class="rtg-stat-value"><?php echo $min_roamer_eff > 0 ? esc_html( number_format( $min_roamer_eff, 2 ) ) : '—'; ?></div>
+                        <div class="rtg-stat-label">Worst mi/kWh</div>
+                    </div>
+                    <div class="rtg-stat-card">
+                        <div class="rtg-stat-value"><?php echo esc_html( number_format( $total_roamer_veh ) ); ?></div>
+                        <div class="rtg-stat-label">Total Vehicles</div>
+                    </div>
+                </div>
+                <?php if ( $roamer_sync_stats && ! empty( $roamer_sync_stats['time'] ) ) : ?>
+                    <p style="color:var(--rtg-text-muted);font-size:13px;margin:0;">
+                        Last sync: <?php echo esc_html( $roamer_sync_stats['time'] ); ?>
+                        <?php if ( $roamer_sync_stats['status'] === 'success' ) : ?>
+                            — <?php echo intval( $roamer_sync_stats['matched'] ); ?> matched,
+                            <?php echo intval( $roamer_sync_stats['skipped'] ); ?> ambiguous,
+                            <?php echo intval( $roamer_sync_stats['unmatched'] ); ?> unmatched
+                        <?php endif; ?>
+                        · <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-roamer-sync' ) ); ?>">Manage →</a>
+                    </p>
+                <?php else : ?>
+                    <p style="color:var(--rtg-text-muted);font-size:13px;margin:0;">
+                        No sync has been run yet. <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-roamer-sync' ) ); ?>">Run first sync →</a>
+                    </p>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Top Real-World Efficient Tires -->
+        <div class="rtg-card">
+            <div class="rtg-card-header"><h2>Most Efficient (Real-World)</h2></div>
+            <div class="rtg-card-body">
+                <?php if ( empty( $stats['top_roamer'] ) ) : ?>
+                    <p style="color: var(--rtg-text-muted);">No Roamer data linked yet. <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-roamer-sync' ) ); ?>">Sync now</a>.</p>
+                <?php else : ?>
+                    <ul class="rtg-mini-list">
+                        <?php foreach ( $stats['top_roamer'] as $i => $tire ) : ?>
+                            <li class="rtg-mini-list-item">
+                                <span class="rtg-mini-list-rank"><?php echo esc_html( $i + 1 ); ?></span>
+                                <?php if ( ! empty( $tire['image'] ) ) : ?>
+                                    <img src="<?php echo esc_url( $tire['image'] ); ?>" alt="" class="rtg-mini-list-thumb">
+                                <?php endif; ?>
+                                <span class="rtg-mini-list-info">
+                                    <span class="rtg-mini-list-name">
+                                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires&s=' . urlencode( $tire['tire_id'] ) ) ); ?>"><?php echo esc_html( $tire['brand'] . ' ' . $tire['model'] ); ?></a>
+                                    </span>
+                                    <span class="rtg-mini-list-meta"><?php echo esc_html( $tire['size'] ); ?> · <?php echo number_format( $tire['roamer_session_count'] ); ?> sessions</span>
+                                </span>
+                                <span class="rtg-mini-list-value" style="color:#60a5fa;"><?php echo esc_html( number_format( $tire['roamer_efficiency'], 2 ) ); ?> mi/kWh</span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </div>
+        </div>
+
+    </div><!-- .rtg-dashboard-grid (roamer) -->
 
     <!-- ================================================================
          JSON Data Feed (full-width)

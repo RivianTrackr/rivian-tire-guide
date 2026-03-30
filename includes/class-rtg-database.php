@@ -707,7 +707,13 @@ class RTG_Database {
                 MAX(weight_lb) as max_weight,
                 ROUND(AVG(CASE WHEN weight_lb > 0 THEN weight_lb ELSE NULL END), 1) as avg_weight,
                 SUM(CASE WHEN image = '' OR image IS NULL THEN 1 ELSE 0 END) as missing_images,
-                SUM(CASE WHEN link = '' OR link IS NULL THEN 1 ELSE 0 END) as missing_links
+                SUM(CASE WHEN link = '' OR link IS NULL THEN 1 ELSE 0 END) as missing_links,
+                SUM(CASE WHEN roamer_tire_id != '' AND roamer_tire_id IS NOT NULL THEN 1 ELSE 0 END) as roamer_linked,
+                ROUND(AVG(CASE WHEN roamer_efficiency > 0 THEN roamer_efficiency ELSE NULL END), 2) as avg_roamer_efficiency,
+                MAX(CASE WHEN roamer_efficiency > 0 THEN roamer_efficiency ELSE NULL END) as max_roamer_efficiency,
+                MIN(CASE WHEN roamer_efficiency > 0 THEN roamer_efficiency ELSE NULL END) as min_roamer_efficiency,
+                SUM(roamer_session_count) as total_roamer_sessions,
+                SUM(roamer_vehicle_count) as total_roamer_vehicles
             FROM {$tires_table}",
             ARRAY_A
         );
@@ -800,6 +806,17 @@ class RTG_Database {
             "SELECT tire_id, brand, model, category, image, created_at
              FROM {$tires_table}
              ORDER BY created_at DESC
+             LIMIT 5",
+            ARRAY_A
+        );
+
+        // Top real-world efficient tires (by Roamer mi/kWh, top 5).
+        $stats['top_roamer'] = $wpdb->get_results(
+            "SELECT tire_id, brand, model, size, image,
+                    roamer_efficiency, roamer_session_count, roamer_vehicle_count
+             FROM {$tires_table}
+             WHERE roamer_efficiency > 0
+             ORDER BY roamer_efficiency DESC
              LIMIT 5",
             ARRAY_A
         );
