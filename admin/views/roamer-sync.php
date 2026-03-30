@@ -218,46 +218,6 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
         </div>
     <?php endif; ?>
 
-    <!-- Unlinked Guide Tires -->
-    <div class="rtg-card" style="margin-top:20px;">
-        <div class="rtg-card-header">
-            <h2>Unlinked Guide Tires (<?php echo count( $mapping['unlinked'] ); ?>)</h2>
-        </div>
-        <div class="rtg-card-body" style="padding:0;">
-            <?php if ( ! empty( $mapping['unlinked'] ) ) : ?>
-                <p style="padding:16px 16px 0;color:#86868b;">
-                    These tires in your guide don't have Roamer data linked. They may not have data available, or you can manually assign a Roamer ID on the tire edit page.
-                </p>
-                <table class="wp-list-table widefat striped" style="border:none;">
-                    <thead>
-                        <tr>
-                            <th>Tire</th>
-                            <th>Size</th>
-                            <th>Load Range</th>
-                            <th>ID</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ( $mapping['unlinked'] as $tire ) : ?>
-                            <tr>
-                                <td>
-                                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit&id=' . $tire['tire_id'] ) ); ?>">
-                                        <strong><?php echo esc_html( $tire['brand'] . ' ' . $tire['model'] ); ?></strong>
-                                    </a>
-                                </td>
-                                <td><?php echo esc_html( $tire['size'] ); ?></td>
-                                <td><?php echo esc_html( $tire['load_range'] ?: '-' ); ?></td>
-                                <td><code style="font-size:11px;"><?php echo esc_html( $tire['tire_id'] ); ?></code></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            <?php else : ?>
-                <p style="padding:16px;color:#5ec095;">All tires in your guide have Roamer data linked.</p>
-            <?php endif; ?>
-        </div>
-    </div>
-
     <!-- Unmatched Roamer Tires (from last sync) -->
     <?php if ( $stats && ! empty( $stats['unmatched_list'] ) ) :
         $all_tires = RTG_Database::get_all_tires();
@@ -309,4 +269,44 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
             </div>
         </div>
     <?php endif; ?>
+
+    <!-- Unlinked Guide Tires -->
+    <div class="rtg-card" style="margin-top:20px;">
+        <div class="rtg-card-header">
+            <h2>Unlinked Guide Tires (<?php echo count( $mapping['unlinked'] ); ?>)</h2>
+        </div>
+        <div class="rtg-card-body" style="padding:0;">
+            <?php if ( ! empty( $mapping['unlinked'] ) ) : ?>
+                <p style="padding:16px 16px 0;color:#86868b;">
+                    These tires in your guide don't have Roamer data linked. They may not have data available, or you can manually assign a Roamer ID on the tire edit page.
+                </p>
+                <table class="wp-list-table widefat striped" style="border:none;">
+                    <thead>
+                        <tr>
+                            <th>Tire</th>
+                            <th>Size</th>
+                            <th>Load Range</th>
+                            <th>ID</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ( $mapping['unlinked'] as $tire ) : ?>
+                            <tr>
+                                <td>
+                                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit&id=' . $tire['tire_id'] ) ); ?>">
+                                        <strong><?php echo esc_html( $tire['brand'] . ' ' . $tire['model'] ); ?></strong>
+                                    </a>
+                                </td>
+                                <td><?php echo esc_html( $tire['size'] ); ?></td>
+                                <td><?php echo esc_html( $tire['load_range'] ?: '-' ); ?></td>
+                                <td><code style="font-size:11px;"><?php echo esc_html( $tire['tire_id'] ); ?></code></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php else : ?>
+                <p style="padding:16px;color:#5ec095;">All tires in your guide have Roamer data linked.</p>
+            <?php endif; ?>
+        </div>
+    </div>
 </div>
