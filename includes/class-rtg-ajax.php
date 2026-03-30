@@ -965,7 +965,11 @@ class RTG_Ajax {
     }
 
     /**
-     * Manually assign a Roamer tire ID to a local tire.
+     * Manually assign one or more Roamer tire IDs to a local tire.
+     *
+     * Accepts a single roamer_tire_id or a JSON array of roamer_tire_ids.
+     * When multiple IDs are provided, efficiency is averaged weighted by
+     * session count, and counts are summed.
      */
     public function roamer_assign() {
         check_ajax_referer( 'rtg_admin_nonce', 'nonce' );
@@ -974,24 +978,117 @@ class RTG_Ajax {
             wp_send_json_error( 'Unauthorized.' );
         }
 
-        $tire_id        = sanitize_text_field( $_POST['tire_id'] ?? '' );
-        $roamer_tire_id = sanitize_text_field( $_POST['roamer_tire_id'] ?? '' );
+        $tire_id = sanitize_text_field( $_POST['tire_id'] ?? '' );
 
-        if ( empty( $tire_id ) || empty( $roamer_tire_id ) ) {
-            wp_send_json_error( 'Missing tire_id or roamer_tire_id.' );
+        if ( empty( $tire_id ) || ! preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) ) {
+            wp_send_json_error( 'Invalid or missing tire_id.' );
         }
 
-        // Validate tire_id format.
-        if ( ! preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) ) {
-            wp_send_json_error( 'Invalid tire_id format.' );
+        // Support single or multiple roamer IDs.
+        $roamer_ids = array();
+        if ( ! empty( $_POST['roamer_tire_ids'] ) ) {
+            $raw = json_decode( stripslashes( $_POST['roamer_tire_ids'] ), true );
+            if ( is_array( $raw ) ) {
+                foreach ( $raw as $rid ) {
+                    $clean = sanitize_text_field( $rid );
+                    if ( ! empty( $clean ) ) {
+                        $roamer_ids[] = $clean;
+                    }
+                }
+            }
+        } elseif ( ! empty( $_POST['roamer_tire_id'] ) ) {
+            $roamer_ids[] = sanitize_text_field( $_POST['roamer_tire_id'] );
         }
 
-        $result = RTG_Database::update_tire( $tire_id, array(
-            'roamer_tire_id' => $roamer_tire_id,
-        ) );
+        if ( empty( $roamer_ids ) ) {
+            wp_send_json_error( 'Missing roamer_tire_id(s).' );
+        }
+
+        // Look up Roamer data from stored sync stats.
+        $stats      = get_option( RTG_Roamer_Sync::STATS_OPTION, array() );
+        $all_roamer = array_merge(
+            $stats['ambiguous_list'] ?? array(),
+            $stats['unmatched_list'] ?? array()
+        );
+
+        // Build map of roamer_tire_id => data.
+        $roamer_map = array();
+        foreach ( $all_roamer as $entry ) {
+            $roamer_map[ $entry['roamer_tire_id'] ] = $entry;
+        }
+
+        if ( count( $roamer_ids ) === 1 ) {
+            // Single assignment.
+            $rid = $roamer_ids[0];
+            $update = array( 'roamer_tire_id' => $rid );
+
+            // Pull efficiency data from stats if available.
+            if ( isset( $roamer_map[ $rid ] ) ) {
+                $update['roamer_efficiency']    = floatval( $roamer_map[ $rid ]['efficiency'] ?? 0 );
+                $update['roamer_session_count'] = intval( $roamer_map[ $rid ]['session_count'] ?? 0 );
+                $update['roamer_synced_at']     = current_time( 'mysql' );
+            }
+
+            $result = RTG_Database::update_tire( $tire_id, $update );
+        } else {
+            // Multiple assignment — weighted average by session count.
+            $total_sessions  = 0;
+            $weighted_eff    = 0;
+            $total_vehicles  = 0;
+            $total_km        = 0;
+            $id_parts        = array();
+
+            foreach ( $roamer_ids as $rid ) {
+                if ( isset( $roamer_map[ $rid ] ) ) {
+                    $eff     = floatval( $roamer_map[ $rid ]['efficiency'] ?? 0 );
+                    $sess    = intval( $roamer_map[ $rid ]['session_count'] ?? 0 );
+                    $weighted_eff   += $eff * $sess;
+                    $total_sessions += $sess;
+                    $total_vehicles += intval( $roamer_map[ $rid ]['vehicle_count'] ?? 0 );
+                    $total_km       += floatval( $roamer_map[ $rid ]['total_km'] ?? 0 );
+                }
+                $id_parts[] = $rid;
+            }
+
+            $avg_eff = $total_sessions > 0 ? $weighted_eff / $total_sessions : 0;
+
+            $result = RTG_Database::update_tire( $tire_id, array(
+                'roamer_tire_id'       => implode( ',', $id_parts ),
+                'roamer_efficiency'    => round( $avg_eff, 2 ),
+                'roamer_session_count' => $total_sessions,
+                'roamer_total_km'      => $total_km,
+                'roamer_vehicle_count' => $total_vehicles,
+                'roamer_synced_at'     => current_time( 'mysql' ),
+            ) );
+        }
 
         if ( false === $result ) {
             wp_send_json_error( 'Failed to update tire.' );
+        }
+
+        // Remove assigned IDs from stored sync stats so they don't persist.
+        if ( ! empty( $stats ) ) {
+            $assigned_set = array_flip( $roamer_ids );
+
+            if ( ! empty( $stats['ambiguous_list'] ) ) {
+                $stats['ambiguous_list'] = array_values( array_filter(
+                    $stats['ambiguous_list'],
+                    function ( $item ) use ( $assigned_set ) {
+                        return ! isset( $assigned_set[ $item['roamer_tire_id'] ] );
+                    }
+                ) );
+            }
+
+            if ( ! empty( $stats['unmatched_list'] ) ) {
+                $stats['unmatched_list'] = array_values( array_filter(
+                    $stats['unmatched_list'],
+                    function ( $item ) use ( $assigned_set ) {
+                        return ! isset( $assigned_set[ $item['roamer_tire_id'] ] );
+                    }
+                ) );
+            }
+
+            update_option( RTG_Roamer_Sync::STATS_OPTION, $stats, false );
         }
 
         wp_send_json_success( array( 'updated' => $result ) );

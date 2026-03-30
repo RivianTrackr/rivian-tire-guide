@@ -174,6 +174,8 @@ class RTG_Roamer_Sync {
                         'size'           => $size,
                         'efficiency'     => $eff_data['roamer_efficiency'],
                         'session_count'  => $eff_data['roamer_session_count'],
+                        'vehicle_count'  => $eff_data['roamer_vehicle_count'],
+                        'total_km'       => $eff_data['roamer_total_km'],
                         'candidates'     => $candidates,
                     );
                     $skipped++;
@@ -186,6 +188,8 @@ class RTG_Roamer_Sync {
                     'size'           => $size,
                     'efficiency'     => $eff_data['roamer_efficiency'],
                     'session_count'  => $eff_data['roamer_session_count'],
+                    'vehicle_count'  => $eff_data['roamer_vehicle_count'],
+                    'total_km'       => $eff_data['roamer_total_km'],
                 );
                 $unmatched++;
             }

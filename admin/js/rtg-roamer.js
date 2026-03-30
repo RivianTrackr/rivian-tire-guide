@@ -117,4 +117,66 @@
     });
   });
 
+  // --- Unmatched Roamer tires: multi-select assign ---
+
+  function updateUnmatchedBar() {
+    var checked = $('.rtg-unmatched-cb:checked');
+    var $bar = $('#rtg-unmatched-assign-bar');
+    var $count = $('#rtg-unmatched-selected-count');
+    var $btn = $('#rtg-unmatched-assign-btn');
+    var $select = $('#rtg-unmatched-assign-tire');
+
+    if (checked.length > 0) {
+      $bar.css('display', 'flex');
+      $count.text(checked.length + ' selected');
+      $btn.prop('disabled', !$select.val());
+    } else {
+      $bar.hide();
+    }
+  }
+
+  $(document).on('change', '.rtg-unmatched-cb', updateUnmatchedBar);
+
+  $('#rtg-unmatched-select-all').on('change', function () {
+    $('.rtg-unmatched-cb').prop('checked', $(this).prop('checked'));
+    updateUnmatchedBar();
+  });
+
+  $('#rtg-unmatched-assign-tire').on('change', function () {
+    var checked = $('.rtg-unmatched-cb:checked');
+    $('#rtg-unmatched-assign-btn').prop('disabled', !$(this).val() || checked.length === 0);
+  });
+
+  $('#rtg-unmatched-assign-btn').on('click', function () {
+    var $btn = $(this);
+    var tireId = $('#rtg-unmatched-assign-tire').val();
+    var roamerIds = [];
+
+    $('.rtg-unmatched-cb:checked').each(function () {
+      roamerIds.push($(this).val());
+    });
+
+    if (!tireId || roamerIds.length === 0) return;
+
+    $btn.prop('disabled', true).text('Assigning...');
+
+    $.post(rtgAdmin.ajaxurl, {
+      action: 'rtg_roamer_assign',
+      nonce: rtgAdmin.nonce,
+      tire_id: tireId,
+      roamer_tire_ids: JSON.stringify(roamerIds)
+    }, function (response) {
+      if (response.success) {
+        $btn.text('Assigned').removeClass('button-primary');
+        setTimeout(function () { location.reload(); }, 1000);
+      } else {
+        $btn.prop('disabled', false).text('Assign');
+        alert('Failed: ' + (response.data || 'Unknown error'));
+      }
+    }).fail(function () {
+      $btn.prop('disabled', false).text('Assign');
+      alert('Network error.');
+    });
+  });
+
 })(jQuery);
