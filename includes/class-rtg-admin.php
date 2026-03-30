@@ -135,6 +135,19 @@ class RTG_Admin {
             echo '</p>';
         }
 
+        // Roamer sync coverage.
+        $roamer_linked = intval( $stats['core']['roamer_linked'] ?? 0 );
+        if ( $roamer_linked > 0 || $total_tires > 0 ) {
+            $roamer_pct = $total_tires > 0 ? round( ( $roamer_linked / $total_tires ) * 100 ) : 0;
+            printf(
+                '<p style="margin:4px 0;color:#666;">Roamer: %d/%d tires linked (%d%%) · <a href="%s">Manage</a></p>',
+                $roamer_linked,
+                $total_tires,
+                $roamer_pct,
+                esc_url( admin_url( 'admin.php?page=rtg-roamer-sync' ) )
+            );
+        }
+
         // Top rated tire.
         if ( ! empty( $stats['top_rated'] ) ) {
             $top = $stats['top_rated'][0];
