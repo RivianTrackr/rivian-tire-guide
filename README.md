@@ -32,10 +32,11 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Single Source of Truth** — Calculation lives in `RTG_Database::calculate_efficiency()`. Admin form uses AJAX to call the PHP formula directly.
 
 ### Real-World Efficiency (Rivian Roamer)
-- **Live Data Sync** — Integrates real-world km/kWh efficiency data from [Rivian Roamer](https://rivianroamer.com), collected from actual Rivian owner driving sessions. Syncs automatically twice daily via WP-Cron.
-- **Admin Mapping** — Auto-matches tires by brand + model + size. Ambiguous matches (same tire, different load ratings) are flagged for manual review on the Roamer Sync admin page.
-- **Tire Cards** — Blue "Real-World km/kWh" badge with session and vehicle count, displayed alongside the calculated efficiency score.
+- **Live Data Sync** — Integrates real-world mi/kWh efficiency data from [Rivian Roamer](https://rivianroamer.com), collected from actual Rivian owner driving sessions. Syncs automatically twice daily via WP-Cron.
+- **Admin Mapping** — Auto-matches tires by brand + model + size. Ambiguous matches (same tire, different load ratings) are flagged for manual review on the Roamer Sync admin page. Multiple Roamer entries can be assigned to one tire with weighted-average efficiency.
+- **Tire Cards** — Blue mi/kWh pill badge displayed alongside the calculated efficiency badge, with its own info tooltip linking to Rivian Roamer.
 - **Sort & Compare** — "Real-World Efficiency" sort option and comparison row in Performance section.
+- **Dashboard** — Roamer overview card (coverage, avg/best/worst mi/kWh, sessions, vehicles, last sync) and top 5 most efficient tires by real-world data.
 
 ### Analytics
 - **Click Tracking** — Tracks affiliate link clicks (purchase, review) via `navigator.sendBeacon()` with 5-second server-side deduplication.
@@ -47,7 +48,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Wishlist System** — Logged-in users save tires to a personal favorites list via heart icon. "My Favorites" filter toggle with badge count. Optimistic UI updates.
 
 ### Admin
-- **Dashboard** — Overview cards (total tires, average price, efficiency, ratings), breakdowns by category/brand/size/grade, content health indicators (pending reviews, missing images/links). A quick-stats dashboard widget also appears on the main WordPress dashboard.
+- **Dashboard** — Overview cards (total tires, average price, efficiency, ratings), breakdowns by category/brand/size/grade, Rivian Roamer real-world efficiency overview and top 5 rankings, content health indicators (pending reviews, missing images/links). A quick-stats dashboard widget (with Roamer coverage) also appears on the main WordPress dashboard.
 - **Tire Management** — Full CRUD with search, filters, bulk actions, tire duplication, and tag suggestions.
 - **CSV Import/Export** — Bulk import with duplicate handling (skip/update), auto-generated IDs, auto-calculated efficiency, MIME validation, and full catalog export.
 - **Reviews Management** — Pending/approved/rejected tabs with approve, reject, and delete actions.

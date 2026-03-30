@@ -4,28 +4,29 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.29.2] - 2026-03-29
-
-### Improved
-- **Real-world efficiency display** — Redesigned the Roamer mi/kWh value to show inline on the same line as the efficiency badge with a cleaner design. Removed the separate info icon and merged its explanation into the Efficiency Score tooltip. Tire tags (EV Rated, etc.) now render on their own line below efficiency.
-
-### Changed
-- **Plugin version** — Bumped to 1.29.2.
-
-## [1.29.0] - 2026-03-29
+## [1.30.0] - 2026-03-30
 
 ### Added
-- **Rivian Roamer real-world efficiency data** — Integrates live tire efficiency data (km/kWh) collected from Rivian owners via Rivian Roamer. Data syncs automatically twice daily via WP-Cron and is displayed alongside the calculated efficiency score on tire cards, comparison pages, and the REST API feed.
-- **Roamer Sync admin page** — New admin page (Tire Guide > Roamer Sync) for managing the integration: sync status dashboard, settings (enable/disable, feed URL), linked tires table, ambiguous match resolution with dropdown assignment, unlinked guide tires list, and unmatched Roamer tires reference.
-- **Manual Roamer mapping** — Tires with the same name and size but different load ratings are flagged as ambiguous and skipped for manual review. Admins can assign Roamer data via the sync page or directly on the tire edit form.
-- **Real-World Efficiency sort** — New "Real-World Efficiency" option in the sort dropdown, ordering tires by km/kWh (tires without data sorted to bottom).
-- **Real-World Efficiency on compare page** — New row in the Performance section showing km/kWh with session count and best-value highlighting.
+- **Rivian Roamer real-world efficiency data** — Integrates live tire efficiency data (mi/kWh) collected from Rivian owners via [Rivian Roamer](https://rivianroamer.com). Data syncs automatically twice daily via WP-Cron and is displayed alongside the calculated efficiency score on tire cards, comparison pages, and the REST API feed.
+- **Roamer Sync admin page** — New admin page (Tire Guide > Roamer Sync) for managing the integration: sync status dashboard, settings (enable/disable, feed URL), linked tires table, ambiguous match resolution with dropdown assignment, unmatched Roamer tires with multi-select assign, and paginated unlinked guide tires list.
+- **Manual Roamer mapping** — Tires with the same name and size but different load ratings are flagged as ambiguous and skipped for manual review. Admins can assign Roamer data via the sync page or directly on the tire edit form. Multiple Roamer entries can be assigned to one tire with weighted-average efficiency.
+- **Real-World Efficiency sort** — New "Real-World Efficiency" option in the sort dropdown, ordering tires by mi/kWh (tires without data sorted to bottom).
+- **Real-World Efficiency on compare page** — New row in the Performance section showing mi/kWh with session count and best-value highlighting.
 - **Roamer fields in REST API** — The `/wp-json/rtg/v1/feed` endpoint now includes `roamer_efficiency`, `roamer_session_count`, `roamer_vehicle_count`, and `roamer_synced_at`.
-- **Tire edit form Roamer section** — New "Rivian Roamer — Real-World Data" card on the tire edit page showing linked Roamer ID, km/kWh, session count, vehicle count, and km tracked.
+- **Tire edit form Roamer section** — New "Rivian Roamer — Real-World Data" card on the tire edit page showing linked Roamer ID, mi/kWh, session count, vehicle count, and km tracked.
+- **Dashboard Roamer cards** — New "Rivian Roamer — Real-World Efficiency" overview card with coverage, avg/best/worst mi/kWh, total sessions, total vehicles, and last sync status. New "Most Efficient (Real-World)" ranked list of top 5 tires by Roamer mi/kWh.
+- **WP Dashboard widget** — Roamer sync coverage stat (X/Y tires linked) with link to Roamer Sync page.
+
+### Improved
+- **Real-world efficiency display** — mi/kWh shown as a bordered pill badge next to the calculated efficiency badge on tire cards, with its own info tooltip linking to Rivian Roamer. Tags (EV Rated, etc.) moved to a dedicated row at the bottom of the spec list.
+
+### Fixed
+- **Ambiguous/unmatched assignments persist** — Assigned tires are now removed from the stored sync stats immediately, so they no longer reappear in the ambiguous or unmatched tables after page reload or sync.
+- **Multi-assign sync recognition** — Comma-separated `roamer_tire_id` values from multi-assign are now correctly recognized during sync so tires stay linked.
 
 ### Changed
 - **Database schema** — Migration 12 adds 6 columns to `wp_rtg_tires`: `roamer_tire_id`, `roamer_efficiency`, `roamer_session_count`, `roamer_total_km`, `roamer_vehicle_count`, `roamer_synced_at`.
-- **Plugin version** — Bumped to 1.29.0.
+- **Plugin version** — Bumped to 1.30.0.
 
 ## [1.28.2] - 2026-03-16
 
