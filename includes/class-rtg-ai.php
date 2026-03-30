@@ -124,6 +124,8 @@ class RTG_AI {
             $avg_rating  = isset( $ratings[ $tid ]['average'] ) ? round( $ratings[ $tid ]['average'], 1 ) : 'N/A';
             $review_count = $ratings[ $tid ]['count'] ?? 0;
 
+            $roamer_eff  = ! empty( $tire['roamer_efficiency'] ) ? round( $tire['roamer_efficiency'], 2 ) . ' mi/kWh (' . intval( $tire['roamer_session_count'] ) . ' sessions)' : 'N/A';
+
             $parts = array(
                 'ID: ' . $tid,
                 'Brand: ' . $tire['brand'],
@@ -140,6 +142,7 @@ class RTG_AI {
                 'Speed: ' . $tire['speed_rating'],
                 'UTQG: ' . $tire['utqg'],
                 'Efficiency: ' . $tire['efficiency_grade'] . ' (' . $tire['efficiency_score'] . ')',
+                'Real-World: ' . $roamer_eff,
                 'Rating: ' . $avg_rating . '/5 (' . $review_count . ' reviews)',
                 'Tags: ' . ( $tire['tags'] ?: 'None' ),
             );
@@ -234,6 +237,7 @@ IMPORTANT CONTEXT:
 - "3PMS" (Three-Peak Mountain Snowflake) means the tire is certified for severe snow conditions.
 - "EV Rated" in tags means the tire is specifically designed for electric vehicles.
 - "Efficiency Grade" rates how well the tire preserves range/efficiency (A is best, F is worst).
+- "Real-World" is real-world efficiency data from Rivian Roamer, measured in mi/kWh by actual Rivian owners. Higher mi/kWh means better real-world range. The session count indicates how much data backs the measurement. When a user asks about range or efficiency, factor in the Real-World mi/kWh data alongside the Efficiency Grade — real-world data is especially valuable because it reflects actual driving conditions. If a tire has no Real-World data (N/A), note that in your reason.
 - Category types: All-Season, Winter, Performance, All-Terrain, Highway, Rugged Terrain, Mud-Terrain.
 
 INSTRUCTIONS:
