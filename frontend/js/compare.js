@@ -246,7 +246,7 @@ function renderComparison(rows, indexes) {
       const miPerKwh = v.toFixed(2);
       const sess = parseInt(t[COL.roamerSessionCount]) || 0;
       const veh = parseInt(t[COL.roamerVehicleCount]) || 0;
-      return '<span style="font-weight:700;color:#60a5fa;">' + miPerKwh + ' mi/kWh</span>' +
+      return '<span style="display:inline-block;background:rgba(59,130,246,0.15);border-radius:6px;padding:2px 8px;font-weight:700;color:#60a5fa;">' + miPerKwh + ' mi/kWh</span>' +
         '<br><span style="font-size:11px;color:#94a3b8;">' + sess.toLocaleString() + ' sessions, ' + veh + ' vehicle' + (veh !== 1 ? 's' : '') + '</span>';
     }, 'roamerEfficiency'],
     ['Speed Rating', t => t[COL.speedRating] || "-"],

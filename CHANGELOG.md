@@ -4,16 +4,17 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.32.0] - 2026-03-30
+## [1.33.0] - 2026-03-30
 
 ### Added
 - **Real-world efficiency in AI search** — The AI Tire Advisor now includes Rivian Roamer real-world efficiency data (mi/kWh and session count) in its tire context. When users ask about range or efficiency, the AI factors in actual driving data from Rivian owners alongside the calculated efficiency grade.
 
 ### Fixed
 - **Roamer efficiency unit conversion** — Source data from Rivian Roamer (`efficiency_km_per_kwh`) is in km/kWh. Values are now correctly converted to mi/kWh (× 0.621371) during sync. Admin labels on the Roamer Sync page and tire edit form updated from "km/kWh" to "mi/kWh" for consistency.
+- **Compare view Real-World Efficiency styling** — Added blue pill background behind mi/kWh values and fixed the row label background not filling the full row height on multi-line rows.
 
 ### Changed
-- **Plugin version** — Bumped to 1.32.0.
+- **Plugin version** — Bumped to 1.33.0.
 
 ## [1.30.0] - 2026-03-30
 
