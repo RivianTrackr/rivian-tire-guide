@@ -265,7 +265,7 @@
     /* --- Spec rows --- */
     .cmp-row {
       display: grid;
-      align-items: center;
+      align-items: stretch;
       padding: 0;
       border-bottom: 1px solid rgba(51, 65, 85, 0.4);
     }
@@ -276,9 +276,12 @@
       font-weight: 600;
       color: var(--rtg-text-muted);
       background: rgba(30, 41, 59, 0.3);
+      display: flex;
+      align-items: center;
     }
     .cmp-row-values {
       display: grid;
+      align-items: center;
       gap: 0;
     }
     .cmp-row-value {
