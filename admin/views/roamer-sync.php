@@ -25,7 +25,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
     <h1 class="wp-heading-inline">Roamer Sync — Real-World Efficiency Data</h1>
     <p class="rtg-page-description" style="margin-top:8px;color:#86868b;">
         Sync live tire efficiency data from <a href="https://rivianroamer.com" target="_blank" rel="noopener">Rivian Roamer</a>
-        to show real-world km/kWh alongside calculated efficiency scores.
+        to show real-world mi/kWh alongside calculated efficiency scores.
     </p>
 
     <!-- Settings -->
@@ -128,7 +128,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                             <th>Size</th>
                             <th>Load Range</th>
                             <th>Roamer ID</th>
-                            <th>km/kWh</th>
+                            <th>mi/kWh</th>
                             <th>Sessions</th>
                             <th>Vehicles</th>
                             <th>Last Synced</th>
@@ -175,7 +175,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                         <tr>
                             <th>Roamer Tire</th>
                             <th>Size</th>
-                            <th>km/kWh</th>
+                            <th>mi/kWh</th>
                             <th>Sessions</th>
                             <th>Assign To</th>
                             <th>Actions</th>
