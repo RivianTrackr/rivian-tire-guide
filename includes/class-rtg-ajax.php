@@ -78,6 +78,7 @@ class RTG_Ajax {
         add_action( 'wp_ajax_rtg_roamer_assign', array( $this, 'roamer_assign' ) );
         add_action( 'wp_ajax_rtg_roamer_unlink', array( $this, 'roamer_unlink' ) );
         add_action( 'wp_ajax_rtg_roamer_hide', array( $this, 'roamer_hide' ) );
+        add_action( 'wp_ajax_rtg_roamer_restore', array( $this, 'roamer_restore' ) );
     }
 
     /**
@@ -1192,5 +1193,49 @@ class RTG_Ajax {
         }
 
         wp_send_json_success( array( 'hidden' => $roamer_ids ) );
+    }
+
+    /**
+     * Restore previously hidden Roamer tire IDs.
+     *
+     * Removes IDs from the hidden list so they reappear on the next sync.
+     */
+    public function roamer_restore() {
+        check_ajax_referer( 'rtg_admin_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized.' );
+        }
+
+        $roamer_ids = array();
+        if ( ! empty( $_POST['roamer_tire_ids'] ) ) {
+            $raw = json_decode( stripslashes( $_POST['roamer_tire_ids'] ), true );
+            if ( is_array( $raw ) ) {
+                foreach ( $raw as $rid ) {
+                    $clean = sanitize_text_field( $rid );
+                    if ( ! empty( $clean ) ) {
+                        $roamer_ids[] = $clean;
+                    }
+                }
+            }
+        }
+
+        if ( empty( $roamer_ids ) ) {
+            wp_send_json_error( 'Missing roamer_tire_ids.' );
+        }
+
+        $hidden = get_option( RTG_Roamer_Sync::HIDDEN_OPTION, array() );
+        if ( ! is_array( $hidden ) ) {
+            $hidden = array();
+        }
+
+        $restore_set = array_flip( $roamer_ids );
+        $hidden = array_values( array_filter( $hidden, function ( $id ) use ( $restore_set ) {
+            return ! isset( $restore_set[ $id ] );
+        } ) );
+
+        update_option( RTG_Roamer_Sync::HIDDEN_OPTION, $hidden, false );
+
+        wp_send_json_success( array( 'restored' => $roamer_ids ) );
     }
 }

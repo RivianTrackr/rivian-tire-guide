@@ -181,6 +181,58 @@
     });
   });
 
+  // --- Hidden Roamer tires: restore ---
+
+  function updateHiddenBar() {
+    var checked = $('.rtg-hidden-cb:checked');
+    var $bar = $('#rtg-hidden-restore-bar');
+    var $count = $('#rtg-hidden-selected-count');
+
+    if (checked.length > 0) {
+      $bar.css('display', 'flex');
+      $count.text(checked.length + ' selected');
+    } else {
+      $bar.hide();
+    }
+  }
+
+  $(document).on('change', '.rtg-hidden-cb', updateHiddenBar);
+
+  $('#rtg-hidden-select-all').on('change', function () {
+    $('.rtg-hidden-cb').prop('checked', $(this).prop('checked'));
+    updateHiddenBar();
+  });
+
+  $('#rtg-hidden-restore-btn').on('click', function () {
+    var $btn = $(this);
+    var roamerIds = [];
+
+    $('.rtg-hidden-cb:checked').each(function () {
+      roamerIds.push($(this).val());
+    });
+
+    if (roamerIds.length === 0) return;
+
+    $btn.prop('disabled', true).text('Restoring...');
+
+    $.post(rtgAdmin.ajaxurl, {
+      action: 'rtg_roamer_restore',
+      nonce: rtgAdmin.nonce,
+      roamer_tire_ids: JSON.stringify(roamerIds)
+    }, function (response) {
+      if (response.success) {
+        $btn.text('Restored');
+        setTimeout(function () { location.reload(); }, 1000);
+      } else {
+        $btn.prop('disabled', false).text('Restore');
+        alert('Failed: ' + (response.data || 'Unknown error'));
+      }
+    }).fail(function () {
+      $btn.prop('disabled', false).text('Restore');
+      alert('Network error.');
+    });
+  });
+
   // --- Hide unmatched Roamer tires permanently ---
 
   $('#rtg-unmatched-hide-btn').on('click', function () {
