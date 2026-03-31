@@ -89,6 +89,9 @@ function rtg_init() {
     // Standalone tire review page.
     new RTG_Tire_Review();
 
+    // Standalone tire efficiency rankings page.
+    new RTG_Efficiency();
+
     // Schema.org structured data.
     new RTG_Schema();
 

@@ -185,6 +185,17 @@ if ( ! defined( 'ABSPATH' ) ) {
     <div id="filterResultCount" class="filter-result-count" aria-live="polite"></div>
   </div>
 </div>
+<?php
+$rtg_eff_settings = get_option( 'rtg_settings', array() );
+$rtg_eff_slug     = $rtg_eff_settings['efficiency_slug'] ?? 'tire-efficiency';
+?>
+<div class="rtg-efficiency-banner">
+  <a href="<?php echo esc_url( home_url( '/' . sanitize_title( $rtg_eff_slug ) . '/' ) ); ?>" class="rtg-efficiency-link">
+    <i class="fa-solid fa-bolt" aria-hidden="true"></i>
+    View Tire Efficiency Rankings
+    <i class="fa-solid fa-arrow-right" aria-hidden="true" style="font-size: 12px; opacity: 0.7;"></i>
+  </a>
+</div>
 <div class="sort-wrapper">
   <span id="tireCount" class="tire-count" aria-live="polite">Showing 0 tires</span>
   <div style="flex: 1;"></div>
