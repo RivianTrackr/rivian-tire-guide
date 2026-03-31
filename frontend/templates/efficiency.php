@@ -392,13 +392,18 @@
       .eff-page { padding: 16px 12px 40px; }
       .eff-title { font-size: 20px; }
       .eff-grid { grid-template-columns: 1fr; gap: 16px; }
-      .eff-filter-label { min-width: 64px; font-size: 11px; }
-      .eff-filter-btn { padding: 5px 12px; font-size: 12px; }
+      .eff-filters { gap: 8px; }
+      .eff-filter-row { gap: 6px; }
+      .eff-filter-label { min-width: auto; width: 100%; font-size: 11px; margin-bottom: -2px; }
+      .eff-filter-btn { padding: 6px 14px; font-size: 13px; }
+      .eff-card-variants { gap: 4px; }
+      .eff-variant-pill { font-size: 9px; padding: 2px 6px; }
     }
 
     @media (max-width: 480px) {
       .eff-topbar-actions .eff-btn span { display: none; }
       .eff-card-efficiency-value { font-size: 28px; }
+      .eff-filter-btn { padding: 5px 10px; font-size: 12px; flex: 1 1 auto; text-align: center; }
     }
 
     /* --- Print --- */
