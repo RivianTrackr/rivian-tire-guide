@@ -24,6 +24,9 @@ class RTG_Roamer_Sync {
     /** Option key for sync stats. */
     const STATS_OPTION = 'rtg_roamer_sync_stats';
 
+    /** Option key for permanently hidden Roamer tire IDs. */
+    const HIDDEN_OPTION = 'rtg_roamer_hidden_ids';
+
     /** HTTP request timeout in seconds. */
     const REQUEST_TIMEOUT = 15;
 
@@ -135,9 +138,18 @@ class RTG_Roamer_Sync {
         $unmatched_list = array();
         $now = current_time( 'mysql' );
 
+        // Load permanently hidden Roamer IDs so they are excluded from unmatched.
+        $hidden_ids = get_option( self::HIDDEN_OPTION, array() );
+        $hidden_set = is_array( $hidden_ids ) ? array_flip( $hidden_ids ) : array();
+
         foreach ( $data['tires'] as $roamer_tire ) {
             $roamer_id = sanitize_text_field( $roamer_tire['tire_id'] ?? '' );
             if ( empty( $roamer_id ) ) {
+                continue;
+            }
+
+            // Skip permanently hidden tires.
+            if ( isset( $hidden_set[ $roamer_id ] ) ) {
                 continue;
             }
 

@@ -124,12 +124,14 @@
     var $bar = $('#rtg-unmatched-assign-bar');
     var $count = $('#rtg-unmatched-selected-count');
     var $btn = $('#rtg-unmatched-assign-btn');
+    var $hideBtn = $('#rtg-unmatched-hide-btn');
     var $select = $('#rtg-unmatched-assign-tire');
 
     if (checked.length > 0) {
       $bar.css('display', 'flex');
       $count.text(checked.length + ' selected');
       $btn.prop('disabled', !$select.val());
+      $hideBtn.prop('disabled', false);
     } else {
       $bar.hide();
     }
@@ -175,6 +177,42 @@
       }
     }).fail(function () {
       $btn.prop('disabled', false).text('Assign');
+      alert('Network error.');
+    });
+  });
+
+  // --- Hide unmatched Roamer tires permanently ---
+
+  $('#rtg-unmatched-hide-btn').on('click', function () {
+    var $btn = $(this);
+    var roamerIds = [];
+
+    $('.rtg-unmatched-cb:checked').each(function () {
+      roamerIds.push($(this).val());
+    });
+
+    if (roamerIds.length === 0) return;
+
+    if (!confirm('Hide ' + roamerIds.length + ' tire(s) permanently? They won\u2019t appear in future syncs. You can restore them from the plugin settings.')) {
+      return;
+    }
+
+    $btn.prop('disabled', true).text('Hiding...');
+
+    $.post(rtgAdmin.ajaxurl, {
+      action: 'rtg_roamer_hide',
+      nonce: rtgAdmin.nonce,
+      roamer_tire_ids: JSON.stringify(roamerIds)
+    }, function (response) {
+      if (response.success) {
+        $btn.text('Hidden');
+        setTimeout(function () { location.reload(); }, 1000);
+      } else {
+        $btn.prop('disabled', false).text('Hide');
+        alert('Failed: ' + (response.data || 'Unknown error'));
+      }
+    }).fail(function () {
+      $btn.prop('disabled', false).text('Hide');
       alert('Network error.');
     });
   });
