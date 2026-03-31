@@ -275,11 +275,17 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
         </div>
     <?php endif; ?>
 
-    <!-- Hidden Roamer Tires -->
+    <!-- Hidden Roamer Tires (collapsed by default) -->
     <?php
     $hidden_ids = get_option( RTG_Roamer_Sync::HIDDEN_OPTION, array() );
     if ( ! empty( $hidden_ids ) ) : ?>
-        <div class="rtg-card" style="margin-top:20px;">
+        <div style="margin-top:20px;">
+            <button type="button" id="rtg-toggle-hidden-btn" class="button" style="display:inline-flex;align-items:center;gap:6px;">
+                <span class="dashicons dashicons-hidden" style="font-size:16px;width:16px;height:16px;line-height:16px;"></span>
+                View Hidden Tires (<?php echo count( $hidden_ids ); ?>)
+            </button>
+        </div>
+        <div id="rtg-hidden-section" class="rtg-card" style="margin-top:12px;display:none;">
             <div class="rtg-card-header" style="display:flex;align-items:center;justify-content:space-between;">
                 <h2>Hidden Roamer Tires (<?php echo count( $hidden_ids ); ?>)</h2>
                 <div id="rtg-hidden-restore-bar" style="display:none;align-items:center;gap:8px;">
@@ -289,7 +295,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
             </div>
             <div class="rtg-card-body" style="padding:0;">
                 <p style="padding:16px 16px 0;color:#86868b;">
-                    These Roamer tire IDs have been permanently hidden. They are excluded from future syncs. Select one or more and click Restore to unhide them.
+                    These Roamer tire IDs have been permanently hidden and excluded from future syncs. Select one or more and click Restore to unhide them — they'll reappear as unmatched on the next sync.
                 </p>
                 <table class="wp-list-table widefat striped" style="border:none;">
                     <thead>
