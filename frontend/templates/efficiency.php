@@ -454,7 +454,6 @@
 
     <div class="eff-filters">
       <div id="effFilterModel" class="eff-filter-row" role="radiogroup" aria-label="Filter by vehicle type"></div>
-      <div id="effFilterGen" class="eff-filter-row" role="radiogroup" aria-label="Filter by generation" style="display:none"></div>
       <div id="effFilterPack" class="eff-filter-row" role="radiogroup" aria-label="Filter by battery pack" style="display:none"></div>
     </div>
 
