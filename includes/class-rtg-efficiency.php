@@ -31,7 +31,20 @@ class RTG_Efficiency {
         if ( get_option( 'rtg_flush_rewrite' ) ) {
             flush_rewrite_rules();
             delete_option( 'rtg_flush_rewrite' );
+            return;
         }
+
+        // Auto-flush once if the efficiency rewrite rule is missing.
+        if ( get_transient( 'rtg_efficiency_rewrite_flushed' ) ) {
+            return;
+        }
+        $rules = get_option( 'rewrite_rules' );
+        $settings = get_option( 'rtg_settings', array() );
+        $slug = sanitize_title( $settings['efficiency_slug'] ?? 'tire-efficiency' );
+        if ( ! isset( $rules[ '^' . $slug . '/?$' ] ) ) {
+            flush_rewrite_rules();
+        }
+        set_transient( 'rtg_efficiency_rewrite_flushed', 1, DAY_IN_SECONDS );
     }
 
     public function load_template() {
