@@ -199,13 +199,9 @@
 
   // --- Hidden Roamer tires: toggle & restore ---
 
-  $('#rtg-toggle-hidden-btn').on('click', function () {
-    var $section = $('#rtg-hidden-section');
-    var $btn = $(this);
-    $section.slideToggle(200, function () {
-      var visible = $section.is(':visible');
-      $btn.find('span:last').text(visible ? 'Hide List' : 'View Hidden Tires (' + $('.rtg-hidden-cb').length + ')');
-    });
+  $('#rtg-hidden-toggle').on('click', function () {
+    $('#rtg-hidden-section').slideToggle(200);
+    $('#rtg-hidden-arrow').toggleClass('rtg-arrow-open');
   });
 
   function updateHiddenBar() {

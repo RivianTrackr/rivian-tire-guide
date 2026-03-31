@@ -306,40 +306,37 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
     <?php
     $hidden_ids = get_option( RTG_Roamer_Sync::HIDDEN_OPTION, array() );
     if ( ! empty( $hidden_ids ) ) : ?>
-        <div style="margin-top:20px;">
-            <button type="button" id="rtg-toggle-hidden-btn" class="button" style="display:inline-flex;align-items:center;gap:6px;">
-                <span class="dashicons dashicons-hidden" style="font-size:16px;width:16px;height:16px;line-height:16px;"></span>
-                View Hidden Tires (<?php echo count( $hidden_ids ); ?>)
-            </button>
-        </div>
-        <div id="rtg-hidden-section" class="rtg-card" style="margin-top:12px;display:none;">
-            <div class="rtg-card-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="rtg-card" style="margin-top:20px;">
+            <div class="rtg-card-header" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" id="rtg-hidden-toggle">
                 <h2>Hidden Roamer Tires (<?php echo count( $hidden_ids ); ?>)</h2>
-                <div id="rtg-hidden-restore-bar" style="display:none;align-items:center;gap:8px;">
+                <span class="dashicons dashicons-arrow-down-alt2" id="rtg-hidden-arrow" style="font-size:20px;width:20px;height:20px;color:#86868b;transition:transform 0.2s;"></span>
+            </div>
+            <div id="rtg-hidden-section" style="display:none;">
+                <div id="rtg-hidden-restore-bar" style="display:none;align-items:center;gap:8px;padding:12px 24px 0;">
                     <span id="rtg-hidden-selected-count" style="font-size:13px;color:#86868b;">0 selected</span>
                     <button type="button" id="rtg-hidden-restore-btn" class="button">Restore</button>
                 </div>
-            </div>
-            <div class="rtg-card-body" style="padding:0;">
-                <p style="padding:16px 16px 0;color:#86868b;">
-                    These Roamer tire IDs have been permanently hidden and excluded from future syncs. Select one or more and click Restore to unhide them — they'll reappear as unmatched on the next sync.
-                </p>
-                <table class="wp-list-table widefat striped" style="border:none;">
-                    <thead>
-                        <tr>
-                            <th style="width:30px;"><input type="checkbox" id="rtg-hidden-select-all"></th>
-                            <th>Roamer ID</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ( $hidden_ids as $hid ) : ?>
+                <div class="rtg-card-body" style="padding:0;">
+                    <p style="padding:16px 16px 0;color:#86868b;">
+                        These Roamer tire IDs have been permanently hidden and excluded from future syncs. Select one or more and click Restore to unhide them.
+                    </p>
+                    <table class="wp-list-table widefat striped" style="border:none;">
+                        <thead>
                             <tr>
-                                <td><input type="checkbox" class="rtg-hidden-cb" value="<?php echo esc_attr( $hid ); ?>"></td>
-                                <td><code style="font-size:11px;"><?php echo esc_html( $hid ); ?></code></td>
+                                <th style="width:30px;"><input type="checkbox" id="rtg-hidden-select-all"></th>
+                                <th>Roamer ID</th>
                             </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <?php foreach ( $hidden_ids as $hid ) : ?>
+                                <tr>
+                                    <td><input type="checkbox" class="rtg-hidden-cb" value="<?php echo esc_attr( $hid ); ?>"></td>
+                                    <td><code style="font-size:11px;"><?php echo esc_html( $hid ); ?></code></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     <?php endif; ?>
