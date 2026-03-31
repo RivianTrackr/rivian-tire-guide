@@ -13,8 +13,9 @@ $sync_url     = $settings['roamer_sync_url'] ?? RTG_Roamer_Sync::DEFAULT_URL;
 // Handle settings save.
 if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
     check_admin_referer( 'rtg_roamer_settings', 'rtg_roamer_settings_nonce' );
-    $settings['roamer_sync_enabled'] = ! empty( $_POST['roamer_sync_enabled'] );
-    $settings['roamer_sync_url']     = esc_url_raw( $_POST['roamer_sync_url'] ?? '' );
+    $settings['roamer_sync_enabled']   = ! empty( $_POST['roamer_sync_enabled'] );
+    $settings['roamer_notify_enabled'] = ! empty( $_POST['roamer_notify_enabled'] );
+    $settings['roamer_sync_url']       = esc_url_raw( $_POST['roamer_sync_url'] ?? '' );
     update_option( 'rtg_settings', $settings );
     $sync_enabled = $settings['roamer_sync_enabled'];
     $sync_url     = $settings['roamer_sync_url'];
@@ -43,6 +44,15 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                             <label>
                                 <input type="checkbox" name="roamer_sync_enabled" id="roamer_sync_enabled" value="1" <?php checked( $sync_enabled ); ?>>
                                 Automatically sync efficiency data twice daily
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="roamer_notify_enabled">Email Notifications</label></th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="roamer_notify_enabled" id="roamer_notify_enabled" value="1" <?php checked( $settings['roamer_notify_enabled'] ?? true ); ?>>
+                                Email me when new ambiguous or unmatched tires are detected
                             </label>
                         </td>
                     </tr>

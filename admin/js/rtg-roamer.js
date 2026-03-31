@@ -119,18 +119,14 @@
 
   // --- Collapsible sections ---
 
-  $('#rtg-linked-toggle').on('click', function () {
-    var $section = $('#rtg-linked-section');
-    var $arrow = $('#rtg-linked-arrow');
-    $section.slideToggle(200);
-    $arrow.toggleClass('rtg-arrow-open');
+  $(document).on('click', '#rtg-linked-toggle', function () {
+    $('#rtg-linked-section').slideToggle(200);
+    $('#rtg-linked-arrow').toggleClass('rtg-arrow-open');
   });
 
-  $('#rtg-unlinked-toggle').on('click', function () {
-    var $section = $('#rtg-unlinked-section');
-    var $arrow = $('#rtg-unlinked-arrow');
-    $section.slideToggle(200);
-    $arrow.toggleClass('rtg-arrow-open');
+  $(document).on('click', '#rtg-unlinked-toggle', function () {
+    $('#rtg-unlinked-section').slideToggle(200);
+    $('#rtg-unlinked-arrow').toggleClass('rtg-arrow-open');
   });
 
   // --- Unmatched Roamer tires: multi-select assign ---
@@ -199,7 +195,7 @@
 
   // --- Hidden Roamer tires: toggle & restore ---
 
-  $('#rtg-hidden-toggle').on('click', function () {
+  $(document).on('click', '#rtg-hidden-toggle', function () {
     $('#rtg-hidden-section').slideToggle(200);
     $('#rtg-hidden-arrow').toggleClass('rtg-arrow-open');
   });
