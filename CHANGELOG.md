@@ -4,14 +4,19 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.34.0] - 2026-03-31
+## [1.35.0] - 2026-03-31
 
 ### Added
 - **Hide unmatched Roamer tires** — New "Hide" button on the Roamer Sync page lets you permanently dismiss unmatched tires that aren't compatible with Rivian (e.g. insufficient load rating). Hidden tires are excluded from future syncs and won't reappear.
+- **Restore hidden tires** — Hidden Roamer tires can be viewed and restored via a collapsible "View Hidden Tires" button on the Roamer Sync page.
+- **Coverage stat** — Sync Status card now shows a linked/total coverage percentage (e.g. "32/45 — 71%") at a glance.
 
 ### Changed
 - **Default sort is now Real-World Efficiency** — The tire guide sort dropdown defaults to "Real-World Efficiency" instead of "Rating: High → Low", so visitors see efficiency-ranked tires first.
-- **Plugin version** — Bumped to 1.34.0.
+- **Collapsible Linked & Unlinked tables** — Linked Tires and Unlinked Guide Tires sections on the Roamer Sync page are now collapsed by default to reduce clutter, with click-to-expand headers.
+- **Relative timestamps** — "Last Sync" and per-tire "Last Synced" now display as relative time (e.g. "2 hours ago") with full datetime on hover.
+- **Unmatched sorted by session count** — Unmatched Roamer tires are now sorted by session count descending so the most impactful tires appear first.
+- **Plugin version** — Bumped to 1.35.0.
 
 ## [1.33.0] - 2026-03-30
 

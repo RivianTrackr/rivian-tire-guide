@@ -117,6 +117,22 @@
     });
   });
 
+  // --- Collapsible sections ---
+
+  $('#rtg-linked-toggle').on('click', function () {
+    var $section = $('#rtg-linked-section');
+    var $arrow = $('#rtg-linked-arrow');
+    $section.slideToggle(200);
+    $arrow.toggleClass('rtg-arrow-open');
+  });
+
+  $('#rtg-unlinked-toggle').on('click', function () {
+    var $section = $('#rtg-unlinked-section');
+    var $arrow = $('#rtg-unlinked-arrow');
+    $section.slideToggle(200);
+    $arrow.toggleClass('rtg-arrow-open');
+  });
+
   // --- Unmatched Roamer tires: multi-select assign ---
 
   function updateUnmatchedBar() {
@@ -181,7 +197,16 @@
     });
   });
 
-  // --- Hidden Roamer tires: restore ---
+  // --- Hidden Roamer tires: toggle & restore ---
+
+  $('#rtg-toggle-hidden-btn').on('click', function () {
+    var $section = $('#rtg-hidden-section');
+    var $btn = $(this);
+    $section.slideToggle(200, function () {
+      var visible = $section.is(':visible');
+      $btn.find('span:last').text(visible ? 'Hide List' : 'View Hidden Tires (' + $('.rtg-hidden-cb').length + ')');
+    });
+  });
 
   function updateHiddenBar() {
     var checked = $('.rtg-hidden-cb:checked');
@@ -198,12 +223,12 @@
 
   $(document).on('change', '.rtg-hidden-cb', updateHiddenBar);
 
-  $('#rtg-hidden-select-all').on('change', function () {
+  $(document).on('change', '#rtg-hidden-select-all', function () {
     $('.rtg-hidden-cb').prop('checked', $(this).prop('checked'));
     updateHiddenBar();
   });
 
-  $('#rtg-hidden-restore-btn').on('click', function () {
+  $(document).on('click', '#rtg-hidden-restore-btn', function () {
     var $btn = $(this);
     var roamerIds = [];
 
