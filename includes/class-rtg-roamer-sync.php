@@ -228,6 +228,13 @@ class RTG_Roamer_Sync {
             'meta'           => $data['meta'] ?? array(),
         );
 
+        // Detect newly appeared ambiguous/unmatched tires and send notification.
+        $notify_enabled = $settings['roamer_notify_enabled'] ?? true;
+        if ( $notify_enabled && ( ! empty( $ambiguous_list ) || ! empty( $unmatched_list ) ) ) {
+            $prev_stats = get_option( self::STATS_OPTION, array() );
+            self::maybe_send_notification( $prev_stats, $ambiguous_list, $unmatched_list );
+        }
+
         update_option( self::STATS_OPTION, $result, false );
 
         return $result;
@@ -301,5 +308,43 @@ class RTG_Roamer_Sync {
             'matched'  => $matched,
             'unlinked' => $unlinked,
         );
+    }
+
+    /**
+     * Compare new sync results against previous stats and send an email
+     * notification if there are newly appeared ambiguous or unmatched tires.
+     *
+     * @param array $prev_stats       Previous sync stats from the DB.
+     * @param array $ambiguous_list   Current ambiguous tires.
+     * @param array $unmatched_list   Current unmatched tires.
+     */
+    private static function maybe_send_notification( $prev_stats, $ambiguous_list, $unmatched_list ) {
+        // Build sets of previously known IDs.
+        $prev_ambiguous_ids = array();
+        if ( ! empty( $prev_stats['ambiguous_list'] ) ) {
+            foreach ( $prev_stats['ambiguous_list'] as $item ) {
+                $prev_ambiguous_ids[ $item['roamer_tire_id'] ] = true;
+            }
+        }
+        $prev_unmatched_ids = array();
+        if ( ! empty( $prev_stats['unmatched_list'] ) ) {
+            foreach ( $prev_stats['unmatched_list'] as $item ) {
+                $prev_unmatched_ids[ $item['roamer_tire_id'] ] = true;
+            }
+        }
+
+        // Find only newly appeared entries.
+        $new_ambiguous = array_filter( $ambiguous_list, function ( $item ) use ( $prev_ambiguous_ids ) {
+            return ! isset( $prev_ambiguous_ids[ $item['roamer_tire_id'] ] );
+        } );
+        $new_unmatched = array_filter( $unmatched_list, function ( $item ) use ( $prev_unmatched_ids ) {
+            return ! isset( $prev_unmatched_ids[ $item['roamer_tire_id'] ] );
+        } );
+
+        if ( empty( $new_ambiguous ) && empty( $new_unmatched ) ) {
+            return;
+        }
+
+        RTG_Mailer::send_roamer_sync_notification( $new_ambiguous, $new_unmatched );
     }
 }
