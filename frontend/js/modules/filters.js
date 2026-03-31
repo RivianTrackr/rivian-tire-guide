@@ -671,7 +671,7 @@ export function resetFilters() {
     { id: "priceMax", value: 600 },
     { id: "warrantyMin", value: 0 },
     { id: "weightMax", value: 70 },
-    { id: "sortBy", value: "rating-desc" }
+    { id: "sortBy", value: "roamer-efficiency" }
   ];
 
   elements.forEach(({ id, value }) => {
@@ -1004,7 +1004,7 @@ export function updateURLFromFilters() {
   if (getChecked("filterReviewed")) params.set("reviewed", "1");
 
   const currentSort = getVal("sortBy");
-  if (currentSort && ALLOWED_SORT_OPTIONS.includes(currentSort) && currentSort !== "rating-desc") {
+  if (currentSort && ALLOWED_SORT_OPTIONS.includes(currentSort) && currentSort !== "roamer-efficiency") {
     params.set("sort", currentSort);
   }
 
