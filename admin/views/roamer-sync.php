@@ -275,6 +275,42 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
         </div>
     <?php endif; ?>
 
+    <!-- Hidden Roamer Tires -->
+    <?php
+    $hidden_ids = get_option( RTG_Roamer_Sync::HIDDEN_OPTION, array() );
+    if ( ! empty( $hidden_ids ) ) : ?>
+        <div class="rtg-card" style="margin-top:20px;">
+            <div class="rtg-card-header" style="display:flex;align-items:center;justify-content:space-between;">
+                <h2>Hidden Roamer Tires (<?php echo count( $hidden_ids ); ?>)</h2>
+                <div id="rtg-hidden-restore-bar" style="display:none;align-items:center;gap:8px;">
+                    <span id="rtg-hidden-selected-count" style="font-size:13px;color:#86868b;">0 selected</span>
+                    <button type="button" id="rtg-hidden-restore-btn" class="button">Restore</button>
+                </div>
+            </div>
+            <div class="rtg-card-body" style="padding:0;">
+                <p style="padding:16px 16px 0;color:#86868b;">
+                    These Roamer tire IDs have been permanently hidden. They are excluded from future syncs. Select one or more and click Restore to unhide them.
+                </p>
+                <table class="wp-list-table widefat striped" style="border:none;">
+                    <thead>
+                        <tr>
+                            <th style="width:30px;"><input type="checkbox" id="rtg-hidden-select-all"></th>
+                            <th>Roamer ID</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ( $hidden_ids as $hid ) : ?>
+                            <tr>
+                                <td><input type="checkbox" class="rtg-hidden-cb" value="<?php echo esc_attr( $hid ); ?>"></td>
+                                <td><code style="font-size:11px;"><?php echo esc_html( $hid ); ?></code></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <!-- Unlinked Guide Tires -->
     <?php
     $unlinked_total    = count( $mapping['unlinked'] );
