@@ -30,7 +30,8 @@ var COL = {
   loadIndex: 11, maxLoad: 12, loadRange: 13, speedRating: 14,
   psi: 15, utqg: 16, tags: 17, link: 18, image: 19,
   effScore: 20, effGrade: 21, reviewLink: 22, createdAt: 23,
-  roamerEfficiency: 24, roamerSessionCount: 25, roamerVehicleCount: 26
+  roamerEfficiency: 24, roamerSessionCount: 25, roamerVehicleCount: 26,
+  vehicleBreakdown: 27
 };
 
 // --- Efficiency grade colors ---
@@ -44,17 +45,57 @@ var CATEGORY_ORDER = [
   'Rugged Terrain', 'Mud-Terrain', 'Winter'
 ];
 
-// --- Find best tire per category for a set of compatible sizes ---
+// --- Active model filter (module-level so renderWinnerCard can access it) ---
+var activeModelFilter = '';
+
+// --- Parse vehicle breakdown JSON string ---
+function parseBreakdown(jsonStr) {
+  if (!jsonStr) return [];
+  try { return JSON.parse(jsonStr); } catch (e) { return []; }
+}
+
+// --- Parse a variant name like "Gen 2 R1S Max" into components ---
+function parseVariant(name) {
+  var match = name.match(/^(Gen \d+)\s+(R1[TS]|R2|R3)\s*(.*)/i);
+  if (!match) return { gen: '', model: '', pack: '', full: name };
+  return { gen: match[1], model: match[2].toUpperCase(), pack: match[3].trim(), full: name };
+}
+
+// --- Check if a tire's breakdown includes a given vehicle model (e.g., "R1T") ---
+function tireMatchesModel(tire, model) {
+  if (!model) return true;
+  var bd = parseBreakdown(tire[COL.vehicleBreakdown]);
+  for (var i = 0; i < bd.length; i++) {
+    var parsed = parseVariant(bd[i][0]);
+    if (parsed.model === model) return true;
+  }
+  return false;
+}
+
+// --- Collect unique vehicle models from all tire breakdown data ---
+function collectVehicleModels(tires) {
+  var models = {};
+  for (var i = 0; i < tires.length; i++) {
+    var bd = parseBreakdown(tires[i][COL.vehicleBreakdown]);
+    for (var j = 0; j < bd.length; j++) {
+      var parsed = parseVariant(bd[j][0]);
+      if (parsed.model) models[parsed.model] = true;
+    }
+  }
+  return Object.keys(models).sort();
+}
+
+// --- Find best tire per category, filtered by vehicle model ---
 // Returns { category: { tire: [...], source: 'roamer'|'calculated' } }
-function findWinners(tires, compatibleSizes) {
+function findWinners(tires, modelFilter) {
   var roamerBest = {};
   var calcBest = {};
 
   for (var i = 0; i < tires.length; i++) {
     var tire = tires[i];
 
-    // If we have size restrictions, filter by compatible sizes.
-    if (compatibleSizes && compatibleSizes.indexOf(tire[COL.size]) === -1) continue;
+    // Filter by vehicle model if active.
+    if (modelFilter && !tireMatchesModel(tire, modelFilter)) continue;
 
     var category = tire[COL.category] || 'Other';
     var roamerEff = parseFloat(tire[COL.roamerEfficiency]);
@@ -91,6 +132,25 @@ function findWinners(tires, compatibleSizes) {
   }
 
   return winners;
+}
+
+// --- Render vehicle breakdown pills for a card ---
+function renderBreakdownPills(tire) {
+  var bd = parseBreakdown(tire[COL.vehicleBreakdown]);
+  if (bd.length === 0) return '';
+
+  var html = '<div class="eff-card-variants">';
+  for (var k = 0; k < bd.length; k++) {
+    var vName = bd[k][0];
+    var vCount = bd[k][1];
+    var parsed = parseVariant(vName);
+    var isActive = activeModelFilter && parsed.model === activeModelFilter;
+    html += '<span class="eff-variant-pill' + (isActive ? ' active' : '') + '">';
+    html += escapeHTML(vName) + ' <small>(' + vCount + ')</small>';
+    html += '</span>';
+  }
+  html += '</div>';
+  return html;
 }
 
 // --- Render a winner card ---
@@ -160,6 +220,9 @@ function renderWinnerCard(entry) {
     html += '</div>';
   }
 
+  // Vehicle breakdown pills
+  html += renderBreakdownPills(tire);
+
   // Grade + Price row
   html += '<div class="eff-card-footer">';
   html += '<span class="eff-card-grade" style="background:' + gradeColor + '">' + escapeHTML(grade) + '</span>';
@@ -177,20 +240,20 @@ function renderWinnerCard(entry) {
   return html;
 }
 
-// --- Render the grid for the active vehicle ---
-function renderGrid(tires, vehicleSizes, activeVehicle) {
+// --- Render the grid for the active vehicle model ---
+function renderGrid(tires, modelFilter) {
   var grid = document.getElementById('effGrid');
   if (!grid) return;
 
-  var sizes = activeVehicle ? vehicleSizes[activeVehicle] || [] : null;
-  var winners = findWinners(tires, sizes);
+  activeModelFilter = modelFilter || '';
+  var winners = findWinners(tires, modelFilter);
 
   if (Object.keys(winners).length === 0) {
     grid.innerHTML = '<div class="eff-empty">' +
       '<div class="eff-empty-icon">' + rtgIcon('chart-line', 48) + '</div>' +
       '<div class="eff-empty-title">No efficiency data available</div>' +
       '<div class="eff-empty-text">No tires with efficiency data are available' +
-      (activeVehicle ? ' for the ' + escapeHTML(activeVehicle) + '.' : '.') +
+      (modelFilter ? ' for the ' + escapeHTML(modelFilter) + '.' : '.') +
       '</div></div>';
     return;
   }
@@ -214,8 +277,8 @@ function renderGrid(tires, vehicleSizes, activeVehicle) {
   grid.innerHTML = html;
 }
 
-// --- Vehicle tab click handler ---
-function initVehicleTabs(tires, vehicleSizes) {
+// --- Vehicle model tab click handler ---
+function initVehicleTabs(tires) {
   var container = document.getElementById('effVehicleToggle');
   if (!container) return;
 
@@ -229,8 +292,8 @@ function initVehicleTabs(tires, vehicleSizes) {
       btn.classList.add('active');
       btn.setAttribute('aria-pressed', 'true');
 
-      var vehicle = btn.getAttribute('data-vehicle') || '';
-      renderGrid(tires, vehicleSizes, vehicle || null);
+      var model = btn.getAttribute('data-model') || '';
+      renderGrid(tires, model || null);
     });
   });
 }
@@ -280,20 +343,18 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   var tires = rtgEfficiency.tires;
-  var vehicleSizes = rtgEfficiency.vehicleSizes || {};
 
-  // Build vehicle toggle buttons dynamically.
+  // Build vehicle model toggle from Roamer breakdown data.
   var toggle = document.getElementById('effVehicleToggle');
   if (toggle) {
-    var vehicleKeys = Object.keys(vehicleSizes);
-    vehicleKeys.sort();
-    var buttonsHtml = '<button type="button" class="eff-vehicle-btn active" data-vehicle="" aria-pressed="true">All Vehicles</button>';
-    for (var i = 0; i < vehicleKeys.length; i++) {
-      buttonsHtml += '<button type="button" class="eff-vehicle-btn" data-vehicle="' + escapeHTML(vehicleKeys[i]) + '" aria-pressed="false">' + escapeHTML(vehicleKeys[i]) + '</button>';
+    var models = collectVehicleModels(tires);
+    var buttonsHtml = '<button type="button" class="eff-vehicle-btn active" data-model="" aria-pressed="true">All Vehicles</button>';
+    for (var i = 0; i < models.length; i++) {
+      buttonsHtml += '<button type="button" class="eff-vehicle-btn" data-model="' + escapeHTML(models[i]) + '" aria-pressed="false">' + escapeHTML(models[i]) + '</button>';
     }
     toggle.innerHTML = buttonsHtml;
   }
 
-  initVehicleTabs(tires, vehicleSizes);
-  renderGrid(tires, vehicleSizes, null);
+  initVehicleTabs(tires);
+  renderGrid(tires, null);
 });
