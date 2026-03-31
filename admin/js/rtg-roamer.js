@@ -117,6 +117,22 @@
     });
   });
 
+  // --- Collapsible sections ---
+
+  $('#rtg-linked-toggle').on('click', function () {
+    var $section = $('#rtg-linked-section');
+    var $arrow = $('#rtg-linked-arrow');
+    $section.slideToggle(200);
+    $arrow.toggleClass('rtg-arrow-open');
+  });
+
+  $('#rtg-unlinked-toggle').on('click', function () {
+    var $section = $('#rtg-unlinked-section');
+    var $arrow = $('#rtg-unlinked-arrow');
+    $section.slideToggle(200);
+    $arrow.toggleClass('rtg-arrow-open');
+  });
+
   // --- Unmatched Roamer tires: multi-select assign ---
 
   function updateUnmatchedBar() {

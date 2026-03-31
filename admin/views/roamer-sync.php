@@ -78,9 +78,25 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                         </div>
                         <div>
                             <strong style="color:#86868b;font-size:12px;text-transform:uppercase;">Last Sync</strong><br>
-                            <span style="font-size:18px;font-weight:600;"><?php echo esc_html( $stats['time'] ?? 'N/A' ); ?></span>
+                            <?php
+                            $sync_time = $stats['time'] ?? '';
+                            if ( $sync_time ) {
+                                $relative = human_time_diff( strtotime( $sync_time ), current_time( 'timestamp' ) ) . ' ago';
+                            } else {
+                                $relative = 'N/A';
+                            }
+                            ?>
+                            <span style="font-size:18px;font-weight:600;" title="<?php echo esc_attr( $sync_time ); ?>"><?php echo esc_html( $relative ); ?></span>
                         </div>
-                        <?php if ( $stats['status'] === 'success' ) : ?>
+                        <?php if ( $stats['status'] === 'success' ) :
+                            $linked_count = count( $mapping['matched'] );
+                            $total_guide  = $linked_count + count( $mapping['unlinked'] );
+                            $coverage_pct = $total_guide > 0 ? round( $linked_count / $total_guide * 100 ) : 0;
+                        ?>
+                            <div>
+                                <strong style="color:#86868b;font-size:12px;text-transform:uppercase;">Coverage</strong><br>
+                                <span style="font-size:18px;font-weight:600;color:#3b82f6;"><?php echo $linked_count . '/' . $total_guide; ?> (<?php echo $coverage_pct; ?>%)</span>
+                            </div>
                             <div>
                                 <strong style="color:#86868b;font-size:12px;text-transform:uppercase;">Matched</strong><br>
                                 <span style="font-size:18px;font-weight:600;color:#5ec095;"><?php echo intval( $stats['matched'] ); ?></span>
@@ -114,48 +130,53 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
         </div>
     </div>
 
-    <!-- Matched Tires -->
+    <!-- Matched Tires (collapsed by default) -->
     <div class="rtg-card" style="margin-top:20px;">
-        <div class="rtg-card-header">
+        <div class="rtg-card-header" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" id="rtg-linked-toggle">
             <h2>Linked Tires (<?php echo count( $mapping['matched'] ); ?>)</h2>
+            <span class="dashicons dashicons-arrow-down-alt2" id="rtg-linked-arrow" style="font-size:20px;width:20px;height:20px;color:#86868b;transition:transform 0.2s;"></span>
         </div>
-        <div class="rtg-card-body" style="padding:0;">
-            <?php if ( ! empty( $mapping['matched'] ) ) : ?>
-                <table class="wp-list-table widefat striped" style="border:none;">
-                    <thead>
-                        <tr>
-                            <th>Tire</th>
-                            <th>Size</th>
-                            <th>Load Range</th>
-                            <th>Roamer ID</th>
-                            <th>mi/kWh</th>
-                            <th>Sessions</th>
-                            <th>Vehicles</th>
-                            <th>Last Synced</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ( $mapping['matched'] as $tire ) : ?>
+        <div id="rtg-linked-section" style="display:none;">
+            <div class="rtg-card-body" style="padding:0;">
+                <?php if ( ! empty( $mapping['matched'] ) ) : ?>
+                    <table class="wp-list-table widefat striped" style="border:none;">
+                        <thead>
                             <tr>
-                                <td><strong><?php echo esc_html( $tire['brand'] . ' ' . $tire['model'] ); ?></strong></td>
-                                <td><?php echo esc_html( $tire['size'] ); ?></td>
-                                <td><?php echo esc_html( $tire['load_range'] ?: '-' ); ?></td>
-                                <td><code style="font-size:11px;"><?php echo esc_html( $tire['roamer_tire_id'] ); ?></code></td>
-                                <td><strong><?php echo esc_html( number_format( $tire['roamer_efficiency'], 2 ) ); ?></strong></td>
-                                <td><?php echo number_format( $tire['roamer_session_count'] ); ?></td>
-                                <td><?php echo intval( $tire['roamer_vehicle_count'] ); ?></td>
-                                <td><?php echo esc_html( $tire['roamer_synced_at'] ?: 'N/A' ); ?></td>
-                                <td>
-                                    <button type="button" class="button button-small rtg-roamer-unlink" data-tire-id="<?php echo esc_attr( $tire['tire_id'] ); ?>">Unlink</button>
-                                </td>
+                                <th>Tire</th>
+                                <th>Size</th>
+                                <th>Load Range</th>
+                                <th>Roamer ID</th>
+                                <th>mi/kWh</th>
+                                <th>Sessions</th>
+                                <th>Vehicles</th>
+                                <th>Last Synced</th>
+                                <th>Actions</th>
                             </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            <?php else : ?>
-                <p style="padding:16px;color:#86868b;">No tires have been linked to Roamer data yet. Run a sync to auto-match.</p>
-            <?php endif; ?>
+                        </thead>
+                        <tbody>
+                            <?php foreach ( $mapping['matched'] as $tire ) :
+                                $synced_rel = $tire['roamer_synced_at'] ? human_time_diff( strtotime( $tire['roamer_synced_at'] ), current_time( 'timestamp' ) ) . ' ago' : 'N/A';
+                            ?>
+                                <tr>
+                                    <td><strong><?php echo esc_html( $tire['brand'] . ' ' . $tire['model'] ); ?></strong></td>
+                                    <td><?php echo esc_html( $tire['size'] ); ?></td>
+                                    <td><?php echo esc_html( $tire['load_range'] ?: '-' ); ?></td>
+                                    <td><code style="font-size:11px;"><?php echo esc_html( $tire['roamer_tire_id'] ); ?></code></td>
+                                    <td><strong><?php echo esc_html( number_format( $tire['roamer_efficiency'], 2 ) ); ?></strong></td>
+                                    <td><?php echo number_format( $tire['roamer_session_count'] ); ?></td>
+                                    <td><?php echo intval( $tire['roamer_vehicle_count'] ); ?></td>
+                                    <td title="<?php echo esc_attr( $tire['roamer_synced_at'] ?: '' ); ?>"><?php echo esc_html( $synced_rel ); ?></td>
+                                    <td>
+                                        <button type="button" class="button button-small rtg-roamer-unlink" data-tire-id="<?php echo esc_attr( $tire['tire_id'] ); ?>">Unlink</button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php else : ?>
+                    <p style="padding:16px;color:#86868b;">No tires have been linked to Roamer data yet. Run a sync to auto-match.</p>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 
@@ -220,6 +241,12 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
 
     <!-- Unmatched Roamer Tires (from last sync) -->
     <?php if ( $stats && ! empty( $stats['unmatched_list'] ) ) :
+        // Sort unmatched by session count descending so most impactful are first.
+        $unmatched_sorted = $stats['unmatched_list'];
+        usort( $unmatched_sorted, function ( $a, $b ) {
+            return ( $b['session_count'] ?? 0 ) - ( $a['session_count'] ?? 0 );
+        } );
+
         $all_tires = RTG_Database::get_all_tires();
         usort( $all_tires, function ( $a, $b ) {
             $cmp = strcasecmp( $a['brand'], $b['brand'] );
@@ -259,7 +286,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ( $stats['unmatched_list'] as $tire ) : ?>
+                        <?php foreach ( $unmatched_sorted as $tire ) : ?>
                             <tr>
                                 <td><input type="checkbox" class="rtg-unmatched-cb" value="<?php echo esc_attr( $tire['roamer_tire_id'] ); ?>"></td>
                                 <td><strong><?php echo esc_html( $tire['name'] ); ?></strong></td>
@@ -327,9 +354,11 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
     $unlinked_slice    = array_slice( $mapping['unlinked'], $unlinked_offset, $unlinked_per_page );
     ?>
     <div class="rtg-card" style="margin-top:20px;">
-        <div class="rtg-card-header">
+        <div class="rtg-card-header" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" id="rtg-unlinked-toggle">
             <h2>Unlinked Guide Tires (<?php echo $unlinked_total; ?>)</h2>
+            <span class="dashicons dashicons-arrow-down-alt2" id="rtg-unlinked-arrow" style="font-size:20px;width:20px;height:20px;color:#86868b;transition:transform 0.2s;"></span>
         </div>
+        <div id="rtg-unlinked-section" style="display:none;">
         <div class="rtg-card-body" style="padding:0;">
             <?php if ( $unlinked_total > 0 ) : ?>
                 <p style="padding:16px 16px 0;color:#86868b;">
@@ -380,6 +409,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
             <?php else : ?>
                 <p style="padding:16px;color:#5ec095;">All tires in your guide have Roamer data linked.</p>
             <?php endif; ?>
+        </div>
         </div>
     </div>
 </div>
