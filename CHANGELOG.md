@@ -4,6 +4,15 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.34.0] - 2026-03-31
+
+### Added
+- **Hide unmatched Roamer tires** — New "Hide" button on the Roamer Sync page lets you permanently dismiss unmatched tires that aren't compatible with Rivian (e.g. insufficient load rating). Hidden tires are excluded from future syncs and won't reappear.
+
+### Changed
+- **Default sort is now Real-World Efficiency** — The tire guide sort dropdown defaults to "Real-World Efficiency" instead of "Rating: High → Low", so visitors see efficiency-ranked tires first.
+- **Plugin version** — Bumped to 1.34.0.
+
 ## [1.33.0] - 2026-03-30
 
 ### Added
