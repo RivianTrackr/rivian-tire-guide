@@ -4,43 +4,6 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.39.0] - 2026-03-31
-
-### Changed
-- **Simplified efficiency page to vehicle-only filter** — Removed Generation and Battery filters, keeping a single Vehicle filter row (R1T, R1S, R2). Cleaner UX that matches how owners think about their vehicle.
-- **Plugin version** — Bumped to 1.39.0.
-
-## [1.38.0] - 2026-03-31
-
-### Changed
-- **Simplified efficiency page filters** — Removed the Generation filter row, keeping just Vehicle (R1T/R1S) and Battery (Standard/Large/Max). Selecting a vehicle narrows the available battery options.
-- **Plugin version** — Bumped to 1.38.0.
-
-## [1.37.0] - 2026-03-31
-
-### Added
-- **Cascading vehicle filters on efficiency page** — Three-level filter system (Vehicle, Generation, Battery) allows users to drill down to their exact Rivian variant (e.g., Gen 2 R1S Max). Filters cascade: selecting a vehicle type narrows the available generations, and selecting a generation narrows the available battery packs. Derived dynamically from Roamer breakdown data.
-
-### Changed
-- **Plugin version** — Bumped to 1.37.0.
-
-## [1.36.0] - 2026-03-31
-
-### Added
-- **Tire Efficiency Rankings page** — New standalone page at `/tire-efficiency/` showing the most energy-efficient tire in each category. Rankings use real-world mi/kWh data from Rivian Roamer when available, with calculated efficiency scores as a fallback. Each card displays a "Real-World Data" or "Calculated" badge so visitors know the data source.
-- **Vehicle breakdown on efficiency page** — Winner cards now show which Rivian variants (e.g., "Gen 2 R1S Max", "Gen 1 R1T Large") have tested each tire, with vehicle counts per variant displayed as pills.
-- **R1T / R1S model filter** — The efficiency page toggle buttons are derived from actual Roamer breakdown data, allowing users to filter by vehicle model (R1T, R1S) to see tires tested on their specific vehicle.
-- **Vehicle breakdown data sync** — Roamer sync now stores the `vehicle_breakdown` field from the Rivian Roamer feed (previously discarded). Stored as JSON in a new `roamer_vehicle_breakdown` column (migration 13).
-- **Efficiency page slug in admin settings** — The efficiency page URL slug is now configurable alongside the compare, user reviews, and tire review slugs.
-- **Efficiency page link on tire guide** — The main tire guide includes a banner linking to the efficiency rankings page.
-
-### Fixed
-- **Efficiency page 404** — Auto-flush rewrite rules when the efficiency route is missing, fixing 404 errors on first visit after the route was added.
-
-### Changed
-- **Plugin version** — Bumped to 1.36.0.
-- **Database version** — Bumped to 13 (adds `roamer_vehicle_breakdown` column).
-
 ## [1.35.0] - 2026-03-31
 
 ### Added

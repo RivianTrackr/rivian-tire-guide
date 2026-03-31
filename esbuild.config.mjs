@@ -38,14 +38,6 @@ const builds = [
     minify: true,
     drop: ['console', 'debugger'],
   },
-  // --- Frontend JS (efficiency page) ---
-  {
-    ...jsDefaults,
-    entryPoints: ['frontend/js/efficiency.js'],
-    outfile: 'frontend/js/efficiency.min.js',
-    minify: true,
-    drop: ['console', 'debugger'],
-  },
   // --- Frontend JS (user reviews) ---
   {
     ...jsDefaults,
