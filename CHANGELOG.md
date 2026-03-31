@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.37.0] - 2026-03-31
+
+### Added
+- **Cascading vehicle filters on efficiency page** — Three-level filter system (Vehicle, Generation, Battery) allows users to drill down to their exact Rivian variant (e.g., Gen 2 R1S Max). Filters cascade: selecting a vehicle type narrows the available generations, and selecting a generation narrows the available battery packs. Derived dynamically from Roamer breakdown data.
+
+### Changed
+- **Plugin version** — Bumped to 1.37.0.
+
 ## [1.36.0] - 2026-03-31
 
 ### Added

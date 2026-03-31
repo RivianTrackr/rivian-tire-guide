@@ -45,8 +45,8 @@ var CATEGORY_ORDER = [
   'Rugged Terrain', 'Mud-Terrain', 'Winter'
 ];
 
-// --- Active model filter (module-level so renderWinnerCard can access it) ---
-var activeModelFilter = '';
+// --- Active filters (module-level so renderWinnerCard can access them) ---
+var activeFilters = { model: '', gen: '', pack: '' };
 
 // --- Parse vehicle breakdown JSON string ---
 function parseBreakdown(jsonStr) {
@@ -61,41 +61,85 @@ function parseVariant(name) {
   return { gen: match[1], model: match[2].toUpperCase(), pack: match[3].trim(), full: name };
 }
 
-// --- Check if a tire's breakdown includes a given vehicle model (e.g., "R1T") ---
-function tireMatchesModel(tire, model) {
-  if (!model) return true;
+// --- Check if a single variant matches the active filters ---
+function variantMatchesFilters(parsed, filters) {
+  if (filters.model && parsed.model !== filters.model) return false;
+  if (filters.gen && parsed.gen !== filters.gen) return false;
+  if (filters.pack && parsed.pack !== filters.pack) return false;
+  return true;
+}
+
+// --- Check if a tire has any variant matching the active filters ---
+function tireMatchesFilters(tire, filters) {
+  if (!filters.model && !filters.gen && !filters.pack) return true;
   var bd = parseBreakdown(tire[COL.vehicleBreakdown]);
   for (var i = 0; i < bd.length; i++) {
     var parsed = parseVariant(bd[i][0]);
-    if (parsed.model === model) return true;
+    if (variantMatchesFilters(parsed, filters)) return true;
   }
   return false;
 }
 
-// --- Collect unique vehicle models from all tire breakdown data ---
-function collectVehicleModels(tires) {
+// --- Collect all unique filter values from breakdown data ---
+// Returns { models: [...], gens: [...], packs: [...] }
+function collectFilterOptions(tires) {
   var models = {};
+  var gens = {};
+  var packs = {};
+
   for (var i = 0; i < tires.length; i++) {
     var bd = parseBreakdown(tires[i][COL.vehicleBreakdown]);
     for (var j = 0; j < bd.length; j++) {
       var parsed = parseVariant(bd[j][0]);
       if (parsed.model) models[parsed.model] = true;
+      if (parsed.gen) gens[parsed.gen] = true;
+      if (parsed.pack) packs[parsed.pack] = true;
     }
   }
-  return Object.keys(models).sort();
+
+  return {
+    models: Object.keys(models).sort(),
+    gens: Object.keys(gens).sort(),
+    packs: Object.keys(packs).sort()
+  };
 }
 
-// --- Find best tire per category, filtered by vehicle model ---
+// --- Collect available options for downstream filters given current selections ---
+// This enables cascading: picking "R1T" narrows the available gens and packs.
+function collectAvailableOptions(tires, filters) {
+  var gens = {};
+  var packs = {};
+
+  for (var i = 0; i < tires.length; i++) {
+    var bd = parseBreakdown(tires[i][COL.vehicleBreakdown]);
+    for (var j = 0; j < bd.length; j++) {
+      var parsed = parseVariant(bd[j][0]);
+      // Check if variant passes the model filter (or no model filter set).
+      if (filters.model && parsed.model !== filters.model) continue;
+      if (parsed.gen) gens[parsed.gen] = true;
+      // Check if variant passes model + gen filter for packs.
+      if (filters.gen && parsed.gen !== filters.gen) continue;
+      if (parsed.pack) packs[parsed.pack] = true;
+    }
+  }
+
+  return {
+    gens: Object.keys(gens).sort(),
+    packs: Object.keys(packs).sort()
+  };
+}
+
+// --- Find best tire per category, filtered by active filters ---
 // Returns { category: { tire: [...], source: 'roamer'|'calculated' } }
-function findWinners(tires, modelFilter) {
+function findWinners(tires, filters) {
   var roamerBest = {};
   var calcBest = {};
 
   for (var i = 0; i < tires.length; i++) {
     var tire = tires[i];
 
-    // Filter by vehicle model if active.
-    if (modelFilter && !tireMatchesModel(tire, modelFilter)) continue;
+    // Filter by vehicle filters if active.
+    if (!tireMatchesFilters(tire, filters)) continue;
 
     var category = tire[COL.category] || 'Other';
     var roamerEff = parseFloat(tire[COL.roamerEfficiency]);
@@ -144,7 +188,8 @@ function renderBreakdownPills(tire) {
     var vName = bd[k][0];
     var vCount = bd[k][1];
     var parsed = parseVariant(vName);
-    var isActive = activeModelFilter && parsed.model === activeModelFilter;
+    var isActive = variantMatchesFilters(parsed, activeFilters) &&
+                   (activeFilters.model || activeFilters.gen || activeFilters.pack);
     html += '<span class="eff-variant-pill' + (isActive ? ' active' : '') + '">';
     html += escapeHTML(vName) + ' <small>(' + vCount + ')</small>';
     html += '</span>';
@@ -240,20 +285,21 @@ function renderWinnerCard(entry) {
   return html;
 }
 
-// --- Render the grid for the active vehicle model ---
-function renderGrid(tires, modelFilter) {
+// --- Render the grid ---
+function renderGrid(tires) {
   var grid = document.getElementById('effGrid');
   if (!grid) return;
 
-  activeModelFilter = modelFilter || '';
-  var winners = findWinners(tires, modelFilter);
+  var winners = findWinners(tires, activeFilters);
+  var hasFilter = activeFilters.model || activeFilters.gen || activeFilters.pack;
 
   if (Object.keys(winners).length === 0) {
+    var filterDesc = buildFilterDescription();
     grid.innerHTML = '<div class="eff-empty">' +
       '<div class="eff-empty-icon">' + rtgIcon('chart-line', 48) + '</div>' +
       '<div class="eff-empty-title">No efficiency data available</div>' +
       '<div class="eff-empty-text">No tires with efficiency data are available' +
-      (modelFilter ? ' for the ' + escapeHTML(modelFilter) + '.' : '.') +
+      (filterDesc ? ' for ' + escapeHTML(filterDesc) + '.' : '.') +
       '</div></div>';
     return;
   }
@@ -277,24 +323,71 @@ function renderGrid(tires, modelFilter) {
   grid.innerHTML = html;
 }
 
-// --- Vehicle model tab click handler ---
-function initVehicleTabs(tires) {
-  var container = document.getElementById('effVehicleToggle');
+// --- Build a human-readable description of the active filters ---
+function buildFilterDescription() {
+  var parts = [];
+  if (activeFilters.gen) parts.push(activeFilters.gen);
+  if (activeFilters.model) parts.push(activeFilters.model);
+  if (activeFilters.pack) parts.push(activeFilters.pack);
+  return parts.join(' ');
+}
+
+// --- Render a single filter row ---
+function renderFilterRow(containerId, label, options, activeValue, dataAttr) {
+  var container = document.getElementById(containerId);
   if (!container) return;
 
-  var buttons = container.querySelectorAll('.eff-vehicle-btn');
-  buttons.forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      buttons.forEach(function(b) {
-        b.classList.remove('active');
-        b.setAttribute('aria-pressed', 'false');
-      });
-      btn.classList.add('active');
-      btn.setAttribute('aria-pressed', 'true');
+  if (options.length === 0) {
+    container.style.display = 'none';
+    container.innerHTML = '';
+    return;
+  }
 
-      var model = btn.getAttribute('data-model') || '';
-      renderGrid(tires, model || null);
-    });
+  container.style.display = '';
+  var html = '<span class="eff-filter-label">' + escapeHTML(label) + '</span>';
+  html += '<button type="button" class="eff-filter-btn' + (!activeValue ? ' active' : '') + '" data-' + dataAttr + '="" aria-pressed="' + (!activeValue ? 'true' : 'false') + '">All</button>';
+  for (var i = 0; i < options.length; i++) {
+    var val = options[i];
+    var isActive = activeValue === val;
+    html += '<button type="button" class="eff-filter-btn' + (isActive ? ' active' : '') + '" data-' + dataAttr + '="' + escapeHTML(val) + '" aria-pressed="' + (isActive ? 'true' : 'false') + '">' + escapeHTML(val) + '</button>';
+  }
+  container.innerHTML = html;
+}
+
+// --- Update all filter rows and re-render grid ---
+function updateFilters(tires, allOptions) {
+  // Always show model row with all options.
+  renderFilterRow('effFilterModel', 'Vehicle', allOptions.models, activeFilters.model, 'model');
+
+  // Cascade: available gens/packs depend on the model + gen selection.
+  var available = collectAvailableOptions(tires, activeFilters);
+  renderFilterRow('effFilterGen', 'Generation', available.gens, activeFilters.gen, 'gen');
+  renderFilterRow('effFilterPack', 'Battery', available.packs, activeFilters.pack, 'pack');
+
+  renderGrid(tires);
+}
+
+// --- Attach click handlers to a filter row ---
+function initFilterRow(containerId, filterKey, tires, allOptions) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+
+  container.addEventListener('click', function(e) {
+    var btn = e.target.closest('.eff-filter-btn');
+    if (!btn) return;
+
+    var value = btn.getAttribute('data-' + filterKey) || '';
+    activeFilters[filterKey] = value;
+
+    // When a higher-level filter changes, reset lower-level filters.
+    if (filterKey === 'model') {
+      activeFilters.gen = '';
+      activeFilters.pack = '';
+    } else if (filterKey === 'gen') {
+      activeFilters.pack = '';
+    }
+
+    updateFilters(tires, allOptions);
   });
 }
 
@@ -343,18 +436,13 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   var tires = rtgEfficiency.tires;
+  var allOptions = collectFilterOptions(tires);
 
-  // Build vehicle model toggle from Roamer breakdown data.
-  var toggle = document.getElementById('effVehicleToggle');
-  if (toggle) {
-    var models = collectVehicleModels(tires);
-    var buttonsHtml = '<button type="button" class="eff-vehicle-btn active" data-model="" aria-pressed="true">All Vehicles</button>';
-    for (var i = 0; i < models.length; i++) {
-      buttonsHtml += '<button type="button" class="eff-vehicle-btn" data-model="' + escapeHTML(models[i]) + '" aria-pressed="false">' + escapeHTML(models[i]) + '</button>';
-    }
-    toggle.innerHTML = buttonsHtml;
-  }
+  // Initialize filter rows.
+  initFilterRow('effFilterModel', 'model', tires, allOptions);
+  initFilterRow('effFilterGen', 'gen', tires, allOptions);
+  initFilterRow('effFilterPack', 'pack', tires, allOptions);
 
-  initVehicleTabs(tires);
-  renderGrid(tires, null);
+  // Initial render.
+  updateFilters(tires, allOptions);
 });

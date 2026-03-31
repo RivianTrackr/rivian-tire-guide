@@ -121,29 +121,44 @@
       line-height: 1.6;
     }
 
-    /* --- Vehicle toggle --- */
-    .eff-vehicle-toggle {
+    /* --- Filter rows --- */
+    .eff-filters {
       display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
+      flex-direction: column;
+      gap: 10px;
       margin-bottom: 24px;
     }
-    .eff-vehicle-btn {
-      padding: 8px 18px;
+    .eff-filter-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .eff-filter-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--rtg-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      min-width: 80px;
+      flex-shrink: 0;
+    }
+    .eff-filter-btn {
+      padding: 6px 16px;
       border-radius: 8px;
       border: 1px solid var(--rtg-border);
       background: var(--rtg-bg-card);
       color: var(--rtg-text-primary);
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       transition: all .15s;
     }
-    .eff-vehicle-btn:hover {
+    .eff-filter-btn:hover {
       border-color: var(--rtg-accent);
       color: var(--rtg-accent);
     }
-    .eff-vehicle-btn.active {
+    .eff-filter-btn.active {
       background: var(--rtg-accent);
       border-color: var(--rtg-accent);
       color: #0f172a;
@@ -377,6 +392,8 @@
       .eff-page { padding: 16px 12px 40px; }
       .eff-title { font-size: 20px; }
       .eff-grid { grid-template-columns: 1fr; gap: 16px; }
+      .eff-filter-label { min-width: 64px; font-size: 11px; }
+      .eff-filter-btn { padding: 5px 12px; font-size: 12px; }
     }
 
     @media (max-width: 480px) {
@@ -430,7 +447,11 @@
       Select your vehicle to see the best tire for your Rivian.
     </p>
 
-    <div id="effVehicleToggle" class="eff-vehicle-toggle" role="radiogroup" aria-label="Filter by vehicle"></div>
+    <div class="eff-filters">
+      <div id="effFilterModel" class="eff-filter-row" role="radiogroup" aria-label="Filter by vehicle type"></div>
+      <div id="effFilterGen" class="eff-filter-row" role="radiogroup" aria-label="Filter by generation" style="display:none"></div>
+      <div id="effFilterPack" class="eff-filter-row" role="radiogroup" aria-label="Filter by battery pack" style="display:none"></div>
+    </div>
 
     <div id="effGrid" class="eff-grid">
       <div class="eff-empty">
