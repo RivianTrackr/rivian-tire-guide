@@ -183,6 +183,26 @@
       margin-bottom: 4px;
     }
 
+    .eff-card-source-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      padding: 3px 10px;
+      border-radius: 12px;
+    }
+    .eff-source-roamer {
+      color: #5ec095;
+      background: rgba(94, 192, 149, 0.12);
+    }
+    .eff-source-calculated {
+      color: #60a5fa;
+      background: rgba(96, 165, 250, 0.12);
+    }
+
     .eff-card-img-wrap {
       width: 120px;
       height: 120px;
@@ -377,8 +397,9 @@
   <div class="eff-page">
     <h1 class="eff-title">Tire Efficiency Rankings</h1>
     <p class="eff-subtitle">
-      The most energy-efficient tire in each category, ranked by real-world mi/kWh data from
-      <strong>Rivian Roamer</strong>. Select your vehicle to see the best tire for your Rivian.
+      The most energy-efficient tire in each category. Rankings use real-world mi/kWh data from
+      <strong>Rivian Roamer</strong> when available, with calculated efficiency scores as a fallback.
+      Select your vehicle to see the best tire for your Rivian.
     </p>
 
     <div id="effVehicleToggle" class="eff-vehicle-toggle" role="radiogroup" aria-label="Filter by vehicle"></div>

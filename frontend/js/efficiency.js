@@ -45,20 +45,48 @@ var CATEGORY_ORDER = [
 ];
 
 // --- Find best tire per category for a set of compatible sizes ---
+// Returns { category: { tire: [...], source: 'roamer'|'calculated' } }
 function findWinners(tires, compatibleSizes) {
-  var winners = {};
+  var roamerBest = {};
+  var calcBest = {};
 
   for (var i = 0; i < tires.length; i++) {
     var tire = tires[i];
-    var efficiency = parseFloat(tire[COL.roamerEfficiency]);
-    if (!efficiency || efficiency <= 0) continue;
 
     // If we have size restrictions, filter by compatible sizes.
     if (compatibleSizes && compatibleSizes.indexOf(tire[COL.size]) === -1) continue;
 
     var category = tire[COL.category] || 'Other';
-    if (!winners[category] || efficiency > parseFloat(winners[category][COL.roamerEfficiency])) {
-      winners[category] = tire;
+    var roamerEff = parseFloat(tire[COL.roamerEfficiency]);
+    var calcScore = parseInt(tire[COL.effScore], 10);
+
+    // Track best Roamer efficiency per category.
+    if (roamerEff > 0) {
+      if (!roamerBest[category] || roamerEff > parseFloat(roamerBest[category][COL.roamerEfficiency])) {
+        roamerBest[category] = tire;
+      }
+    }
+
+    // Track best calculated efficiency score per category.
+    if (calcScore > 0) {
+      if (!calcBest[category] || calcScore > parseInt(calcBest[category][COL.effScore], 10)) {
+        calcBest[category] = tire;
+      }
+    }
+  }
+
+  // Merge: prefer Roamer data, fall back to calculated.
+  var winners = {};
+  var allCategories = {};
+  var key;
+  for (key in roamerBest) { allCategories[key] = true; }
+  for (key in calcBest) { allCategories[key] = true; }
+
+  for (key in allCategories) {
+    if (roamerBest[key]) {
+      winners[key] = { tire: roamerBest[key], source: 'roamer' };
+    } else if (calcBest[key]) {
+      winners[key] = { tire: calcBest[key], source: 'calculated' };
     }
   }
 
@@ -66,11 +94,11 @@ function findWinners(tires, compatibleSizes) {
 }
 
 // --- Render a winner card ---
-function renderWinnerCard(tire) {
+// entry: { tire: [...], source: 'roamer'|'calculated' }
+function renderWinnerCard(entry) {
+  var tire = entry.tire;
+  var source = entry.source;
   var img = safeImageURL(tire[COL.image]);
-  var efficiency = parseFloat(tire[COL.roamerEfficiency]).toFixed(2);
-  var sessions = parseInt(tire[COL.roamerSessionCount]) || 0;
-  var vehicles = parseInt(tire[COL.roamerVehicleCount]) || 0;
   var grade = (tire[COL.effGrade] || '-').toUpperCase();
   var gradeColor = GRADE_COLORS[grade] || '#94a3b8';
   var price = parseFloat(tire[COL.price]);
@@ -81,6 +109,13 @@ function renderWinnerCard(tire) {
 
   // Category badge
   html += '<div class="eff-card-category">' + escapeHTML(tire[COL.category]) + '</div>';
+
+  // Source badge
+  if (source === 'roamer') {
+    html += '<span class="eff-card-source-badge eff-source-roamer">' + rtgIcon('signal', 10) + ' Real-World Data</span>';
+  } else {
+    html += '<span class="eff-card-source-badge eff-source-calculated">' + rtgIcon('calculator', 10) + ' Calculated</span>';
+  }
 
   // Image
   html += '<div class="eff-card-img-wrap">';
@@ -96,17 +131,34 @@ function renderWinnerCard(tire) {
   html += '<div class="eff-card-model">' + escapeHTML(tire[COL.model]) + '</div>';
   html += '<div class="eff-card-size">' + escapeHTML(tire[COL.size]) + '</div>';
 
-  // Roamer efficiency (prominent)
-  html += '<div class="eff-card-efficiency">';
-  html += '<span class="eff-card-efficiency-value">' + escapeHTML(efficiency) + '</span>';
-  html += '<span class="eff-card-efficiency-unit">mi/kWh</span>';
-  html += '</div>';
+  // Efficiency display — differs by source
+  if (source === 'roamer') {
+    var efficiency = parseFloat(tire[COL.roamerEfficiency]).toFixed(2);
+    var sessions = parseInt(tire[COL.roamerSessionCount]) || 0;
+    var vehicles = parseInt(tire[COL.roamerVehicleCount]) || 0;
 
-  // Data confidence
-  html += '<div class="eff-card-meta">';
-  html += '<span>' + rtgIcon('database', 12) + ' ' + sessions.toLocaleString() + ' sessions</span>';
-  html += '<span>' + rtgIcon('car', 12) + ' ' + vehicles + ' vehicle' + (vehicles !== 1 ? 's' : '') + '</span>';
-  html += '</div>';
+    html += '<div class="eff-card-efficiency">';
+    html += '<span class="eff-card-efficiency-value">' + escapeHTML(efficiency) + '</span>';
+    html += '<span class="eff-card-efficiency-unit">mi/kWh</span>';
+    html += '</div>';
+
+    html += '<div class="eff-card-meta">';
+    html += '<span>' + rtgIcon('database', 12) + ' ' + sessions.toLocaleString() + ' sessions</span>';
+    html += '<span>' + rtgIcon('car', 12) + ' ' + vehicles + ' vehicle' + (vehicles !== 1 ? 's' : '') + '</span>';
+    html += '</div>';
+  } else {
+    var score = parseInt(tire[COL.effScore], 10) || 0;
+
+    html += '<div class="eff-card-efficiency">';
+    html += '<span class="eff-card-efficiency-value">' + score + '</span>';
+    html += '<span class="eff-card-efficiency-unit">/ 100</span>';
+    html += '</div>';
+
+    html += '<div class="eff-card-meta">';
+    html += '<span>' + rtgIcon('gauge-high', 12) + ' Efficiency Score</span>';
+    html += '<span>' + rtgIcon('ranking-star', 12) + ' Grade ' + escapeHTML(grade) + '</span>';
+    html += '</div>';
+  }
 
   // Grade + Price row
   html += '<div class="eff-card-footer">';
@@ -137,7 +189,7 @@ function renderGrid(tires, vehicleSizes, activeVehicle) {
     grid.innerHTML = '<div class="eff-empty">' +
       '<div class="eff-empty-icon">' + rtgIcon('chart-line', 48) + '</div>' +
       '<div class="eff-empty-title">No efficiency data available</div>' +
-      '<div class="eff-empty-text">No tires with Roamer real-world efficiency data are available' +
+      '<div class="eff-empty-text">No tires with efficiency data are available' +
       (activeVehicle ? ' for the ' + escapeHTML(activeVehicle) + '.' : '.') +
       '</div></div>';
     return;
