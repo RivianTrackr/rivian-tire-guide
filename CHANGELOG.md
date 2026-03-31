@@ -4,6 +4,12 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.39.0] - 2026-03-31
+
+### Changed
+- **Simplified efficiency page to vehicle-only filter** — Removed Generation and Battery filters, keeping a single Vehicle filter row (R1T, R1S, R2). Cleaner UX that matches how owners think about their vehicle.
+- **Plugin version** — Bumped to 1.39.0.
+
 ## [1.38.0] - 2026-03-31
 
 ### Changed

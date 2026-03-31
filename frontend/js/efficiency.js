@@ -46,7 +46,7 @@ var CATEGORY_ORDER = [
 ];
 
 // --- Active filters (module-level so renderWinnerCard can access them) ---
-var activeFilters = { model: '', pack: '' };
+var activeFilters = { model: '' };
 
 // --- Parse vehicle breakdown JSON string ---
 function parseBreakdown(jsonStr) {
@@ -64,13 +64,12 @@ function parseVariant(name) {
 // --- Check if a single variant matches the active filters ---
 function variantMatchesFilters(parsed, filters) {
   if (filters.model && parsed.model !== filters.model) return false;
-  if (filters.pack && parsed.pack !== filters.pack) return false;
   return true;
 }
 
 // --- Check if a tire has any variant matching the active filters ---
 function tireMatchesFilters(tire, filters) {
-  if (!filters.model && !filters.pack) return true;
+  if (!filters.model) return true;
   var bd = parseBreakdown(tire[COL.vehicleBreakdown]);
   for (var i = 0; i < bd.length; i++) {
     var parsed = parseVariant(bd[i][0]);
@@ -79,41 +78,17 @@ function tireMatchesFilters(tire, filters) {
   return false;
 }
 
-// --- Collect all unique filter values from breakdown data ---
-// Returns { models: [...], packs: [...] }
-function collectFilterOptions(tires) {
+// --- Collect unique vehicle models from breakdown data ---
+function collectVehicleModels(tires) {
   var models = {};
-  var packs = {};
-
   for (var i = 0; i < tires.length; i++) {
     var bd = parseBreakdown(tires[i][COL.vehicleBreakdown]);
     for (var j = 0; j < bd.length; j++) {
       var parsed = parseVariant(bd[j][0]);
       if (parsed.model) models[parsed.model] = true;
-      if (parsed.pack) packs[parsed.pack] = true;
     }
   }
-
-  return {
-    models: Object.keys(models).sort(),
-    packs: Object.keys(packs).sort()
-  };
-}
-
-// --- Collect available packs given the current model selection ---
-function collectAvailablePacks(tires, filters) {
-  var packs = {};
-
-  for (var i = 0; i < tires.length; i++) {
-    var bd = parseBreakdown(tires[i][COL.vehicleBreakdown]);
-    for (var j = 0; j < bd.length; j++) {
-      var parsed = parseVariant(bd[j][0]);
-      if (filters.model && parsed.model !== filters.model) continue;
-      if (parsed.pack) packs[parsed.pack] = true;
-    }
-  }
-
-  return Object.keys(packs).sort();
+  return Object.keys(models).sort();
 }
 
 // --- Find best tire per category, filtered by active filters ---
@@ -175,8 +150,7 @@ function renderBreakdownPills(tire) {
     var vName = bd[k][0];
     var vCount = bd[k][1];
     var parsed = parseVariant(vName);
-    var isActive = variantMatchesFilters(parsed, activeFilters) &&
-                   (activeFilters.model || activeFilters.pack);
+    var isActive = activeFilters.model && parsed.model === activeFilters.model;
     html += '<span class="eff-variant-pill' + (isActive ? ' active' : '') + '">';
     html += escapeHTML(vName) + ' <small>(' + vCount + ')</small>';
     html += '</span>';
@@ -278,7 +252,7 @@ function renderGrid(tires) {
   if (!grid) return;
 
   var winners = findWinners(tires, activeFilters);
-  var hasFilter = activeFilters.model || activeFilters.pack;
+  var hasFilter = !!activeFilters.model;
 
   if (Object.keys(winners).length === 0) {
     var filterDesc = buildFilterDescription();
@@ -312,10 +286,7 @@ function renderGrid(tires) {
 
 // --- Build a human-readable description of the active filters ---
 function buildFilterDescription() {
-  var parts = [];
-  if (activeFilters.model) parts.push(activeFilters.model);
-  if (activeFilters.pack) parts.push(activeFilters.pack);
-  return parts.join(' ');
+  return activeFilters.model || '';
 }
 
 // --- Render a single filter row ---
@@ -340,36 +311,23 @@ function renderFilterRow(containerId, label, options, activeValue, dataAttr) {
   container.innerHTML = html;
 }
 
-// --- Update all filter rows and re-render grid ---
-function updateFilters(tires, allOptions) {
-  // Always show model row with all options.
-  renderFilterRow('effFilterModel', 'Vehicle', allOptions.models, activeFilters.model, 'model');
-
-  // Cascade: available packs depend on the model selection.
-  var availablePacks = collectAvailablePacks(tires, activeFilters);
-  renderFilterRow('effFilterPack', 'Battery', availablePacks, activeFilters.pack, 'pack');
-
+// --- Update filter row and re-render grid ---
+function updateFilters(tires, models) {
+  renderFilterRow('effFilterModel', 'Vehicle', models, activeFilters.model, 'model');
   renderGrid(tires);
 }
 
-// --- Attach click handlers to a filter row ---
-function initFilterRow(containerId, filterKey, tires, allOptions) {
-  var container = document.getElementById(containerId);
+// --- Attach click handler to vehicle filter row ---
+function initVehicleFilter(tires, models) {
+  var container = document.getElementById('effFilterModel');
   if (!container) return;
 
   container.addEventListener('click', function(e) {
     var btn = e.target.closest('.eff-filter-btn');
     if (!btn) return;
 
-    var value = btn.getAttribute('data-' + filterKey) || '';
-    activeFilters[filterKey] = value;
-
-    // When vehicle changes, reset battery pack filter.
-    if (filterKey === 'model') {
-      activeFilters.pack = '';
-    }
-
-    updateFilters(tires, allOptions);
+    activeFilters.model = btn.getAttribute('data-model') || '';
+    updateFilters(tires, models);
   });
 }
 
@@ -418,12 +376,9 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   var tires = rtgEfficiency.tires;
-  var allOptions = collectFilterOptions(tires);
+  var models = collectVehicleModels(tires);
 
-  // Initialize filter rows.
-  initFilterRow('effFilterModel', 'model', tires, allOptions);
-  initFilterRow('effFilterPack', 'pack', tires, allOptions);
-
-  // Initial render.
-  updateFilters(tires, allOptions);
+  // Initialize vehicle filter and render.
+  initVehicleFilter(tires, models);
+  updateFilters(tires, models);
 });
