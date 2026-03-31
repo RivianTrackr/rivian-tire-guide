@@ -77,6 +77,7 @@ class RTG_Ajax {
         add_action( 'wp_ajax_rtg_roamer_sync_now', array( $this, 'roamer_sync_now' ) );
         add_action( 'wp_ajax_rtg_roamer_assign', array( $this, 'roamer_assign' ) );
         add_action( 'wp_ajax_rtg_roamer_unlink', array( $this, 'roamer_unlink' ) );
+        add_action( 'wp_ajax_rtg_roamer_hide', array( $this, 'roamer_hide' ) );
     }
 
     /**
@@ -1124,5 +1125,72 @@ class RTG_Ajax {
         }
 
         wp_send_json_success( array( 'unlinked' => $tire_id ) );
+    }
+
+    /**
+     * Permanently hide one or more unmatched Roamer tires.
+     *
+     * Hidden IDs are stored in a dedicated option and excluded from
+     * future syncs and the admin unmatched list.
+     */
+    public function roamer_hide() {
+        check_ajax_referer( 'rtg_admin_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized.' );
+        }
+
+        $roamer_ids = array();
+        if ( ! empty( $_POST['roamer_tire_ids'] ) ) {
+            $raw = json_decode( stripslashes( $_POST['roamer_tire_ids'] ), true );
+            if ( is_array( $raw ) ) {
+                foreach ( $raw as $rid ) {
+                    $clean = sanitize_text_field( $rid );
+                    if ( ! empty( $clean ) ) {
+                        $roamer_ids[] = $clean;
+                    }
+                }
+            }
+        }
+
+        if ( empty( $roamer_ids ) ) {
+            wp_send_json_error( 'Missing roamer_tire_ids.' );
+        }
+
+        // Append to the persistent hidden list.
+        $hidden = get_option( RTG_Roamer_Sync::HIDDEN_OPTION, array() );
+        if ( ! is_array( $hidden ) ) {
+            $hidden = array();
+        }
+        $hidden = array_unique( array_merge( $hidden, $roamer_ids ) );
+        update_option( RTG_Roamer_Sync::HIDDEN_OPTION, $hidden, false );
+
+        // Remove hidden IDs from stored sync stats so they disappear immediately.
+        $stats = get_option( RTG_Roamer_Sync::STATS_OPTION, array() );
+        if ( ! empty( $stats ) ) {
+            $hidden_set = array_flip( $roamer_ids );
+
+            if ( ! empty( $stats['unmatched_list'] ) ) {
+                $stats['unmatched_list'] = array_values( array_filter(
+                    $stats['unmatched_list'],
+                    function ( $item ) use ( $hidden_set ) {
+                        return ! isset( $hidden_set[ $item['roamer_tire_id'] ] );
+                    }
+                ) );
+            }
+
+            if ( ! empty( $stats['ambiguous_list'] ) ) {
+                $stats['ambiguous_list'] = array_values( array_filter(
+                    $stats['ambiguous_list'],
+                    function ( $item ) use ( $hidden_set ) {
+                        return ! isset( $hidden_set[ $item['roamer_tire_id'] ] );
+                    }
+                ) );
+            }
+
+            update_option( RTG_Roamer_Sync::STATS_OPTION, $stats, false );
+        }
+
+        wp_send_json_success( array( 'hidden' => $roamer_ids ) );
     }
 }

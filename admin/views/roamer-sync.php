@@ -240,6 +240,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                         <?php endforeach; ?>
                     </select>
                     <button type="button" id="rtg-unmatched-assign-btn" class="button button-primary" disabled>Assign</button>
+                    <button type="button" id="rtg-unmatched-hide-btn" class="button" style="color:#d63638;" title="Permanently hide selected tires from the unmatched list">Hide</button>
                 </div>
             </div>
             <div class="rtg-card-body" style="padding:0;">
