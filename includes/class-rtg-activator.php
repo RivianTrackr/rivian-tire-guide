@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 12;
+    const DB_VERSION = 13;
 
     public static function activate() {
         self::create_tables();
@@ -88,6 +88,7 @@ class RTG_Activator {
             roamer_session_count INT UNSIGNED NOT NULL DEFAULT 0,
             roamer_total_km DECIMAL(10,1) NOT NULL DEFAULT 0,
             roamer_vehicle_count INT UNSIGNED NOT NULL DEFAULT 0,
+            roamer_vehicle_breakdown TEXT NOT NULL,
             roamer_synced_at DATETIME NULL DEFAULT NULL,
             sort_order INT UNSIGNED NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -186,6 +187,7 @@ class RTG_Activator {
             10 => 'migrate_10_add_search_type_column',
             11 => 'migrate_11_add_guest_review_columns',
             12 => 'migrate_12_add_roamer_columns',
+            13 => 'migrate_13_add_vehicle_breakdown_column',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -312,5 +314,13 @@ class RTG_Activator {
      */
     private static function migrate_12_add_roamer_columns() {
         // Columns added by dbDelta above.
+    }
+
+    /**
+     * Add roamer_vehicle_breakdown column to store per-vehicle-variant data.
+     * Column added by dbDelta above; this marks the migration.
+     */
+    private static function migrate_13_add_vehicle_breakdown_column() {
+        // Column added by dbDelta above.
     }
 }

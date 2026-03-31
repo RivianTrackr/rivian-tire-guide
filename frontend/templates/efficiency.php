@@ -269,6 +269,34 @@
       gap: 4px;
     }
 
+    /* --- Vehicle breakdown pills --- */
+    .eff-card-variants {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      margin: 4px 0;
+    }
+    .eff-variant-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 10px;
+      background: var(--rtg-bg-input);
+      color: var(--rtg-text-muted);
+      white-space: nowrap;
+    }
+    .eff-variant-pill small {
+      opacity: 0.7;
+    }
+    .eff-variant-pill.active {
+      background: rgba(94, 192, 149, 0.15);
+      color: var(--rtg-accent);
+    }
+
     .eff-card-footer {
       display: flex;
       align-items: center;
