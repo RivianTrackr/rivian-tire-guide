@@ -11,6 +11,7 @@ $cdn_prefix = $settings['cdn_prefix'] ?? '';
 $compare_slug = $settings['compare_slug'] ?? 'tire-compare';
 $user_reviews_slug = $settings['user_reviews_slug'] ?? 'user-reviews';
 $tire_review_slug = $settings['tire_review_slug'] ?? 'tire-review';
+$efficiency_slug = $settings['efficiency_slug'] ?? 'tire-efficiency';
 
 // Theme color defaults.
 $default_colors = array(
@@ -109,6 +110,13 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                     </div>
                     <p class="rtg-field-description">URL slug for the standalone tire review page. Default: <code>tire-review</code> (accessible at <code><?php echo esc_html( home_url( '/' . $tire_review_slug . '/' ) ); ?></code>)</p>
                     <input type="text" id="tire_review_slug" name="tire_review_slug" value="<?php echo esc_attr( $tire_review_slug ); ?>">
+                </div>
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="efficiency_slug">Efficiency Page Slug</label>
+                    </div>
+                    <p class="rtg-field-description">URL slug for the tire efficiency rankings page. Default: <code>tire-efficiency</code> (accessible at <code><?php echo esc_html( home_url( '/' . $efficiency_slug . '/' ) ); ?></code>)</p>
+                    <input type="text" id="efficiency_slug" name="efficiency_slug" value="<?php echo esc_attr( $efficiency_slug ); ?>">
                 </div>
             </div>
         </div>
