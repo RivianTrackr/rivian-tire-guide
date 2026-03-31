@@ -90,7 +90,6 @@ class RTG_Database {
                 (string) $tire['roamer_efficiency'],
                 (string) $tire['roamer_session_count'],
                 (string) $tire['roamer_vehicle_count'],
-                (string) ( $tire['roamer_vehicle_breakdown'] ?? '' ),
             );
         }
 
@@ -164,7 +163,6 @@ class RTG_Database {
                 (string) $tire['roamer_efficiency'],
                 (string) $tire['roamer_session_count'],
                 (string) $tire['roamer_vehicle_count'],
-                (string) ( $tire['roamer_vehicle_breakdown'] ?? '' ),
             );
         }
 

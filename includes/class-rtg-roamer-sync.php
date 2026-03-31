@@ -155,12 +155,11 @@ class RTG_Roamer_Sync {
 
             // Source value is km/kWh — convert to mi/kWh for storage and display.
             $eff_data = array(
-                'roamer_efficiency'         => round( floatval( $roamer_tire['efficiency_km_per_kwh'] ?? 0 ) * 0.621371, 2 ),
-                'roamer_session_count'      => intval( $roamer_tire['session_count'] ?? 0 ),
-                'roamer_total_km'           => floatval( $roamer_tire['total_distance_km'] ?? 0 ),
-                'roamer_vehicle_count'      => intval( $roamer_tire['vehicle_count'] ?? 0 ),
-                'roamer_vehicle_breakdown'  => wp_json_encode( $roamer_tire['vehicle_breakdown'] ?? array() ),
-                'roamer_synced_at'          => $now,
+                'roamer_efficiency'    => round( floatval( $roamer_tire['efficiency_km_per_kwh'] ?? 0 ) * 0.621371, 2 ),
+                'roamer_session_count' => intval( $roamer_tire['session_count'] ?? 0 ),
+                'roamer_total_km'      => floatval( $roamer_tire['total_distance_km'] ?? 0 ),
+                'roamer_vehicle_count' => intval( $roamer_tire['vehicle_count'] ?? 0 ),
+                'roamer_synced_at'     => $now,
             );
 
             // Fast path: already linked by roamer_tire_id.

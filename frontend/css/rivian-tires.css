@@ -814,31 +814,6 @@
   cursor: help;
 }
 
-/* === Efficiency Rankings Banner === */
-.rtg-efficiency-banner {
-  margin: 16px 0 0;
-}
-.rtg-efficiency-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 8px;
-  background: rgba(96, 165, 250, 0.1);
-  border: 1px solid rgba(96, 165, 250, 0.25);
-  color: #60a5fa;
-  font-size: 13px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all .15s;
-}
-.rtg-efficiency-link:hover {
-  background: rgba(96, 165, 250, 0.18);
-  border-color: rgba(96, 165, 250, 0.4);
-  color: #93bbfc;
-  text-decoration: none;
-}
-
 /* === Sort Bar === */
 .sort-wrapper {
   display: flex;
