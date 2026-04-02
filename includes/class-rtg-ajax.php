@@ -95,6 +95,7 @@ class RTG_Ajax {
         }
 
         $raw_ids  = isset( $_POST['tire_ids'] ) ? (array) $_POST['tire_ids'] : array();
+        $raw_ids  = array_slice( $raw_ids, 0, 200 ); // Cap to prevent query explosion.
         $tire_ids = array();
 
         foreach ( $raw_ids as $id ) {

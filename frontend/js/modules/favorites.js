@@ -77,6 +77,7 @@ export function toggleFavorite(tireId) {
       }
       updateFavoriteButton(tireId);
       updateFavoritesFilterCount();
+      showFavoriteError();
     });
 }
 
@@ -97,6 +98,19 @@ export function updateFavoriteButtons() {
     const tireId = btn.dataset.tireId;
     if (tireId) updateFavoriteButton(tireId);
   });
+}
+
+function showFavoriteError() {
+  const existing = document.getElementById('rtg-fav-toast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'rtg-fav-toast';
+  toast.className = 'rtg-toast rtg-toast-error';
+  toast.setAttribute('role', 'alert');
+  toast.textContent = 'Could not update favorite. Please try again.';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
 }
 
 export function updateFavoritesFilterCount() {

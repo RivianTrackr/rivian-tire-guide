@@ -4,6 +4,24 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.36.0] - 2026-04-02
+
+### Fixed
+- **Roamer efficiency NaN guard** — Added `Number.isFinite()` check before displaying Roamer real-world efficiency values to prevent `Infinity` or `NaN` from rendering broken badges on tire cards.
+- **Rating sort error handling** — Added `.catch()` handler to the `loadTireRatings` promise chain in `filterAndRender` so sorting by rating or most-reviewed still completes on network failure instead of silently breaking.
+- **Card cache eviction** — Cache now evicts 20 entries at a time when the 100-entry limit is reached, preventing single-evict thrashing that allowed unbounded memory growth on long sessions.
+- **Favorites error feedback** — Failed favorite toggle (network error or server rejection) now shows a visible toast notification instead of silently reverting the optimistic UI update.
+- **REST API IP validation** — Rate limiter in the REST API now uses `filter_var(FILTER_VALIDATE_IP)` for proper IPv4/IPv6 validation instead of a regex that could pass malformed addresses.
+- **REST efficiency endpoint validation** — The `POST /efficiency` endpoint now returns a 400 error when the required `size` parameter is missing, instead of silently calculating with empty data.
+- **AJAX tire_ids cap** — The `get_tire_ratings` AJAX handler now caps the `tire_ids` array to 200 entries to prevent query explosion from malicious or malformed requests.
+
+### Improved
+- **Image modal accessibility** — Added `role="dialog"`, `aria-modal="true"`, and `aria-label` attributes to the full-screen image preview modal for screen reader support.
+- **Honeypot accessibility** — Added `aria-hidden="true"` to the hidden honeypot field in the guest review modal so screen readers no longer announce it.
+
+### Changed
+- **Plugin version** — Bumped to 1.36.0.
+
 ## [1.35.0] - 2026-03-31
 
 ### Added

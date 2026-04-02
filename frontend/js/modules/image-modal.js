@@ -30,6 +30,9 @@ export function openImageModal(src, altText) {
     }
   };
 
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-label', escapeHTML(safeString(altText, 200)) || 'Image preview');
   modal.style.display = "flex";
   document.body.style.overflow = "hidden";
 

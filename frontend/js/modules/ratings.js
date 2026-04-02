@@ -519,6 +519,7 @@ export function openReviewModal(tireId, preselectedRating = 0) {
     honeypotInput.name = 'website';
     honeypotInput.tabIndex = -1;
     honeypotInput.autocomplete = 'off';
+    honeypotInput.setAttribute('aria-hidden', 'true');
     honeypotInput.style.cssText = 'position:absolute;left:-9999px;top:-9999px;opacity:0;height:0;width:0;';
   }
 
