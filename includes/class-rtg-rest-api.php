@@ -391,8 +391,17 @@ class RTG_REST_API {
             return $rate_check;
         }
 
+        $size = sanitize_text_field( $request->get_param( 'size' ) );
+        if ( empty( $size ) ) {
+            return new WP_Error(
+                'rtg_missing_param',
+                'The size parameter is required.',
+                array( 'status' => 400 )
+            );
+        }
+
         $data = array(
-            'size'          => sanitize_text_field( $request->get_param( 'size' ) ),
+            'size'          => $size,
             'weight_lb'     => floatval( $request->get_param( 'weight_lb' ) ),
             'tread'         => sanitize_text_field( $request->get_param( 'tread' ) ),
             'load_range'    => sanitize_text_field( $request->get_param( 'load_range' ) ),
@@ -429,8 +438,9 @@ class RTG_REST_API {
      * @return true|WP_Error
      */
     private function check_rate_limit( $bucket, $limit, $window = 60 ) {
-        $ip  = preg_replace( '/[^a-fA-F0-9.:_]/', '', $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0' );
-        $key = 'rtg_rl_' . $bucket . '_' . md5( $ip );
+        $raw_ip = isset( $_SERVER['REMOTE_ADDR'] ) ? trim( $_SERVER['REMOTE_ADDR'] ) : '';
+        $ip     = filter_var( $raw_ip, FILTER_VALIDATE_IP ) ? $raw_ip : '0.0.0.0';
+        $key    = 'rtg_rl_' . $bucket . '_' . md5( $ip );
 
         $current = (int) get_transient( $key );
 

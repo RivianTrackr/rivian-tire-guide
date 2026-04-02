@@ -399,7 +399,7 @@ export function createSingleCard(row) {
 
       // Roamer real-world efficiency — separate pill matching efficiency badge style.
       const roamerVal = parseFloat(roamerEfficiency);
-      if (roamerVal > 0) {
+      if (Number.isFinite(roamerVal) && roamerVal > 0) {
         const roamerTag = document.createElement('span');
         roamerTag.className = 'tire-card-eff';
 
@@ -581,9 +581,10 @@ export function createSingleCard(row) {
 
   card.appendChild(actionsContainer);
 
-  if (state.cardCache.size > 100) {
-    const firstKey = state.cardCache.keys().next().value;
-    state.cardCache.delete(firstKey);
+  if (state.cardCache.size >= 100) {
+    // Evict oldest 20 entries to avoid thrashing on every new card.
+    const keysToDelete = [...state.cardCache.keys()].slice(0, 20);
+    keysToDelete.forEach(k => state.cardCache.delete(k));
   }
   state.cardCache.set(cacheKey, card.cloneNode(true));
 
