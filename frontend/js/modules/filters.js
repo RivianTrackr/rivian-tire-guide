@@ -387,6 +387,10 @@ export function filterAndRender() {
     loadTireRatings(allFilteredTireIds).then(() => {
       applySorting(sortOption);
       finishFilterAndRender();
+    }).catch(() => {
+      // Fall back to rendering without rating data on network failure.
+      applySorting(sortOption);
+      finishFilterAndRender();
     });
   } else {
     applySorting(sortOption);

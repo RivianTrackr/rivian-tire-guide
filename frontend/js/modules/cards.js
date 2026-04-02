@@ -399,7 +399,7 @@ export function createSingleCard(row) {
 
       // Roamer real-world efficiency — separate pill matching efficiency badge style.
       const roamerVal = parseFloat(roamerEfficiency);
-      if (roamerVal > 0) {
+      if (Number.isFinite(roamerVal) && roamerVal > 0) {
         const roamerTag = document.createElement('span');
         roamerTag.className = 'tire-card-eff';
 
