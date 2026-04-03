@@ -385,7 +385,7 @@
 .filter-header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
   font-size: 15px;
   font-weight: 600;
   color: var(--rtg-text-heading);
@@ -394,11 +394,22 @@
   background: var(--rtg-bg-primary);
   border-bottom: 1px solid var(--rtg-border);
 }
+.filter-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 .filter-header i {
   color: var(--rtg-accent);
   font-size: 16px;
   width: 20px;
   text-align: center;
+}
+.filter-header .rtg-clear-filters-btn {
+  height: 34px;
+  padding: 6px 12px;
+  font-size: 12px;
+  margin: 0;
 }
 .filter-body {
   padding: 20px;
@@ -683,6 +694,100 @@
 }
 .rtg-clear-filters-btn i {
   font-size: 13px;
+}
+
+/* === Advanced Filters Collapsible === */
+.rtg-advanced-filters {
+  margin-top: 16px;
+  border: 1px solid var(--rtg-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--rtg-bg-primary);
+}
+.rtg-advanced-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--rtg-text-primary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s;
+  font-family: var(--rtg-font-stack);
+}
+.rtg-advanced-toggle:hover {
+  color: var(--rtg-accent);
+}
+.rtg-advanced-toggle-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rtg-advanced-toggle-text i {
+  color: var(--rtg-accent);
+  font-size: 14px;
+}
+.rtg-advanced-chevron {
+  margin-left: auto;
+  font-size: 12px;
+  transition: transform 0.25s ease;
+  color: var(--rtg-text-muted);
+}
+.rtg-advanced-filters.open .rtg-advanced-chevron {
+  transform: rotate(180deg);
+}
+.rtg-advanced-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0f172a;
+  background: var(--rtg-accent);
+  border-radius: 10px;
+}
+.rtg-advanced-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.rtg-advanced-filters.open .rtg-advanced-body {
+  max-height: 600px;
+  overflow: visible;
+}
+.rtg-advanced-body > .rtg-filter-section:first-child {
+  border-top: 1px solid var(--rtg-border);
+}
+
+/* === Filter Section Dividers === */
+.rtg-filter-section {
+  padding: 14px 16px;
+}
+.rtg-filter-section + .rtg-filter-section {
+  border-top: 1px solid var(--rtg-border);
+}
+.rtg-filter-section-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--rtg-text-muted);
+  opacity: 0.6;
+  margin-bottom: 10px;
+}
+.rtg-filter-section .slider-row {
+  margin-top: 0;
+}
+.rtg-filter-section .switch-row {
+  margin-top: 0;
 }
 
 /* === Info Tooltip Trigger === */
