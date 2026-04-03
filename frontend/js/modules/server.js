@@ -9,7 +9,9 @@ import { rtgColor, getDOMElement, debounce, styleButton } from './helpers.js';
 import { validateAndSanitizeCSVRow } from './validation.js';
 import { RTG_ANALYTICS } from './analytics.js';
 import { renderCards } from './cards.js';
+import { VALIDATION_PATTERNS } from './validation.js';
 import { loadTireRatings } from './ratings.js';
+import { rtgIcon } from './helpers.js';
 import { updateURLFromFilters, renderSmartNoResults, renderActiveFilterChips, applyFiltersFromURL, populateDropdown, getSelectedVehicle, populateVehicleToggle } from './filters.js';
 
 export function isServerSide() {
@@ -21,10 +23,15 @@ export function fetchTiresFromServer(page) {
   state.serverSideFetchController = new AbortController();
 
   const searchInput = document.querySelector('#searchInput');
+  const urlParams = new URLSearchParams(window.location.search);
+  const tireParam = urlParams.get('tire');
+  const isDeepLink = tireParam && VALIDATION_PATTERNS.tireId.test(tireParam);
+
   const body = new FormData();
   body.append('action', 'rtg_get_tires');
   body.append('nonce', rtgData.settings.tireNonce);
   body.append('page', page || state.currentPage);
+  body.append('tire_id', isDeepLink ? tireParam : '');
   body.append('search', searchInput ? searchInput.value : '');
   body.append('vehicle', getSelectedVehicle());
   body.append('size', getDOMElement("filterSize")?.value || '');
@@ -74,8 +81,34 @@ export function fetchTiresFromServer(page) {
     }
 
     renderCards(state.filteredRows);
-    renderServerPagination(state.serverSideTotal, json.data.per_page || ROWS_PER_PAGE, state.currentPage);
-    updateURLFromFilters();
+
+    if (isDeepLink && state.filteredRows.length > 0) {
+      const filterWrapper = document.querySelector(".filter-wrapper");
+      const sortWrapper = document.querySelector(".sort-wrapper");
+      const activeFilters = getDOMElement("activeFilters");
+      const paginationControls = getDOMElement("paginationControls");
+      const toggleBtn = document.querySelector(".toggle-filters-btn");
+      if (filterWrapper) filterWrapper.style.display = "none";
+      if (sortWrapper) sortWrapper.style.display = "none";
+      if (activeFilters) activeFilters.style.display = "none";
+      if (paginationControls) paginationControls.style.display = "none";
+      if (toggleBtn) toggleBtn.style.display = "none";
+
+      const tireSection = getDOMElement("tireSection");
+      if (tireSection && !document.querySelector('.tire-deeplink-bar')) {
+        const backBar = document.createElement("div");
+        backBar.className = "tire-deeplink-bar";
+        const backBtn = document.createElement("a");
+        backBtn.href = window.location.pathname;
+        backBtn.className = "tire-deeplink-back";
+        backBtn.innerHTML = rtgIcon('arrow-left', 14) + ' View all tires';
+        backBar.appendChild(backBtn);
+        tireSection.parentNode.insertBefore(backBar, tireSection);
+      }
+    } else {
+      renderServerPagination(state.serverSideTotal, json.data.per_page || ROWS_PER_PAGE, state.currentPage);
+      updateURLFromFilters();
+    }
 
     const noResults = getDOMElement("noResults");
     const tireCards = getDOMElement("tireCards");

@@ -532,6 +532,11 @@ class RTG_Database {
         $where  = array( '1=1' );
         $values = array();
 
+        if ( ! empty( $filters['tire_id'] ) ) {
+            $where[]  = 'tire_id = %s';
+            $values[] = $filters['tire_id'];
+        }
+
         if ( ! empty( $filters['search'] ) ) {
             $like     = '%' . $wpdb->esc_like( $filters['search'] ) . '%';
             $where[]  = '( brand LIKE %s OR model LIKE %s OR tire_id LIKE %s OR tags LIKE %s )';

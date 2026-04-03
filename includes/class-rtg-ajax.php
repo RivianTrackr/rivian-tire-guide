@@ -493,6 +493,7 @@ class RTG_Ajax {
         $per_page = intval( $settings['rows_per_page'] ?? 12 );
 
         $filters = array(
+            'tire_id'      => sanitize_text_field( $_POST['tire_id'] ?? '' ),
             'search'       => sanitize_text_field( wp_unslash( $_POST['search'] ?? '' ) ),
             'vehicle'      => sanitize_text_field( $_POST['vehicle'] ?? '' ),
             'size'         => sanitize_text_field( $_POST['size'] ?? '' ),
