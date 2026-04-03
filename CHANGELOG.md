@@ -10,42 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Dropdown counts no longer show (0) when a filter is selected** — Size, Brand, and Category dropdowns now count against rows filtered by everything *except* their own selection, so users see how many tires each option would yield if they switched to it.
 
 ### Improved
-- **Clear All button color** — Replaced the red color with muted text and subtle border that highlights to the accent gold on hover, consistent with the rest of the filter card.
-- **More Filters slimmed to inline toggle** — Replaced the full-width bordered bar with a compact inline text link (`⚙ More Filters ▼`) that takes minimal space when collapsed.
-- **Wheel guide callout spacing** — Added bottom margin between the wheel guide callout and the tire cards grid.
+- **Collapsible advanced filters** — Sliders (price, warranty, weight) and toggle switches (3PMS, EV Rated, Studded, Reviewed, Favorites) are now tucked behind a compact inline "More Filters" toggle, keeping primary filters (vehicle, size, brand, category) always visible and reducing visual clutter.
+- **Advanced filter badge** — The "More Filters" toggle shows an active filter count badge and auto-expands when any advanced filter is in use, so users never lose track of applied filters.
+- **Filter section labels** — Added "Specifications" and "Features" sub-section labels within the advanced filters panel for clearer visual hierarchy and grouping.
+- **Clear All button** — Relocated from the toggle row into the filter header bar for constant visibility, and restyled from red to muted text with accent gold hover to match the UI palette.
+- **Sort dropdown moved into filter card** — The sort dropdown now lives inside the filter card beneath the primary filters, matching the "Filter, Sort, and Compare" header and keeping all controls in one place.
+- **Two-column toggle grid** — Toggle switches now use a CSS grid layout with `auto-fill` columns for consistent two-column alignment on desktop and clean single-column stacking on mobile.
+- **Compact slider group** — Reduced padding, gap, and font size on the price/warranty/weight sliders for a tighter footprint within the advanced filters panel.
+- **Wheel guide moved to standalone callout** — The "Not sure which tire fits your Rivian?" wheel guide is now a standalone collapsible section below the filter card with its own styled trigger, separating help content from filter controls.
 
 ### Changed
 - **Plugin version** — Bumped to 1.40.0.
-
-## [1.39.0] - 2026-04-03
-
-### Improved
-- **Wheel guide moved to standalone callout** — The "Not sure which tire fits your Rivian?" wheel guide is now a standalone collapsible section below the filter card instead of being embedded inside the filters panel. This separates help/education content from filter controls, reducing visual noise and giving the wheel guide its own clear identity.
-- **Wheel guide callout styling** — The trigger button now matches the "More Filters" visual pattern with a chevron icon, consistent hover states, and a truck icon for better discoverability.
-
-### Changed
-- **Plugin version** — Bumped to 1.39.0.
-
-## [1.38.0] - 2026-04-03
-
-### Improved
-- **Sort dropdown moved into filter card** — The sort dropdown now lives inside the filter card beneath the primary filters, matching the "Filter, Sort, and Compare" header and keeping all controls in one place.
-- **Two-column toggle grid** — Toggle switches (3PMS, EV Rated, Studded, etc.) now use a CSS grid layout with `auto-fill` columns instead of flex-wrap, producing consistent two-column alignment on desktop and clean single-column stacking on mobile.
-- **Compact slider group** — Reduced padding, gap, and font size on the price/warranty/weight sliders for a tighter footprint within the advanced filters panel.
-
-### Changed
-- **Plugin version** — Bumped to 1.38.0.
-
-## [1.37.0] - 2026-04-03
-
-### Improved
-- **Collapsible advanced filters** — Sliders (price, warranty, weight) and toggle switches (3PMS, EV Rated, Studded, Reviewed, Favorites) are now tucked behind a "More Filters" button, keeping primary filters (vehicle, size, brand, category) always visible and reducing visual clutter.
-- **Clear All button visibility** — Relocated the Clear All button from the toggle row into the filter header bar so it's always accessible regardless of whether advanced filters are expanded.
-- **Filter section labels** — Added "Specifications" and "Features" sub-section labels within the advanced filters panel for clearer visual hierarchy and grouping.
-- **Advanced filter badge** — The "More Filters" button shows an active filter count badge and auto-expands when any advanced filter is in use, so users never lose track of applied filters.
-
-### Changed
-- **Plugin version** — Bumped to 1.37.0.
 
 ## [1.36.0] - 2026-04-02
 
