@@ -203,6 +203,7 @@ function getFilteredIndexes(filters) {
     if (filters["3PMS"] && !safeString(row[9]).toLowerCase().includes("yes")) return false;
     if (filters["EVRated"] && !safeString(row[17]).toLowerCase().includes("ev rated")) return false;
     if (filters["Studded"] && !safeString(row[17]).toLowerCase().includes("studded available")) return false;
+    if (filters["OEM"] && !safeString(row[17]).toLowerCase().includes("oem")) return false;
     if (filters["Reviewed"] && !safeString(row[22])) return false;
     if (filters["Favorites"] && !state.userFavorites.has(row[0])) return false;
 
@@ -314,6 +315,7 @@ export function filterAndRender() {
   const filter3pms = getDOMElement("filter3pms");
   const filterEVRated = getDOMElement("filterEVRated");
   const filterStudded = getDOMElement("filterStudded");
+  const filterOEM = getDOMElement("filterOEM");
   const filterReviewed = getDOMElement("filterReviewed");
   const filterFavorites = getDOMElement("filterFavorites");
   const filterSize = getDOMElement("filterSize");
@@ -336,6 +338,7 @@ export function filterAndRender() {
     "3PMS": filter3pms?.checked || false,
     "EVRated": filterEVRated?.checked || false,
     "Studded": filterStudded?.checked || false,
+    "OEM": filterOEM?.checked || false,
     "Reviewed": filterReviewed?.checked || false,
     "Favorites": filterFavorites?.checked || false,
     Vehicle: vehicleVal && state.VALID_VEHICLES.includes(vehicleVal) ? vehicleVal : "",
@@ -369,6 +372,7 @@ export function filterAndRender() {
   if (f["3PMS"]) activeFilters.three_pms = true;
   if (f["EVRated"]) activeFilters.ev_rated = true;
   if (f["Studded"]) activeFilters.studded = true;
+  if (f["OEM"]) activeFilters.oem = true;
   if (f.PriceMax < 600) activeFilters.price_max = f.PriceMax;
   if (f.WarrantyMin > 0) activeFilters.warranty_min = f.WarrantyMin;
   if (f.WeightMax < 70) activeFilters.weight_max = f.WeightMax;
@@ -516,6 +520,7 @@ function getActiveFilterCount() {
   if (getDOMElement("filter3pms")?.checked) count++;
   if (getDOMElement("filterEVRated")?.checked) count++;
   if (getDOMElement("filterStudded")?.checked) count++;
+  if (getDOMElement("filterOEM")?.checked) count++;
   if (getDOMElement("filterReviewed")?.checked) count++;
   if (getDOMElement("filterFavorites")?.checked) count++;
   return count;
@@ -557,6 +562,7 @@ function getAdvancedFilterCount() {
   if (getDOMElement("filter3pms")?.checked) count++;
   if (getDOMElement("filterEVRated")?.checked) count++;
   if (getDOMElement("filterStudded")?.checked) count++;
+  if (getDOMElement("filterOEM")?.checked) count++;
   if (getDOMElement("filterReviewed")?.checked) count++;
   if (getDOMElement("filterFavorites")?.checked) count++;
   return count;
@@ -589,6 +595,7 @@ function getCurrentFilters() {
   const filter3pms = getDOMElement("filter3pms");
   const filterEVRated = getDOMElement("filterEVRated");
   const filterStudded = getDOMElement("filterStudded");
+  const filterOEM = getDOMElement("filterOEM");
   const filterReviewed = getDOMElement("filterReviewed");
   const filterFavorites = getDOMElement("filterFavorites");
   const filterSize = getDOMElement("filterSize");
@@ -605,6 +612,7 @@ function getCurrentFilters() {
     "3PMS": filter3pms?.checked || false,
     "EVRated": filterEVRated?.checked || false,
     "Studded": filterStudded?.checked || false,
+    "OEM": filterOEM?.checked || false,
     "Reviewed": filterReviewed?.checked || false,
     "Favorites": filterFavorites?.checked || false,
     Vehicle: getSelectedVehicle() && state.VALID_VEHICLES.includes(getSelectedVehicle()) ? getSelectedVehicle() : "",
@@ -757,7 +765,7 @@ export function resetFilters() {
     if (el) el.value = value;
   });
 
-  const checkboxes = ["filter3pms", "filterEVRated", "filterStudded", "filterReviewed", "filterFavorites"];
+  const checkboxes = ["filter3pms", "filterEVRated", "filterStudded", "filterOEM", "filterReviewed", "filterFavorites"];
   checkboxes.forEach(id => {
     const el = getDOMElement(id);
     if (el) el.checked = false;
@@ -854,6 +862,9 @@ export function renderActiveFilterChips() {
   if (getDOMElement("filterStudded")?.checked) {
     chips.push({ label: "Studded", value: "Yes", clear: () => { getDOMElement("filterStudded").checked = false; } });
   }
+  if (getDOMElement("filterOEM")?.checked) {
+    chips.push({ label: "OEM", value: "Yes", clear: () => { getDOMElement("filterOEM").checked = false; } });
+  }
   if (getDOMElement("filterReviewed")?.checked) {
     chips.push({ label: "Reviewed", value: "Yes", clear: () => { getDOMElement("filterReviewed").checked = false; } });
   }
@@ -921,6 +932,7 @@ export function renderSmartNoResults() {
   if (getDOMElement("filter3pms")?.checked) activeFilterNames.push("3PMS");
   if (getDOMElement("filterEVRated")?.checked) activeFilterNames.push("EV Rated");
   if (getDOMElement("filterStudded")?.checked) activeFilterNames.push("Studded");
+  if (getDOMElement("filterOEM")?.checked) activeFilterNames.push("OEM");
   if (getDOMElement("filterReviewed")?.checked) activeFilterNames.push("Reviewed");
   if (getDOMElement("filterFavorites")?.checked) activeFilterNames.push("Favorites");
   if (searchEl?.value?.trim()) activeFilterNames.push("Search");
@@ -1079,6 +1091,7 @@ export function updateURLFromFilters() {
   if (getChecked("filter3pms")) params.set("3pms", "1");
   if (getChecked("filterEVRated")) params.set("ev", "1");
   if (getChecked("filterStudded")) params.set("studded", "1");
+  if (getChecked("filterOEM")) params.set("oem", "1");
   if (getChecked("filterReviewed")) params.set("reviewed", "1");
 
   const currentSort = getVal("sortBy");
@@ -1165,6 +1178,7 @@ export function applyFiltersFromURL() {
   setChecked("filter3pms", params.get("3pms"));
   setChecked("filterEVRated", params.get("ev"));
   setChecked("filterStudded", params.get("studded"));
+  setChecked("filterOEM", params.get("oem"));
   setChecked("filterReviewed", params.get("reviewed"));
   setChecked("filterFavorites", params.get("favorites"));
 

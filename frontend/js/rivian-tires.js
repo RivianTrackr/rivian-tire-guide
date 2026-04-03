@@ -218,6 +218,7 @@ function initializeUI() {
     { id: "filter3pms", listener: filterFn },
     { id: "filterEVRated", listener: filterFn },
     { id: "filterStudded", listener: filterFn },
+    { id: "filterOEM", listener: filterFn },
     { id: "filterReviewed", listener: filterFn },
     { id: "filterFavorites", listener: filterFn },
   ];
@@ -357,6 +358,10 @@ document.addEventListener("DOMContentLoaded", () => {
             tooltipKey = 'Studded Available Filter';
             labelText = 'Studded Available';
             break;
+          case 'filterOEM':
+            tooltipKey = 'OEM Filter';
+            labelText = 'OEM Tire';
+            break;
           case 'filterReviewed':
             tooltipKey = 'Officially Reviewed Filter';
             labelText = 'Officially Reviewed';
@@ -378,6 +383,7 @@ document.addEventListener("DOMContentLoaded", () => {
         { selector: 'filter3pms', label: '3PMS Rated', key: '3PMS Filter' },
         { selector: 'filterEVRated', label: 'EV Rated', key: 'EV Rated Filter' },
         { selector: 'filterStudded', label: 'Studded Available', key: 'Studded Available Filter' },
+        { selector: 'filterOEM', label: 'OEM Tire', key: 'OEM Filter' },
         { selector: 'filterReviewed', label: 'Officially Reviewed', key: 'Officially Reviewed Filter' },
       ];
 

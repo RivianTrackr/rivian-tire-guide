@@ -32,6 +32,10 @@ export const TOOLTIP_DATA = {
     title: 'Studded Available Filter',
     content: 'Filters for tires marked as "Studded Available" — these can be fitted with studs for enhanced traction on ice.'
   },
+  'OEM Filter': {
+    title: 'OEM Tire Filter',
+    content: 'Filters for tires that come as Original Equipment from the factory on Rivian vehicles.'
+  },
   'Officially Reviewed Filter': {
     title: 'Officially Reviewed Filter',
     content: 'Filters for tires that have an official review from RivianTrackr — either a written article or video review.'
