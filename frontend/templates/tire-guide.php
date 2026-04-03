@@ -96,7 +96,7 @@ if ( ! defined( 'ABSPATH' ) ) {
               <div class="switch-label">
                 <span class="switch-text">
                   <div style="display: flex; align-items: center; gap: 6px;">
-                    <span>3PMS Rated</span>
+                    <span>3PMS</span>
                     <button class="info-tooltip-trigger" data-tooltip-key="3PMS Filter">
                       <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
                     </button>
@@ -120,7 +120,7 @@ if ( ! defined( 'ABSPATH' ) ) {
               <div class="switch-label">
                 <span class="switch-text">
                   <div style="display: flex; align-items: center; gap: 6px;">
-                    <span>Studded Available</span>
+                    <span>Studded</span>
                     <button class="info-tooltip-trigger" data-tooltip-key="Studded Available Filter">
                       <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
                     </button>
@@ -144,7 +144,7 @@ if ( ! defined( 'ABSPATH' ) ) {
               <div class="switch-label">
                 <span class="switch-text">
                   <div style="display: flex; align-items: center; gap: 6px;">
-                    <span>Officially Reviewed</span>
+                    <span>Reviewed</span>
                     <button class="info-tooltip-trigger" data-tooltip-key="Officially Reviewed Filter">
                       <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
                     </button>
@@ -158,7 +158,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <span class="switch-text">
                   <div style="display: flex; align-items: center; gap: 6px;">
                     <i class="fa-solid fa-heart" aria-hidden="true"></i>
-                    <span>My Favorites</span>
+                    <span>Favorites</span>
                   </div>
                 </span>
                 <span id="favoritesCount" class="favorites-count-badge" style="display: none;"></span>
