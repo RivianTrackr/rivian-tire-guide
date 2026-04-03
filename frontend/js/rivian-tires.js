@@ -436,6 +436,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Advanced filters toggle
+  const advToggle = getDOMElement("advancedFiltersToggle");
+  const advFilters = getDOMElement("advancedFilters");
+  if (advToggle && advFilters) {
+    advToggle.addEventListener("click", () => {
+      const isOpen = advFilters.classList.toggle("open");
+      advToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+  }
+
   const trigger = getDOMElement("wheelDrawerTrigger");
   const drawer = getDOMElement("wheelDrawer");
   if (trigger && drawer) {

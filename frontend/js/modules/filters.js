@@ -496,6 +496,7 @@ function finishFilterAndRender() {
   renderActiveFilterChips();
   updateFilterResultCount();
   updateMobileFilterBadge();
+  updateAdvancedFilterBadge();
   updateDropdownCounts();
 }
 
@@ -542,6 +543,41 @@ function updateMobileFilterBadge() {
     toggleBtn.innerHTML = `<i class="fa-solid fa-sliders" aria-hidden="true"></i>&nbsp; ${isOpen ? "Hide" : "Show"} Filters <span class="mobile-filter-badge">${count}</span>`;
   } else {
     toggleBtn.innerHTML = `<i class="fa-solid fa-sliders" aria-hidden="true"></i>&nbsp; ${isOpen ? "Hide" : "Show"} Filters`;
+  }
+}
+
+function getAdvancedFilterCount() {
+  let count = 0;
+  const priceEl = getDOMElement("priceMax");
+  if (priceEl && parseInt(priceEl.value) < 600) count++;
+  const warrantyEl = getDOMElement("warrantyMin");
+  if (warrantyEl && parseInt(warrantyEl.value) > 0) count++;
+  const weightEl = getDOMElement("weightMax");
+  if (weightEl && parseInt(weightEl.value) < 70) count++;
+  if (getDOMElement("filter3pms")?.checked) count++;
+  if (getDOMElement("filterEVRated")?.checked) count++;
+  if (getDOMElement("filterStudded")?.checked) count++;
+  if (getDOMElement("filterReviewed")?.checked) count++;
+  if (getDOMElement("filterFavorites")?.checked) count++;
+  return count;
+}
+
+function updateAdvancedFilterBadge() {
+  const badge = getDOMElement("advancedFilterBadge");
+  if (!badge) return;
+  const count = getAdvancedFilterCount();
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = '';
+    // Auto-open advanced filters when they have active values
+    const advFilters = getDOMElement("advancedFilters");
+    const toggle = getDOMElement("advancedFiltersToggle");
+    if (advFilters && !advFilters.classList.contains("open")) {
+      advFilters.classList.add("open");
+      if (toggle) toggle.setAttribute('aria-expanded', 'true');
+    }
+  } else {
+    badge.style.display = 'none';
   }
 }
 
