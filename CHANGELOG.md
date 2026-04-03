@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.41.2] - 2026-04-03
+
+### Fixed
+- **Tire deep links broken in server-side mode** — Direct tire links (`?tire=tire001`) were only handled in client-side mode. Added `tire_id` filter support to the server-side AJAX path and PHP query so deep links work regardless of pagination mode.
+
+### Changed
+- **Plugin version** — Bumped to 1.41.2.
+
 ## [1.41.1] - 2026-04-03
 
 ### Fixed
