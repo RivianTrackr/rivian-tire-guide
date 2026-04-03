@@ -250,8 +250,9 @@ function initializeUI() {
     });
   } else {
     buildFilterIndexes();
-    filterAndRender();
-    applyTireDeepLink();
+    if (!applyTireDeepLink()) {
+      filterAndRender();
+    }
 
     const countDisplay = getDOMElement("tireCount");
     if (countDisplay) {
