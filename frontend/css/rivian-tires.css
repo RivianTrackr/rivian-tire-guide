@@ -1007,8 +1007,8 @@
   cursor: zoom-in;
 }
 
-/* Reviewed badge */
-.tire-card-badge {
+/* OEM badge */
+.tire-card-badge-oem {
   position: absolute;
   top: 12px;
   left: 12px;
@@ -1018,9 +1018,9 @@
   text-transform: uppercase;
   padding: 2.5px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #fba919, #d2de24, #86c440, #5ec095, #34c5ec, #2b96d2, #3571b8, #534da0, #d11d55, #ef3d6c, #ed1a36, #ee383a);
+  background: linear-gradient(135deg, #047857, #10b981, #34d399);
 }
-.tire-card-badge-inner {
+.tire-card-badge-oem .tire-card-badge-inner {
   background: #ffffff;
   color: #1a1a1a;
   font-size: 12px;
@@ -1030,17 +1030,6 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-}
-.tire-card-badge-inner i {
-  color: #ed1a36;
-}
-
-/* OEM badge */
-.tire-card-badge-oem {
-  background: linear-gradient(135deg, #047857, #10b981, #34d399);
-  top: 12px;
-  right: 12px;
-  left: auto;
 }
 .tire-card-badge-oem .tire-card-badge-inner i {
   color: #047857;

@@ -360,7 +360,7 @@ document.addEventListener("DOMContentLoaded", () => {
             break;
           case 'filterOEM':
             tooltipKey = 'OEM Filter';
-            labelText = 'OEM Tire';
+            labelText = 'OEM';
             break;
           case 'filterReviewed':
             tooltipKey = 'Officially Reviewed Filter';
@@ -383,7 +383,7 @@ document.addEventListener("DOMContentLoaded", () => {
         { selector: 'filter3pms', label: '3PMS Rated', key: '3PMS Filter' },
         { selector: 'filterEVRated', label: 'EV Rated', key: 'EV Rated Filter' },
         { selector: 'filterStudded', label: 'Studded Available', key: 'Studded Available Filter' },
-        { selector: 'filterOEM', label: 'OEM Tire', key: 'OEM Filter' },
+        { selector: 'filterOEM', label: 'OEM', key: 'OEM Filter' },
         { selector: 'filterReviewed', label: 'Officially Reviewed', key: 'Officially Reviewed Filter' },
       ];
 
