@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.38.0] - 2026-04-03
+
+### Improved
+- **Sort dropdown moved into filter card** — The sort dropdown now lives inside the filter card beneath the primary filters, matching the "Filter, Sort, and Compare" header and keeping all controls in one place.
+- **Two-column toggle grid** — Toggle switches (3PMS, EV Rated, Studded, etc.) now use a CSS grid layout with `auto-fill` columns instead of flex-wrap, producing consistent two-column alignment on desktop and clean single-column stacking on mobile.
+- **Compact slider group** — Reduced padding, gap, and font size on the price/warranty/weight sliders for a tighter footprint within the advanced filters panel.
+
+### Changed
+- **Plugin version** — Bumped to 1.38.0.
+
 ## [1.37.0] - 2026-04-03
 
 ### Improved

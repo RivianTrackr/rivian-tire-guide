@@ -604,31 +604,32 @@
 
 /* === Toggle Switches === */
 .switch-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
   margin-top: 16px;
-  align-items: flex-start;
+  align-items: start;
 }
 .slider-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  margin-top: 12px;
+  margin-top: 0;
 }
 .switch-label {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--rtg-text-primary);
   transition: all .15s;
-  height: 42px;
+  height: 40px;
   margin-bottom: 0;
   background-color: var(--rtg-bg-primary);
-  padding: 8px 14px;
+  padding: 6px 12px;
   border-radius: 8px;
   border: 1px solid var(--rtg-border);
 }
@@ -845,15 +846,18 @@
 /* === Slider Wrapper === */
 .slider-wrapper {
   background-color: var(--rtg-bg-primary);
-  padding: 10px 16px 18px;
+  padding: 8px 14px 14px;
   border-radius: 10px;
   border: 1px solid var(--rtg-border);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   flex: 1 1 30%;
-  min-width: 200px;
+  min-width: 170px;
   box-sizing: border-box;
+}
+.slider-wrapper label {
+  font-size: 12px;
 }
 
 /* === Tooltips === */
@@ -925,7 +929,9 @@
   justify-content: flex-end;
   align-items: center;
   gap: 12px;
-  margin: 16px 0 20px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rtg-border);
   font-size: 14px;
   color: var(--rtg-text-primary);
 }
