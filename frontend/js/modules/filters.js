@@ -1258,10 +1258,10 @@ export function setUpdateCompareBar(fn) {
 export function applyTireDeepLink() {
   const params = new URLSearchParams(window.location.search);
   const tireParam = params.get("tire");
-  if (!tireParam || !VALIDATION_PATTERNS.tireId.test(tireParam)) return;
+  if (!tireParam || !VALIDATION_PATTERNS.tireId.test(tireParam)) return false;
 
   const tireRow = state.allRows.find(row => row[0] === tireParam);
-  if (!tireRow) return;
+  if (!tireRow) return false;
 
   state.filteredRows = [tireRow];
   state.currentPage = 1;
@@ -1292,6 +1292,7 @@ export function applyTireDeepLink() {
   }
 
   render();
+  return true;
 }
 
 export function applyShortcodePrefilters() {
