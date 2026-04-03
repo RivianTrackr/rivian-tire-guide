@@ -4,6 +4,17 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.37.0] - 2026-04-03
+
+### Improved
+- **Collapsible advanced filters** — Sliders (price, warranty, weight) and toggle switches (3PMS, EV Rated, Studded, Reviewed, Favorites) are now tucked behind a "More Filters" button, keeping primary filters (vehicle, size, brand, category) always visible and reducing visual clutter.
+- **Clear All button visibility** — Relocated the Clear All button from the toggle row into the filter header bar so it's always accessible regardless of whether advanced filters are expanded.
+- **Filter section labels** — Added "Specifications" and "Features" sub-section labels within the advanced filters panel for clearer visual hierarchy and grouping.
+- **Advanced filter badge** — The "More Filters" button shows an active filter count badge and auto-expands when any advanced filter is in use, so users never lose track of applied filters.
+
+### Changed
+- **Plugin version** — Bumped to 1.37.0.
+
 ## [1.36.0] - 2026-04-02
 
 ### Fixed
