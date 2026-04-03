@@ -202,24 +202,24 @@ if ( ! defined( 'ABSPATH' ) ) {
       </div>
       <?php endif; ?>
     </div>
+    <div class="sort-wrapper">
+      <span id="tireCount" class="tire-count" aria-live="polite">Showing 0 tires</span>
+      <div style="flex: 1;"></div>
+      <label for="sortBy" class="screen-reader-text">Sort tires by</label>
+      <select id="sortBy" aria-label="Sort tires by">
+        <option value="efficiencyGrade">Efficiency Grade</option>
+        <option value="roamer-efficiency" selected>Real-World Efficiency</option>
+        <option value="most-reviewed">Most Reviewed</option>
+        <option value="newest">Newest Added</option>
+        <option value="price-asc">Price: Low → High</option>
+        <option value="price-desc">Price: High → Low</option>
+        <option value="rating-desc">Rating: High → Low</option>
+        <option value="warranty-desc">Warranty: High → Low</option>
+        <option value="weight-asc">Weight: Light → Heavy</option>
+      </select>
+    </div>
     <div id="filterResultCount" class="filter-result-count" aria-live="polite"></div>
   </div>
-</div>
-<div class="sort-wrapper">
-  <span id="tireCount" class="tire-count" aria-live="polite">Showing 0 tires</span>
-  <div style="flex: 1;"></div>
-  <label for="sortBy" class="screen-reader-text">Sort tires by</label>
-  <select id="sortBy" aria-label="Sort tires by">
-    <option value="efficiencyGrade">Efficiency Grade</option>
-    <option value="roamer-efficiency" selected>Real-World Efficiency</option>
-    <option value="most-reviewed">Most Reviewed</option>
-    <option value="newest">Newest Added</option>
-    <option value="price-asc">Price: Low → High</option>
-    <option value="price-desc">Price: High → Low</option>
-    <option value="rating-desc">Rating: High → Low</option>
-    <option value="warranty-desc">Warranty: High → Low</option>
-    <option value="weight-asc">Weight: Light → Heavy</option>
-  </select>
 </div>
 <div id="activeFilters" class="active-filters" aria-label="Active filters" role="region"></div>
 <div id="tireSection">
