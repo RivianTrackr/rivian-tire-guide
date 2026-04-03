@@ -4,6 +4,15 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.39.0] - 2026-04-03
+
+### Improved
+- **Wheel guide moved to standalone callout** — The "Not sure which tire fits your Rivian?" wheel guide is now a standalone collapsible section below the filter card instead of being embedded inside the filters panel. This separates help/education content from filter controls, reducing visual noise and giving the wheel guide its own clear identity.
+- **Wheel guide callout styling** — The trigger button now matches the "More Filters" visual pattern with a chevron icon, consistent hover states, and a truck icon for better discoverability.
+
+### Changed
+- **Plugin version** — Bumped to 1.39.0.
+
 ## [1.38.0] - 2026-04-03
 
 ### Improved

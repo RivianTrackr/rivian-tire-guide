@@ -158,49 +158,6 @@ if ( ! defined( 'ABSPATH' ) ) {
           </div>
         </div>
       </div>
-      <?php
-      $rtg_wheels = RTG_Database::get_all_wheels();
-      if ( ! empty( $rtg_wheels ) ) :
-      ?>
-      <div id="wheelDrawerContainer">
-        <button id="wheelDrawerTrigger" class="wheel-trigger">
-          <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-          Not sure which Rivian tire you need?
-        </button>
-        <div id="wheelDrawer" class="wheel-drawer">
-          <p class="wheel-drawer-heading">Rivian Stock Wheel Guide</p>
-          <div class="wheel-items">
-            <?php foreach ( $rtg_wheels as $rtg_wheel ) :
-              $alt_list = array_filter( array_map( 'trim', explode( ',', $rtg_wheel['alt_sizes'] ) ) );
-              $vehicle_list = array_filter( array_map( 'trim', explode( ',', $rtg_wheel['vehicles'] ) ) );
-            ?>
-            <div class="wheel-item">
-              <?php if ( ! empty( $rtg_wheel['image'] ) ) : ?>
-                <img src="<?php echo esc_url( $rtg_wheel['image'] ); ?>" alt="<?php echo esc_attr( $rtg_wheel['name'] ); ?>" />
-              <?php endif; ?>
-              <div>
-                <strong><?php echo esc_html( $rtg_wheel['name'] ); ?></strong>
-                <?php if ( ! empty( $vehicle_list ) ) : ?>
-                  <span class="wheel-vehicle-badges">
-                    <?php foreach ( $vehicle_list as $vehicle ) : ?>
-                      <span class="wheel-vehicle-badge"><?php echo esc_html( $vehicle ); ?></span>
-                    <?php endforeach; ?>
-                  </span>
-                <?php endif; ?>
-                <br />Stock: <code><?php echo esc_html( $rtg_wheel['stock_size'] ); ?></code>
-                <?php if ( ! empty( $alt_list ) ) : ?>
-                  <br />Alt:
-                  <?php foreach ( $alt_list as $alt ) : ?>
-                    <code><?php echo esc_html( $alt ); ?></code>
-                  <?php endforeach; ?>
-                <?php endif; ?>
-              </div>
-            </div>
-            <?php endforeach; ?>
-          </div>
-        </div>
-      </div>
-      <?php endif; ?>
     </div>
     <div class="sort-wrapper">
       <span id="tireCount" class="tire-count" aria-live="polite">Showing 0 tires</span>
@@ -221,6 +178,52 @@ if ( ! defined( 'ABSPATH' ) ) {
     <div id="filterResultCount" class="filter-result-count" aria-live="polite"></div>
   </div>
 </div>
+<?php
+$rtg_wheels = RTG_Database::get_all_wheels();
+if ( ! empty( $rtg_wheels ) ) :
+?>
+<div id="wheelDrawerContainer" class="rtg-wheel-callout">
+  <button id="wheelDrawerTrigger" class="rtg-wheel-callout-trigger" aria-expanded="false" aria-controls="wheelDrawer">
+    <span class="rtg-wheel-callout-label">
+      <i class="fa-solid fa-truck-monster" aria-hidden="true"></i>
+      Not sure which tire fits your Rivian?
+    </span>
+    <i class="fa-solid fa-chevron-down rtg-wheel-callout-chevron" aria-hidden="true"></i>
+  </button>
+  <div id="wheelDrawer" class="wheel-drawer">
+    <p class="wheel-drawer-heading">Rivian Stock Wheel Guide</p>
+    <div class="wheel-items">
+      <?php foreach ( $rtg_wheels as $rtg_wheel ) :
+        $alt_list = array_filter( array_map( 'trim', explode( ',', $rtg_wheel['alt_sizes'] ) ) );
+        $vehicle_list = array_filter( array_map( 'trim', explode( ',', $rtg_wheel['vehicles'] ) ) );
+      ?>
+      <div class="wheel-item">
+        <?php if ( ! empty( $rtg_wheel['image'] ) ) : ?>
+          <img src="<?php echo esc_url( $rtg_wheel['image'] ); ?>" alt="<?php echo esc_attr( $rtg_wheel['name'] ); ?>" />
+        <?php endif; ?>
+        <div>
+          <strong><?php echo esc_html( $rtg_wheel['name'] ); ?></strong>
+          <?php if ( ! empty( $vehicle_list ) ) : ?>
+            <span class="wheel-vehicle-badges">
+              <?php foreach ( $vehicle_list as $vehicle ) : ?>
+                <span class="wheel-vehicle-badge"><?php echo esc_html( $vehicle ); ?></span>
+              <?php endforeach; ?>
+            </span>
+          <?php endif; ?>
+          <br />Stock: <code><?php echo esc_html( $rtg_wheel['stock_size'] ); ?></code>
+          <?php if ( ! empty( $alt_list ) ) : ?>
+            <br />Alt:
+            <?php foreach ( $alt_list as $alt ) : ?>
+              <code><?php echo esc_html( $alt ); ?></code>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </div>
+      </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
 <div id="activeFilters" class="active-filters" aria-label="Active filters" role="region"></div>
 <div id="tireSection">
   <div id="tireCards"></div>

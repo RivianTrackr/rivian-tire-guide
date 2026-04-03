@@ -448,11 +448,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const trigger = getDOMElement("wheelDrawerTrigger");
   const drawer = getDOMElement("wheelDrawer");
-  if (trigger && drawer) {
-    trigger.setAttribute('aria-expanded', 'false');
-    trigger.setAttribute('aria-controls', 'wheelDrawer');
+  const wheelCallout = getDOMElement("wheelDrawerContainer");
+  if (trigger && drawer && wheelCallout) {
     trigger.addEventListener("click", () => {
-      const isOpen = drawer.style.display !== "block";
+      const isOpen = wheelCallout.classList.toggle("open");
       drawer.style.display = isOpen ? "block" : "none";
       trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     });
