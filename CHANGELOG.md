@@ -4,6 +4,19 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.40.0] - 2026-04-03
+
+### Fixed
+- **Dropdown counts no longer show (0) when a filter is selected** — Size, Brand, and Category dropdowns now count against rows filtered by everything *except* their own selection, so users see how many tires each option would yield if they switched to it.
+
+### Improved
+- **Clear All button color** — Replaced the red color with muted text and subtle border that highlights to the accent gold on hover, consistent with the rest of the filter card.
+- **More Filters slimmed to inline toggle** — Replaced the full-width bordered bar with a compact inline text link (`⚙ More Filters ▼`) that takes minimal space when collapsed.
+- **Wheel guide callout spacing** — Added bottom margin between the wheel guide callout and the tire cards grid.
+
+### Changed
+- **Plugin version** — Bumped to 1.40.0.
+
 ## [1.39.0] - 2026-04-03
 
 ### Improved
