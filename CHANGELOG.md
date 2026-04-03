@@ -4,6 +4,26 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.42.0] - 2026-04-03
+
+### Added
+- **OEM tire tag support** — Tires tagged with "OEM" display a green badge with a certificate icon on their card and can be filtered via a dedicated toggle.
+- **OEM filter and server-side query** — New "OEM" toggle in the Features filter section with full server-side filtering support.
+
+### Improved
+- **Shortened feature filter labels** — Renamed "3PMS Rated" → "3PMS", "Studded Available" → "Studded", "Officially Reviewed" → "Reviewed", "My Favorites" → "Favorites" for a cleaner filter UI.
+- **Wheel guide hidden on deep links** — The "Not sure which tire fits your Rivian?" section is now hidden when viewing a single tire via direct link.
+
+### Fixed
+- **Tire deep links in server-side mode** — Direct tire links (`?tire=tire001`) now work in server-side pagination mode by passing the tire ID to the PHP query.
+- **Tire deep link render race condition** — Deep links in client-side mode no longer race with the async filter render.
+
+### Removed
+- **Reviewed badge** — Removed the rainbow "Reviewed" badge from tire cards (no longer used).
+
+### Changed
+- **Plugin version** — Bumped to 1.42.0.
+
 ## [1.41.2] - 2026-04-03
 
 ### Fixed
