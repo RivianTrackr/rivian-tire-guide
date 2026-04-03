@@ -52,6 +52,9 @@
   .toggle-filters-btn {
     display: block;
   }
+  .switch-row {
+    grid-template-columns: 1fr;
+  }
   .switch-label {
     justify-content: space-between;
   }
