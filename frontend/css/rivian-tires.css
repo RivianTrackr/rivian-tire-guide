@@ -1035,6 +1035,17 @@
   color: #ed1a36;
 }
 
+/* OEM badge */
+.tire-card-badge-oem {
+  background: linear-gradient(135deg, #047857, #10b981, #34d399);
+  top: 12px;
+  right: 12px;
+  left: auto;
+}
+.tire-card-badge-oem .tire-card-badge-inner i {
+  color: #047857;
+}
+
 /* Card body content — mobile-first */
 .tire-card-body {
   padding: 12px 16px 0;

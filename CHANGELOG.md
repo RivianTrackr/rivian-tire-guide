@@ -4,6 +4,17 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.41.0] - 2026-04-03
+
+### Added
+- **OEM tire tag support** — Tires tagged with "OEM" now display a green badge with a certificate icon in the top-right corner of their card, making factory-original tires instantly recognizable.
+- **OEM filter toggle** — New "OEM Tire" toggle in the filter sidebar lets users filter the catalog to show only Original Equipment tires.
+- **OEM server-side filtering** — The OEM filter is applied server-side for consistent results across paginated and AJAX-loaded views.
+- **OEM tooltip** — Added info tooltip explaining that OEM tires are Original Equipment from the factory on Rivian vehicles.
+
+### Changed
+- **Plugin version** — Bumped to 1.41.0.
+
 ## [1.40.0] - 2026-04-03
 
 ### Fixed

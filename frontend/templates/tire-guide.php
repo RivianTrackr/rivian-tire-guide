@@ -132,6 +132,18 @@ if ( ! defined( 'ABSPATH' ) ) {
               <div class="switch-label">
                 <span class="switch-text">
                   <div style="display: flex; align-items: center; gap: 6px;">
+                    <span>OEM Tire</span>
+                    <button class="info-tooltip-trigger" data-tooltip-key="OEM Filter">
+                      <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                    </button>
+                  </div>
+                </span>
+                <input type="checkbox" id="filterOEM" aria-label="OEM Tire"/>
+                <span class="switch-slider" onclick="document.getElementById('filterOEM').click()"></span>
+              </div>
+              <div class="switch-label">
+                <span class="switch-text">
+                  <div style="display: flex; align-items: center; gap: 6px;">
                     <span>Officially Reviewed</span>
                     <button class="info-tooltip-trigger" data-tooltip-key="Officially Reviewed Filter">
                       <i class="fa-solid fa-circle-info" aria-hidden="true"></i>

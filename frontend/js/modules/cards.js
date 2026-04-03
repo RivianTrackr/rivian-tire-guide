@@ -228,6 +228,23 @@ export function createSingleCard(row) {
     card.appendChild(badge);
   }
 
+  if (safeString(tags).toLowerCase().includes("oem")) {
+    const oemBadge = document.createElement('div');
+    oemBadge.className = 'tire-card-badge tire-card-badge-oem';
+
+    const oemInner = document.createElement('div');
+    oemInner.className = 'tire-card-badge-inner';
+
+    const oemIcon = document.createElement('span');
+    oemIcon.innerHTML = rtgIcon('certificate', 14);
+    oemIcon.style.display = 'inline-flex';
+
+    oemInner.appendChild(oemIcon);
+    oemInner.appendChild(document.createTextNode('OEM'));
+    oemBadge.appendChild(oemInner);
+    card.appendChild(oemBadge);
+  }
+
   // Compare checkbox overlay
   const compareOverlay = document.createElement('label');
   compareOverlay.className = 'tire-card-compare-overlay';
@@ -504,7 +521,7 @@ export function createSingleCard(row) {
 
   // Tags row — at the bottom of specs as supplementary info.
   if (tags && safeString(tags).trim()) {
-    const tagList = safeString(tags).split(/[,|]/).map(tag => tag.trim()).filter(tag => tag && tag.toLowerCase() !== 'reviewed');
+    const tagList = safeString(tags).split(/[,|]/).map(tag => tag.trim()).filter(tag => tag && tag.toLowerCase() !== 'reviewed' && tag.toLowerCase() !== 'oem');
 
     if (tagList.length > 0) {
       const tagSpecRow = document.createElement('div');

@@ -501,6 +501,7 @@ class RTG_Ajax {
             'three_pms'    => ! empty( $_POST['three_pms'] ),
             'ev_rated'     => ! empty( $_POST['ev_rated'] ),
             'studded'      => ! empty( $_POST['studded'] ),
+            'oem'          => ! empty( $_POST['oem'] ),
             'reviewed'     => ! empty( $_POST['reviewed'] ),
         );
 

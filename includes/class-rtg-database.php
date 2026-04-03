@@ -515,6 +515,7 @@ class RTG_Database {
      *     @type bool   $three_pms Filter to 3PMS-rated only.
      *     @type bool   $ev_rated  Filter to EV Rated tags.
      *     @type bool   $studded   Filter to Studded Available tags.
+     *     @type bool   $oem       Filter to OEM tags.
      *     @type float  $price_max Max price.
      *     @type int    $warranty_min Min mileage warranty.
      *     @type float  $weight_max  Max weight.
@@ -577,6 +578,10 @@ class RTG_Database {
 
         if ( ! empty( $filters['studded'] ) ) {
             $where[] = "LOWER(tags) LIKE '%studded available%'";
+        }
+
+        if ( ! empty( $filters['oem'] ) ) {
+            $where[] = "LOWER(tags) LIKE '%oem%'";
         }
 
         if ( ! empty( $filters['reviewed'] ) ) {
