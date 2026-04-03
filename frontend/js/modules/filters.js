@@ -1290,6 +1290,8 @@ export function applyTireDeepLink() {
     backBar.appendChild(backBtn);
     tireSection.parentNode.insertBefore(backBar, tireSection);
   }
+
+  render();
 }
 
 export function applyShortcodePrefilters() {

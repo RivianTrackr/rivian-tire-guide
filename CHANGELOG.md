@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.41.1] - 2026-04-03
+
+### Fixed
+- **Tire deep links not rendering** — Direct tire links (`?tire=tire001`) were setting the filtered data but not re-rendering the card grid, so the page still showed all tires instead of the single linked tire.
+
+### Changed
+- **Plugin version** — Bumped to 1.41.1.
+
 ## [1.41.0] - 2026-04-03
 
 ### Added
