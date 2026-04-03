@@ -349,7 +349,7 @@ document.addEventListener("DOMContentLoaded", () => {
         switch(inputId) {
           case 'filter3pms':
             tooltipKey = '3PMS Filter';
-            labelText = '3PMS Rated';
+            labelText = '3PMS';
             break;
           case 'filterEVRated':
             tooltipKey = 'EV Rated Filter';
@@ -357,7 +357,7 @@ document.addEventListener("DOMContentLoaded", () => {
             break;
           case 'filterStudded':
             tooltipKey = 'Studded Available Filter';
-            labelText = 'Studded Available';
+            labelText = 'Studded';
             break;
           case 'filterOEM':
             tooltipKey = 'OEM Filter';
@@ -365,7 +365,7 @@ document.addEventListener("DOMContentLoaded", () => {
             break;
           case 'filterReviewed':
             tooltipKey = 'Officially Reviewed Filter';
-            labelText = 'Officially Reviewed';
+            labelText = 'Reviewed';
             break;
         }
 
@@ -381,11 +381,11 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateFilterTooltips() {
     setTimeout(() => {
       const tooltipConfig = [
-        { selector: 'filter3pms', label: '3PMS Rated', key: '3PMS Filter' },
+        { selector: 'filter3pms', label: '3PMS', key: '3PMS Filter' },
         { selector: 'filterEVRated', label: 'EV Rated', key: 'EV Rated Filter' },
-        { selector: 'filterStudded', label: 'Studded Available', key: 'Studded Available Filter' },
+        { selector: 'filterStudded', label: 'Studded', key: 'Studded Available Filter' },
         { selector: 'filterOEM', label: 'OEM', key: 'OEM Filter' },
-        { selector: 'filterReviewed', label: 'Officially Reviewed', key: 'Officially Reviewed Filter' },
+        { selector: 'filterReviewed', label: 'Reviewed', key: 'Officially Reviewed Filter' },
       ];
 
       tooltipConfig.forEach(({ selector, label, key }) => {

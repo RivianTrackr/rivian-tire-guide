@@ -88,11 +88,13 @@ export function fetchTiresFromServer(page) {
       const activeFilters = getDOMElement("activeFilters");
       const paginationControls = getDOMElement("paginationControls");
       const toggleBtn = document.querySelector(".toggle-filters-btn");
+      const wheelDrawer = getDOMElement("wheelDrawerContainer");
       if (filterWrapper) filterWrapper.style.display = "none";
       if (sortWrapper) sortWrapper.style.display = "none";
       if (activeFilters) activeFilters.style.display = "none";
       if (paginationControls) paginationControls.style.display = "none";
       if (toggleBtn) toggleBtn.style.display = "none";
+      if (wheelDrawer) wheelDrawer.style.display = "none";
 
       const tireSection = getDOMElement("tireSection");
       if (tireSection && !document.querySelector('.tire-deeplink-bar')) {
