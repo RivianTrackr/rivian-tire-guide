@@ -581,19 +581,57 @@ function updateAdvancedFilterBadge() {
   }
 }
 
-function updateDropdownCounts() {
-  updateSelectCounts("filterSize", 1);
-  updateSelectCounts("filterBrand", 3);
-  updateSelectCounts("filterCategory", 5);
+function getCurrentFilters() {
+  const searchInput = document.querySelector('#searchInput');
+  const priceMax = getDOMElement("priceMax");
+  const warrantyMin = getDOMElement("warrantyMin");
+  const weightMax = getDOMElement("weightMax");
+  const filter3pms = getDOMElement("filter3pms");
+  const filterEVRated = getDOMElement("filterEVRated");
+  const filterStudded = getDOMElement("filterStudded");
+  const filterReviewed = getDOMElement("filterReviewed");
+  const filterFavorites = getDOMElement("filterFavorites");
+  const filterSize = getDOMElement("filterSize");
+  const filterBrand = getDOMElement("filterBrand");
+  const filterCategory = getDOMElement("filterCategory");
+
+  const searchVal = searchInput ? sanitizeInput(searchInput.value, VALIDATION_PATTERNS.search) : "";
+
+  return {
+    search: searchVal.toLowerCase(),
+    PriceMax: priceMax ? validateNumeric(priceMax.value, NUMERIC_BOUNDS.price, 600) : 600,
+    WarrantyMin: warrantyMin ? validateNumeric(warrantyMin.value, NUMERIC_BOUNDS.warranty, 0) : 0,
+    WeightMax: weightMax ? validateNumeric(weightMax.value, NUMERIC_BOUNDS.weight, 70) : 70,
+    "3PMS": filter3pms?.checked || false,
+    "EVRated": filterEVRated?.checked || false,
+    "Studded": filterStudded?.checked || false,
+    "Reviewed": filterReviewed?.checked || false,
+    "Favorites": filterFavorites?.checked || false,
+    Vehicle: getSelectedVehicle() && state.VALID_VEHICLES.includes(getSelectedVehicle()) ? getSelectedVehicle() : "",
+    Size: filterSize?.value && state.VALID_SIZES.includes(filterSize.value) ? filterSize.value : "",
+    Brand: filterBrand?.value && state.VALID_BRANDS.includes(filterBrand.value) ? filterBrand.value : "",
+    Category: filterCategory?.value && state.VALID_CATEGORIES.includes(filterCategory.value) ? filterCategory.value : ""
+  };
 }
 
-function updateSelectCounts(selectId, rowIndex) {
+function updateDropdownCounts() {
+  const filters = getCurrentFilters();
+
+  // For each dropdown, count against rows filtered with that dropdown's
+  // filter removed so users see how many tires each option would yield.
+  updateSelectCounts("filterSize", 1, { ...filters, Size: "" });
+  updateSelectCounts("filterBrand", 3, { ...filters, Brand: "" });
+  updateSelectCounts("filterCategory", 5, { ...filters, Category: "" });
+}
+
+function updateSelectCounts(selectId, rowIndex, filtersExcludingSelf) {
   const select = getDOMElement(selectId);
   if (!select) return;
 
-  // Count how many filtered rows match each option value
+  // Count from rows filtered by everything except this dropdown's own filter
+  const rows = getFilteredIndexes(filtersExcludingSelf);
   const counts = new Map();
-  state.filteredRows.forEach(row => {
+  rows.forEach(row => {
     const val = safeString(row[rowIndex]).trim();
     if (val) counts.set(val, (counts.get(val) || 0) + 1);
   });
