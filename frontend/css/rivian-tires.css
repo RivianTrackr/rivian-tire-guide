@@ -698,44 +698,39 @@
 
 /* === Advanced Filters Collapsible === */
 .rtg-advanced-filters {
-  margin-top: 16px;
-  border: 1px solid var(--rtg-border);
-  border-radius: 10px;
-  overflow: hidden;
-  background: var(--rtg-bg-primary);
+  margin-top: 12px;
 }
 .rtg-advanced-toggle {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 12px 16px;
-  font-size: 14px;
+  gap: 8px;
+  padding: 0;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--rtg-text-primary);
+  color: var(--rtg-text-muted);
   background: transparent;
   border: none;
   cursor: pointer;
   transition: color 0.15s;
   font-family: var(--rtg-font-stack);
+  opacity: 0.7;
 }
 .rtg-advanced-toggle:hover {
   color: var(--rtg-accent);
+  opacity: 1;
 }
 .rtg-advanced-toggle-text {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 .rtg-advanced-toggle-text i {
   color: var(--rtg-accent);
-  font-size: 14px;
+  font-size: 13px;
 }
 .rtg-advanced-chevron {
-  margin-left: auto;
-  font-size: 12px;
+  font-size: 10px;
   transition: transform 0.25s ease;
-  color: var(--rtg-text-muted);
 }
 .rtg-advanced-filters.open .rtg-advanced-chevron {
   transform: rotate(180deg);
@@ -744,14 +739,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  font-size: 11px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 10px;
   font-weight: 700;
   color: #0f172a;
   background: var(--rtg-accent);
-  border-radius: 10px;
+  border-radius: 9px;
 }
 .rtg-advanced-body {
   max-height: 0;
@@ -762,16 +757,19 @@
   max-height: 600px;
   overflow: visible;
 }
-.rtg-advanced-body > .rtg-filter-section:first-child {
-  border-top: 1px solid var(--rtg-border);
+.rtg-advanced-filters.open .rtg-advanced-body > .rtg-filter-section:first-child {
+  margin-top: 14px;
 }
 
 /* === Filter Section Dividers === */
 .rtg-filter-section {
   padding: 14px 16px;
+  background: var(--rtg-bg-primary);
+  border: 1px solid var(--rtg-border);
+  border-radius: 10px;
 }
 .rtg-filter-section + .rtg-filter-section {
-  border-top: 1px solid var(--rtg-border);
+  margin-top: 10px;
 }
 .rtg-filter-section-label {
   display: block;
