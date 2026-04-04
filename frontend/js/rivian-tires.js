@@ -462,5 +462,19 @@ document.addEventListener("DOMContentLoaded", () => {
       drawer.style.display = isOpen ? "block" : "none";
       trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     });
+
+    // Vehicle tab switching inside wheel drawer.
+    const wheelTabs = wheelCallout.querySelectorAll(".wheel-tab");
+    const wheelPanels = wheelCallout.querySelectorAll(".wheel-tab-panel");
+    wheelTabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        wheelTabs.forEach((t) => { t.classList.remove("active"); t.setAttribute("aria-selected", "false"); });
+        wheelPanels.forEach((p) => { p.classList.remove("active"); p.hidden = true; });
+        tab.classList.add("active");
+        tab.setAttribute("aria-selected", "true");
+        const panel = document.getElementById(tab.getAttribute("aria-controls"));
+        if (panel) { panel.classList.add("active"); panel.hidden = false; }
+      });
+    });
   }
 });

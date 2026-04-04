@@ -1546,15 +1546,6 @@
 .rtg-wheel-callout.open .rtg-wheel-callout-chevron {
   transform: rotate(180deg);
 }
-#wheelDrawer code {
-  background-color: var(--rtg-border);
-  color: var(--rtg-text-light);
-  padding: 2px 6px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-family: monospace;
-  display: inline-block;
-}
 .wheel-drawer {
   display: none;
   border-top: 1px solid var(--rtg-border);
@@ -1566,53 +1557,97 @@
 .wheel-drawer-heading {
   font-weight: 700;
   font-size: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   color: var(--rtg-text-heading);
 }
-.wheel-items {
+/* --- Vehicle Tabs --- */
+.wheel-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--rtg-border);
+  padding-bottom: 0;
+}
+.wheel-tab {
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--rtg-font-stack);
+  color: var(--rtg-text-muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
+}
+.wheel-tab:hover {
+  color: var(--rtg-text-heading);
+}
+.wheel-tab.active {
+  color: var(--rtg-accent);
+  border-bottom-color: var(--rtg-accent);
+}
+/* --- Tab Panels --- */
+.wheel-tab-panel {
+  display: none;
+}
+.wheel-tab-panel.active {
+  display: block;
+}
+/* --- Card Grid --- */
+.wheel-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.wheel-card {
+  background: var(--rtg-bg-card);
+  border: 1px solid var(--rtg-border);
+  border-radius: 10px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 16px;
 }
-.wheel-item {
+.wheel-card-img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border-bottom: 1px solid var(--rtg-border);
+}
+.wheel-card-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wheel-card-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--rtg-text-heading);
+}
+.wheel-card-sizes {
   display: flex;
   align-items: center;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 5px;
 }
-.wheel-item img {
-  width: 160px;
-  aspect-ratio: 5 / 3;
-  object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid var(--rtg-border);
-}
-.wheel-item code {
-  background-color: var(--rtg-border);
-  color: var(--rtg-text-light);
-  padding: 2px 6px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-family: monospace;
-  display: inline-block;
-  margin-right: 6px;
-  margin-bottom: 4px;
-}
-.wheel-vehicle-badges {
-  display: inline-flex;
-  gap: 4px;
-  margin-left: 6px;
-  vertical-align: middle;
-}
-.wheel-vehicle-badge {
-  display: inline-block;
-  padding: 1px 7px;
+.wheel-card-label {
   font-size: 11px;
   font-weight: 600;
-  border-radius: 4px;
-  background-color: color-mix(in srgb, var(--rtg-accent, #fba919) 18%, transparent);
-  color: var(--rtg-accent, #fba919);
-  letter-spacing: 0.02em;
-  line-height: 1.5;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--rtg-text-muted);
+  min-width: 34px;
+}
+.wheel-card-sizes code {
+  background-color: var(--rtg-border);
+  color: var(--rtg-text-light);
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: monospace;
+  display: inline-block;
 }
 
 /* === Rating Stars (SVG-based with half-star support) === */
@@ -2587,18 +2622,15 @@ a.rtg-review-card-title-link:hover {
     padding: 10px 14px;
     font-size: 16px;
   }
-  .wheel-item {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
+  .wheel-card-grid {
+    grid-template-columns: 1fr;
   }
-  .wheel-item img {
-    width: 100%;
-    max-width: 100%;
+  .wheel-tabs {
+    gap: 2px;
   }
-  .wheel-item div {
-    font-size: 15px;
-    line-height: 1.7;
+  .wheel-tab {
+    padding: 7px 12px;
+    font-size: 12px;
   }
   #compareBar {
     flex-wrap: wrap;

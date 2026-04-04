@@ -204,35 +204,70 @@ if ( ! empty( $rtg_wheels ) ) :
   </button>
   <div id="wheelDrawer" class="wheel-drawer">
     <p class="wheel-drawer-heading">Rivian Stock Wheel Guide</p>
-    <div class="wheel-items">
-      <?php foreach ( $rtg_wheels as $rtg_wheel ) :
-        $alt_list = array_filter( array_map( 'trim', explode( ',', $rtg_wheel['alt_sizes'] ) ) );
-        $vehicle_list = array_filter( array_map( 'trim', explode( ',', $rtg_wheel['vehicles'] ) ) );
-      ?>
-      <div class="wheel-item">
-        <?php if ( ! empty( $rtg_wheel['image'] ) ) : ?>
-          <img src="<?php echo esc_url( $rtg_wheel['image'] ); ?>" alt="<?php echo esc_attr( $rtg_wheel['name'] ); ?>" />
-        <?php endif; ?>
-        <div>
-          <strong><?php echo esc_html( $rtg_wheel['name'] ); ?></strong>
-          <?php if ( ! empty( $vehicle_list ) ) : ?>
-            <span class="wheel-vehicle-badges">
-              <?php foreach ( $vehicle_list as $vehicle ) : ?>
-                <span class="wheel-vehicle-badge"><?php echo esc_html( $vehicle ); ?></span>
-              <?php endforeach; ?>
-            </span>
-          <?php endif; ?>
-          <br />Stock: <code><?php echo esc_html( $rtg_wheel['stock_size'] ); ?></code>
-          <?php if ( ! empty( $alt_list ) ) : ?>
-            <br />Alt:
-            <?php foreach ( $alt_list as $alt ) : ?>
-              <code><?php echo esc_html( $alt ); ?></code>
-            <?php endforeach; ?>
-          <?php endif; ?>
-        </div>
-      </div>
+    <?php
+    // Build vehicle groups from wheel data.
+    $rtg_vehicle_groups = array();
+    foreach ( $rtg_wheels as $rtg_wheel ) {
+      $vehicle_list = array_filter( array_map( 'trim', explode( ',', $rtg_wheel['vehicles'] ) ) );
+      foreach ( $vehicle_list as $vehicle ) {
+        if ( ! isset( $rtg_vehicle_groups[ $vehicle ] ) ) {
+          $rtg_vehicle_groups[ $vehicle ] = array();
+        }
+        $rtg_vehicle_groups[ $vehicle ][] = $rtg_wheel;
+      }
+    }
+    $rtg_vehicle_names = array_keys( $rtg_vehicle_groups );
+    ?>
+    <div class="wheel-tabs" role="tablist" aria-label="Filter wheels by vehicle">
+      <?php foreach ( $rtg_vehicle_names as $idx => $vehicle_name ) : ?>
+        <button
+          class="wheel-tab<?php echo 0 === $idx ? ' active' : ''; ?>"
+          role="tab"
+          aria-selected="<?php echo 0 === $idx ? 'true' : 'false'; ?>"
+          aria-controls="wheelPanel-<?php echo esc_attr( sanitize_title( $vehicle_name ) ); ?>"
+          id="wheelTab-<?php echo esc_attr( sanitize_title( $vehicle_name ) ); ?>"
+          data-vehicle="<?php echo esc_attr( sanitize_title( $vehicle_name ) ); ?>"
+        ><?php echo esc_html( $vehicle_name ); ?></button>
       <?php endforeach; ?>
     </div>
+    <?php foreach ( $rtg_vehicle_names as $idx => $vehicle_name ) :
+      $slug = sanitize_title( $vehicle_name );
+    ?>
+    <div
+      class="wheel-tab-panel<?php echo 0 === $idx ? ' active' : ''; ?>"
+      role="tabpanel"
+      id="wheelPanel-<?php echo esc_attr( $slug ); ?>"
+      aria-labelledby="wheelTab-<?php echo esc_attr( $slug ); ?>"
+      <?php echo 0 !== $idx ? 'hidden' : ''; ?>
+    >
+      <div class="wheel-card-grid">
+        <?php foreach ( $rtg_vehicle_groups[ $vehicle_name ] as $rtg_wheel ) :
+          $alt_list = array_filter( array_map( 'trim', explode( ',', $rtg_wheel['alt_sizes'] ) ) );
+        ?>
+        <div class="wheel-card">
+          <?php if ( ! empty( $rtg_wheel['image'] ) ) : ?>
+            <img class="wheel-card-img" src="<?php echo esc_url( $rtg_wheel['image'] ); ?>" alt="<?php echo esc_attr( $rtg_wheel['name'] ); ?>" />
+          <?php endif; ?>
+          <div class="wheel-card-body">
+            <strong class="wheel-card-name"><?php echo esc_html( $rtg_wheel['name'] ); ?></strong>
+            <div class="wheel-card-sizes">
+              <span class="wheel-card-label">Stock</span>
+              <code><?php echo esc_html( $rtg_wheel['stock_size'] ); ?></code>
+            </div>
+            <?php if ( ! empty( $alt_list ) ) : ?>
+            <div class="wheel-card-sizes">
+              <span class="wheel-card-label">Alt</span>
+              <?php foreach ( $alt_list as $alt ) : ?>
+                <code><?php echo esc_html( $alt ); ?></code>
+              <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+          </div>
+        </div>
+        <?php endforeach; ?>
+      </div>
+    </div>
+    <?php endforeach; ?>
   </div>
 </div>
 <?php endif; ?>
