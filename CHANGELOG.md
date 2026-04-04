@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.43.0] - 2026-04-04
+
+### Changed
+- **Redesigned wheel guide section** — The "Not sure which tire fits your Rivian?" drawer now features vehicle tabs (R1T, R1S, R2, etc.) and a card grid layout, replacing the old flat list. Users can quickly filter by their vehicle and browse wheels in a clean, visual card format.
+
+### Improved
+- **Mobile wheel guide** — Card grid collapses to a single column on small screens with compact tab styling.
+
 ## [1.42.1] - 2026-04-04
 
 ### Improved
