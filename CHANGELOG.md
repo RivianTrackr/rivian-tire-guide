@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.42.1] - 2026-04-04
+
+### Improved
+- **Roamer efficiency info tooltip** — The info icon on the Real-World Efficiency badge now shows the number of driving sessions and vehicles that contributed to the efficiency value for each tire.
+
+### Changed
+- **Plugin version** — Bumped to 1.42.1.
+
 ## [1.42.0] - 2026-04-03
 
 ### Added
