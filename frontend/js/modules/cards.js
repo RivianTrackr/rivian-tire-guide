@@ -418,6 +418,13 @@ export function createSingleCard(row) {
         roamerInfoBtn.innerHTML = '' + rtgIcon('circle-info', 14) + '';
         roamerInfoBtn.className = 'info-tooltip-trigger';
         roamerInfoBtn.dataset.tooltipKey = 'Real-World Efficiency';
+        const sess = parseInt(roamerSessionCount) || 0;
+        const veh = parseInt(roamerVehicleCount) || 0;
+        if (sess > 0 || veh > 0) {
+          roamerInfoBtn.dataset.tooltipExtra =
+            sess.toLocaleString() + ' driving session' + (sess !== 1 ? 's' : '') +
+            ' from ' + veh.toLocaleString() + ' vehicle' + (veh !== 1 ? 's' : '');
+        }
         roamerInfoBtn.setAttribute('aria-label', 'More info about Real-World Efficiency');
         roamerInfoBtn.setAttribute('type', 'button');
         roamerInfoBtn.style.cssText = `
