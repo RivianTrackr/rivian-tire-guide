@@ -64,7 +64,7 @@ const COL = {
   loadIndex: 11, maxLoad: 12, loadRange: 13, speedRating: 14,
   psi: 15, utqg: 16, tags: 17, link: 18, image: 19,
   effScore: 20, effGrade: 21, reviewLink: 22, createdAt: 23,
-  roamerEfficiency: 24, roamerSessionCount: 25, roamerVehicleCount: 26
+  roamerEfficiency: 24, roamerTotalKm: 25, roamerVehicleCount: 26, roamerVehicleBreakdown: 27
 };
 
 // --- Efficiency badge colors ---
@@ -244,10 +244,10 @@ function renderComparison(rows, indexes) {
       const v = parseFloat(t[COL.roamerEfficiency]);
       if (!v || v === 0) return '-';
       const miPerKwh = v.toFixed(2);
-      const sess = parseInt(t[COL.roamerSessionCount]) || 0;
+      const km = Math.round(parseFloat(t[COL.roamerTotalKm]) || 0);
       const veh = parseInt(t[COL.roamerVehicleCount]) || 0;
       return '<span style="display:inline-block;background:rgba(59,130,246,0.15);border-radius:6px;padding:2px 8px;font-weight:700;color:#60a5fa;">' + miPerKwh + ' mi/kWh</span>' +
-        '<br><span style="font-size:11px;color:#94a3b8;">' + sess.toLocaleString() + ' sessions, ' + veh + ' vehicle' + (veh !== 1 ? 's' : '') + '</span>';
+        '<br><span style="font-size:11px;color:#94a3b8;">' + km.toLocaleString() + ' km tracked, ' + veh + ' vehicle' + (veh !== 1 ? 's' : '') + '</span>';
     }, 'roamerEfficiency'],
     ['Speed Rating', t => t[COL.speedRating] || "-"],
     ['UTQG', t => t[COL.utqg] || "None"],

@@ -189,7 +189,7 @@ export function createSingleCard(row) {
     tireId, size, diameter, brand, model, category, price, warranty, weight, tpms,
     tread, loadIndex, maxLoad, loadRange, speed, psi, utqg, tags, link, image,
     efficiencyScore, efficiencyGrade, reviewLink, /* createdAt */ ,
-    roamerEfficiency, roamerSessionCount, roamerVehicleCount
+    roamerEfficiency, roamerTotalKm, roamerVehicleCount, roamerVehicleBreakdown
   ] = row;
 
   if (!VALIDATION_PATTERNS.tireId.test(tireId)) {
@@ -418,12 +418,27 @@ export function createSingleCard(row) {
         roamerInfoBtn.innerHTML = '' + rtgIcon('circle-info', 14) + '';
         roamerInfoBtn.className = 'info-tooltip-trigger';
         roamerInfoBtn.dataset.tooltipKey = 'Real-World Efficiency';
-        const sess = parseInt(roamerSessionCount) || 0;
+        const totalKm = parseFloat(roamerTotalKm) || 0;
         const veh = parseInt(roamerVehicleCount) || 0;
-        if (sess > 0 || veh > 0) {
-          roamerInfoBtn.dataset.tooltipExtra =
-            sess.toLocaleString() + ' driving session' + (sess !== 1 ? 's' : '') +
-            ' from ' + veh.toLocaleString() + ' vehicle' + (veh !== 1 ? 's' : '');
+        const extraParts = [];
+        if (totalKm > 0) {
+          extraParts.push(Math.round(totalKm).toLocaleString() + ' km tracked');
+        }
+        if (veh > 0) {
+          extraParts.push(veh.toLocaleString() + ' vehicle' + (veh !== 1 ? 's' : ''));
+        }
+        // Show vehicle breakdown by drivetrain if available.
+        if (roamerVehicleBreakdown) {
+          try {
+            const bd = typeof roamerVehicleBreakdown === 'string' ? JSON.parse(roamerVehicleBreakdown) : roamerVehicleBreakdown;
+            if (bd && typeof bd === 'object' && Object.keys(bd).length > 0) {
+              const bdParts = Object.entries(bd).map(([name, count]) => count + ' ' + name);
+              extraParts.push(bdParts.join(', '));
+            }
+          } catch (e) { /* ignore parse errors */ }
+        }
+        if (extraParts.length > 0) {
+          roamerInfoBtn.dataset.tooltipExtra = extraParts.join(' · ');
         }
         roamerInfoBtn.setAttribute('aria-label', 'More info about Real-World Efficiency');
         roamerInfoBtn.setAttribute('type', 'button');

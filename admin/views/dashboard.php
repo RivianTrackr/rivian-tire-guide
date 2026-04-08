@@ -30,7 +30,7 @@ $roamer_linked       = (int) ( $core['roamer_linked'] ?? 0 );
 $avg_roamer_eff      = floatval( $core['avg_roamer_efficiency'] ?? 0 );
 $max_roamer_eff      = floatval( $core['max_roamer_efficiency'] ?? 0 );
 $min_roamer_eff      = floatval( $core['min_roamer_efficiency'] ?? 0 );
-$total_roamer_sess   = (int) ( $core['total_roamer_sessions'] ?? 0 );
+$total_roamer_km     = floatval( $core['total_roamer_km'] ?? 0 );
 $total_roamer_veh    = (int) ( $core['total_roamer_vehicles'] ?? 0 );
 $roamer_pct          = $total_tires > 0 ? round( ( $roamer_linked / $total_tires ) * 100 ) : 0;
 $roamer_sync_stats   = RTG_Roamer_Sync::get_stats();
@@ -405,8 +405,8 @@ $grade_colors = array(
                         <div class="rtg-stat-label">Avg mi/kWh</div>
                     </div>
                     <div class="rtg-stat-card">
-                        <div class="rtg-stat-value"><?php echo esc_html( number_format( $total_roamer_sess ) ); ?></div>
-                        <div class="rtg-stat-label">Total Sessions</div>
+                        <div class="rtg-stat-value"><?php echo esc_html( number_format( $total_roamer_km, 0 ) ); ?></div>
+                        <div class="rtg-stat-label">Total km Tracked</div>
                     </div>
                 </div>
                 <div class="rtg-stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 16px;">
@@ -459,7 +459,7 @@ $grade_colors = array(
                                     <span class="rtg-mini-list-name">
                                         <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires&s=' . urlencode( $tire['tire_id'] ) ) ); ?>"><?php echo esc_html( $tire['brand'] . ' ' . $tire['model'] ); ?></a>
                                     </span>
-                                    <span class="rtg-mini-list-meta"><?php echo esc_html( $tire['size'] ); ?> · <?php echo number_format( $tire['roamer_session_count'] ); ?> sessions</span>
+                                    <span class="rtg-mini-list-meta"><?php echo esc_html( $tire['size'] ); ?> · <?php echo number_format( floatval( $tire['roamer_total_km'] ?? 0 ), 0 ); ?> km tracked</span>
                                 </span>
                                 <span class="rtg-mini-list-value" style="color:#60a5fa;"><?php echo esc_html( number_format( $tire['roamer_efficiency'], 2 ) ); ?> mi/kWh</span>
                             </li>

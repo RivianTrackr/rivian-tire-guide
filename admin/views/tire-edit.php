@@ -379,9 +379,10 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                     </div>
                     <?php
                     $r_eff     = floatval( $v['roamer_efficiency'] ?? 0 );
-                    $r_sess    = intval( $v['roamer_session_count'] ?? 0 );
-                    $r_veh     = intval( $v['roamer_vehicle_count'] ?? 0 );
                     $r_km      = floatval( $v['roamer_total_km'] ?? 0 );
+                    $r_veh     = intval( $v['roamer_vehicle_count'] ?? 0 );
+                    $r_bd_raw  = $v['roamer_vehicle_breakdown'] ?? '';
+                    $r_bd      = ! empty( $r_bd_raw ) ? json_decode( $r_bd_raw, true ) : array();
                     $r_synced  = $v['roamer_synced_at'] ?? '';
                     ?>
                     <?php if ( $r_eff > 0 ) : ?>
@@ -396,18 +397,26 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                                     <span style="font-size:14px;color:#86868b;">mi/kWh</span>
                                 </div>
                                 <div>
-                                    <span style="font-size:18px;font-weight:600;color:#1d1d1f;"><?php echo number_format( $r_sess ); ?></span>
-                                    <span style="font-size:14px;color:#86868b;">sessions</span>
+                                    <span style="font-size:18px;font-weight:600;color:#1d1d1f;"><?php echo esc_html( number_format( $r_km, 1 ) ); ?></span>
+                                    <span style="font-size:14px;color:#86868b;">km tracked</span>
                                 </div>
                                 <div>
                                     <span style="font-size:18px;font-weight:600;color:#1d1d1f;"><?php echo intval( $r_veh ); ?></span>
                                     <span style="font-size:14px;color:#86868b;">vehicles</span>
                                 </div>
-                                <div>
-                                    <span style="font-size:18px;font-weight:600;color:#1d1d1f;"><?php echo esc_html( number_format( $r_km, 1 ) ); ?></span>
-                                    <span style="font-size:14px;color:#86868b;">km tracked</span>
-                                </div>
                             </div>
+                            <?php if ( ! empty( $r_bd ) && is_array( $r_bd ) ) : ?>
+                                <div style="margin-top:10px;">
+                                    <span style="font-size:12px;font-weight:600;color:#86868b;text-transform:uppercase;">Vehicle Breakdown</span>
+                                    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px;">
+                                        <?php foreach ( $r_bd as $drivetrain => $count ) : ?>
+                                            <span style="font-size:13px;padding:2px 8px;background:rgba(59,130,246,0.1);border-radius:4px;color:#3b82f6;">
+                                                <?php echo esc_html( $drivetrain ); ?>: <?php echo intval( $count ); ?>
+                                            </span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
                             <?php if ( $r_synced ) : ?>
                                 <p style="margin-top:8px;font-size:12px;color:#86868b;">Last synced: <?php echo esc_html( $r_synced ); ?></p>
                             <?php endif; ?>

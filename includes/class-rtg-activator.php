@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 12;
+    const DB_VERSION = 13;
 
     public static function activate() {
         self::create_tables();
@@ -85,9 +85,9 @@ class RTG_Activator {
             review_link TEXT NOT NULL,
             roamer_tire_id VARCHAR(100) NOT NULL DEFAULT '',
             roamer_efficiency DECIMAL(4,2) NOT NULL DEFAULT 0,
-            roamer_session_count INT UNSIGNED NOT NULL DEFAULT 0,
             roamer_total_km DECIMAL(10,1) NOT NULL DEFAULT 0,
             roamer_vehicle_count INT UNSIGNED NOT NULL DEFAULT 0,
+            roamer_vehicle_breakdown TEXT NOT NULL DEFAULT '',
             roamer_synced_at DATETIME NULL DEFAULT NULL,
             sort_order INT UNSIGNED NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -186,6 +186,7 @@ class RTG_Activator {
             10 => 'migrate_10_add_search_type_column',
             11 => 'migrate_11_add_guest_review_columns',
             12 => 'migrate_12_add_roamer_columns',
+            13 => 'migrate_13_roamer_drop_sessions_add_breakdown',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -312,5 +313,24 @@ class RTG_Activator {
      */
     private static function migrate_12_add_roamer_columns() {
         // Columns added by dbDelta above.
+    }
+
+    /**
+     * Migration 13: Replace roamer_session_count with roamer_vehicle_breakdown.
+     * The Roamer feed no longer provides driving session counts; instead it
+     * provides total_distance_km (already stored) and a vehicle_breakdown
+     * object. dbDelta cannot drop columns, so we handle removal manually.
+     */
+    private static function migrate_13_roamer_drop_sessions_add_breakdown() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'rtg_tires';
+
+        // Drop the obsolete session_count column.
+        $cols = $wpdb->get_col( "SHOW COLUMNS FROM {$table}" );
+        if ( in_array( 'roamer_session_count', $cols, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table} DROP COLUMN roamer_session_count" );
+        }
+
+        // roamer_vehicle_breakdown added by dbDelta above.
     }
 }

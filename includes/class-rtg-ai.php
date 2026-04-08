@@ -124,7 +124,7 @@ class RTG_AI {
             $avg_rating  = isset( $ratings[ $tid ]['average'] ) ? round( $ratings[ $tid ]['average'], 1 ) : 'N/A';
             $review_count = $ratings[ $tid ]['count'] ?? 0;
 
-            $roamer_eff  = ! empty( $tire['roamer_efficiency'] ) ? round( $tire['roamer_efficiency'], 2 ) . ' mi/kWh (' . intval( $tire['roamer_session_count'] ) . ' sessions)' : 'N/A';
+            $roamer_eff  = ! empty( $tire['roamer_efficiency'] ) ? round( $tire['roamer_efficiency'], 2 ) . ' mi/kWh (' . number_format( floatval( $tire['roamer_total_km'] ?? 0 ), 0 ) . ' km tracked)' : 'N/A';
 
             $parts = array(
                 'ID: ' . $tid,
