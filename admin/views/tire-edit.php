@@ -409,7 +409,12 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                                 <div style="margin-top:10px;">
                                     <span style="font-size:12px;font-weight:600;color:#86868b;text-transform:uppercase;">Vehicle Breakdown</span>
                                     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px;">
-                                        <?php foreach ( $r_bd as $drivetrain => $count ) : ?>
+                                        <?php foreach ( $r_bd as $entry ) :
+                                            // Feed format: array of [name, count] pairs.
+                                            if ( ! is_array( $entry ) || count( $entry ) < 2 ) continue;
+                                            $drivetrain = $entry[0];
+                                            $count      = $entry[1];
+                                        ?>
                                             <span style="font-size:13px;padding:2px 8px;background:rgba(59,130,246,0.1);border-radius:4px;color:#3b82f6;">
                                                 <?php echo esc_html( $drivetrain ); ?>: <?php echo intval( $count ); ?>
                                             </span>
