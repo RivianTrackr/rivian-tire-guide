@@ -1,6 +1,6 @@
 {
   "name": "rivian-tire-guide",
-  "version": "1.43.0",
+  "version": "1.44.0",
   "private": true,
   "description": "Interactive tire guide for Rivian vehicles — WordPress plugin",
   "scripts": {
