@@ -428,12 +428,13 @@ export function createSingleCard(row) {
           extraParts.push(veh.toLocaleString() + ' vehicle' + (veh !== 1 ? 's' : ''));
         }
         // Show vehicle breakdown by drivetrain if available.
+        // Feed format is array of [name, count] pairs, e.g. [["Gen 1 R1T Dual",1],["Gen 2 R1T Tri",3]]
         if (roamerVehicleBreakdown) {
           try {
             const bd = typeof roamerVehicleBreakdown === 'string' ? JSON.parse(roamerVehicleBreakdown) : roamerVehicleBreakdown;
-            if (bd && typeof bd === 'object' && Object.keys(bd).length > 0) {
-              const bdParts = Object.entries(bd).map(([name, count]) => count + ' ' + name);
-              extraParts.push(bdParts.join(', '));
+            if (Array.isArray(bd) && bd.length > 0) {
+              const bdParts = bd.map(entry => Array.isArray(entry) ? entry[1] + ' ' + entry[0] : '');
+              extraParts.push(bdParts.filter(Boolean).join(', '));
             }
           } catch (e) { /* ignore parse errors */ }
         }

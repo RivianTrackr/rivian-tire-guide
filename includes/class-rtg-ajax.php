@@ -1053,11 +1053,13 @@ class RTG_Ajax {
                     $total_km_all   += $km;
                     $total_vehicles += intval( $roamer_map[ $rid ]['vehicle_count'] ?? 0 );
 
-                    // Merge vehicle breakdowns.
+                    // Merge vehicle breakdowns (feed format: array of [name, count] pairs).
                     $bd = json_decode( $roamer_map[ $rid ]['vehicle_breakdown'] ?? '', true );
                     if ( is_array( $bd ) ) {
-                        foreach ( $bd as $key => $count ) {
-                            $merged_breakdown[ $key ] = ( $merged_breakdown[ $key ] ?? 0 ) + intval( $count );
+                        foreach ( $bd as $entry ) {
+                            if ( is_array( $entry ) && count( $entry ) >= 2 ) {
+                                $merged_breakdown[ $entry[0] ] = ( $merged_breakdown[ $entry[0] ] ?? 0 ) + intval( $entry[1] );
+                            }
                         }
                     }
                 }
@@ -1071,7 +1073,7 @@ class RTG_Ajax {
                 'roamer_efficiency'         => round( $avg_eff, 2 ),
                 'roamer_total_km'           => $total_km_all,
                 'roamer_vehicle_count'      => $total_vehicles,
-                'roamer_vehicle_breakdown'  => ! empty( $merged_breakdown ) ? wp_json_encode( $merged_breakdown ) : '',
+                'roamer_vehicle_breakdown'  => ! empty( $merged_breakdown ) ? wp_json_encode( array_map( function ( $name, $count ) { return array( $name, $count ); }, array_keys( $merged_breakdown ), $merged_breakdown ) ) : '',
                 'roamer_synced_at'          => current_time( 'mysql' ),
             ) );
         }
