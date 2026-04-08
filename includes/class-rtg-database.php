@@ -88,8 +88,9 @@ class RTG_Database {
                 (string) $tire['review_link'],
                 (string) $tire['created_at'],
                 (string) $tire['roamer_efficiency'],
-                (string) $tire['roamer_session_count'],
+                (string) $tire['roamer_total_km'],
                 (string) $tire['roamer_vehicle_count'],
+                (string) ( $tire['roamer_vehicle_breakdown'] ?? '' ),
             );
         }
 
@@ -161,8 +162,9 @@ class RTG_Database {
                 (string) $tire['review_link'],
                 (string) $tire['created_at'],
                 (string) $tire['roamer_efficiency'],
-                (string) $tire['roamer_session_count'],
+                (string) $tire['roamer_total_km'],
                 (string) $tire['roamer_vehicle_count'],
+                (string) ( $tire['roamer_vehicle_breakdown'] ?? '' ),
             );
         }
 
@@ -234,12 +236,12 @@ class RTG_Database {
             'efficiency_grade' => '',
             'bundle_link'          => '',
             'review_link'          => '',
-            'roamer_tire_id'       => '',
-            'roamer_efficiency'    => 0,
-            'roamer_session_count' => 0,
-            'roamer_total_km'      => 0,
-            'roamer_vehicle_count' => 0,
-            'roamer_synced_at'     => null,
+            'roamer_tire_id'            => '',
+            'roamer_efficiency'         => 0,
+            'roamer_total_km'           => 0,
+            'roamer_vehicle_count'      => 0,
+            'roamer_vehicle_breakdown'  => '',
+            'roamer_synced_at'          => null,
             'sort_order'           => 0,
         );
 
@@ -290,7 +292,6 @@ class RTG_Database {
                 case 'max_load_lb':
                 case 'efficiency_score':
                 case 'sort_order':
-                case 'roamer_session_count':
                 case 'roamer_vehicle_count':
                     $formats[] = '%d';
                     break;
@@ -664,8 +665,9 @@ class RTG_Database {
                 (string) $tire['review_link'],
                 (string) $tire['created_at'],
                 (string) $tire['roamer_efficiency'],
-                (string) $tire['roamer_session_count'],
+                (string) $tire['roamer_total_km'],
                 (string) $tire['roamer_vehicle_count'],
+                (string) ( $tire['roamer_vehicle_breakdown'] ?? '' ),
             );
         }
 
@@ -722,7 +724,7 @@ class RTG_Database {
                 ROUND(AVG(CASE WHEN roamer_efficiency > 0 THEN roamer_efficiency ELSE NULL END), 2) as avg_roamer_efficiency,
                 MAX(CASE WHEN roamer_efficiency > 0 THEN roamer_efficiency ELSE NULL END) as max_roamer_efficiency,
                 MIN(CASE WHEN roamer_efficiency > 0 THEN roamer_efficiency ELSE NULL END) as min_roamer_efficiency,
-                SUM(roamer_session_count) as total_roamer_sessions,
+                SUM(roamer_total_km) as total_roamer_km,
                 SUM(roamer_vehicle_count) as total_roamer_vehicles
             FROM {$tires_table}",
             ARRAY_A
@@ -823,7 +825,7 @@ class RTG_Database {
         // Top real-world efficient tires (by Roamer mi/kWh, top 5).
         $stats['top_roamer'] = $wpdb->get_results(
             "SELECT tire_id, brand, model, size, image,
-                    roamer_efficiency, roamer_session_count, roamer_vehicle_count
+                    roamer_efficiency, roamer_total_km, roamer_vehicle_count
              FROM {$tires_table}
              WHERE roamer_efficiency > 0
              ORDER BY roamer_efficiency DESC

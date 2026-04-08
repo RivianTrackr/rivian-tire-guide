@@ -157,7 +157,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                                 <th>Load Range</th>
                                 <th>Roamer ID</th>
                                 <th>mi/kWh</th>
-                                <th>Sessions</th>
+                                <th>Distance</th>
                                 <th>Vehicles</th>
                                 <th>Last Synced</th>
                                 <th>Actions</th>
@@ -173,7 +173,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                                     <td><?php echo esc_html( $tire['load_range'] ?: '-' ); ?></td>
                                     <td><code style="font-size:11px;"><?php echo esc_html( $tire['roamer_tire_id'] ); ?></code></td>
                                     <td><strong><?php echo esc_html( number_format( $tire['roamer_efficiency'], 2 ) ); ?></strong></td>
-                                    <td><?php echo number_format( $tire['roamer_session_count'] ); ?></td>
+                                    <td><?php echo esc_html( number_format( floatval( $tire['roamer_total_km'] ?? 0 ) * 0.621371, 0 ) ); ?> mi</td>
                                     <td><?php echo intval( $tire['roamer_vehicle_count'] ); ?></td>
                                     <td title="<?php echo esc_attr( $tire['roamer_synced_at'] ?: '' ); ?>"><?php echo esc_html( $synced_rel ); ?></td>
                                     <td>
@@ -207,7 +207,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                             <th>Roamer Tire</th>
                             <th>Size</th>
                             <th>mi/kWh</th>
-                            <th>Sessions</th>
+                            <th>Distance</th>
                             <th>Assign To</th>
                             <th>Actions</th>
                         </tr>
@@ -227,7 +227,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                                 <td><strong><?php echo esc_html( $amb['name'] ); ?></strong></td>
                                 <td><?php echo esc_html( $amb['size'] ); ?></td>
                                 <td><strong><?php echo esc_html( number_format( $amb['efficiency'], 2 ) ); ?></strong></td>
-                                <td><?php echo number_format( $amb['session_count'] ); ?></td>
+                                <td><?php echo esc_html( number_format( floatval( $amb['total_km'] ?? 0 ) * 0.621371, 0 ) ); ?> mi</td>
                                 <td>
                                     <select class="rtg-roamer-assign-select" data-roamer-id="<?php echo esc_attr( $amb['roamer_tire_id'] ); ?>">
                                         <option value="">Select tire...</option>
@@ -251,10 +251,10 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
 
     <!-- Unmatched Roamer Tires (from last sync) -->
     <?php if ( $stats && ! empty( $stats['unmatched_list'] ) ) :
-        // Sort unmatched by session count descending so most impactful are first.
+        // Sort unmatched by total distance descending so most impactful are first.
         $unmatched_sorted = $stats['unmatched_list'];
         usort( $unmatched_sorted, function ( $a, $b ) {
-            return ( $b['session_count'] ?? 0 ) - ( $a['session_count'] ?? 0 );
+            return ( floatval( $b['total_km'] ?? 0 ) <=> floatval( $a['total_km'] ?? 0 ) );
         } );
 
         $all_tires = RTG_Database::get_all_tires();
@@ -282,7 +282,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
             </div>
             <div class="rtg-card-body" style="padding:0;">
                 <p style="padding:16px 16px 0;color:#86868b;">
-                    These tires exist on Rivian Roamer but aren't in your guide. Select one or more to manually assign to a guide tire. When multiple are selected, efficiency is averaged weighted by session count.
+                    These tires exist on Rivian Roamer but aren't in your guide. Select one or more to manually assign to a guide tire. When multiple are selected, efficiency is averaged weighted by total distance.
                 </p>
                 <table class="wp-list-table widefat striped" style="border:none;">
                     <thead>
@@ -291,7 +291,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                             <th>Tire</th>
                             <th>Size</th>
                             <th>mi/kWh</th>
-                            <th>Sessions</th>
+                            <th>Distance</th>
                             <th>Roamer ID</th>
                         </tr>
                     </thead>
@@ -302,7 +302,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                                 <td><strong><?php echo esc_html( $tire['name'] ); ?></strong></td>
                                 <td><?php echo esc_html( $tire['size'] ); ?></td>
                                 <td><?php echo esc_html( number_format( $tire['efficiency'], 2 ) ); ?></td>
-                                <td><?php echo number_format( $tire['session_count'] ); ?></td>
+                                <td><?php echo esc_html( number_format( floatval( $tire['total_km'] ?? 0 ) * 0.621371, 0 ) ); ?> mi</td>
                                 <td><code style="font-size:11px;"><?php echo esc_html( $tire['roamer_tire_id'] ); ?></code></td>
                             </tr>
                         <?php endforeach; ?>

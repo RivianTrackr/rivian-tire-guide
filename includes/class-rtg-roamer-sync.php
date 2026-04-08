@@ -154,12 +154,13 @@ class RTG_Roamer_Sync {
             }
 
             // Source value is km/kWh — convert to mi/kWh for storage and display.
+            $breakdown_raw = $roamer_tire['vehicle_breakdown'] ?? array();
             $eff_data = array(
-                'roamer_efficiency'    => round( floatval( $roamer_tire['efficiency_km_per_kwh'] ?? 0 ) * 0.621371, 2 ),
-                'roamer_session_count' => intval( $roamer_tire['session_count'] ?? 0 ),
-                'roamer_total_km'      => floatval( $roamer_tire['total_distance_km'] ?? 0 ),
-                'roamer_vehicle_count' => intval( $roamer_tire['vehicle_count'] ?? 0 ),
-                'roamer_synced_at'     => $now,
+                'roamer_efficiency'         => round( floatval( $roamer_tire['efficiency_km_per_kwh'] ?? 0 ) * 0.621371, 2 ),
+                'roamer_total_km'           => floatval( $roamer_tire['total_distance_km'] ?? 0 ),
+                'roamer_vehicle_count'      => intval( $roamer_tire['vehicle_count'] ?? 0 ),
+                'roamer_vehicle_breakdown'  => is_array( $breakdown_raw ) ? wp_json_encode( $breakdown_raw ) : '',
+                'roamer_synced_at'          => $now,
             );
 
             // Fast path: already linked by roamer_tire_id.
@@ -188,27 +189,27 @@ class RTG_Roamer_Sync {
                 } else {
                     // Multiple matches (different load ratings) — skip for manual review.
                     $ambiguous_list[] = array(
-                        'roamer_tire_id' => $roamer_id,
-                        'name'           => $brand . ' ' . $model,
-                        'size'           => $size,
-                        'efficiency'     => $eff_data['roamer_efficiency'],
-                        'session_count'  => $eff_data['roamer_session_count'],
-                        'vehicle_count'  => $eff_data['roamer_vehicle_count'],
-                        'total_km'       => $eff_data['roamer_total_km'],
-                        'candidates'     => $candidates,
+                        'roamer_tire_id'      => $roamer_id,
+                        'name'                => $brand . ' ' . $model,
+                        'size'                => $size,
+                        'efficiency'          => $eff_data['roamer_efficiency'],
+                        'total_km'            => $eff_data['roamer_total_km'],
+                        'vehicle_count'       => $eff_data['roamer_vehicle_count'],
+                        'vehicle_breakdown'   => $eff_data['roamer_vehicle_breakdown'],
+                        'candidates'          => $candidates,
                     );
                     $skipped++;
                 }
             } else {
                 // No match in guide.
                 $unmatched_list[] = array(
-                    'roamer_tire_id' => $roamer_id,
-                    'name'           => ( $roamer_tire['brand'] ?? '' ) . ' ' . ( $roamer_tire['model'] ?? '' ),
-                    'size'           => $size,
-                    'efficiency'     => $eff_data['roamer_efficiency'],
-                    'session_count'  => $eff_data['roamer_session_count'],
-                    'vehicle_count'  => $eff_data['roamer_vehicle_count'],
-                    'total_km'       => $eff_data['roamer_total_km'],
+                    'roamer_tire_id'      => $roamer_id,
+                    'name'                => ( $roamer_tire['brand'] ?? '' ) . ' ' . ( $roamer_tire['model'] ?? '' ),
+                    'size'                => $size,
+                    'efficiency'          => $eff_data['roamer_efficiency'],
+                    'total_km'            => $eff_data['roamer_total_km'],
+                    'vehicle_count'       => $eff_data['roamer_vehicle_count'],
+                    'vehicle_breakdown'   => $eff_data['roamer_vehicle_breakdown'],
                 );
                 $unmatched++;
             }
@@ -291,10 +292,11 @@ class RTG_Roamer_Sync {
                 'size'                 => $tire['size'],
                 'load_range'           => $tire['load_range'],
                 'roamer_tire_id'       => $tire['roamer_tire_id'] ?? '',
-                'roamer_efficiency'    => floatval( $tire['roamer_efficiency'] ?? 0 ),
-                'roamer_session_count' => intval( $tire['roamer_session_count'] ?? 0 ),
-                'roamer_vehicle_count' => intval( $tire['roamer_vehicle_count'] ?? 0 ),
-                'roamer_synced_at'     => $tire['roamer_synced_at'] ?? '',
+                'roamer_efficiency'         => floatval( $tire['roamer_efficiency'] ?? 0 ),
+                'roamer_total_km'           => floatval( $tire['roamer_total_km'] ?? 0 ),
+                'roamer_vehicle_count'      => intval( $tire['roamer_vehicle_count'] ?? 0 ),
+                'roamer_vehicle_breakdown'  => $tire['roamer_vehicle_breakdown'] ?? '',
+                'roamer_synced_at'          => $tire['roamer_synced_at'] ?? '',
             );
 
             if ( ! empty( $tire['roamer_tire_id'] ) ) {

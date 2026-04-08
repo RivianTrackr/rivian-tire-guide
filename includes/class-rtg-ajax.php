@@ -1029,41 +1029,50 @@ class RTG_Ajax {
 
             // Pull efficiency data from stats if available.
             if ( isset( $roamer_map[ $rid ] ) ) {
-                $update['roamer_efficiency']    = floatval( $roamer_map[ $rid ]['efficiency'] ?? 0 );
-                $update['roamer_session_count'] = intval( $roamer_map[ $rid ]['session_count'] ?? 0 );
-                $update['roamer_synced_at']     = current_time( 'mysql' );
+                $update['roamer_efficiency']        = floatval( $roamer_map[ $rid ]['efficiency'] ?? 0 );
+                $update['roamer_total_km']          = floatval( $roamer_map[ $rid ]['total_km'] ?? 0 );
+                $update['roamer_vehicle_count']     = intval( $roamer_map[ $rid ]['vehicle_count'] ?? 0 );
+                $update['roamer_vehicle_breakdown'] = $roamer_map[ $rid ]['vehicle_breakdown'] ?? '';
+                $update['roamer_synced_at']         = current_time( 'mysql' );
             }
 
             $result = RTG_Database::update_tire( $tire_id, $update );
         } else {
-            // Multiple assignment — weighted average by session count.
-            $total_sessions  = 0;
+            // Multiple assignment — weighted average by total distance.
+            $total_km_all    = 0;
             $weighted_eff    = 0;
             $total_vehicles  = 0;
-            $total_km        = 0;
+            $merged_breakdown = array();
             $id_parts        = array();
 
             foreach ( $roamer_ids as $rid ) {
                 if ( isset( $roamer_map[ $rid ] ) ) {
-                    $eff     = floatval( $roamer_map[ $rid ]['efficiency'] ?? 0 );
-                    $sess    = intval( $roamer_map[ $rid ]['session_count'] ?? 0 );
-                    $weighted_eff   += $eff * $sess;
-                    $total_sessions += $sess;
+                    $eff  = floatval( $roamer_map[ $rid ]['efficiency'] ?? 0 );
+                    $km   = floatval( $roamer_map[ $rid ]['total_km'] ?? 0 );
+                    $weighted_eff   += $eff * $km;
+                    $total_km_all   += $km;
                     $total_vehicles += intval( $roamer_map[ $rid ]['vehicle_count'] ?? 0 );
-                    $total_km       += floatval( $roamer_map[ $rid ]['total_km'] ?? 0 );
+
+                    // Merge vehicle breakdowns.
+                    $bd = json_decode( $roamer_map[ $rid ]['vehicle_breakdown'] ?? '', true );
+                    if ( is_array( $bd ) ) {
+                        foreach ( $bd as $key => $count ) {
+                            $merged_breakdown[ $key ] = ( $merged_breakdown[ $key ] ?? 0 ) + intval( $count );
+                        }
+                    }
                 }
                 $id_parts[] = $rid;
             }
 
-            $avg_eff = $total_sessions > 0 ? $weighted_eff / $total_sessions : 0;
+            $avg_eff = $total_km_all > 0 ? $weighted_eff / $total_km_all : 0;
 
             $result = RTG_Database::update_tire( $tire_id, array(
-                'roamer_tire_id'       => implode( ',', $id_parts ),
-                'roamer_efficiency'    => round( $avg_eff, 2 ),
-                'roamer_session_count' => $total_sessions,
-                'roamer_total_km'      => $total_km,
-                'roamer_vehicle_count' => $total_vehicles,
-                'roamer_synced_at'     => current_time( 'mysql' ),
+                'roamer_tire_id'            => implode( ',', $id_parts ),
+                'roamer_efficiency'         => round( $avg_eff, 2 ),
+                'roamer_total_km'           => $total_km_all,
+                'roamer_vehicle_count'      => $total_vehicles,
+                'roamer_vehicle_breakdown'  => ! empty( $merged_breakdown ) ? wp_json_encode( $merged_breakdown ) : '',
+                'roamer_synced_at'          => current_time( 'mysql' ),
             ) );
         }
 
@@ -1116,12 +1125,12 @@ class RTG_Ajax {
         }
 
         $result = RTG_Database::update_tire( $tire_id, array(
-            'roamer_tire_id'       => '',
-            'roamer_efficiency'    => 0,
-            'roamer_session_count' => 0,
-            'roamer_total_km'      => 0,
-            'roamer_vehicle_count' => 0,
-            'roamer_synced_at'     => null,
+            'roamer_tire_id'            => '',
+            'roamer_efficiency'         => 0,
+            'roamer_total_km'           => 0,
+            'roamer_vehicle_count'      => 0,
+            'roamer_vehicle_breakdown'  => '',
+            'roamer_synced_at'          => null,
         ) );
 
         if ( false === $result ) {
