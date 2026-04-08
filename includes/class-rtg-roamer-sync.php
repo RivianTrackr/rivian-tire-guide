@@ -104,6 +104,10 @@ class RTG_Roamer_Sync {
             return $result;
         }
 
+        // Ensure the vehicle_breakdown column exists before writing.
+        // dbDelta can silently fail for TEXT columns on older MySQL.
+        self::ensure_breakdown_column();
+
         // Fetch all local tires.
         $local_tires = RTG_Database::get_all_tires();
 
@@ -348,5 +352,20 @@ class RTG_Roamer_Sync {
         }
 
         RTG_Mailer::send_roamer_sync_notification( $new_ambiguous, $new_unmatched );
+    }
+
+    /**
+     * Ensure the roamer_vehicle_breakdown column exists in the tires table.
+     * dbDelta can silently fail to add TEXT columns on MySQL < 8.0.13, so
+     * we check and add it explicitly before every sync.
+     */
+    private static function ensure_breakdown_column() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'rtg_tires';
+        $cols  = $wpdb->get_col( "SHOW COLUMNS FROM {$table}" );
+
+        if ( ! in_array( 'roamer_vehicle_breakdown', $cols, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table} ADD COLUMN roamer_vehicle_breakdown TEXT AFTER roamer_vehicle_count" );
+        }
     }
 }
