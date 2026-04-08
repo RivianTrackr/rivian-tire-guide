@@ -211,10 +211,15 @@ export function validateAndSanitizeCSVRow(row) {
     const cell = row[i];
 
     if (typeof cell === "string") {
-      sanitized[i] = cell.replace(/[<>\"'&]/g, "").trim();
+      // Index 27 (vehicle_breakdown) contains JSON — preserve quotes.
+      if (i === 27) {
+        sanitized[i] = cell;
+      } else {
+        sanitized[i] = cell.replace(/[<>\"'&]/g, "").trim();
 
-      if (sanitized[i].length > 500) {
-        sanitized[i] = sanitized[i].substring(0, 500);
+        if (sanitized[i].length > 500) {
+          sanitized[i] = sanitized[i].substring(0, 500);
+        }
       }
     } else if (typeof cell === "number") {
       if (i === 6) {

@@ -4,10 +4,20 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.44.2] - 2026-04-08
+
+### Fixed
+- **Vehicle breakdown not showing in tooltip** — The row sanitizer (`validateAndSanitizeCSVRow`) was stripping double quotes from all string cells, turning the JSON `[["Gen 1 R1T Dual",1]]` into unparseable `[[Gen 1 R1T Dual,1]]`. The vehicle_breakdown field (index 27) is now excluded from quote stripping.
+- **Sync silently failing without vehicle_breakdown column** — The sync now ensures the `roamer_vehicle_breakdown` column exists before writing, so UPDATEs don't fail silently on sites where dbDelta missed it.
+- **Wrong insert_tire format types** — Fixed misaligned `$formats` array in `insert_tire()` after the `roamer_session_count` removal shifted column positions.
+
+### Changed
+- **Plugin version** — Bumped to 1.44.2.
+
 ## [1.44.1] - 2026-04-08
 
 ### Fixed
-- **Vehicle breakdown not displaying** — Fixed parsing of the Roamer feed's `vehicle_breakdown` field which uses an array-of-pairs format (`[["Gen 1 R1T Dual", 1]]`) rather than an object. Tooltip, admin tire edit, and multi-assign merge logic all updated.
+- **Vehicle breakdown feed format** — Fixed parsing of the Roamer feed's `vehicle_breakdown` field which uses an array-of-pairs format (`[["Gen 1 R1T Dual", 1]]`) rather than an object. Tooltip, admin tire edit, and multi-assign merge logic all updated.
 - **Vehicle breakdown column not created** — The `roamer_vehicle_breakdown` TEXT column could fail to be created by dbDelta on MySQL < 8.0.13 (TEXT columns don't support DEFAULT values). Added migration 14 as a safety net to explicitly create the column via ALTER TABLE.
 
 ### Changed
