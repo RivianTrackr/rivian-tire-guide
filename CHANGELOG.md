@@ -4,6 +4,15 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.44.0] - 2026-04-08
+
+### Changed
+- **Roamer schema: sessions → distance** — Replaced `roamer_session_count` with `total_distance_km` from the updated Rivian Roamer feed. All surfaces now display total miles tracked instead of driving session counts. Multi-assign efficiency weighting changed from session count to total distance.
+- **Vehicle breakdown by drivetrain** — New `vehicle_breakdown` field from the Roamer feed shows how many vehicles contributed by drivetrain (e.g. "Gen 1 R1T Dual", "Gen 2 R1T Tri"). Displayed in tile tooltips, compare page, admin tire edit, and stored as JSON in the database.
+- **Distance displayed in miles** — All user-facing surfaces convert the source km values to miles for consistency with mi/kWh efficiency units. REST API field renamed from `roamer_total_km` to `roamer_total_miles`.
+- **Database schema** — Migration 13 drops `roamer_session_count` column and adds `roamer_vehicle_breakdown` TEXT column to `wp_rtg_tires`.
+- **Plugin version** — Bumped to 1.44.0.
+
 ## [1.43.0] - 2026-04-04
 
 ### Changed
