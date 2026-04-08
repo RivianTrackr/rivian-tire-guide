@@ -397,8 +397,8 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                                     <span style="font-size:14px;color:#86868b;">mi/kWh</span>
                                 </div>
                                 <div>
-                                    <span style="font-size:18px;font-weight:600;color:#1d1d1f;"><?php echo esc_html( number_format( $r_km, 1 ) ); ?></span>
-                                    <span style="font-size:14px;color:#86868b;">km tracked</span>
+                                    <span style="font-size:18px;font-weight:600;color:#1d1d1f;"><?php echo esc_html( number_format( $r_km * 0.621371, 0 ) ); ?></span>
+                                    <span style="font-size:14px;color:#86868b;">mi tracked</span>
                                 </div>
                                 <div>
                                     <span style="font-size:18px;font-weight:600;color:#1d1d1f;"><?php echo intval( $r_veh ); ?></span>

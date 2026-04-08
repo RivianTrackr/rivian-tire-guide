@@ -302,7 +302,7 @@ class RTG_Mailer {
                 <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #1d1d1f;">' . esc_html( $tire['name'] ) . '</td>
                 <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">' . esc_html( $tire['size'] ) . '</td>
                 <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">' . esc_html( number_format( $tire['efficiency'], 2 ) ) . '</td>
-                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">' . esc_html( number_format( floatval( $tire['total_km'] ?? 0 ), 0 ) ) . ' km</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">' . esc_html( number_format( floatval( $tire['total_km'] ?? 0 ) * 0.621371, 0 ) ) . ' mi</td>
                 <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">
                     <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #fff; background: #f59e0b;">Ambiguous</span>
                 </td>
@@ -313,7 +313,7 @@ class RTG_Mailer {
                 <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #1d1d1f;">' . esc_html( $tire['name'] ) . '</td>
                 <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">' . esc_html( $tire['size'] ) . '</td>
                 <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">' . esc_html( number_format( $tire['efficiency'], 2 ) ) . '</td>
-                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">' . esc_html( number_format( floatval( $tire['total_km'] ?? 0 ), 0 ) ) . ' km</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">' . esc_html( number_format( floatval( $tire['total_km'] ?? 0 ) * 0.621371, 0 ) ) . ' mi</td>
                 <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">
                     <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #fff; background: #94a3b8;">Unmatched</span>
                 </td>

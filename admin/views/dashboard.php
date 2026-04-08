@@ -405,8 +405,8 @@ $grade_colors = array(
                         <div class="rtg-stat-label">Avg mi/kWh</div>
                     </div>
                     <div class="rtg-stat-card">
-                        <div class="rtg-stat-value"><?php echo esc_html( number_format( $total_roamer_km, 0 ) ); ?></div>
-                        <div class="rtg-stat-label">Total km Tracked</div>
+                        <div class="rtg-stat-value"><?php echo esc_html( number_format( $total_roamer_km * 0.621371, 0 ) ); ?></div>
+                        <div class="rtg-stat-label">Total Miles Tracked</div>
                     </div>
                 </div>
                 <div class="rtg-stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 16px;">
@@ -459,7 +459,7 @@ $grade_colors = array(
                                     <span class="rtg-mini-list-name">
                                         <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires&s=' . urlencode( $tire['tire_id'] ) ) ); ?>"><?php echo esc_html( $tire['brand'] . ' ' . $tire['model'] ); ?></a>
                                     </span>
-                                    <span class="rtg-mini-list-meta"><?php echo esc_html( $tire['size'] ); ?> · <?php echo number_format( floatval( $tire['roamer_total_km'] ?? 0 ), 0 ); ?> km tracked</span>
+                                    <span class="rtg-mini-list-meta"><?php echo esc_html( $tire['size'] ); ?> · <?php echo number_format( floatval( $tire['roamer_total_km'] ?? 0 ) * 0.621371, 0 ); ?> mi tracked</span>
                                 </span>
                                 <span class="rtg-mini-list-value" style="color:#60a5fa;"><?php echo esc_html( number_format( $tire['roamer_efficiency'], 2 ) ); ?> mi/kWh</span>
                             </li>

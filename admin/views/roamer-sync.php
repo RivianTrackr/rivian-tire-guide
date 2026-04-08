@@ -173,7 +173,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                                     <td><?php echo esc_html( $tire['load_range'] ?: '-' ); ?></td>
                                     <td><code style="font-size:11px;"><?php echo esc_html( $tire['roamer_tire_id'] ); ?></code></td>
                                     <td><strong><?php echo esc_html( number_format( $tire['roamer_efficiency'], 2 ) ); ?></strong></td>
-                                    <td><?php echo esc_html( number_format( floatval( $tire['roamer_total_km'] ?? 0 ), 0 ) ); ?> km</td>
+                                    <td><?php echo esc_html( number_format( floatval( $tire['roamer_total_km'] ?? 0 ) * 0.621371, 0 ) ); ?> mi</td>
                                     <td><?php echo intval( $tire['roamer_vehicle_count'] ); ?></td>
                                     <td title="<?php echo esc_attr( $tire['roamer_synced_at'] ?: '' ); ?>"><?php echo esc_html( $synced_rel ); ?></td>
                                     <td>
@@ -227,7 +227,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                                 <td><strong><?php echo esc_html( $amb['name'] ); ?></strong></td>
                                 <td><?php echo esc_html( $amb['size'] ); ?></td>
                                 <td><strong><?php echo esc_html( number_format( $amb['efficiency'], 2 ) ); ?></strong></td>
-                                <td><?php echo esc_html( number_format( floatval( $amb['total_km'] ?? 0 ), 0 ) ); ?> km</td>
+                                <td><?php echo esc_html( number_format( floatval( $amb['total_km'] ?? 0 ) * 0.621371, 0 ) ); ?> mi</td>
                                 <td>
                                     <select class="rtg-roamer-assign-select" data-roamer-id="<?php echo esc_attr( $amb['roamer_tire_id'] ); ?>">
                                         <option value="">Select tire...</option>
@@ -302,7 +302,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                                 <td><strong><?php echo esc_html( $tire['name'] ); ?></strong></td>
                                 <td><?php echo esc_html( $tire['size'] ); ?></td>
                                 <td><?php echo esc_html( number_format( $tire['efficiency'], 2 ) ); ?></td>
-                                <td><?php echo esc_html( number_format( floatval( $tire['total_km'] ?? 0 ), 0 ) ); ?> km</td>
+                                <td><?php echo esc_html( number_format( floatval( $tire['total_km'] ?? 0 ) * 0.621371, 0 ) ); ?> mi</td>
                                 <td><code style="font-size:11px;"><?php echo esc_html( $tire['roamer_tire_id'] ); ?></code></td>
                             </tr>
                         <?php endforeach; ?>

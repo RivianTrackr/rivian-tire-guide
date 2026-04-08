@@ -418,11 +418,11 @@ export function createSingleCard(row) {
         roamerInfoBtn.innerHTML = '' + rtgIcon('circle-info', 14) + '';
         roamerInfoBtn.className = 'info-tooltip-trigger';
         roamerInfoBtn.dataset.tooltipKey = 'Real-World Efficiency';
-        const totalKm = parseFloat(roamerTotalKm) || 0;
+        const totalMi = Math.round((parseFloat(roamerTotalKm) || 0) * 0.621371);
         const veh = parseInt(roamerVehicleCount) || 0;
         const extraParts = [];
-        if (totalKm > 0) {
-          extraParts.push(Math.round(totalKm).toLocaleString() + ' km tracked');
+        if (totalMi > 0) {
+          extraParts.push(totalMi.toLocaleString() + ' mi tracked');
         }
         if (veh > 0) {
           extraParts.push(veh.toLocaleString() + ' vehicle' + (veh !== 1 ? 's' : ''));
