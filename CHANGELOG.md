@@ -4,6 +4,15 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.44.1] - 2026-04-08
+
+### Fixed
+- **Vehicle breakdown not displaying** — Fixed parsing of the Roamer feed's `vehicle_breakdown` field which uses an array-of-pairs format (`[["Gen 1 R1T Dual", 1]]`) rather than an object. Tooltip, admin tire edit, and multi-assign merge logic all updated.
+- **Vehicle breakdown column not created** — The `roamer_vehicle_breakdown` TEXT column could fail to be created by dbDelta on MySQL < 8.0.13 (TEXT columns don't support DEFAULT values). Added migration 14 as a safety net to explicitly create the column via ALTER TABLE.
+
+### Changed
+- **Plugin version** — Bumped to 1.44.1.
+
 ## [1.44.0] - 2026-04-08
 
 ### Changed
