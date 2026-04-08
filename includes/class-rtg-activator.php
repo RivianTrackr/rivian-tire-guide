@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 13;
+    const DB_VERSION = 14;
 
     public static function activate() {
         self::create_tables();
@@ -87,7 +87,7 @@ class RTG_Activator {
             roamer_efficiency DECIMAL(4,2) NOT NULL DEFAULT 0,
             roamer_total_km DECIMAL(10,1) NOT NULL DEFAULT 0,
             roamer_vehicle_count INT UNSIGNED NOT NULL DEFAULT 0,
-            roamer_vehicle_breakdown TEXT NOT NULL DEFAULT '',
+            roamer_vehicle_breakdown TEXT,
             roamer_synced_at DATETIME NULL DEFAULT NULL,
             sort_order INT UNSIGNED NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -187,6 +187,7 @@ class RTG_Activator {
             11 => 'migrate_11_add_guest_review_columns',
             12 => 'migrate_12_add_roamer_columns',
             13 => 'migrate_13_roamer_drop_sessions_add_breakdown',
+            14 => 'migrate_14_ensure_vehicle_breakdown_column',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -331,6 +332,27 @@ class RTG_Activator {
             $wpdb->query( "ALTER TABLE {$table} DROP COLUMN roamer_session_count" );
         }
 
-        // roamer_vehicle_breakdown added by dbDelta above.
+        // Explicitly add vehicle_breakdown column if dbDelta missed it
+        // (TEXT columns with DEFAULT can fail on older MySQL/MariaDB).
+        $cols = $wpdb->get_col( "SHOW COLUMNS FROM {$table}" );
+        if ( ! in_array( 'roamer_vehicle_breakdown', $cols, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table} ADD COLUMN roamer_vehicle_breakdown TEXT AFTER roamer_vehicle_count" );
+        }
+    }
+
+    /**
+     * Migration 14: Ensure roamer_vehicle_breakdown column exists.
+     * Migration 13 relied on dbDelta to add the TEXT column, which can
+     * fail silently on MySQL < 8.0.13 (TEXT DEFAULT not supported).
+     * This migration is a safety net for sites that already ran 13.
+     */
+    private static function migrate_14_ensure_vehicle_breakdown_column() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'rtg_tires';
+
+        $cols = $wpdb->get_col( "SHOW COLUMNS FROM {$table}" );
+        if ( ! in_array( 'roamer_vehicle_breakdown', $cols, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table} ADD COLUMN roamer_vehicle_breakdown TEXT AFTER roamer_vehicle_count" );
+        }
     }
 }
