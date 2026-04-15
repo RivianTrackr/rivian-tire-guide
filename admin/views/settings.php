@@ -310,19 +310,19 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                         <label class="rtg-field-label" for="rtg_ai_model">AI Model</label>
                     </div>
                     <p class="rtg-field-description">Claude Haiku is fast and cost-effective (recommended). Claude Sonnet is more capable but slower and costs more per query. Use <strong>Refresh</strong> to pull the latest list of Claude models directly from Anthropic.</p>
-                    <div class="rtg-ai-model-row" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                        <select id="rtg_ai_model" name="rtg_ai_model" style="min-width: 320px;">
+                    <div class="rtg-ai-model-row">
+                        <select id="rtg_ai_model" name="rtg_ai_model" class="rtg-ai-model-select">
                             <?php foreach ( $ai_model_list as $_m ) : ?>
                                 <option value="<?php echo esc_attr( $_m['id'] ); ?>" <?php selected( $ai_model, $_m['id'] ); ?>>
                                     <?php echo esc_html( $_m['display_name'] ); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
-                        <button type="button" id="rtg_refresh_ai_models" class="button" data-nonce="<?php echo esc_attr( wp_create_nonce( 'rtg_admin_nonce' ) ); ?>">
-                            <span class="dashicons dashicons-update" style="vertical-align:middle;line-height:inherit;"></span>
-                            Refresh from Anthropic
+                        <button type="button" id="rtg_refresh_ai_models" class="button rtg-ai-model-refresh-btn" data-nonce="<?php echo esc_attr( wp_create_nonce( 'rtg_admin_nonce' ) ); ?>">
+                            <span class="dashicons dashicons-update" aria-hidden="true"></span>
+                            <span>Refresh from Anthropic</span>
                         </button>
-                        <span id="rtg_refresh_ai_models_status" class="rtg-ai-model-status" style="font-size:12px;color:var(--rtg-text-muted);">
+                        <span id="rtg_refresh_ai_models_status" class="rtg-ai-model-status">
                             <?php if ( $ai_models_from_api && $ai_models_fetched_at ) : ?>
                                 Last refreshed <?php echo esc_html( human_time_diff( $ai_models_fetched_at, current_time( 'timestamp' ) ) ); ?> ago
                                 (<?php echo count( $ai_model_list ); ?> models)

@@ -1391,3 +1391,57 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* === AI Model Row (Settings → AI Recommendations) ========================== */
+.rtg-ai-model-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 4px;
+}
+.rtg-ai-model-select {
+    min-width: 320px;
+    max-width: 100%;
+    height: 36px;
+    padding: 0 10px;
+    font-size: 14px;
+    line-height: 1.4;
+    border: 1px solid var(--rtg-border);
+    border-radius: 6px;
+    background-color: var(--rtg-bg-input, #fff);
+    color: var(--rtg-text-primary);
+}
+/* WordPress .button height is 30px; make the refresh button taller so it
+   lines up with our 36px select, and align the dashicon properly. */
+.rtg-ai-model-refresh-btn.button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 14px;
+    line-height: 1;
+}
+.rtg-ai-model-refresh-btn .dashicons {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+    line-height: 1;
+    margin: 0;
+}
+.rtg-ai-model-refresh-btn[disabled] .dashicons {
+    animation: rtg-refresh-spin 0.9s linear infinite;
+}
+@keyframes rtg-refresh-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+.rtg-ai-model-status {
+    font-size: 12px;
+    color: var(--rtg-text-muted, #6b7280);
+    flex: 1 1 auto;
+    min-width: 200px;
+}
+.rtg-ai-model-status.is-error {
+    color: #c41e3a;
+}
