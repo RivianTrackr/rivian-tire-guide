@@ -716,7 +716,10 @@
   align-items: center;
 }
 .rtg-extended-filters .slider-wrapper {
+  /* flex-direction must be explicit — .filter-group sets `column` and that
+     would otherwise stack the label above the range input inside the pill. */
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 12px;
   flex: 1 1 260px;
