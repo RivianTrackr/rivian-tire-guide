@@ -4,6 +4,17 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.45.4] - 2026-04-15
+
+### Changed
+- **Max PSI hidden from tire cards** — Removed Max PSI from the default card
+  spec list. It's not useful information for most Rivian owners when browsing
+  tires. Still rendered on the compare page (`compare.js:274`), still editable
+  in the admin tire-edit form, still in CSV import/export. Max PSI is not
+  part of the efficiency formula, so this change has no effect on any
+  efficiency score. (`frontend/js/modules/cards.js`)
+- **Plugin version** — Bumped to 1.45.4.
+
 ## [1.45.3] - 2026-04-15
 
 ### Changed
