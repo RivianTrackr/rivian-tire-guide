@@ -1400,29 +1400,24 @@
     gap: 10px;
     margin-top: 4px;
 }
-.rtg-ai-model-select {
+/* Override the generic `.rtg-wrap select` rule above (specificity 0,1,1)
+   by pairing the class with the element selector (0,1,2). Don't try to
+   re-do the padding/line-height — the generic rule already renders fine
+   on every other select in the admin. We only need to widen it. */
+.rtg-wrap select.rtg-ai-model-select {
     min-width: 320px;
     max-width: 100%;
-    /* Let the browser compute height from font + padding so text centers
-       reliably across Chrome / Safari / Firefox. Fixed `height` + `line-height`
-       on a <select> clips the glyph descenders on some platforms. */
-    padding: 8px 10px;
-    font-size: 14px;
-    line-height: 1.4;
-    border: 1px solid var(--rtg-border);
-    border-radius: 6px;
-    background-color: var(--rtg-bg-input, #fff);
-    color: var(--rtg-text-primary);
+    width: auto;
 }
-/* Match the refresh button's visual height to the naturally-sized select
-   (~36px at 14px / 1.4 with 8px top+bottom padding). */
+/* Match the refresh button's visual rhythm to the WP admin select
+   (padding: 10px 12px, font-size: 15px, line-height: default). */
 .rtg-ai-model-refresh-btn.button {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 14px;
-    line-height: 1.4;
+    padding: 10px 14px;
     font-size: 14px;
+    height: auto;
 }
 .rtg-ai-model-refresh-btn .dashicons {
     width: 16px;
