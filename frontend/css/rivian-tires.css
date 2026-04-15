@@ -699,96 +699,25 @@
   font-size: 13px;
 }
 
-/* === Advanced Filters Collapsible === */
-.rtg-advanced-filters {
-  margin-top: 12px;
-}
-.rtg-advanced-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--rtg-text-muted);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: color 0.15s;
-  font-family: var(--rtg-font-stack);
-  opacity: 0.7;
-}
-.rtg-advanced-toggle:hover {
-  color: var(--rtg-accent);
-  opacity: 1;
-}
-.rtg-advanced-toggle-text {
+/* === Extended Filters Row ===
+   Flat row below the main filter container with the two remaining sliders
+   (Max Price, Min Warranty) and the two remaining feature toggles (3PMS,
+   OEM). Replaces the old collapsible "More Filters" disclosure, since
+   five controls don't justify a progressive-disclosure pattern. */
+.rtg-extended-filters {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+  align-items: flex-end;
 }
-.rtg-advanced-toggle-text i {
-  color: var(--rtg-accent);
-  font-size: 13px;
+.rtg-extended-filters .slider-wrapper {
+  flex: 1 1 260px;
+  min-width: 220px;
 }
-.rtg-advanced-chevron {
-  font-size: 10px;
-  transition: transform 0.25s ease;
-}
-.rtg-advanced-filters.open .rtg-advanced-chevron {
-  transform: rotate(180deg);
-}
-.rtg-advanced-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  font-size: 10px;
-  font-weight: 700;
-  color: #0f172a;
-  background: var(--rtg-accent);
-  border-radius: 9px;
-}
-.rtg-advanced-body {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease;
-}
-.rtg-advanced-filters.open .rtg-advanced-body {
-  max-height: 600px;
-  overflow: visible;
-}
-.rtg-advanced-filters.open .rtg-advanced-body > .rtg-filter-section:first-child {
-  margin-top: 14px;
-}
-
-/* === Filter Section Dividers === */
-.rtg-filter-section {
-  padding: 14px 16px;
-  background: var(--rtg-bg-primary);
-  border: 1px solid var(--rtg-border);
-  border-radius: 10px;
-}
-.rtg-filter-section + .rtg-filter-section {
-  margin-top: 10px;
-}
-.rtg-filter-section-label {
-  display: block;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: var(--rtg-text-muted);
-  opacity: 0.6;
-  margin-bottom: 10px;
-}
-.rtg-filter-section .slider-row {
-  margin-top: 0;
-}
-.rtg-filter-section .switch-row {
-  margin-top: 0;
+.rtg-extended-filters .switch-label {
+  flex: 0 0 auto;
+  align-self: flex-end;
 }
 
 /* === Info Tooltip Trigger === */
@@ -926,7 +855,7 @@
 /* === Sort Bar === */
 .sort-wrapper {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   gap: 12px;
   margin-top: 16px;
@@ -934,11 +863,26 @@
   border-top: 1px solid var(--rtg-border);
   font-size: 14px;
   color: var(--rtg-text-primary);
+  flex-wrap: wrap;
 }
 .tire-count {
   font-size: 14px;
   color: var(--rtg-text-muted);
   font-weight: 600;
+}
+/* Groups the Favorites toggle (logged-in only) + sort dropdown on the
+   right side of the sort bar. Favorites lives here because it's a
+   personal collection, not a tire attribute, so it doesn't belong with
+   3PMS / OEM in the filter row. */
+.rtg-sort-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.rtg-sort-actions .favorites-filter-wrapper {
+  height: 40px;
 }
 .sort-wrapper select {
   height: 40px;

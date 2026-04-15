@@ -63,79 +63,59 @@ if ( ! defined( 'ABSPATH' ) ) {
           </select>
         </div>
       </div>
-      <div id="advancedFilters" class="rtg-advanced-filters">
-        <button id="advancedFiltersToggle" class="rtg-advanced-toggle" type="button" aria-expanded="false" aria-controls="advancedFiltersBody">
-          <span class="rtg-advanced-toggle-text">
-            <i class="fa-solid fa-gear" aria-hidden="true"></i>
-            More Filters
+      <div class="rtg-extended-filters">
+        <div class="filter-group slider-wrapper">
+          <label for="priceMax">Max Price: <span id="priceVal">&le; $600</span></label>
+          <input id="priceMax" class="range-slider" type="range" min="0" max="600" value="600" step="10" aria-label="Maximum Price"/>
+        </div>
+        <div class="filter-group slider-wrapper">
+          <label for="warrantyMin">Min Warranty: <span id="warrantyVal">&ge; 0 miles</span></label>
+          <input id="warrantyMin" class="range-slider" type="range" min="0" max="80000" value="0" step="1000" aria-label="Minimum Warranty in miles"/>
+        </div>
+        <div class="switch-label">
+          <span class="switch-text">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span>3PMS</span>
+              <button class="info-tooltip-trigger" data-tooltip-key="3PMS Filter">
+                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+              </button>
+            </div>
           </span>
-          <span id="advancedFilterBadge" class="rtg-advanced-badge" style="display: none;"></span>
-          <i class="fa-solid fa-chevron-down rtg-advanced-chevron" aria-hidden="true"></i>
-        </button>
-        <div id="advancedFiltersBody" class="rtg-advanced-body">
-          <div class="rtg-filter-section">
-            <span class="rtg-filter-section-label">Specifications</span>
-            <div class="slider-row">
-              <div class="filter-group slider-wrapper">
-                <label for="priceMax">Max Price: <span id="priceVal">&le; $600</span></label>
-                <input id="priceMax" class="range-slider" type="range" min="0" max="600" value="600" step="10" aria-label="Maximum Price"/>
-              </div>
-              <div class="filter-group slider-wrapper">
-                <label for="warrantyMin">Min Warranty: <span id="warrantyVal">&ge; 0 miles</span></label>
-                <input id="warrantyMin" class="range-slider" type="range" min="0" max="80000" value="0" step="1000" aria-label="Minimum Warranty in miles"/>
-              </div>
+          <input type="checkbox" id="filter3pms" aria-label="3PMS Rated" />
+          <span class="switch-slider" onclick="document.getElementById('filter3pms').click()"></span>
+        </div>
+        <div class="switch-label">
+          <span class="switch-text">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span>OEM</span>
+              <button class="info-tooltip-trigger" data-tooltip-key="OEM Filter">
+                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+              </button>
             </div>
-          </div>
-          <div class="rtg-filter-section">
-            <span class="rtg-filter-section-label">Features</span>
-            <div class="switch-row">
-              <div class="switch-label">
-                <span class="switch-text">
-                  <div style="display: flex; align-items: center; gap: 6px;">
-                    <span>3PMS</span>
-                    <button class="info-tooltip-trigger" data-tooltip-key="3PMS Filter">
-                      <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-                    </button>
-                  </div>
-                </span>
-                <input type="checkbox" id="filter3pms" aria-label="3PMS Rated" />
-                <span class="switch-slider" onclick="document.getElementById('filter3pms').click()"></span>
-              </div>
-              <div class="switch-label">
-                <span class="switch-text">
-                  <div style="display: flex; align-items: center; gap: 6px;">
-                    <span>OEM</span>
-                    <button class="info-tooltip-trigger" data-tooltip-key="OEM Filter">
-                      <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-                    </button>
-                  </div>
-                </span>
-                <input type="checkbox" id="filterOEM" aria-label="OEM"/>
-                <span class="switch-slider" onclick="document.getElementById('filterOEM').click()"></span>
-              </div>
-              <?php if ( is_user_logged_in() ) : ?>
-              <div class="switch-label favorites-filter-wrapper">
-                <span class="switch-text">
-                  <div style="display: flex; align-items: center; gap: 6px;">
-                    <i class="fa-solid fa-heart" aria-hidden="true"></i>
-                    <span>Favorites</span>
-                  </div>
-                </span>
-                <span id="favoritesCount" class="favorites-count-badge" style="display: none;"></span>
-                <input type="checkbox" id="filterFavorites" aria-label="My Favorites"/>
-                <span class="switch-slider" onclick="document.getElementById('filterFavorites').click()"></span>
-              </div>
-              <?php endif; ?>
-            </div>
-          </div>
+          </span>
+          <input type="checkbox" id="filterOEM" aria-label="OEM"/>
+          <span class="switch-slider" onclick="document.getElementById('filterOEM').click()"></span>
         </div>
       </div>
     </div>
     <div class="sort-wrapper">
       <span id="tireCount" class="tire-count" aria-live="polite">Showing 0 tires</span>
-      <div style="flex: 1;"></div>
-      <label for="sortBy" class="screen-reader-text">Sort tires by</label>
-      <select id="sortBy" aria-label="Sort tires by">
+      <div class="rtg-sort-actions">
+        <?php if ( is_user_logged_in() ) : ?>
+        <div class="switch-label favorites-filter-wrapper">
+          <span class="switch-text">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-heart" aria-hidden="true"></i>
+              <span>Favorites</span>
+            </div>
+          </span>
+          <span id="favoritesCount" class="favorites-count-badge" style="display: none;"></span>
+          <input type="checkbox" id="filterFavorites" aria-label="My Favorites"/>
+          <span class="switch-slider" onclick="document.getElementById('filterFavorites').click()"></span>
+        </div>
+        <?php endif; ?>
+        <label for="sortBy" class="screen-reader-text">Sort tires by</label>
+        <select id="sortBy" aria-label="Sort tires by">
         <option value="efficiencyGrade">Efficiency Grade</option>
         <option value="roamer-efficiency" selected>Real-World Efficiency</option>
         <option value="most-reviewed">Most Reviewed</option>
@@ -146,6 +126,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         <option value="warranty-desc">Warranty: High → Low</option>
         <option value="weight-asc">Weight: Light → Heavy</option>
       </select>
+      </div>
     </div>
     <div id="filterResultCount" class="filter-result-count" aria-live="polite"></div>
   </div>
