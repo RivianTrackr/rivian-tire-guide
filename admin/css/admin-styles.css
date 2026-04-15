@@ -1403,8 +1403,10 @@
 .rtg-ai-model-select {
     min-width: 320px;
     max-width: 100%;
-    height: 36px;
-    padding: 0 10px;
+    /* Let the browser compute height from font + padding so text centers
+       reliably across Chrome / Safari / Firefox. Fixed `height` + `line-height`
+       on a <select> clips the glyph descenders on some platforms. */
+    padding: 8px 10px;
     font-size: 14px;
     line-height: 1.4;
     border: 1px solid var(--rtg-border);
@@ -1412,15 +1414,15 @@
     background-color: var(--rtg-bg-input, #fff);
     color: var(--rtg-text-primary);
 }
-/* WordPress .button height is 30px; make the refresh button taller so it
-   lines up with our 36px select, and align the dashicon properly. */
+/* Match the refresh button's visual height to the naturally-sized select
+   (~36px at 14px / 1.4 with 8px top+bottom padding). */
 .rtg-ai-model-refresh-btn.button {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 36px;
-    padding: 0 14px;
-    line-height: 1;
+    padding: 8px 14px;
+    line-height: 1.4;
+    font-size: 14px;
 }
 .rtg-ai-model-refresh-btn .dashicons {
     width: 16px;
