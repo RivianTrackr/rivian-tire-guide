@@ -310,15 +310,23 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                         <label class="rtg-field-label" for="rtg_ai_model">AI Model</label>
                     </div>
                     <p class="rtg-field-description">Claude Haiku is fast and cost-effective (recommended). Claude Sonnet is more capable but slower and costs more per query. Use <strong>Refresh</strong> to pull the latest list of Claude models directly from Anthropic.</p>
+                    <?php
+                    // Inline styles here bypass any cached admin stylesheet —
+                    // the clipping bug was a stale browser cache of an earlier
+                    // 1.45.1 CSS file. These also beat specificity from any
+                    // future conflicting rule.
+                    $rtg_ai_select_style = 'min-width:320px;max-width:100%;width:auto;height:40px;line-height:38px;padding:0 36px 0 12px;font-size:15px;-webkit-appearance:none;-moz-appearance:none;appearance:none;background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 12 8%27%3E%3Cpath fill=%27%236e6e73%27 d=%27M6 8 0 0h12z%27/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:10px auto;';
+                    $rtg_ai_btn_style = 'height:40px;padding:0 14px;line-height:1;display:inline-flex;align-items:center;gap:6px;font-size:14px;';
+                    ?>
                     <div class="rtg-ai-model-row">
-                        <select id="rtg_ai_model" name="rtg_ai_model" class="rtg-ai-model-select">
+                        <select id="rtg_ai_model" name="rtg_ai_model" class="rtg-ai-model-select" style="<?php echo esc_attr( $rtg_ai_select_style ); ?>">
                             <?php foreach ( $ai_model_list as $_m ) : ?>
                                 <option value="<?php echo esc_attr( $_m['id'] ); ?>" <?php selected( $ai_model, $_m['id'] ); ?>>
                                     <?php echo esc_html( $_m['display_name'] ); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
-                        <button type="button" id="rtg_refresh_ai_models" class="button rtg-ai-model-refresh-btn" data-nonce="<?php echo esc_attr( wp_create_nonce( 'rtg_admin_nonce' ) ); ?>">
+                        <button type="button" id="rtg_refresh_ai_models" class="button rtg-ai-model-refresh-btn" data-nonce="<?php echo esc_attr( wp_create_nonce( 'rtg_admin_nonce' ) ); ?>" style="<?php echo esc_attr( $rtg_ai_btn_style ); ?>">
                             <span class="dashicons dashicons-update" aria-hidden="true"></span>
                             <span>Refresh from Anthropic</span>
                         </button>
