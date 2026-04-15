@@ -11,6 +11,47 @@ class RTG_Ajax {
     const RATE_LIMIT_MAX    = 3;
     const RATE_LIMIT_WINDOW = 300; // seconds (5 minutes)
 
+    /**
+     * Resolve a stable per-visitor identifier for rate limiting.
+     *
+     * Prefers the logged-in user ID; otherwise falls back to a hash of
+     * REMOTE_ADDR + User-Agent so a single spoofed IP can't bypass the
+     * limit from multiple clients.
+     *
+     * @return string Opaque identifier.
+     */
+    private function get_client_fingerprint() {
+        if ( is_user_logged_in() ) {
+            return 'u' . get_current_user_id();
+        }
+        $ip = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
+        $ua = isset( $_SERVER['HTTP_USER_AGENT'] ) ? substr( (string) $_SERVER['HTTP_USER_AGENT'], 0, 200 ) : '';
+        return 'g' . md5( $ip . '|' . $ua );
+    }
+
+    /**
+     * Log a security-relevant event to error_log when WP_DEBUG_LOG is on.
+     * Keeps the user-facing message opaque while preserving an audit trail.
+     *
+     * @param string $event   Short event identifier (e.g. "nonce_fail").
+     * @param string $handler Handler method name.
+     * @param array  $context Optional structured context.
+     */
+    private function log_security_event( $event, $handler, $context = array() ) {
+        if ( ! ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+            return;
+        }
+        $payload = array_merge(
+            array(
+                'event'   => $event,
+                'handler' => $handler,
+                'fp'      => $this->get_client_fingerprint(),
+            ),
+            $context
+        );
+        error_log( '[RTG] ' . wp_json_encode( $payload ) );
+    }
+
     public function __construct() {
         // Review handlers — available to both logged-in and logged-out users.
         add_action( 'wp_ajax_get_tire_ratings', array( $this, 'get_tire_ratings' ) );
@@ -100,7 +141,7 @@ class RTG_Ajax {
 
         foreach ( $raw_ids as $id ) {
             $clean = sanitize_text_field( $id );
-            if ( preg_match( '/^[a-zA-Z0-9\-_]+$/', $clean ) && strlen( $clean ) <= 50 ) {
+            if ( RTG_Database::validate_tire_id( $clean ) ) {
                 $tire_ids[] = $clean;
             }
         }
@@ -140,6 +181,7 @@ class RTG_Ajax {
     public function submit_tire_rating() {
         // Verify nonce.
         if ( ! check_ajax_referer( 'tire_rating_nonce', 'nonce', false ) ) {
+            $this->log_security_event( 'nonce_fail', __METHOD__ );
             wp_send_json_error( 'Security check failed.' );
         }
 
@@ -151,6 +193,7 @@ class RTG_Ajax {
 
         // Rate limiting: max submissions per minute per user.
         if ( $this->is_rate_limited( $user_id ) ) {
+            $this->log_security_event( 'rate_limit_hit', __METHOD__, array( 'uid' => $user_id ) );
             wp_send_json_error( 'Too many rating submissions. Please wait a moment and try again.' );
         }
 
@@ -163,7 +206,7 @@ class RTG_Ajax {
         $review_text  = sanitize_textarea_field( $post['review_text'] ?? '' );
 
         // Validate tire_id format.
-        if ( ! preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) || strlen( $tire_id ) > 50 ) {
+        if ( ! RTG_Database::validate_tire_id( $tire_id ) ) {
             wp_send_json_error( 'Invalid tire ID.' );
         }
 
@@ -232,9 +275,10 @@ class RTG_Ajax {
             wp_send_json_success( array( 'review_status' => 'pending' ) );
         }
 
-        // IP-based rate limiting for guests.
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-        if ( $this->is_guest_rate_limited( $ip ) ) {
+        // Fingerprint-based rate limiting for guests (resists naive IP spoofing).
+        $fingerprint = $this->get_client_fingerprint();
+        if ( $this->is_guest_rate_limited( $fingerprint ) ) {
+            $this->log_security_event( 'rate_limit_hit', __METHOD__ );
             wp_send_json_error( 'Too many submissions. Please wait a moment and try again.' );
         }
 
@@ -249,7 +293,7 @@ class RTG_Ajax {
         $review_text  = sanitize_textarea_field( $post['review_text'] ?? '' );
 
         // Validate tire_id format.
-        if ( ! preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) || strlen( $tire_id ) > 50 ) {
+        if ( ! RTG_Database::validate_tire_id( $tire_id ) ) {
             wp_send_json_error( 'Invalid tire ID.' );
         }
 
@@ -294,7 +338,7 @@ class RTG_Ajax {
         }
 
         // Record rate limit hit.
-        $this->record_guest_rate_limit( $ip );
+        $this->record_guest_rate_limit( $fingerprint );
 
         // Save the guest review (always pending).
         RTG_Database::set_guest_rating( $tire_id, $guest_name, $guest_email, $rating, $review_title, $review_text );
@@ -328,7 +372,7 @@ class RTG_Ajax {
         $user_id = get_current_user_id();
         $tire_id = sanitize_text_field( $_POST['tire_id'] ?? '' );
 
-        if ( ! preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) || strlen( $tire_id ) > 50 ) {
+        if ( ! RTG_Database::validate_tire_id( $tire_id ) ) {
             wp_send_json_error( 'Invalid tire ID.' );
         }
 
@@ -354,8 +398,8 @@ class RTG_Ajax {
      * @param string $ip Client IP address.
      * @return bool True if rate-limited.
      */
-    private function is_guest_rate_limited( $ip ) {
-        $transient_key = 'rtg_rate_guest_' . md5( $ip );
+    private function is_guest_rate_limited( $fingerprint ) {
+        $transient_key = 'rtg_rate_guest_' . md5( $fingerprint );
         $attempts      = get_transient( $transient_key );
 
         if ( false === $attempts ) {
@@ -368,10 +412,10 @@ class RTG_Ajax {
     /**
      * Record a guest rate-limit hit.
      *
-     * @param string $ip Client IP address.
+     * @param string $fingerprint Opaque client identifier.
      */
-    private function record_guest_rate_limit( $ip ) {
-        $transient_key = 'rtg_rate_guest_' . md5( $ip );
+    private function record_guest_rate_limit( $fingerprint ) {
+        $transient_key = 'rtg_rate_guest_' . md5( $fingerprint );
         $attempts      = get_transient( $transient_key );
 
         if ( false === $attempts ) {
@@ -395,7 +439,7 @@ class RTG_Ajax {
 
         $tire_id = sanitize_text_field( $_POST['tire_id'] ?? '' );
 
-        if ( ! preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) || strlen( $tire_id ) > 50 ) {
+        if ( ! RTG_Database::validate_tire_id( $tire_id ) ) {
             wp_send_json_error( 'Invalid tire ID.' );
         }
 
@@ -604,7 +648,7 @@ class RTG_Ajax {
 
         $tire_id = sanitize_text_field( $_POST['tire_id'] ?? '' );
 
-        if ( ! preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) || strlen( $tire_id ) > 50 ) {
+        if ( ! RTG_Database::validate_tire_id( $tire_id ) ) {
             wp_send_json_error( 'Invalid tire ID.' );
         }
 
@@ -637,7 +681,7 @@ class RTG_Ajax {
 
         $tire_id = sanitize_text_field( $_POST['tire_id'] ?? '' );
 
-        if ( ! preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) || strlen( $tire_id ) > 50 ) {
+        if ( ! RTG_Database::validate_tire_id( $tire_id ) ) {
             wp_send_json_error( 'Invalid tire ID.' );
         }
 
@@ -670,7 +714,7 @@ class RTG_Ajax {
         $bundle_link = esc_url_raw( $post['bundle_link'] ?? '' );
         $review_link = esc_url_raw( $post['review_link'] ?? '' );
 
-        if ( ! preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) || strlen( $tire_id ) > 50 ) {
+        if ( ! RTG_Database::validate_tire_id( $tire_id ) ) {
             wp_send_json_error( 'Invalid tire ID.' );
         }
 
@@ -708,7 +752,7 @@ class RTG_Ajax {
         $tire_id   = sanitize_text_field( $_POST['tire_id'] ?? '' );
         $link_type = sanitize_text_field( $_POST['link_type'] ?? 'purchase' );
 
-        if ( ! preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) || strlen( $tire_id ) > 50 ) {
+        if ( ! RTG_Database::validate_tire_id( $tire_id ) ) {
             wp_send_json_error( 'Invalid tire ID.' );
         }
 
@@ -836,8 +880,11 @@ class RTG_Ajax {
             wp_send_json_error( 'Unauthorized.' );
         }
 
-        // Allow enough time for outbound HTTP requests (up to 50 links).
-        set_time_limit( 300 );
+        // Each link uses a hard 15s timeout. 50 links × 15s = 12.5 min worst case,
+        // but typically finishes in under a minute. Bump PHP's limit only when allowed.
+        if ( function_exists( 'set_time_limit' ) ) {
+            @set_time_limit( RTG_Link_Checker::BATCH_SIZE * ( RTG_Link_Checker::REQUEST_TIMEOUT + 2 ) );
+        }
 
         $results = RTG_Link_Checker::run();
 
@@ -893,7 +940,10 @@ class RTG_Ajax {
             );
         }
 
-        set_time_limit( 120 );
+        // PROGRESS_BATCH_SIZE × per-link timeout gives a safe upper bound per batch.
+        if ( function_exists( 'set_time_limit' ) ) {
+            @set_time_limit( RTG_Link_Checker::PROGRESS_BATCH_SIZE * ( RTG_Link_Checker::REQUEST_TIMEOUT + 2 ) );
+        }
 
         $result = RTG_Link_Checker::check_batch( $batch );
 
@@ -985,7 +1035,7 @@ class RTG_Ajax {
 
         $tire_id = sanitize_text_field( $_POST['tire_id'] ?? '' );
 
-        if ( empty( $tire_id ) || ! preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) ) {
+        if ( ! RTG_Database::validate_tire_id( $tire_id ) ) {
             wp_send_json_error( 'Invalid or missing tire_id.' );
         }
 

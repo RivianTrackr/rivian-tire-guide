@@ -23,13 +23,29 @@ class RTG_Database {
     }
 
     private static $cache_key = 'rtg_all_tires';
+    private static $dashboard_cache_key = 'rtg_dashboard_stats';
 
     /**
      * Flush the tire data cache.
      */
     public static function flush_cache() {
         delete_transient( self::$cache_key );
+        delete_transient( self::$dashboard_cache_key );
         RTG_AI::flush_cache();
+    }
+
+    /**
+     * Validate a tire_id string against the canonical format.
+     * Extracted from 15+ duplicate callsites so the rule lives in one place.
+     *
+     * @param mixed $tire_id Raw input.
+     * @return bool True when the value is a safe tire_id.
+     */
+    public static function validate_tire_id( $tire_id ) {
+        if ( ! is_string( $tire_id ) ) {
+            return false;
+        }
+        return (bool) preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) && strlen( $tire_id ) <= 50;
     }
 
     // --- Tire CRUD ---
@@ -51,6 +67,34 @@ class RTG_Database {
 
         set_transient( self::$cache_key, $result, HOUR_IN_SECONDS );
         return $result;
+    }
+
+    /**
+     * Fetch all tires with aggregated rating data in a single query.
+     * Avoids the N+1 pattern of calling get_all_tires() + get_tire_ratings() separately.
+     *
+     * Each returned row contains the tire columns plus:
+     *   - rating_average (float|null)
+     *   - rating_count   (int)
+     *
+     * @return array[] Tire rows with appended rating columns.
+     */
+    public static function get_tires_with_ratings() {
+        global $wpdb;
+        $tires_table   = self::tires_table();
+        $ratings_table = self::ratings_table();
+
+        $sql = "
+            SELECT t.*,
+                   ROUND(AVG(r.rating), 2) AS rating_average,
+                   COUNT(r.id)             AS rating_count
+            FROM {$tires_table} t
+            LEFT JOIN {$ratings_table} r ON r.tire_id = t.tire_id
+            GROUP BY t.id
+            ORDER BY t.sort_order ASC, t.id ASC
+        ";
+
+        return $wpdb->get_results( $sql, ARRAY_A );
     }
 
     /**
@@ -116,7 +160,7 @@ class RTG_Database {
         $placeholders = array();
         foreach ( $tire_ids as $id ) {
             $clean = sanitize_text_field( $id );
-            if ( preg_match( '/^[a-zA-Z0-9\-_]+$/', $clean ) && strlen( $clean ) <= 50 ) {
+            if ( self::validate_tire_id( $clean ) ) {
                 $clean_ids[]    = $clean;
                 $placeholders[] = '%s';
             }
@@ -526,9 +570,15 @@ class RTG_Database {
      * @param int    $per_page   Results per page.
      * @return array { 'rows' => array[], 'total' => int }
      */
-    public static function get_filtered_tires( $filters = array(), $sort = 'efficiency_score', $page = 1, $per_page = 12 ) {
+    /**
+     * Build the WHERE clause and bound values for a filter set.
+     * Split out of get_filtered_tires() so the query body stays readable.
+     *
+     * @param array $filters Filter map (see get_filtered_tires() docblock).
+     * @return array [ string $where_sql, array $values ]
+     */
+    private static function build_filter_where_clause( $filters ) {
         global $wpdb;
-        $table = self::tires_table();
 
         $where  = array( '1=1' );
         $values = array();
@@ -609,9 +659,16 @@ class RTG_Database {
             $values[] = floatval( $filters['weight_max'] );
         }
 
-        $where_sql = implode( ' AND ', $where );
+        return array( implode( ' AND ', $where ), $values );
+    }
 
-        // Determine ORDER BY.
+    /**
+     * Map a sort key to a SQL ORDER BY clause. Falls back to efficiency_score DESC.
+     *
+     * @param string $sort Sort key.
+     * @return string ORDER BY clause (no "ORDER BY" prefix).
+     */
+    private static function build_filter_sort_clause( $sort ) {
         $sort_map = array(
             'efficiency_score'  => 'efficiency_score DESC',
             'price-asc'         => 'price ASC',
@@ -621,7 +678,15 @@ class RTG_Database {
             'newest'            => 'created_at DESC',
             'roamer-efficiency' => 'roamer_efficiency DESC',
         );
-        $order_sql = isset( $sort_map[ $sort ] ) ? $sort_map[ $sort ] : 'efficiency_score DESC';
+        return $sort_map[ $sort ] ?? 'efficiency_score DESC';
+    }
+
+    public static function get_filtered_tires( $filters = array(), $sort = 'efficiency_score', $page = 1, $per_page = 12 ) {
+        global $wpdb;
+        $table = self::tires_table();
+
+        list( $where_sql, $values ) = self::build_filter_where_clause( $filters );
+        $order_sql                  = self::build_filter_sort_clause( $sort );
 
         // Count.
         $count_sql = "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}";
@@ -701,6 +766,11 @@ class RTG_Database {
      * @return array Dashboard statistics.
      */
     public static function get_dashboard_stats() {
+        $cached = get_transient( self::$dashboard_cache_key );
+        if ( false !== $cached ) {
+            return $cached;
+        }
+
         global $wpdb;
         $tires_table   = self::tires_table();
         $ratings_table = self::ratings_table();
@@ -852,6 +922,9 @@ class RTG_Database {
         } else {
             $stats['affiliate_count'] = 0;
         }
+
+        // Cache for 5 minutes. Invalidated via flush_cache() on tire/rating writes.
+        set_transient( self::$dashboard_cache_key, $stats, 5 * MINUTE_IN_SECONDS );
 
         return $stats;
     }

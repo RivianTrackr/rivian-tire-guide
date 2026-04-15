@@ -4,6 +4,84 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.45.0] - 2026-04-15
+
+Plugin review sweep — security hardening, performance, and accessibility fixes
+across the PHP backend and JS frontend. No feature changes, no schema changes.
+
+### Security
+- **AI API key can live in `wp-config.php`** — Define `RTG_ANTHROPIC_API_KEY` to
+  keep the Anthropic credential out of `wp_options`. The plugin settings field
+  still works as a fallback when the constant is not set. (`includes/class-rtg-ai.php`)
+- **Guest rate limiting no longer trusts raw `REMOTE_ADDR`** — Replaced the naive
+  IP check with a per-visitor fingerprint (`md5(IP + truncated User-Agent)`) so a
+  single spoofed IP from multiple clients can't bypass the limit. Logged-in users
+  are fingerprinted by user ID. (`includes/class-rtg-ajax.php`)
+- **Admin tire-delete hardens `$_GET['tire_id']`** — Input is now unslashed,
+  sanitized, and validated before the nonce check, rejecting malformed IDs with
+  a `wp_die()` instead of silently building an unpredictable nonce token.
+  (`includes/class-rtg-admin.php`)
+- **Security event logging** — Nonce failures and rate-limit hits now emit a
+  compact `[RTG] {json}` line to `error_log` when `WP_DEBUG` is on, giving an
+  audit trail without changing user-facing messages. (`includes/class-rtg-ajax.php`)
+
+### Performance
+- **Dashboard stats are now cached** — `RTG_Database::get_dashboard_stats()` runs
+  roughly ten aggregation queries; results are memoised in a 5-minute transient
+  and invalidated automatically by `flush_cache()` on any tire/rating write.
+  (`includes/class-rtg-database.php`)
+- **N+1 eliminated in AI context build** — `build_tire_context()` used to call
+  `get_all_tires()` then a second `get_tire_ratings()` query. Added
+  `get_tires_with_ratings()`, a single `LEFT JOIN` query returning tires with
+  aggregated rating columns, and switched the AI path to use it. (`includes/class-rtg-database.php`, `includes/class-rtg-ai.php`)
+- **Link checker `set_time_limit` is bounded and guarded** — The 300s / 120s
+  hard-coded ceilings were replaced with `BATCH_SIZE × (REQUEST_TIMEOUT + 2)`
+  and `PROGRESS_BATCH_SIZE × (REQUEST_TIMEOUT + 2)`, wrapped in a
+  `function_exists('set_time_limit')` check for hosts that disable it.
+  (`includes/class-rtg-ajax.php`)
+- **Card cache LRU tightened to 20 entries** — Previous limit was 100 with a
+  20-entry batch eviction; that effectively held 100 cloned DOM subtrees plus
+  their image references in memory. Dropped to 20 with single-entry LRU eviction
+  using `Map`'s insertion-order iteration. (`frontend/js/modules/cards.js`)
+- **`IntersectionObserver` is now disposable** — Added `disconnectImageObserver()`
+  and a `pagehide` listener so the shared observer is released on teardown.
+  (`frontend/js/modules/cards.js`)
+
+### Accessibility
+- **Pagination controls are announced properly** — `#paginationControls` now
+  carries `role="navigation"` + `aria-label`, each button has a descriptive
+  `aria-label`, and the page info span is a `role="status"` / `aria-live="polite"`
+  region so screen readers announce page changes. (`frontend/js/modules/filters.js`)
+- **Image modal traps focus and returns focus on close** — Opening the modal
+  remembers the launching element, focuses the dialog, traps Tab/Shift+Tab
+  inside, and returns focus to the original element when closed. (`frontend/js/modules/image-modal.js`)
+
+### Refactors
+- **Single-source-of-truth `RTG_Database::validate_tire_id()`** — The
+  `preg_match('/^[a-zA-Z0-9\-_]+$/', ...) && strlen <= 50` rule was duplicated
+  across 15+ AJAX handlers and the database helper. Extracted to one static
+  method and threaded through all callers. (`includes/class-rtg-database.php`,
+  `includes/class-rtg-ajax.php`, `includes/class-rtg-admin.php`)
+- **`get_filtered_tires()` split into builders** — Extracted
+  `build_filter_where_clause()` and `build_filter_sort_clause()` so the main
+  method is now a short count + fetch pair. No behaviour change, but the query
+  body is dramatically easier to read and modify. (`includes/class-rtg-database.php`)
+- **Memory-safe search listener binding** — `initializeSmartSearch()` used
+  `cloneNode(true)` to strip old handlers, which orphaned references held in
+  module-level caches. Now tracks the handler and calls `removeEventListener()`.
+  (`frontend/js/modules/search.js`)
+- **Pagination event delegation** — Replaced per-render `.onclick` assignments
+  with a single delegated click handler on `#paginationControls`, using
+  `data-pagination="prev|next"` attributes. (`frontend/js/modules/filters.js`)
+- **Inline `style.cssText` replaced with CSS classes** — `.info-tooltip-trigger`
+  and `.tire-card-tag-list` now live in `rivian-tires.css`, eliminating the
+  hardcoded style blocks and mouseenter/mouseleave handlers in `cards.js`.
+  Hover and focus states also get proper focus-visible treatment.
+  (`frontend/css/rivian-tires.css`, `frontend/js/modules/cards.js`)
+
+### Changed
+- **Plugin version** — Bumped to 1.45.0.
+
 ## [1.44.2] - 2026-04-08
 
 ### Fixed

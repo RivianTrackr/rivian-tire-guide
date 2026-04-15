@@ -53,7 +53,22 @@ class RTG_AI {
      */
     public static function is_enabled() {
         $settings = get_option( 'rtg_settings', array() );
-        return ! empty( $settings['ai_enabled'] ) && ! empty( $settings['ai_api_key'] );
+        return ! empty( $settings['ai_enabled'] ) && '' !== self::get_api_key();
+    }
+
+    /**
+     * Resolve the Anthropic API key, preferring the wp-config constant
+     * RTG_ANTHROPIC_API_KEY over the plugin-settings value so credentials
+     * can live outside the database.
+     *
+     * @return string API key or empty string.
+     */
+    public static function get_api_key() {
+        if ( defined( 'RTG_ANTHROPIC_API_KEY' ) && '' !== RTG_ANTHROPIC_API_KEY ) {
+            return (string) RTG_ANTHROPIC_API_KEY;
+        }
+        $settings = get_option( 'rtg_settings', array() );
+        return (string) ( $settings['ai_api_key'] ?? '' );
     }
 
     /**
@@ -64,8 +79,9 @@ class RTG_AI {
      */
     public static function get_recommendations( $query ) {
         $settings = get_option( 'rtg_settings', array() );
+        $api_key  = self::get_api_key();
 
-        if ( empty( $settings['ai_api_key'] ) ) {
+        if ( '' === $api_key ) {
             return new WP_Error( 'no_api_key', 'AI recommendations are not configured.' );
         }
 
@@ -95,7 +111,6 @@ class RTG_AI {
         // Build context and call API.
         $tire_context = self::build_tire_context();
         $model        = $settings['ai_model'] ?? self::DEFAULT_MODEL;
-        $api_key      = $settings['ai_api_key'];
 
         $result = self::call_anthropic_api( $api_key, $model, $tire_context, $query );
 
@@ -115,14 +130,14 @@ class RTG_AI {
      * @return string Formatted tire catalog.
      */
     private static function build_tire_context() {
-        $tires = RTG_Database::get_all_tires();
-        $ratings = RTG_Database::get_tire_ratings( array_column( $tires, 'tire_id' ) );
+        // Single JOIN query instead of get_all_tires() + get_tire_ratings() (eliminates N+1).
+        $tires = RTG_Database::get_tires_with_ratings();
 
         $lines = array();
         foreach ( $tires as $tire ) {
-            $tid         = $tire['tire_id'];
-            $avg_rating  = isset( $ratings[ $tid ]['average'] ) ? round( $ratings[ $tid ]['average'], 1 ) : 'N/A';
-            $review_count = $ratings[ $tid ]['count'] ?? 0;
+            $tid          = $tire['tire_id'];
+            $avg_rating   = ! empty( $tire['rating_count'] ) ? round( floatval( $tire['rating_average'] ), 1 ) : 'N/A';
+            $review_count = (int) ( $tire['rating_count'] ?? 0 );
 
             $roamer_eff  = ! empty( $tire['roamer_efficiency'] ) ? round( $tire['roamer_efficiency'], 2 ) . ' mi/kWh (' . number_format( floatval( $tire['roamer_total_km'] ?? 0 ) * 0.621371, 0 ) . ' mi tracked)' : 'N/A';
 

@@ -5,7 +5,7 @@
  */
 
 import { state, filterIndexes, ROWS_PER_PAGE } from './state.js';
-import { rtgColor, rtgIcon, safeString, getDOMElement, debounce, updateSliderBackground, styleButton, escapeHTML } from './helpers.js';
+import { rtgIcon, safeString, getDOMElement, debounce, updateSliderBackground, styleButton, escapeHTML } from './helpers.js';
 import { VALIDATION_PATTERNS, NUMERIC_BOUNDS, ALLOWED_SORT_OPTIONS, sanitizeInput, validateNumeric } from './validation.js';
 import { RTG_ANALYTICS } from './analytics.js';
 import { renderCards, preloadNextPageImages } from './cards.js';
@@ -269,41 +269,70 @@ function render() {
   });
 }
 
+// Delegated once at module load: every click inside #paginationControls
+// checks for a data-pagination attribute and dispatches, so re-rendering
+// the pagination buttons doesn't leak handlers.
+let paginationDelegated = false;
+function ensurePaginationDelegation() {
+  if (paginationDelegated) return;
+  const container = getDOMElement("paginationControls");
+  if (!container) return;
+  paginationDelegated = true;
+  container.addEventListener("click", (e) => {
+    const btn = e.target.closest('[data-pagination]');
+    if (!btn || btn.disabled) return;
+    const action = btn.dataset.pagination;
+    if (action === "prev" && state.currentPage > 1) {
+      state.currentPage--;
+    } else if (action === "next") {
+      state.currentPage++;
+    } else {
+      return;
+    }
+    render();
+    updateURLFromFilters();
+    const filterTop = getDOMElement("filterTop");
+    if (filterTop) filterTop.scrollIntoView({ behavior: "smooth" });
+  });
+}
+
 function renderPaginationControls(totalRows) {
   const container = getDOMElement("paginationControls");
   container.innerHTML = "";
   const totalPages = Math.ceil(totalRows.length / ROWS_PER_PAGE);
-  if (totalPages <= 1) return;
+  if (totalPages <= 1) {
+    container.removeAttribute("role");
+    container.removeAttribute("aria-label");
+    return;
+  }
+
+  ensurePaginationDelegation();
+  container.setAttribute("role", "navigation");
+  container.setAttribute("aria-label", "Tire list pagination");
 
   const prev = document.createElement("button");
+  prev.type = "button";
   prev.textContent = "Previous";
   prev.disabled = state.currentPage === 1;
+  prev.dataset.pagination = "prev";
+  prev.setAttribute("aria-label", `Previous page (currently on page ${state.currentPage} of ${totalPages})`);
   styleButton(prev);
-  prev.onclick = () => {
-    state.currentPage--;
-    render();
-    updateURLFromFilters();
-    const filterTop = getDOMElement("filterTop");
-    if (filterTop) filterTop.scrollIntoView({ behavior: "smooth" });
-  };
   container.appendChild(prev);
 
   const pageInfo = document.createElement("span");
+  pageInfo.className = "rtg-pagination-info";
+  pageInfo.setAttribute("role", "status");
+  pageInfo.setAttribute("aria-live", "polite");
   pageInfo.textContent = `Page ${state.currentPage} of ${totalPages}`;
-  pageInfo.style.cssText = `color: ${rtgColor('text-primary')}; font-weight: 500; display: flex; align-items: center;`;
   container.appendChild(pageInfo);
 
   const next = document.createElement("button");
+  next.type = "button";
   next.textContent = "Next";
   next.disabled = state.currentPage === totalPages;
+  next.dataset.pagination = "next";
+  next.setAttribute("aria-label", `Next page (currently on page ${state.currentPage} of ${totalPages})`);
   styleButton(next);
-  next.onclick = () => {
-    state.currentPage++;
-    render();
-    updateURLFromFilters();
-    const filterTop = getDOMElement("filterTop");
-    if (filterTop) filterTop.scrollIntoView({ behavior: "smooth" });
-  };
   container.appendChild(next);
 }
 

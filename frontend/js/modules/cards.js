@@ -5,7 +5,7 @@
  */
 
 import { state, ROWS_PER_PAGE } from './state.js';
-import { rtgColor, rtgIcon, escapeHTML, safeString, getDOMElement } from './helpers.js';
+import { rtgIcon, escapeHTML, safeString, getDOMElement } from './helpers.js';
 import { VALIDATION_PATTERNS, NUMERIC_BOUNDS, validateNumeric, safeImageURL, safeLinkURL, safeReviewLinkURL } from './validation.js';
 import { TOOLTIP_DATA, createInfoTooltip } from './tooltips.js';
 import { createRatingHTML } from './ratings.js';
@@ -46,6 +46,23 @@ export function observeCardImages(container) {
 
   const images = container.querySelectorAll('img[data-src]');
   images.forEach(img => imageObserver.observe(img));
+}
+
+/**
+ * Disconnect the shared IntersectionObserver. Call when the guide is
+ * being torn down or the card container is about to be cleared in bulk.
+ */
+export function disconnectImageObserver() {
+  if (imageObserver) {
+    imageObserver.disconnect();
+    imageObserver = null;
+  }
+}
+
+// Clean up when the page is unloaded so we don't hold the observer across
+// page transitions in persistent-navigation setups.
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', disconnectImageObserver, { once: true });
 }
 
 function removeSkeletonLoader() {
@@ -364,31 +381,6 @@ export function createSingleCard(row) {
       infoButton.dataset.tooltipKey = 'Efficiency Score';
       infoButton.setAttribute('aria-label', 'More info about Efficiency Score');
       infoButton.setAttribute('type', 'button');
-      infoButton.style.cssText = `
-        background: none;
-        border: none;
-        color: var(--rtg-text-muted);
-        font-size: 14px;
-        cursor: pointer;
-        padding: 2px;
-        border-radius: 50%;
-        width: 20px;
-        height: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s ease;
-      `;
-
-      infoButton.addEventListener('mouseenter', () => {
-        infoButton.style.color = rtgColor('accent');
-        infoButton.style.backgroundColor = `color-mix(in srgb, ${rtgColor('accent')} 10%, transparent)`;
-      });
-
-      infoButton.addEventListener('mouseleave', () => {
-        infoButton.style.color = rtgColor('text-muted');
-        infoButton.style.backgroundColor = 'transparent';
-      });
 
       scoreSection.appendChild(scoreText);
       scoreSection.appendChild(infoButton);
@@ -432,31 +424,6 @@ export function createSingleCard(row) {
         }
         roamerInfoBtn.setAttribute('aria-label', 'More info about Real-World Efficiency');
         roamerInfoBtn.setAttribute('type', 'button');
-        roamerInfoBtn.style.cssText = `
-          background: none;
-          border: none;
-          color: var(--rtg-text-muted);
-          font-size: 14px;
-          cursor: pointer;
-          padding: 2px;
-          border-radius: 50%;
-          width: 20px;
-          height: 20px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s ease;
-        `;
-
-        roamerInfoBtn.addEventListener('mouseenter', () => {
-          roamerInfoBtn.style.color = rtgColor('accent');
-          roamerInfoBtn.style.backgroundColor = `color-mix(in srgb, ${rtgColor('accent')} 10%, transparent)`;
-        });
-
-        roamerInfoBtn.addEventListener('mouseleave', () => {
-          roamerInfoBtn.style.color = rtgColor('text-muted');
-          roamerInfoBtn.style.backgroundColor = 'transparent';
-        });
 
         roamerScore.appendChild(roamerText);
         roamerScore.appendChild(roamerInfoBtn);
@@ -527,8 +494,7 @@ export function createSingleCard(row) {
       tagLabel.textContent = 'Tags';
 
       const tagValue = document.createElement('span');
-      tagValue.className = 'tire-card-spec-value';
-      tagValue.style.cssText = 'display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end;';
+      tagValue.className = 'tire-card-spec-value tire-card-tag-list';
 
       tagList.forEach(tag => {
         const tagEl = document.createElement('span');
@@ -593,10 +559,14 @@ export function createSingleCard(row) {
 
   card.appendChild(actionsContainer);
 
-  if (state.cardCache.size >= 100) {
-    // Evict oldest 20 entries to avoid thrashing on every new card.
-    const keysToDelete = [...state.cardCache.keys()].slice(0, 20);
-    keysToDelete.forEach(k => state.cardCache.delete(k));
+  // Tight LRU ceiling. Map iteration order is insertion order, so evicting
+  // the first key removes the oldest entry. Kept small (20) because cloned
+  // card nodes retain their subtree and we don't want them holding images
+  // off the GC indefinitely.
+  const CARD_CACHE_MAX = 20;
+  if (state.cardCache.size >= CARD_CACHE_MAX) {
+    const firstKey = state.cardCache.keys().next().value;
+    if (firstKey !== undefined) state.cardCache.delete(firstKey);
   }
   state.cardCache.set(cacheKey, card.cloneNode(true));
 
