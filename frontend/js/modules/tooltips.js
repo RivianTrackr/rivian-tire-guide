@@ -24,21 +24,9 @@ export const TOOLTIP_DATA = {
     title: '3PMS Rating Filter',
     content: '3PMS (Three-Peak Mountain Snowflake) means the tire meets winter traction requirements and is rated for severe snow service.'
   },
-  'EV Rated Filter': {
-    title: 'EV Rated Filter',
-    content: 'Filters for tires labeled as EV Rated in their specs or marketing. These are typically optimized for electric vehicles.'
-  },
-  'Studded Available Filter': {
-    title: 'Studded Available Filter',
-    content: 'Filters for tires marked as "Studded Available" — these can be fitted with studs for enhanced traction on ice.'
-  },
   'OEM Filter': {
     title: 'OEM Tire Filter',
     content: 'Filters for tires that come as Original Equipment from the factory on Rivian vehicles.'
-  },
-  'Officially Reviewed Filter': {
-    title: 'Officially Reviewed Filter',
-    content: 'Filters for tires that have an official review from RivianTrackr — either a written article or video review.'
   },
   'Efficiency Score': {
     title: 'Efficiency Score',

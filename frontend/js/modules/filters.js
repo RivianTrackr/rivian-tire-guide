@@ -68,7 +68,6 @@ export function buildFilterIndexes() {
   filterIndexes.vehicleIndex.clear();
   filterIndexes.priceIndex.length = 0;
   filterIndexes.warrantyIndex.length = 0;
-  filterIndexes.weightIndex.length = 0;
 
   // Build vehicle → row indexes map.
   for (const [vehicle, sizes] of Object.entries(state.vehicleSizeMap)) {
@@ -81,7 +80,7 @@ export function buildFilterIndexes() {
   }
 
   state.allRows.forEach((row, index) => {
-    const [tireId, size, diameter, brand, model, category, price, warranty, weight] = row;
+    const [, size, , brand, , category, price, warranty] = row;
 
     const sizeKey = safeString(size).toLowerCase();
     if (sizeKey) {
@@ -103,16 +102,13 @@ export function buildFilterIndexes() {
 
     const priceVal = validateNumeric(price, NUMERIC_BOUNDS.price);
     const warrantyVal = validateNumeric(warranty, NUMERIC_BOUNDS.warranty);
-    const weightVal = validateNumeric(weight, NUMERIC_BOUNDS.weight);
 
     filterIndexes.priceIndex.push({ index, value: priceVal });
     filterIndexes.warrantyIndex.push({ index, value: warrantyVal });
-    filterIndexes.weightIndex.push({ index, value: weightVal });
   });
 
   filterIndexes.priceIndex.sort((a, b) => a.value - b.value);
   filterIndexes.warrantyIndex.sort((a, b) => a.value - b.value);
-  filterIndexes.weightIndex.sort((a, b) => a.value - b.value);
 }
 
 function binarySearchMax(arr, maxValue) {
@@ -180,11 +176,6 @@ function getFilteredIndexes(filters) {
     candidateIndexes = new Set([...candidateIndexes].filter(x => warrantySet.has(x)));
   }
 
-  if (filters.WeightMax < 70) {
-    const weightSet = binarySearchMax(filterIndexes.weightIndex, filters.WeightMax);
-    candidateIndexes = new Set([...candidateIndexes].filter(x => weightSet.has(x)));
-  }
-
   return [...candidateIndexes].map(i => state.allRows[i]).filter(row => {
     if (filters.search) {
       const brandText = safeString(row[3]);
@@ -201,10 +192,7 @@ function getFilteredIndexes(filters) {
     }
 
     if (filters["3PMS"] && !safeString(row[9]).toLowerCase().includes("yes")) return false;
-    if (filters["EVRated"] && !safeString(row[17]).toLowerCase().includes("ev rated")) return false;
-    if (filters["Studded"] && !safeString(row[17]).toLowerCase().includes("studded available")) return false;
     if (filters["OEM"] && !safeString(row[17]).toLowerCase().includes("oem")) return false;
-    if (filters["Reviewed"] && !safeString(row[22])) return false;
     if (filters["Favorites"] && !state.userFavorites.has(row[0])) return false;
 
     return true;
@@ -340,12 +328,8 @@ export function filterAndRender() {
   const searchInput = document.querySelector('#searchInput');
   const priceMax = getDOMElement("priceMax");
   const warrantyMin = getDOMElement("warrantyMin");
-  const weightMax = getDOMElement("weightMax");
   const filter3pms = getDOMElement("filter3pms");
-  const filterEVRated = getDOMElement("filterEVRated");
-  const filterStudded = getDOMElement("filterStudded");
   const filterOEM = getDOMElement("filterOEM");
-  const filterReviewed = getDOMElement("filterReviewed");
   const filterFavorites = getDOMElement("filterFavorites");
   const filterSize = getDOMElement("filterSize");
   const filterBrand = getDOMElement("filterBrand");
@@ -355,7 +339,6 @@ export function filterAndRender() {
   const searchVal = searchInput ? sanitizeInput(searchInput.value, VALIDATION_PATTERNS.search) : "";
   const priceVal = priceMax ? validateNumeric(priceMax.value, NUMERIC_BOUNDS.price, 600) : 600;
   const warrantyVal = warrantyMin ? validateNumeric(warrantyMin.value, NUMERIC_BOUNDS.warranty, 0) : 0;
-  const weightVal = weightMax ? validateNumeric(weightMax.value, NUMERIC_BOUNDS.weight, 70) : 70;
 
   const vehicleVal = getSelectedVehicle();
 
@@ -363,12 +346,8 @@ export function filterAndRender() {
     search: searchVal.toLowerCase(),
     PriceMax: priceVal,
     WarrantyMin: warrantyVal,
-    WeightMax: weightVal,
     "3PMS": filter3pms?.checked || false,
-    "EVRated": filterEVRated?.checked || false,
-    "Studded": filterStudded?.checked || false,
     "OEM": filterOEM?.checked || false,
-    "Reviewed": filterReviewed?.checked || false,
     "Favorites": filterFavorites?.checked || false,
     Vehicle: vehicleVal && state.VALID_VEHICLES.includes(vehicleVal) ? vehicleVal : "",
     Size: filterSize?.value && state.VALID_SIZES.includes(filterSize.value) ? filterSize.value : "",
@@ -399,12 +378,9 @@ export function filterAndRender() {
   if (f.Brand) activeFilters.brand = f.Brand;
   if (f.Category) activeFilters.category = f.Category;
   if (f["3PMS"]) activeFilters.three_pms = true;
-  if (f["EVRated"]) activeFilters.ev_rated = true;
-  if (f["Studded"]) activeFilters.studded = true;
   if (f["OEM"]) activeFilters.oem = true;
   if (f.PriceMax < 600) activeFilters.price_max = f.PriceMax;
   if (f.WarrantyMin > 0) activeFilters.warranty_min = f.WarrantyMin;
-  if (f.WeightMax < 70) activeFilters.weight_max = f.WeightMax;
 
   if (f.search || Object.keys(activeFilters).length > 0) {
     RTG_ANALYTICS.trackSearch(
@@ -544,13 +520,8 @@ function getActiveFilterCount() {
   if (priceEl && parseInt(priceEl.value) < 600) count++;
   const warrantyEl = getDOMElement("warrantyMin");
   if (warrantyEl && parseInt(warrantyEl.value) > 0) count++;
-  const weightEl = getDOMElement("weightMax");
-  if (weightEl && parseInt(weightEl.value) < 70) count++;
   if (getDOMElement("filter3pms")?.checked) count++;
-  if (getDOMElement("filterEVRated")?.checked) count++;
-  if (getDOMElement("filterStudded")?.checked) count++;
   if (getDOMElement("filterOEM")?.checked) count++;
-  if (getDOMElement("filterReviewed")?.checked) count++;
   if (getDOMElement("filterFavorites")?.checked) count++;
   return count;
 }
@@ -586,13 +557,8 @@ function getAdvancedFilterCount() {
   if (priceEl && parseInt(priceEl.value) < 600) count++;
   const warrantyEl = getDOMElement("warrantyMin");
   if (warrantyEl && parseInt(warrantyEl.value) > 0) count++;
-  const weightEl = getDOMElement("weightMax");
-  if (weightEl && parseInt(weightEl.value) < 70) count++;
   if (getDOMElement("filter3pms")?.checked) count++;
-  if (getDOMElement("filterEVRated")?.checked) count++;
-  if (getDOMElement("filterStudded")?.checked) count++;
   if (getDOMElement("filterOEM")?.checked) count++;
-  if (getDOMElement("filterReviewed")?.checked) count++;
   if (getDOMElement("filterFavorites")?.checked) count++;
   return count;
 }
@@ -620,12 +586,8 @@ function getCurrentFilters() {
   const searchInput = document.querySelector('#searchInput');
   const priceMax = getDOMElement("priceMax");
   const warrantyMin = getDOMElement("warrantyMin");
-  const weightMax = getDOMElement("weightMax");
   const filter3pms = getDOMElement("filter3pms");
-  const filterEVRated = getDOMElement("filterEVRated");
-  const filterStudded = getDOMElement("filterStudded");
   const filterOEM = getDOMElement("filterOEM");
-  const filterReviewed = getDOMElement("filterReviewed");
   const filterFavorites = getDOMElement("filterFavorites");
   const filterSize = getDOMElement("filterSize");
   const filterBrand = getDOMElement("filterBrand");
@@ -637,12 +599,8 @@ function getCurrentFilters() {
     search: searchVal.toLowerCase(),
     PriceMax: priceMax ? validateNumeric(priceMax.value, NUMERIC_BOUNDS.price, 600) : 600,
     WarrantyMin: warrantyMin ? validateNumeric(warrantyMin.value, NUMERIC_BOUNDS.warranty, 0) : 0,
-    WeightMax: weightMax ? validateNumeric(weightMax.value, NUMERIC_BOUNDS.weight, 70) : 70,
     "3PMS": filter3pms?.checked || false,
-    "EVRated": filterEVRated?.checked || false,
-    "Studded": filterStudded?.checked || false,
     "OEM": filterOEM?.checked || false,
-    "Reviewed": filterReviewed?.checked || false,
     "Favorites": filterFavorites?.checked || false,
     Vehicle: getSelectedVehicle() && state.VALID_VEHICLES.includes(getSelectedVehicle()) ? getSelectedVehicle() : "",
     Size: filterSize?.value && state.VALID_SIZES.includes(filterSize.value) ? filterSize.value : "",
@@ -754,7 +712,6 @@ export function setupSliderHandlers() {
   const sliders = [
     { id: "priceMax", label: "priceVal", format: val => `\u2264 $${val}`, bounds: NUMERIC_BOUNDS.price },
     { id: "warrantyMin", label: "warrantyVal", format: val => `\u2265 ${Number(val).toLocaleString()} miles`, bounds: NUMERIC_BOUNDS.warranty },
-    { id: "weightMax", label: "weightVal", format: val => `\u2264 ${val} lbs`, bounds: NUMERIC_BOUNDS.weight },
   ];
 
   sliders.forEach(({ id, label, format, bounds }) => {
@@ -785,7 +742,6 @@ export function resetFilters() {
     { id: "filterCategory", value: "" },
     { id: "priceMax", value: 600 },
     { id: "warrantyMin", value: 0 },
-    { id: "weightMax", value: 70 },
     { id: "sortBy", value: "roamer-efficiency" }
   ];
 
@@ -794,7 +750,7 @@ export function resetFilters() {
     if (el) el.value = value;
   });
 
-  const checkboxes = ["filter3pms", "filterEVRated", "filterStudded", "filterOEM", "filterReviewed", "filterFavorites"];
+  const checkboxes = ["filter3pms", "filterOEM", "filterFavorites"];
   checkboxes.forEach(id => {
     const el = getDOMElement(id);
     if (el) el.checked = false;
@@ -802,8 +758,7 @@ export function resetFilters() {
 
   const displayUpdates = [
     { id: "priceVal", text: "\u2264 $600" },
-    { id: "warrantyVal", text: "\u2265 0 miles" },
-    { id: "weightVal", text: "\u2264 70 lbs" }
+    { id: "warrantyVal", text: "\u2265 0 miles" }
   ];
 
   displayUpdates.forEach(({ id, text }) => {
@@ -811,7 +766,7 @@ export function resetFilters() {
     if (el) el.textContent = text;
   });
 
-  ["priceMax", "warrantyMin", "weightMax"].forEach(id => {
+  ["priceMax", "warrantyMin"].forEach(id => {
     const slider = getDOMElement(id);
     if (slider) updateSliderBackground(slider);
   });
@@ -876,26 +831,11 @@ export function renderActiveFilterChips() {
     chips.push({ label: "Min Warranty", value: "\u2265 " + Number(warrantyVal).toLocaleString() + " mi", clear: () => { warrantyEl.value = 0; const lbl = getDOMElement("warrantyVal"); if (lbl) lbl.textContent = "\u2265 0 miles"; updateSliderBackground(warrantyEl); } });
   }
 
-  const weightEl = getDOMElement("weightMax");
-  const weightVal = weightEl ? parseInt(weightEl.value) : 70;
-  if (weightVal < 70) {
-    chips.push({ label: "Max Weight", value: "\u2264 " + weightVal + " lbs", clear: () => { weightEl.value = 70; const lbl = getDOMElement("weightVal"); if (lbl) lbl.textContent = "\u2264 70 lbs"; updateSliderBackground(weightEl); } });
-  }
-
   if (getDOMElement("filter3pms")?.checked) {
     chips.push({ label: "3PMS", value: "Yes", clear: () => { getDOMElement("filter3pms").checked = false; } });
   }
-  if (getDOMElement("filterEVRated")?.checked) {
-    chips.push({ label: "EV Rated", value: "Yes", clear: () => { getDOMElement("filterEVRated").checked = false; } });
-  }
-  if (getDOMElement("filterStudded")?.checked) {
-    chips.push({ label: "Studded", value: "Yes", clear: () => { getDOMElement("filterStudded").checked = false; } });
-  }
   if (getDOMElement("filterOEM")?.checked) {
     chips.push({ label: "OEM", value: "Yes", clear: () => { getDOMElement("filterOEM").checked = false; } });
-  }
-  if (getDOMElement("filterReviewed")?.checked) {
-    chips.push({ label: "Reviewed", value: "Yes", clear: () => { getDOMElement("filterReviewed").checked = false; } });
   }
   if (getDOMElement("filterFavorites")?.checked) {
     chips.push({ label: "Favorites", value: "Yes", clear: () => { getDOMElement("filterFavorites").checked = false; } });
@@ -947,7 +887,6 @@ export function renderSmartNoResults() {
   const categoryEl = getDOMElement("filterCategory");
   const priceEl = getDOMElement("priceMax");
   const warrantyEl = getDOMElement("warrantyMin");
-  const weightEl = getDOMElement("weightMax");
   const searchEl = getDOMElement("searchInput");
 
   const noResultsVehicle = getSelectedVehicle();
@@ -957,12 +896,8 @@ export function renderSmartNoResults() {
   if (categoryEl?.value) activeFilterNames.push("Category");
   if (priceEl && parseInt(priceEl.value) < 600) activeFilterNames.push("Price");
   if (warrantyEl && parseInt(warrantyEl.value) > 0) activeFilterNames.push("Warranty");
-  if (weightEl && parseInt(weightEl.value) < 70) activeFilterNames.push("Weight");
   if (getDOMElement("filter3pms")?.checked) activeFilterNames.push("3PMS");
-  if (getDOMElement("filterEVRated")?.checked) activeFilterNames.push("EV Rated");
-  if (getDOMElement("filterStudded")?.checked) activeFilterNames.push("Studded");
   if (getDOMElement("filterOEM")?.checked) activeFilterNames.push("OEM");
-  if (getDOMElement("filterReviewed")?.checked) activeFilterNames.push("Reviewed");
   if (getDOMElement("filterFavorites")?.checked) activeFilterNames.push("Favorites");
   if (searchEl?.value?.trim()) activeFilterNames.push("Search");
 
@@ -1118,10 +1053,7 @@ export function updateURLFromFilters() {
   }
 
   if (getChecked("filter3pms")) params.set("3pms", "1");
-  if (getChecked("filterEVRated")) params.set("ev", "1");
-  if (getChecked("filterStudded")) params.set("studded", "1");
   if (getChecked("filterOEM")) params.set("oem", "1");
-  if (getChecked("filterReviewed")) params.set("reviewed", "1");
 
   const currentSort = getVal("sortBy");
   if (currentSort && ALLOWED_SORT_OPTIONS.includes(currentSort) && currentSort !== "roamer-efficiency") {
@@ -1136,11 +1068,6 @@ export function updateURLFromFilters() {
   const warrantyVal = parseInt(getVal("warrantyMin"));
   if (warrantyVal && warrantyVal > 0 && warrantyVal <= 100000) {
     params.set("warranty", warrantyVal);
-  }
-
-  const weightVal = parseInt(getVal("weightMax"));
-  if (weightVal && weightVal !== 70 && weightVal >= 0 && weightVal <= 200) {
-    params.set("weight", weightVal);
   }
 
   if (getDOMElement("filterFavorites")?.checked) {
@@ -1205,10 +1132,7 @@ export function applyFiltersFromURL() {
   }
 
   setChecked("filter3pms", params.get("3pms"));
-  setChecked("filterEVRated", params.get("ev"));
-  setChecked("filterStudded", params.get("studded"));
   setChecked("filterOEM", params.get("oem"));
-  setChecked("filterReviewed", params.get("reviewed"));
   setChecked("filterFavorites", params.get("favorites"));
 
   const sort = params.get("sort");
@@ -1219,7 +1143,6 @@ export function applyFiltersFromURL() {
 
   const price = params.get("price");
   const warranty = params.get("warranty");
-  const weight = params.get("weight");
 
   if (price) {
     const validPrice = validateNumeric(price, NUMERIC_BOUNDS.price, 600);
@@ -1231,12 +1154,6 @@ export function applyFiltersFromURL() {
     const validWarranty = validateNumeric(warranty, NUMERIC_BOUNDS.warranty, 0);
     const el = document.getElementById("warrantyMin");
     if (el) el.value = validWarranty;
-  }
-
-  if (weight) {
-    const validWeight = validateNumeric(weight, NUMERIC_BOUNDS.weight, 70);
-    const el = document.getElementById("weightMax");
-    if (el) el.value = validWeight;
   }
 
   const pageParam = params.get("pg") || params.get("page");

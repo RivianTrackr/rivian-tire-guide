@@ -38,12 +38,8 @@ export function fetchTiresFromServer(page) {
   body.append('brand', getDOMElement("filterBrand")?.value || '');
   body.append('category', getDOMElement("filterCategory")?.value || '');
   body.append('three_pms', getDOMElement("filter3pms")?.checked ? '1' : '');
-  body.append('ev_rated', getDOMElement("filterEVRated")?.checked ? '1' : '');
-  body.append('studded', getDOMElement("filterStudded")?.checked ? '1' : '');
   body.append('oem', getDOMElement("filterOEM")?.checked ? '1' : '');
-  body.append('reviewed', getDOMElement("filterReviewed")?.checked ? '1' : '');
   body.append('price_max', getDOMElement("priceMax")?.value || '600');
-  body.append('weight_max', getDOMElement("weightMax")?.value || '70');
 
   const warrantyMin = getDOMElement("warrantyMin");
   const warVal = warrantyMin ? parseInt(warrantyMin.value) : 0;
@@ -136,10 +132,7 @@ export function fetchTiresFromServer(page) {
     if (ssBrand) ssFilters.brand = ssBrand;
     if (ssCat) ssFilters.category = ssCat;
     if (getDOMElement("filter3pms")?.checked) ssFilters.three_pms = true;
-    if (getDOMElement("filterEVRated")?.checked) ssFilters.ev_rated = true;
-    if (getDOMElement("filterStudded")?.checked) ssFilters.studded = true;
     if (getDOMElement("filterOEM")?.checked) ssFilters.oem = true;
-    if (getDOMElement("filterReviewed")?.checked) ssFilters.reviewed = true;
 
     if (ssSearch || Object.keys(ssFilters).length > 0) {
       RTG_ANALYTICS.trackSearch(

@@ -4,6 +4,32 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.45.5] - 2026-04-15
+
+### Removed
+- **Max Weight filter slider** — Removed from the advanced filters. The
+  Efficiency Grade already summarizes weight's effect on range (weight is 26%
+  of the efficiency score), so asking users to also set a max weight in
+  pounds was asking them to do manual work the grade already did. Users who
+  want range can still sort by Efficiency Grade or Real-World Efficiency.
+- **EV Rated filter** — Removed from the advanced filters. Every tire in the
+  guide works on a Rivian; this filter's meaning was ambiguous in a
+  Rivian-specific context.
+- **Studded filter** — Removed from the advanced filters. Niche use case —
+  users who need studded tires can find them via the Winter category.
+- **Reviewed filter** — Removed from the advanced filters. The name was
+  confusing (external review link vs. user reviews), and the sort dropdown's
+  "Most Reviewed" option covers the user-review case.
+
+All four filters are fully removed end-to-end — UI template, client-side
+filter logic, URL state, server-side AJAX payload, and the PHP
+`get_filtered_tires()` WHERE clause builder. Underlying tire data (tags,
+review links, weight) is untouched in the database, admin form, CSV
+import/export, and the compare page. No effect on efficiency scores.
+
+### Changed
+- **Plugin version** — Bumped to 1.45.5.
+
 ## [1.45.4] - 2026-04-15
 
 ### Changed
