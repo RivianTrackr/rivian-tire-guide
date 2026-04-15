@@ -4,6 +4,21 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.45.3] - 2026-04-15
+
+### Changed
+- **Simpler tire card specs** — The default card view now hides four specs
+  that are cryptic for most buyers and already summarized by the efficiency
+  grade: **Tread Depth**, **Max Load**, **Load Range**, and **UTQG**. The
+  card drops from 13 spec rows to 9 (Size, Category, Average Price, Mileage
+  Warranty, Weight, 3PMS Rated, Load Index, Speed Rating, Max PSI). The
+  hidden specs still live in the database, admin tire-edit form, CSV
+  import/export, and the compare page — power users who want the full spec
+  sheet haven't lost anything. Tread depth, load range, and UTQG still feed
+  the efficiency score (42% of the total weight) on the backend exactly as
+  before. (`frontend/js/modules/cards.js`)
+- **Plugin version** — Bumped to 1.45.3.
+
 ## [1.45.1] - 2026-04-15
 
 ### Fixed
