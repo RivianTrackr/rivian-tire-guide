@@ -497,61 +497,6 @@
         }
     }
 
-    // --- AI model list refresh ---
-    // Delegated from document so the binding works regardless of script
-    // load timing. Pulls the nonce + ajaxurl from the localized rtgAdmin
-    // object when available, falling back to the data-nonce / global ajaxurl.
-    $(document).on('click', '#rtg_refresh_ai_models', function(e) {
-        e.preventDefault();
-        var $btn    = $(this);
-        var $select = $('#rtg_ai_model');
-        var $status = $('#rtg_refresh_ai_models_status');
-        var nonce   = (typeof rtgAdmin !== 'undefined' && rtgAdmin.nonce) ? rtgAdmin.nonce : $btn.attr('data-nonce');
-        var ajaxUrl = (typeof rtgAdmin !== 'undefined' && rtgAdmin.ajaxurl) ? rtgAdmin.ajaxurl : (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php');
-        var previousValue = $select.val();
-
-        if ($btn.prop('disabled')) return;
-        $btn.prop('disabled', true);
-        $status.removeClass('is-error').text('Refreshing…');
-
-        $.post(ajaxUrl, {
-            action: 'rtg_refresh_ai_models',
-            nonce: nonce
-        }).done(function(resp) {
-            if (!resp || !resp.success || !resp.data || !resp.data.models) {
-                var msg = (resp && resp.data) ? resp.data : 'Refresh failed.';
-                $status.addClass('is-error').text(msg);
-                return;
-            }
-            var models = resp.data.models;
-            $select.empty();
-            models.forEach(function(m) {
-                var opt = document.createElement('option');
-                opt.value = m.id;
-                opt.textContent = m.display_name || m.id;
-                if (m.id === previousValue) opt.selected = true;
-                $select.append(opt);
-            });
-            // If the previously-saved model is gone from the list, keep it
-            // visible so the user can see what they had.
-            if (previousValue && models.every(function(m) { return m.id !== previousValue; })) {
-                var orphan = document.createElement('option');
-                orphan.value = previousValue;
-                orphan.textContent = previousValue + ' (saved — not in current list)';
-                orphan.selected = true;
-                $select.prepend(orphan);
-            }
-            $status.removeClass('is-error').text('Refreshed just now (' + models.length + ' models)');
-        }).fail(function(xhr) {
-            var msg = 'Network error.';
-            if (xhr && xhr.responseJSON && xhr.responseJSON.data) msg = xhr.responseJSON.data;
-            else if (xhr && xhr.status) msg = 'Request failed (HTTP ' + xhr.status + ').';
-            $status.addClass('is-error').text(msg);
-        }).always(function() {
-            $btn.prop('disabled', false);
-        });
-    });
-
     // --- JSON Feed URL copy button ---
     $('#rtg-copy-feed-url').on('click', function() {
         var $input = $('#rtg-feed-url');

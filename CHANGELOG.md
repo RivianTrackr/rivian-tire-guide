@@ -4,6 +4,54 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.46.0] - 2026-04-15
+
+### Removed
+- **AI tire recommendations feature** — Usage was consistently under 1%, so
+  the whole feature is gone end-to-end. Regular search (search button + Enter
+  key) is unchanged.
+  - Deleted `includes/class-rtg-ai.php` (the Anthropic Messages API wrapper,
+    model list cache, rate limiter, response parser, tire context builder)
+  - Deleted `frontend/js/modules/ai-recommend.js`
+  - Removed Ask AI button, AI status area, and AI summary region from the
+    tire-guide template
+  - Removed the entire AI Recommendations card from the admin settings page
+    (enable toggle, API key field, model dropdown, Refresh from Anthropic
+    button, rate limit)
+  - Removed admin-scripts.js `rtg_refresh_ai_models` click handler
+  - Removed `.rtg-ai-*` CSS classes from `admin-styles.css` and
+    `rivian-tires.css` (submit button, NEW badge, status spinner, error,
+    summary banner, clear button, tire chips, highlight animation, model
+    row, model select, refresh button)
+  - Removed AJAX endpoints `rtg_ai_recommend` and `rtg_refresh_ai_models`
+    and their handlers in `class-rtg-ajax.php`
+  - Removed AI settings (enable / api key / model / rate limit) from the
+    admin save handler in `class-rtg-admin.php`
+  - Removed `aiEnabled` / `aiNonce` from the frontend localized data in
+    `class-rtg-frontend.php`
+  - Removed `RTG_AI::flush_cache()` call from `RTG_Database::flush_cache()`
+  - Removed the `'ai'` value from the analytics `search_type` allowlist in
+    `track_search()`
+  - Removed `initAiRecommend` import + call from the frontend entrypoint
+  - Removed `isAiEnabled` / `isAiActive` / `clearAiRecommendations` usage
+    from `search.js` — `executeLocalSearch()` now just calls
+    `filterAndRender()` directly
+  - `uninstall.php` now also deletes the legacy `rtg_ai_models_cache`
+    option and flushes any stray `_transient_rtg_ai_*` rows for sites
+    upgrading from the AI era
+
+### Migration notes
+- Saved settings (`rtg_settings['ai_enabled']`, `ai_api_key`, `ai_model`,
+  `ai_rate_limit`) are preserved on the existing install but no longer
+  read by any code. They'll be removed automatically on plugin uninstall.
+- If you had `RTG_ANTHROPIC_API_KEY` defined in `wp-config.php` from 1.45.x,
+  you can remove it — nothing reads it anymore.
+- The stored `rtg_ai_models_cache` option is no longer touched by the
+  plugin and will be cleaned up on uninstall.
+
+### Changed
+- **Plugin version** — Bumped to 1.46.0 (minor bump to mark feature removal).
+
 ## [1.45.8] - 2026-04-15
 
 ### Changed

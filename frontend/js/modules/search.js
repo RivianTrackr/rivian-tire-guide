@@ -11,14 +11,6 @@
 import { state } from './state.js';
 import { safeString, getDOMElement } from './helpers.js';
 import { filterAndRender } from './filters.js';
-import { isAiActive, clearAiRecommendations } from './ai-recommend.js';
-
-/**
- * Check whether the AI feature is enabled for this page load.
- */
-function isAiEnabled() {
-  return typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.aiEnabled;
-}
 
 // Smart Search Variables
 let searchIndex = {
@@ -175,14 +167,10 @@ export function fuzzyMatch(pattern, text, threshold = 0.7) {
 export function hideSearchSuggestions() {}
 
 /**
- * Execute local search: clear AI state if active and run filterAndRender.
+ * Execute local search — delegates to the main filter pipeline.
  */
 function executeLocalSearch() {
-  if (isAiEnabled() && isAiActive()) {
-    clearAiRecommendations(true); // this calls filterAndRender internally
-  } else {
-    filterAndRender();
-  }
+  filterAndRender();
 }
 
 // Tracked listeners so initializeSmartSearch() can be called multiple times
