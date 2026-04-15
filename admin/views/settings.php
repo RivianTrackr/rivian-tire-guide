@@ -324,7 +324,8 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                         </button>
                         <span id="rtg_refresh_ai_models_status" class="rtg-ai-model-status">
                             <?php if ( $ai_models_from_api && $ai_models_fetched_at ) : ?>
-                                Last refreshed <?php echo esc_html( human_time_diff( $ai_models_fetched_at, current_time( 'timestamp' ) ) ); ?> ago
+                                <?php // Both timestamps must be UTC — current_time('timestamp') would return site-local time and skew the delta by the UTC offset. ?>
+                                Last refreshed <?php echo esc_html( human_time_diff( $ai_models_fetched_at, time() ) ); ?> ago
                                 (<?php echo count( $ai_model_list ); ?> models)
                             <?php else : ?>
                                 Using built-in defaults — click Refresh to fetch the current list.
