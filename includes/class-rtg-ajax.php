@@ -114,6 +114,9 @@ class RTG_Ajax {
         add_action( 'wp_ajax_rtg_ai_recommend', array( $this, 'ai_recommend' ) );
         add_action( 'wp_ajax_nopriv_rtg_ai_recommend', array( $this, 'ai_recommend' ) );
 
+        // AI model list refresh — admin only.
+        add_action( 'wp_ajax_rtg_refresh_ai_models', array( $this, 'refresh_ai_models' ) );
+
         // Roamer sync — admin only.
         add_action( 'wp_ajax_rtg_roamer_sync_now', array( $this, 'roamer_sync_now' ) );
         add_action( 'wp_ajax_rtg_roamer_assign', array( $this, 'roamer_assign' ) );
@@ -863,6 +866,29 @@ class RTG_Ajax {
         // tires that may not already be loaded (e.g. server-side pagination).
         $rec_ids = array_column( $result['recommendations'], 'tire_id' );
         $result['tire_rows'] = RTG_Database::get_tires_by_ids( $rec_ids );
+
+        wp_send_json_success( $result );
+    }
+
+    /**
+     * Refresh the cached AI model list from Anthropic's /v1/models endpoint.
+     * Admin-only. Returns the same shape as RTG_AI::get_available_models().
+     */
+    public function refresh_ai_models() {
+        if ( ! check_ajax_referer( 'rtg_admin_nonce', 'nonce', false ) ) {
+            $this->log_security_event( 'nonce_fail', __METHOD__ );
+            wp_send_json_error( 'Security check failed.' );
+        }
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized.' );
+        }
+
+        $result = RTG_AI::refresh_available_models();
+
+        if ( is_wp_error( $result ) ) {
+            wp_send_json_error( $result->get_error_message() );
+        }
 
         wp_send_json_success( $result );
     }

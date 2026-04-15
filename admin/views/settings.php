@@ -261,7 +261,20 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
         <?php
         $ai_enabled    = ! empty( $settings['ai_enabled'] );
         $ai_api_key    = $settings['ai_api_key'] ?? '';
-        $ai_model      = $settings['ai_model'] ?? 'claude-haiku-4-5-20251001';
+        $ai_model      = $settings['ai_model'] ?? RTG_AI::DEFAULT_MODEL;
+        $ai_models_data = RTG_AI::get_available_models();
+        $ai_model_list  = $ai_models_data['models'];
+        $ai_models_fetched_at = $ai_models_data['fetched_at'];
+        $ai_models_from_api   = 'api' === $ai_models_data['source'];
+        // If the saved model isn't in the list (e.g. Anthropic deprecated it),
+        // prepend it so the select still renders the user's stored choice.
+        $ids_in_list = array_column( $ai_model_list, 'id' );
+        if ( $ai_model && ! in_array( $ai_model, $ids_in_list, true ) ) {
+            array_unshift( $ai_model_list, array(
+                'id'           => $ai_model,
+                'display_name' => $ai_model . ' (saved — not in current list)',
+            ) );
+        }
         $ai_rate_limit = $settings['ai_rate_limit'] ?? 10;
         $ai_key_masked = $ai_api_key ? str_repeat( '*', max( 0, min( strlen( $ai_api_key ) - 8, 20 ) ) ) . substr( $ai_api_key, -8 ) : '';
         ?>
@@ -296,11 +309,28 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                     <div class="rtg-field-label-row">
                         <label class="rtg-field-label" for="rtg_ai_model">AI Model</label>
                     </div>
-                    <p class="rtg-field-description">Claude Haiku is fast and cost-effective (recommended). Claude Sonnet is more capable but slower and costs more per query.</p>
-                    <select id="rtg_ai_model" name="rtg_ai_model" style="min-width: 280px;">
-                        <option value="claude-haiku-4-5-20251001" <?php selected( $ai_model, 'claude-haiku-4-5-20251001' ); ?>>Claude Haiku 4.5 (Fast, Low Cost)</option>
-                        <option value="claude-sonnet-4-20250514" <?php selected( $ai_model, 'claude-sonnet-4-20250514' ); ?>>Claude Sonnet 4 (More Capable)</option>
-                    </select>
+                    <p class="rtg-field-description">Claude Haiku is fast and cost-effective (recommended). Claude Sonnet is more capable but slower and costs more per query. Use <strong>Refresh</strong> to pull the latest list of Claude models directly from Anthropic.</p>
+                    <div class="rtg-ai-model-row" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                        <select id="rtg_ai_model" name="rtg_ai_model" style="min-width: 320px;">
+                            <?php foreach ( $ai_model_list as $_m ) : ?>
+                                <option value="<?php echo esc_attr( $_m['id'] ); ?>" <?php selected( $ai_model, $_m['id'] ); ?>>
+                                    <?php echo esc_html( $_m['display_name'] ); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button type="button" id="rtg_refresh_ai_models" class="button" data-nonce="<?php echo esc_attr( wp_create_nonce( 'rtg_admin_nonce' ) ); ?>">
+                            <span class="dashicons dashicons-update" style="vertical-align:middle;line-height:inherit;"></span>
+                            Refresh from Anthropic
+                        </button>
+                        <span id="rtg_refresh_ai_models_status" class="rtg-ai-model-status" style="font-size:12px;color:var(--rtg-text-muted);">
+                            <?php if ( $ai_models_from_api && $ai_models_fetched_at ) : ?>
+                                Last refreshed <?php echo esc_html( human_time_diff( $ai_models_fetched_at, current_time( 'timestamp' ) ) ); ?> ago
+                                (<?php echo count( $ai_model_list ); ?> models)
+                            <?php else : ?>
+                                Using built-in defaults — click Refresh to fetch the current list.
+                            <?php endif; ?>
+                        </span>
+                    </div>
                 </div>
                 <div class="rtg-field-row" style="border-bottom: none;">
                     <div class="rtg-field-label-row">

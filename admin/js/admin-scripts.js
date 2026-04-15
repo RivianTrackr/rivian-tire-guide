@@ -497,6 +497,58 @@
         }
     }
 
+    // --- AI model list refresh ---
+    // Fetches the current Claude model list from Anthropic via an admin-ajax
+    // endpoint and rebuilds the <select> in place without a page reload.
+    $('#rtg_refresh_ai_models').on('click', function(e) {
+        e.preventDefault();
+        var $btn    = $(this);
+        var $select = $('#rtg_ai_model');
+        var $status = $('#rtg_refresh_ai_models_status');
+        var nonce   = $btn.data('nonce');
+        var previousValue = $select.val();
+
+        if ($btn.prop('disabled')) return;
+        $btn.prop('disabled', true);
+        $status.text('Refreshing…').css('color', 'var(--rtg-text-muted)');
+
+        $.post(ajaxurl, {
+            action: 'rtg_refresh_ai_models',
+            nonce: nonce
+        }).done(function(resp) {
+            if (!resp || !resp.success || !resp.data || !resp.data.models) {
+                var msg = (resp && resp.data) ? resp.data : 'Refresh failed.';
+                $status.text(msg).css('color', '#c41e3a');
+                return;
+            }
+            var models = resp.data.models;
+            $select.empty();
+            models.forEach(function(m) {
+                var opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = m.display_name || m.id;
+                if (m.id === previousValue) opt.selected = true;
+                $select.append(opt);
+            });
+            // If the previously-saved model is gone from the list, keep it
+            // visible so the user can see what they had.
+            if (previousValue && models.every(function(m) { return m.id !== previousValue; })) {
+                var orphan = document.createElement('option');
+                orphan.value = previousValue;
+                orphan.textContent = previousValue + ' (saved — not in current list)';
+                orphan.selected = true;
+                $select.prepend(orphan);
+            }
+            $status.text('Refreshed just now (' + models.length + ' models)').css('color', 'var(--rtg-text-muted)');
+        }).fail(function(xhr) {
+            var msg = 'Network error.';
+            if (xhr && xhr.responseJSON && xhr.responseJSON.data) msg = xhr.responseJSON.data;
+            $status.text(msg).css('color', '#c41e3a');
+        }).always(function() {
+            $btn.prop('disabled', false);
+        });
+    });
+
     // --- JSON Feed URL copy button ---
     $('#rtg-copy-feed-url').on('click', function() {
         var $input = $('#rtg-feed-url');

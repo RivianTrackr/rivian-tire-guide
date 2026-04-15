@@ -7,7 +7,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.45.0] - 2026-04-15
 
 Plugin review sweep — security hardening, performance, and accessibility fixes
-across the PHP backend and JS frontend. No feature changes, no schema changes.
+across the PHP backend and JS frontend. One small admin feature (AI model list
+refresh) is also included. No schema changes.
+
+### Added
+- **AI model list refresh** — The settings page now has a "Refresh from
+  Anthropic" button next to the AI model dropdown. Clicking it calls
+  Anthropic's `GET /v1/models` endpoint, caches the result in the
+  `rtg_ai_models_cache` option, and rebuilds the dropdown in place without a
+  page reload. The save-handler allowlist also reads from this cached list, so
+  new Claude models become selectable immediately after refreshing — no code
+  changes required. Previously-saved models that have been deprecated are
+  preserved in the dropdown with a `(saved — not in current list)` suffix.
+  (`includes/class-rtg-ai.php`, `includes/class-rtg-ajax.php`,
+  `includes/class-rtg-admin.php`, `admin/views/settings.php`,
+  `admin/js/admin-scripts.js`)
 
 ### Security
 - **AI API key can live in `wp-config.php`** — Define `RTG_ANTHROPIC_API_KEY` to
