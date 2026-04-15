@@ -703,21 +703,46 @@
    Flat row below the main filter container with the two remaining sliders
    (Max Price, Min Warranty) and the two remaining feature toggles (3PMS,
    OEM). Replaces the old collapsible "More Filters" disclosure, since
-   five controls don't justify a progressive-disclosure pattern. */
+   five controls don't justify a progressive-disclosure pattern.
+
+   Sliders and toggles share the same 40px bordered-pill treatment so the
+   whole row reads as a set of peer controls at a consistent height. */
 .rtg-extended-filters {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 12px;
-  align-items: flex-end;
+  align-items: center;
 }
 .rtg-extended-filters .slider-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   flex: 1 1 260px;
   min-width: 220px;
+  height: 40px;
+  padding: 0 14px;
+  background-color: var(--rtg-bg-primary);
+  border: 1px solid var(--rtg-border);
+  border-radius: 8px;
+  box-sizing: border-box;
+  transition: border-color .15s;
+}
+.rtg-extended-filters .slider-wrapper:hover {
+  border-color: var(--rtg-accent);
+}
+.rtg-extended-filters .slider-wrapper label {
+  margin-bottom: 0;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.rtg-extended-filters .slider-wrapper input[type="range"] {
+  margin-top: 0;
+  flex: 1 1 auto;
+  min-width: 60px;
 }
 .rtg-extended-filters .switch-label {
   flex: 0 0 auto;
-  align-self: flex-end;
 }
 
 /* === Info Tooltip Trigger === */
