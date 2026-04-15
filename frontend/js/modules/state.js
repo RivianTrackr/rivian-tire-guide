@@ -71,6 +71,5 @@ export const filterIndexes = {
   categoryIndex: new Map(),
   priceIndex: [],
   warrantyIndex: [],
-  weightIndex: [],
   vehicleIndex: new Map(),
 };

@@ -547,10 +547,7 @@ class RTG_Ajax {
             'brand'        => sanitize_text_field( $_POST['brand'] ?? '' ),
             'category'     => sanitize_text_field( $_POST['category'] ?? '' ),
             'three_pms'    => ! empty( $_POST['three_pms'] ),
-            'ev_rated'     => ! empty( $_POST['ev_rated'] ),
-            'studded'      => ! empty( $_POST['studded'] ),
             'oem'          => ! empty( $_POST['oem'] ),
-            'reviewed'     => ! empty( $_POST['reviewed'] ),
         );
 
         $price_max = isset( $_POST['price_max'] ) ? floatval( $_POST['price_max'] ) : 600;
@@ -561,11 +558,6 @@ class RTG_Ajax {
         $warranty_min = isset( $_POST['warranty_min'] ) ? intval( $_POST['warranty_min'] ) : 0;
         if ( $warranty_min >= 0 && $warranty_min <= 100000 ) {
             $filters['warranty_min'] = $warranty_min;
-        }
-
-        $weight_max = isset( $_POST['weight_max'] ) ? floatval( $_POST['weight_max'] ) : 70;
-        if ( $weight_max >= 0 && $weight_max <= 200 ) {
-            $filters['weight_max'] = $weight_max;
         }
 
         $allowed_sorts = array(

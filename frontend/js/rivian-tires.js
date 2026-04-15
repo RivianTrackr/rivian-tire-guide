@@ -216,10 +216,7 @@ function initializeUI() {
     { id: "filterBrand", listener: filterFn },
     { id: "filterCategory", listener: filterFn },
     { id: "filter3pms", listener: filterFn },
-    { id: "filterEVRated", listener: filterFn },
-    { id: "filterStudded", listener: filterFn },
     { id: "filterOEM", listener: filterFn },
-    { id: "filterReviewed", listener: filterFn },
     { id: "filterFavorites", listener: filterFn },
   ];
 
@@ -239,7 +236,7 @@ function initializeUI() {
   initAiRecommend();
 
   if (ssMode) {
-    const sliderIds = ["priceMax", "warrantyMin", "weightMax"];
+    const sliderIds = ["priceMax", "warrantyMin"];
     sliderIds.forEach(id => {
       const input = getDOMElement(id);
       if (input) input.addEventListener("input", debounce(serverSideFilterAndRender, 500));
@@ -351,21 +348,9 @@ document.addEventListener("DOMContentLoaded", () => {
             tooltipKey = '3PMS Filter';
             labelText = '3PMS';
             break;
-          case 'filterEVRated':
-            tooltipKey = 'EV Rated Filter';
-            labelText = 'EV Rated';
-            break;
-          case 'filterStudded':
-            tooltipKey = 'Studded Available Filter';
-            labelText = 'Studded';
-            break;
           case 'filterOEM':
             tooltipKey = 'OEM Filter';
             labelText = 'OEM';
-            break;
-          case 'filterReviewed':
-            tooltipKey = 'Officially Reviewed Filter';
-            labelText = 'Reviewed';
             break;
         }
 
@@ -382,10 +367,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => {
       const tooltipConfig = [
         { selector: 'filter3pms', label: '3PMS', key: '3PMS Filter' },
-        { selector: 'filterEVRated', label: 'EV Rated', key: 'EV Rated Filter' },
-        { selector: 'filterStudded', label: 'Studded', key: 'Studded Available Filter' },
         { selector: 'filterOEM', label: 'OEM', key: 'OEM Filter' },
-        { selector: 'filterReviewed', label: 'Reviewed', key: 'Officially Reviewed Filter' },
       ];
 
       tooltipConfig.forEach(({ selector, label, key }) => {

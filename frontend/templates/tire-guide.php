@@ -84,10 +84,6 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <label for="warrantyMin">Min Warranty: <span id="warrantyVal">&ge; 0 miles</span></label>
                 <input id="warrantyMin" class="range-slider" type="range" min="0" max="80000" value="0" step="1000" aria-label="Minimum Warranty in miles"/>
               </div>
-              <div class="filter-group slider-wrapper">
-                <label for="weightMax">Max Weight: <span id="weightVal">&le; 70 lbs</span></label>
-                <input id="weightMax" class="range-slider" type="range" min="0" max="70" value="70" step="1" aria-label="Maximum Weight in pounds"/>
-              </div>
             </div>
           </div>
           <div class="rtg-filter-section">
@@ -108,30 +104,6 @@ if ( ! defined( 'ABSPATH' ) ) {
               <div class="switch-label">
                 <span class="switch-text">
                   <div style="display: flex; align-items: center; gap: 6px;">
-                    <span>EV Rated</span>
-                    <button class="info-tooltip-trigger" data-tooltip-key="EV Rated Filter">
-                      <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-                    </button>
-                  </div>
-                </span>
-                <input type="checkbox" id="filterEVRated" aria-label="EV Rated" />
-                <span class="switch-slider" onclick="document.getElementById('filterEVRated').click()"></span>
-              </div>
-              <div class="switch-label">
-                <span class="switch-text">
-                  <div style="display: flex; align-items: center; gap: 6px;">
-                    <span>Studded</span>
-                    <button class="info-tooltip-trigger" data-tooltip-key="Studded Available Filter">
-                      <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-                    </button>
-                  </div>
-                </span>
-                <input type="checkbox" id="filterStudded" aria-label="Studded Available"/>
-                <span class="switch-slider" onclick="document.getElementById('filterStudded').click()"></span>
-              </div>
-              <div class="switch-label">
-                <span class="switch-text">
-                  <div style="display: flex; align-items: center; gap: 6px;">
                     <span>OEM</span>
                     <button class="info-tooltip-trigger" data-tooltip-key="OEM Filter">
                       <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
@@ -140,18 +112,6 @@ if ( ! defined( 'ABSPATH' ) ) {
                 </span>
                 <input type="checkbox" id="filterOEM" aria-label="OEM"/>
                 <span class="switch-slider" onclick="document.getElementById('filterOEM').click()"></span>
-              </div>
-              <div class="switch-label">
-                <span class="switch-text">
-                  <div style="display: flex; align-items: center; gap: 6px;">
-                    <span>Reviewed</span>
-                    <button class="info-tooltip-trigger" data-tooltip-key="Officially Reviewed Filter">
-                      <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-                    </button>
-                  </div>
-                </span>
-                <input type="checkbox" id="filterReviewed" aria-label="Officially Reviewed"/>
-                <span class="switch-slider" onclick="document.getElementById('filterReviewed').click()"></span>
               </div>
               <?php if ( is_user_logged_in() ) : ?>
               <div class="switch-label favorites-filter-wrapper">

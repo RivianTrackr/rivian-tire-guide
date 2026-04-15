@@ -558,12 +558,9 @@ class RTG_Database {
      *     @type string $brand    Exact brand match.
      *     @type string $category Exact category match.
      *     @type bool   $three_pms Filter to 3PMS-rated only.
-     *     @type bool   $ev_rated  Filter to EV Rated tags.
-     *     @type bool   $studded   Filter to Studded Available tags.
      *     @type bool   $oem       Filter to OEM tags.
      *     @type float  $price_max Max price.
      *     @type int    $warranty_min Min mileage warranty.
-     *     @type float  $weight_max  Max weight.
      * }
      * @param string $sort       Sort key.
      * @param int    $page       Page number (1-based).
@@ -628,20 +625,8 @@ class RTG_Database {
             $where[] = "LOWER(three_pms) = 'yes'";
         }
 
-        if ( ! empty( $filters['ev_rated'] ) ) {
-            $where[] = "LOWER(tags) LIKE '%ev rated%'";
-        }
-
-        if ( ! empty( $filters['studded'] ) ) {
-            $where[] = "LOWER(tags) LIKE '%studded available%'";
-        }
-
         if ( ! empty( $filters['oem'] ) ) {
             $where[] = "LOWER(tags) LIKE '%oem%'";
-        }
-
-        if ( ! empty( $filters['reviewed'] ) ) {
-            $where[] = "review_link != ''";
         }
 
         if ( isset( $filters['price_max'] ) && $filters['price_max'] < 600 ) {
@@ -652,11 +637,6 @@ class RTG_Database {
         if ( isset( $filters['warranty_min'] ) && $filters['warranty_min'] > 0 ) {
             $where[]  = 'mileage_warranty >= %d';
             $values[] = intval( $filters['warranty_min'] );
-        }
-
-        if ( isset( $filters['weight_max'] ) && $filters['weight_max'] < 70 ) {
-            $where[]  = 'weight_lb <= %f';
-            $values[] = floatval( $filters['weight_max'] );
         }
 
         return array( implode( ' AND ', $where ), $values );
