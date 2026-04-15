@@ -767,6 +767,21 @@
   font-weight: 600;
 }
 
+/* Mobile: stack each slider on its own full-width row, but let 3PMS and
+   OEM flow together on one row beneath them. Max Price and Min Warranty
+   each need the full viewport width to not feel cramped; the two
+   toggles fit comfortably side-by-side. */
+@media (max-width: 600px) {
+  .rtg-extended-filters .slider-wrapper {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  .rtg-extended-filters .switch-label {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
 /* === Favorites heart button (filter header) ===
    Replaces the old Favorites toggle pill. A hollow heart icon that fills
    and turns accent-colored when Favorites filtering is active. Drives the
