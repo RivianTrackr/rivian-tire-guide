@@ -498,27 +498,29 @@
     }
 
     // --- AI model list refresh ---
-    // Fetches the current Claude model list from Anthropic via an admin-ajax
-    // endpoint and rebuilds the <select> in place without a page reload.
-    $('#rtg_refresh_ai_models').on('click', function(e) {
+    // Delegated from document so the binding works regardless of script
+    // load timing. Pulls the nonce + ajaxurl from the localized rtgAdmin
+    // object when available, falling back to the data-nonce / global ajaxurl.
+    $(document).on('click', '#rtg_refresh_ai_models', function(e) {
         e.preventDefault();
         var $btn    = $(this);
         var $select = $('#rtg_ai_model');
         var $status = $('#rtg_refresh_ai_models_status');
-        var nonce   = $btn.data('nonce');
+        var nonce   = (typeof rtgAdmin !== 'undefined' && rtgAdmin.nonce) ? rtgAdmin.nonce : $btn.attr('data-nonce');
+        var ajaxUrl = (typeof rtgAdmin !== 'undefined' && rtgAdmin.ajaxurl) ? rtgAdmin.ajaxurl : (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php');
         var previousValue = $select.val();
 
         if ($btn.prop('disabled')) return;
         $btn.prop('disabled', true);
-        $status.text('Refreshing…').css('color', 'var(--rtg-text-muted)');
+        $status.removeClass('is-error').text('Refreshing…');
 
-        $.post(ajaxurl, {
+        $.post(ajaxUrl, {
             action: 'rtg_refresh_ai_models',
             nonce: nonce
         }).done(function(resp) {
             if (!resp || !resp.success || !resp.data || !resp.data.models) {
                 var msg = (resp && resp.data) ? resp.data : 'Refresh failed.';
-                $status.text(msg).css('color', '#c41e3a');
+                $status.addClass('is-error').text(msg);
                 return;
             }
             var models = resp.data.models;
@@ -539,11 +541,12 @@
                 orphan.selected = true;
                 $select.prepend(orphan);
             }
-            $status.text('Refreshed just now (' + models.length + ' models)').css('color', 'var(--rtg-text-muted)');
+            $status.removeClass('is-error').text('Refreshed just now (' + models.length + ' models)');
         }).fail(function(xhr) {
             var msg = 'Network error.';
             if (xhr && xhr.responseJSON && xhr.responseJSON.data) msg = xhr.responseJSON.data;
-            $status.text(msg).css('color', '#c41e3a');
+            else if (xhr && xhr.status) msg = 'Request failed (HTTP ' + xhr.status + ').';
+            $status.addClass('is-error').text(msg);
         }).always(function() {
             $btn.prop('disabled', false);
         });

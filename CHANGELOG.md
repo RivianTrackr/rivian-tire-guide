@@ -4,6 +4,26 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.45.1] - 2026-04-15
+
+### Fixed
+- **AI model Refresh button didn't fire** — The click handler lived outside
+  `$(document).ready()` and relied on the element existing at script parse
+  time. Switched to delegated binding via `$(document).on('click', ...)` so
+  the handler works regardless of load order. Also wired it to the localized
+  `rtgAdmin.ajaxurl` / `rtgAdmin.nonce` with sensible fallbacks.
+- **AI model row layout** — The inline `vertical-align:middle;line-height:inherit`
+  on the dashicon didn't center inside WP's `.button` class. Moved all the
+  row styling into proper classes (`.rtg-ai-model-row`, `.rtg-ai-model-select`,
+  `.rtg-ai-model-refresh-btn`, `.rtg-ai-model-status`) in `admin-styles.css`.
+  Button is now 36px tall to match the select, the dashicon is sized and
+  centered with `inline-flex`, and the icon spins while a refresh is in
+  flight. Error states use an `.is-error` class instead of inline colours.
+
+### Changed
+- **Plugin version** — Bumped to 1.45.1 (also busts any stale browser cache
+  of `admin-scripts.min.js`).
+
 ## [1.45.0] - 2026-04-15
 
 Plugin review sweep — security hardening, performance, and accessibility fixes
