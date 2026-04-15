@@ -185,32 +185,41 @@ function executeLocalSearch() {
   }
 }
 
+// Tracked listeners so initializeSmartSearch() can be called multiple times
+// without leaking handlers (previous implementation cloned the input node,
+// orphaning references held elsewhere in the module cache).
+let searchKeydownHandler = null;
+let searchButtonHandler = null;
+
 export function initializeSmartSearch() {
   const searchInput = getDOMElement('searchInput');
   if (!searchInput) return;
 
   buildSearchIndex();
 
-  // Clone to remove any previously attached listeners.
-  const newSearchInput = searchInput.cloneNode(true);
-  searchInput.parentNode.replaceChild(newSearchInput, searchInput);
-  state.domCache["searchInput"] = newSearchInput;
+  // Remove any previously attached listeners before re-binding.
+  if (searchKeydownHandler) {
+    searchInput.removeEventListener('keydown', searchKeydownHandler);
+  }
 
   // Search button triggers local filter.
   const searchBtn = document.getElementById('rtgSearchSubmit');
   if (searchBtn) {
-    searchBtn.addEventListener('click', () => {
-      executeLocalSearch();
-    });
+    if (searchButtonHandler) {
+      searchBtn.removeEventListener('click', searchButtonHandler);
+    }
+    searchButtonHandler = () => executeLocalSearch();
+    searchBtn.addEventListener('click', searchButtonHandler);
   }
 
   // Enter key triggers local search.
-  newSearchInput.addEventListener('keydown', (e) => {
+  searchKeydownHandler = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       executeLocalSearch();
     }
-  });
+  };
+  searchInput.addEventListener('keydown', searchKeydownHandler);
 
   // Clear input on filter reset.
   document.addEventListener('filtersReset', () => {

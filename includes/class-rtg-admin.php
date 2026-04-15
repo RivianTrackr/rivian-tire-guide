@@ -716,7 +716,10 @@ class RTG_Admin {
             wp_die( 'Unauthorized' );
         }
 
-        $tire_id = sanitize_text_field( $_GET['tire_id'] );
+        $tire_id = sanitize_text_field( wp_unslash( $_GET['tire_id'] ?? '' ) );
+        if ( ! RTG_Database::validate_tire_id( $tire_id ) ) {
+            wp_die( 'Invalid tire ID' );
+        }
         check_admin_referer( 'rtg_delete_' . $tire_id );
 
         RTG_Database::delete_tire( $tire_id );

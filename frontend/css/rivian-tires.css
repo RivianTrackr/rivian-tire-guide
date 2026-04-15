@@ -2860,7 +2860,45 @@ a.rtg-user-review-tire-link:hover {
 }
 .rtg-pagination-info {
   font-size: 14px;
-  color: var(--rtg-text-muted, #8493a5);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  color: var(--rtg-text-primary, #e5e7eb);
+}
+
+/* Info tooltip button used inside efficiency badges and spec rows.
+   Previously rendered via style.cssText in JS — now a proper class. */
+.info-tooltip-trigger {
+  background: none;
+  border: none;
+  color: var(--rtg-text-muted, #9ca3af);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+.info-tooltip-trigger:hover,
+.info-tooltip-trigger:focus-visible {
+  color: var(--rtg-accent, #fba919);
+  background-color: color-mix(in srgb, var(--rtg-accent, #fba919) 10%, transparent);
+}
+.info-tooltip-trigger:focus-visible {
+  outline: 2px solid var(--rtg-accent, #fba919);
+  outline-offset: 2px;
+}
+
+/* Tag list row inside tire cards. */
+.tire-card-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
 }
 
 /* === Favorite Button Overlay === */
