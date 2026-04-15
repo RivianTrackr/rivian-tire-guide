@@ -4,6 +4,34 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.45.8] - 2026-04-15
+
+### Changed
+- **Filter-area typography normalized** — The extended-filter row's inline
+  slider labels ("Max Price", "Min Warranty") were rendering at 13px/600
+  uppercase muted (leftover from the old label-above-control layout) while
+  the toggle labels next to them were 13px/500 non-uppercase primary. On the
+  same row, the mismatch was visible. Both now render at 14px/600 sentence
+  case primary, matching the vehicle buttons and the rest of the filter
+  area's type scale. Slider value spans (`≤ $600`) stay lighter (14px/500
+  muted) to read as dynamic values.
+  (`frontend/css/rivian-tires.css`)
+- **Favorites is now a heart icon in the filter header** — Replaced the
+  Favorites toggle pill (previously in the sort bar) with a small hollow-
+  heart icon button next to the Clear All button in the filter header. The
+  heart fills and turns accent-colored when Favorites filtering is active,
+  and the red count badge now rides on the heart button. The hidden
+  `#filterFavorites` checkbox is unchanged, so every piece of filter JS
+  keeps working — only the UI surface moved.
+  (`frontend/templates/tire-guide.php`, `frontend/css/rivian-tires.css`)
+
+### Removed
+- `.favorites-filter-wrapper` and `.favorites-count-badge` CSS — the old
+  pill-style Favorites toggle is gone.
+
+### Changed
+- **Plugin version** — Bumped to 1.45.8.
+
 ## [1.45.6] - 2026-04-15
 
 ### Changed

@@ -13,9 +13,19 @@ if ( ! defined( 'ABSPATH' ) ) {
       <i class="fa-solid fa-sliders" aria-hidden="true"></i>
       Filter, Sort, and Compare
     </span>
-    <button class="rtg-clear-filters-btn" onclick="resetFilters()" type="button" aria-label="Clear all filters">
-      <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Clear All
-    </button>
+    <div class="filter-header-actions">
+      <button class="rtg-clear-filters-btn" onclick="resetFilters()" type="button" aria-label="Clear all filters">
+        <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Clear All
+      </button>
+      <?php if ( is_user_logged_in() ) : ?>
+      <input type="checkbox" id="filterFavorites" class="rtg-fav-heart-input" aria-label="Filter to my favorites"/>
+      <label for="filterFavorites" class="rtg-fav-heart-btn" role="button" aria-label="Toggle favorites filter" title="Show only my favorites">
+        <i class="fa-regular fa-heart rtg-fav-heart-outline" aria-hidden="true"></i>
+        <i class="fa-solid fa-heart rtg-fav-heart-filled" aria-hidden="true"></i>
+        <span id="favoritesCount" class="rtg-fav-heart-badge" style="display: none;"></span>
+      </label>
+      <?php endif; ?>
+    </div>
   </div>
   <div class="filter-body">
     <div class="rtg-search-section">
@@ -101,19 +111,6 @@ if ( ! defined( 'ABSPATH' ) ) {
     <div class="sort-wrapper">
       <span id="tireCount" class="tire-count" aria-live="polite">Showing 0 tires</span>
       <div class="rtg-sort-actions">
-        <?php if ( is_user_logged_in() ) : ?>
-        <div class="switch-label favorites-filter-wrapper">
-          <span class="switch-text">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <i class="fa-solid fa-heart" aria-hidden="true"></i>
-              <span>Favorites</span>
-            </div>
-          </span>
-          <span id="favoritesCount" class="favorites-count-badge" style="display: none;"></span>
-          <input type="checkbox" id="filterFavorites" aria-label="My Favorites"/>
-          <span class="switch-slider" onclick="document.getElementById('filterFavorites').click()"></span>
-        </div>
-        <?php endif; ?>
         <label for="sortBy" class="screen-reader-text">Sort tires by</label>
         <select id="sortBy" aria-label="Sort tires by">
         <option value="efficiencyGrade">Efficiency Grade</option>
