@@ -31,7 +31,6 @@ class RTG_Database {
     public static function flush_cache() {
         delete_transient( self::$cache_key );
         delete_transient( self::$dashboard_cache_key );
-        RTG_AI::flush_cache();
     }
 
     /**

@@ -114,263 +114,6 @@
   transform: scale(0.93) !important;
 }
 
-/* AI submit button */
-.rtg-ai-submit {
-  flex-shrink: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 6px !important;
-  height: 44px !important;
-  min-width: 44px !important;
-  padding: 0 14px !important;
-  margin: 0 !important;
-  background: var(--rtg-accent) !important;
-  color: #0f172a !important;
-  border: none !important;
-  border-radius: 8px !important;
-  cursor: pointer !important;
-  font-size: 14px !important;
-  font-weight: 600 !important;
-  line-height: 1 !important;
-  white-space: nowrap !important;
-  transition: background-color 0.2s ease, transform 0.1s ease;
-  position: static !important;
-  transform: none !important;
-  overflow: visible !important;
-}
-
-/* "NEW" badge on AI button */
-.rtg-new-badge {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  background: #ef4444 !important;
-  color: #fff !important;
-  font-size: 9px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.5px !important;
-  line-height: 1 !important;
-  padding: 2px 5px !important;
-  border-radius: 4px !important;
-  margin-left: 2px !important;
-  vertical-align: middle !important;
-  animation: rtg-badge-pulse 2s ease-in-out infinite !important;
-}
-
-@keyframes rtg-badge-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
-  50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
-}
-
-.rtg-ai-submit:hover {
-  background: var(--rtg-accent-hover) !important;
-  color: #0f172a !important;
-}
-
-.rtg-ai-submit:active {
-  transform: scale(0.93) !important;
-}
-
-.rtg-ai-submit:disabled {
-  opacity: 0.5 !important;
-  cursor: not-allowed !important;
-}
-
-/* Mobile: stack buttons below search input */
-@media (max-width: 600px) {
-  .rtg-search-row {
-    flex-wrap: wrap !important;
-  }
-  .rtg-search-row .search-container {
-    flex: 1 1 100% !important;
-    width: 100% !important;
-    min-width: 100% !important;
-  }
-  .rtg-search-btn {
-    flex: 1 1 0 !important;
-    flex-shrink: 1 !important;
-  }
-  .rtg-ai-submit {
-    flex: 1 1 0 !important;
-    flex-shrink: 1 !important;
-  }
-}
-
-/* AI Status / Loading */
-.rtg-ai-status {
-  margin-top: 10px;
-}
-
-.rtg-ai-loading {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--rtg-text-muted);
-  font-size: 13px;
-  padding: 6px 0;
-}
-
-.rtg-ai-spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--rtg-border);
-  border-top-color: var(--rtg-accent);
-  border-radius: 50%;
-  animation: rtg-ai-spin 0.8s linear infinite;
-  flex-shrink: 0;
-}
-
-@keyframes rtg-ai-spin {
-  to { transform: rotate(360deg); }
-}
-
-.rtg-ai-error {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  color: #ef4444;
-  font-size: 13px;
-  padding: 6px 0;
-}
-
-.rtg-ai-error i {
-  margin-top: 1px;
-  flex-shrink: 0;
-}
-
-/* AI Summary Banner */
-.rtg-ai-summary {
-  margin-top: 10px;
-}
-
-.rtg-ai-summary-content {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  background: color-mix(in srgb, var(--rtg-accent) 8%, var(--rtg-bg-deep));
-  border: 1px solid color-mix(in srgb, var(--rtg-accent) 25%, transparent);
-  border-radius: 8px;
-  padding: 12px 16px;
-}
-
-.rtg-ai-summary-icon {
-  color: var(--rtg-accent);
-  font-size: 16px;
-  margin-top: 2px;
-  flex-shrink: 0;
-}
-
-.rtg-ai-summary-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.rtg-ai-summary-text strong {
-  display: block;
-  color: var(--rtg-text-heading);
-  font-size: 13px;
-  margin-bottom: 4px;
-}
-
-.rtg-ai-summary-text p {
-  color: var(--rtg-text-primary);
-  font-size: 13px;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.rtg-ai-clear {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: none;
-  border: 1px solid var(--rtg-border);
-  border-radius: 6px;
-  color: var(--rtg-text-muted);
-  font-size: 12px;
-  padding: 4px 10px;
-  cursor: pointer;
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition: color 0.2s ease, border-color 0.2s ease;
-}
-
-.rtg-ai-clear:hover {
-  color: var(--rtg-text-primary);
-  border-color: var(--rtg-text-muted);
-}
-
-/* AI tire links (used by tire chips) */
-.rtg-ai-tire-link {
-  color: var(--rtg-accent) !important;
-  text-decoration: none !important;
-  cursor: pointer !important;
-  font-weight: 600;
-  transition: color 0.15s;
-}
-.rtg-ai-tire-link:hover {
-  color: var(--rtg-accent-hover) !important;
-  text-decoration: none !important;
-}
-
-/* Clickable tire chips below the AI summary */
-.rtg-ai-tire-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-}
-.rtg-ai-tire-chip {
-  display: inline-flex !important;
-  align-items: center !important;
-  padding: 4px 10px !important;
-  background: color-mix(in srgb, var(--rtg-accent) 12%, var(--rtg-bg-deep, #0c1620)) !important;
-  border: 1px solid color-mix(in srgb, var(--rtg-accent) 30%, transparent) !important;
-  border-radius: 16px !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  text-decoration: none !important;
-  white-space: nowrap;
-  transition: background 0.15s, border-color 0.15s;
-}
-.rtg-ai-tire-chip:hover {
-  background: color-mix(in srgb, var(--rtg-accent) 25%, var(--rtg-bg-deep, #0c1620)) !important;
-  border-color: var(--rtg-accent) !important;
-  text-decoration: none !important;
-}
-.rtg-ai-tire-chip[target="_blank"]::after {
-  content: "\f08e";
-  font-family: "Font Awesome 6 Free";
-  font-weight: 900;
-  font-size: 10px;
-  margin-left: 5px;
-  opacity: 0.7;
-}
-.rtg-ai-tire-chip[target="_blank"]:hover::after {
-  opacity: 1;
-}
-
-/* Highlight animation when scrolling to a tire card */
-@keyframes rtgAiPulse {
-  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-  15%, 85% { box-shadow: 0 0 0 3px var(--rtg-accent), 0 2px 16px rgba(251, 169, 25, 0.3); }
-}
-.rtg-ai-highlight {
-  animation: rtgAiPulse 2s ease !important;
-}
-
-/* AI Responsive */
-@media (max-width: 600px) {
-  .rtg-ai-summary-content {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .rtg-ai-clear {
-    align-self: flex-end;
-  }
-}
 
 /* === Filter Section — Card style matching compare page === */
 .filter-wrapper {
@@ -1453,8 +1196,7 @@
 }
 
 /* === RivianTrackr Search Redirect === */
-.no-results-riviantrackr,
-.rtg-ai-riviantrackr {
+.no-results-riviantrackr {
   margin-top: 20px;
   padding: 14px 18px;
   border: 1px dashed var(--rtg-border);
@@ -1466,8 +1208,7 @@
   margin-left: auto;
   margin-right: auto;
 }
-.no-results-riviantrackr a,
-.rtg-ai-riviantrackr a {
+.no-results-riviantrackr a {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -1477,8 +1218,7 @@
   margin-left: 4px;
   transition: color .15s;
 }
-.no-results-riviantrackr a:hover,
-.rtg-ai-riviantrackr a:hover {
+.no-results-riviantrackr a:hover {
   color: var(--rtg-accent-hover);
   text-decoration: none;
 }

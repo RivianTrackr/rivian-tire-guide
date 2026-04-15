@@ -110,13 +110,6 @@ class RTG_Ajax {
         add_action( 'wp_ajax_rtg_check_links_batch', array( $this, 'check_links_batch' ) );
         add_action( 'wp_ajax_rtg_check_links_finish', array( $this, 'check_links_finish' ) );
 
-        // AI tire recommendations — public.
-        add_action( 'wp_ajax_rtg_ai_recommend', array( $this, 'ai_recommend' ) );
-        add_action( 'wp_ajax_nopriv_rtg_ai_recommend', array( $this, 'ai_recommend' ) );
-
-        // AI model list refresh — admin only.
-        add_action( 'wp_ajax_rtg_refresh_ai_models', array( $this, 'refresh_ai_models' ) );
-
         // Roamer sync — admin only.
         add_action( 'wp_ajax_rtg_roamer_sync_now', array( $this, 'roamer_sync_now' ) );
         add_action( 'wp_ajax_rtg_roamer_assign', array( $this, 'roamer_assign' ) );
@@ -777,7 +770,7 @@ class RTG_Ajax {
         $search_type  = sanitize_text_field( $_POST['search_type'] ?? 'search' );
 
         // Only allow known search types.
-        if ( ! in_array( $search_type, array( 'search', 'ai' ), true ) ) {
+        if ( ! in_array( $search_type, array( 'search' ), true ) ) {
             $search_type = 'search';
         }
 
@@ -821,66 +814,6 @@ class RTG_Ajax {
         );
 
         $result = RTG_Database::calculate_efficiency( $data );
-
-        wp_send_json_success( $result );
-    }
-
-    /**
-     * AI tire recommendation endpoint.
-     * Available to both logged-in and logged-out users.
-     */
-    public function ai_recommend() {
-        if ( ! check_ajax_referer( 'rtg_ai_nonce', 'nonce', false ) ) {
-            wp_send_json_error( 'Security check failed.' );
-        }
-
-        if ( ! RTG_AI::is_enabled() ) {
-            wp_send_json_error( 'AI recommendations are not available.' );
-        }
-
-        $query = sanitize_text_field( wp_unslash( $_POST['query'] ?? '' ) );
-
-        if ( empty( trim( $query ) ) ) {
-            wp_send_json_error( 'Please enter a search query.' );
-        }
-
-        if ( mb_strlen( $query ) > 500 ) {
-            wp_send_json_error( 'Query is too long. Please keep it under 500 characters.' );
-        }
-
-        $result = RTG_AI::get_recommendations( $query );
-
-        if ( is_wp_error( $result ) ) {
-            wp_send_json_error( $result->get_error_message() );
-        }
-
-        // Include full tire row data so the frontend can render cards for
-        // tires that may not already be loaded (e.g. server-side pagination).
-        $rec_ids = array_column( $result['recommendations'], 'tire_id' );
-        $result['tire_rows'] = RTG_Database::get_tires_by_ids( $rec_ids );
-
-        wp_send_json_success( $result );
-    }
-
-    /**
-     * Refresh the cached AI model list from Anthropic's /v1/models endpoint.
-     * Admin-only. Returns the same shape as RTG_AI::get_available_models().
-     */
-    public function refresh_ai_models() {
-        if ( ! check_ajax_referer( 'rtg_admin_nonce', 'nonce', false ) ) {
-            $this->log_security_event( 'nonce_fail', __METHOD__ );
-            wp_send_json_error( 'Security check failed.' );
-        }
-
-        if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( 'Unauthorized.' );
-        }
-
-        $result = RTG_AI::refresh_available_models();
-
-        if ( is_wp_error( $result ) ) {
-            wp_send_json_error( $result->get_error_message() );
-        }
 
         wp_send_json_success( $result );
     }
