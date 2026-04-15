@@ -42,9 +42,144 @@ class RTG_AI {
     const API_URL = 'https://api.anthropic.com/v1/messages';
 
     /**
+     * Anthropic Models API endpoint (list).
+     */
+    const MODELS_API_URL = 'https://api.anthropic.com/v1/models';
+
+    /**
+     * Option key where the refreshed model list is cached.
+     * Shape: [ 'fetched_at' => int, 'models' => [ [id => string, display_name => string], ... ] ]
+     */
+    const MODELS_OPTION = 'rtg_ai_models_cache';
+
+    /**
      * Default model to use.
      */
     const DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
+
+    /**
+     * Fallback model list used when Anthropic has never been queried
+     * (or the refresh failed). Order is the same order they'll render in
+     * the admin dropdown.
+     *
+     * @return array[] Each entry has id and display_name.
+     */
+    public static function get_fallback_models() {
+        return array(
+            array( 'id' => 'claude-haiku-4-5-20251001',  'display_name' => 'Claude Haiku 4.5 (Fast, Low Cost)' ),
+            array( 'id' => 'claude-sonnet-4-20250514',   'display_name' => 'Claude Sonnet 4 (More Capable)' ),
+        );
+    }
+
+    /**
+     * Return the currently cached model list, or the fallback if none.
+     * Used by the admin settings view and the save-handler allowlist.
+     *
+     * @return array { models: array[], fetched_at: int|null, source: 'api'|'fallback' }
+     */
+    public static function get_available_models() {
+        $cache = get_option( self::MODELS_OPTION, array() );
+        if ( is_array( $cache ) && ! empty( $cache['models'] ) ) {
+            return array(
+                'models'     => $cache['models'],
+                'fetched_at' => intval( $cache['fetched_at'] ?? 0 ),
+                'source'     => 'api',
+            );
+        }
+        return array(
+            'models'     => self::get_fallback_models(),
+            'fetched_at' => null,
+            'source'     => 'fallback',
+        );
+    }
+
+    /**
+     * Return just the list of valid model IDs, used as an allowlist
+     * when saving the settings form.
+     *
+     * @return string[]
+     */
+    public static function get_allowed_model_ids() {
+        $data = self::get_available_models();
+        return array_values( array_filter( array_map(
+            static function ( $m ) {
+                return isset( $m['id'] ) ? (string) $m['id'] : '';
+            },
+            $data['models']
+        ) ) );
+    }
+
+    /**
+     * Fetch the current model list from Anthropic's /v1/models endpoint
+     * and persist it to the cache option. Only models whose ID starts with
+     * "claude-" are kept (the endpoint also returns deprecated/legacy entries).
+     *
+     * @return array|WP_Error Result array matching get_available_models(), or WP_Error.
+     */
+    public static function refresh_available_models() {
+        $api_key = self::get_api_key();
+        if ( '' === $api_key ) {
+            return new WP_Error( 'no_api_key', 'Set an Anthropic API key before refreshing the model list.' );
+        }
+
+        $response = wp_remote_get( self::MODELS_API_URL . '?limit=100', array(
+            'timeout' => 15,
+            'headers' => array(
+                'x-api-key'         => $api_key,
+                'anthropic-version' => '2023-06-01',
+            ),
+        ) );
+
+        if ( is_wp_error( $response ) ) {
+            error_log( 'RTG AI models refresh error: ' . $response->get_error_message() );
+            return new WP_Error( 'api_error', 'Unable to reach Anthropic. ' . $response->get_error_message() );
+        }
+
+        $status = wp_remote_retrieve_response_code( $response );
+        $body   = wp_remote_retrieve_body( $response );
+        $data   = json_decode( $body, true );
+
+        if ( 401 === $status ) {
+            return new WP_Error( 'api_auth', 'Anthropic rejected the API key. Check the key in settings.' );
+        }
+        if ( 200 !== $status || ! is_array( $data ) || empty( $data['data'] ) ) {
+            error_log( 'RTG AI models refresh HTTP ' . $status . ': ' . $body );
+            return new WP_Error( 'api_error', 'Anthropic returned an unexpected response (HTTP ' . intval( $status ) . ').' );
+        }
+
+        $models = array();
+        foreach ( $data['data'] as $entry ) {
+            if ( empty( $entry['id'] ) || strpos( $entry['id'], 'claude-' ) !== 0 ) {
+                continue;
+            }
+            $models[] = array(
+                'id'           => sanitize_text_field( $entry['id'] ),
+                'display_name' => sanitize_text_field( $entry['display_name'] ?? $entry['id'] ),
+                'created_at'   => sanitize_text_field( $entry['created_at'] ?? '' ),
+            );
+        }
+
+        if ( empty( $models ) ) {
+            return new WP_Error( 'empty_list', 'Anthropic returned no Claude models.' );
+        }
+
+        // Sort newest first using the created_at ISO timestamp Anthropic returns.
+        usort( $models, static function ( $a, $b ) {
+            return strcmp( $b['created_at'] ?? '', $a['created_at'] ?? '' );
+        } );
+
+        $payload = array(
+            'models'     => $models,
+            'fetched_at' => time(),
+        );
+        update_option( self::MODELS_OPTION, $payload, false );
+
+        return array(
+            'models'     => $models,
+            'fetched_at' => $payload['fetched_at'],
+            'source'     => 'api',
+        );
+    }
 
     /**
      * Check whether AI recommendations are enabled and configured.

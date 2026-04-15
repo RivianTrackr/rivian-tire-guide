@@ -766,13 +766,16 @@ class RTG_Admin {
 
         // AI settings.
         $ai_api_key    = sanitize_text_field( wp_unslash( $_POST['rtg_ai_api_key'] ?? '' ) );
-        $ai_model      = sanitize_text_field( $_POST['rtg_ai_model'] ?? 'claude-haiku-4-5-20251001' );
+        $ai_model      = sanitize_text_field( $_POST['rtg_ai_model'] ?? RTG_AI::DEFAULT_MODEL );
         $ai_rate_limit = intval( $_POST['rtg_ai_rate_limit'] ?? 10 );
         $ai_rate_limit = max( 1, min( 60, $ai_rate_limit ) );
 
-        $allowed_models = array( 'claude-haiku-4-5-20251001', 'claude-sonnet-4-20250514' );
-        if ( ! in_array( $ai_model, $allowed_models, true ) ) {
-            $ai_model = 'claude-haiku-4-5-20251001';
+        // Allowlist the model against the cached Anthropic list (or fallback
+        // when the admin hasn't refreshed it yet). Falling back to the first
+        // available entry keeps the setting valid if Anthropic removes a model.
+        $allowed_models = RTG_AI::get_allowed_model_ids();
+        if ( empty( $allowed_models ) || ! in_array( $ai_model, $allowed_models, true ) ) {
+            $ai_model = ! empty( $allowed_models ) ? $allowed_models[0] : RTG_AI::DEFAULT_MODEL;
         }
 
         // Preserve existing API key if the field is left blank (masked).
