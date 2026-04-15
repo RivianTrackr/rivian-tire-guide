@@ -4,6 +4,37 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.45.6] - 2026-04-15
+
+### Changed
+- **Flattened the filter drawer** — After the previous round of filter
+  removals the "More Filters" disclosure was hiding only five controls.
+  Five controls don't justify a progressive-disclosure pattern, so the
+  disclosure is gone. Max Price slider, Min Warranty slider, 3PMS toggle,
+  and OEM toggle now live in a flat `.rtg-extended-filters` row directly
+  below the vehicle/size/brand/category row. One less click to reach any
+  filter, no ghost grid columns, no "2 filters active" badge logic.
+  (`frontend/templates/tire-guide.php`, `frontend/css/rivian-tires.css`)
+- **Favorites moved to the sort bar** — Favorites is a personal collection,
+  not a tire attribute, so it didn't belong with 3PMS and OEM in the feature
+  row. It now lives next to the sort dropdown (logged-in users only), where
+  it reads naturally as a "my stuff" control rather than a tire filter. The
+  red favorites-count badge rides along.
+  (`frontend/templates/tire-guide.php`)
+
+### Removed
+- `#advancedFiltersToggle`, `#advancedFilters`, `#advancedFilterBadge`,
+  `#advancedFiltersBody` template elements and all their CSS
+  (`.rtg-advanced-filters`, `.rtg-advanced-toggle`, `.rtg-advanced-body`,
+  `.rtg-advanced-badge`, `.rtg-filter-section`, `.rtg-filter-section-label`)
+- `getAdvancedFilterCount()` and `updateAdvancedFilterBadge()` from
+  `filters.js`, along with their caller in `finishFilterAndRender()` and
+  the auto-open-on-active-filter logic
+- The advanced-filters click handler in `rivian-tires.js`
+
+### Changed
+- **Plugin version** — Bumped to 1.45.6.
+
 ## [1.45.5] - 2026-04-15
 
 ### Removed
