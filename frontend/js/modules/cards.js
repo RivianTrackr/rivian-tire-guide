@@ -441,6 +441,11 @@ export function createSingleCard(row) {
   const specsContainer = document.createElement('div');
   specsContainer.className = 'tire-card-specs';
 
+  // Specs shown on the default card view. Tread depth, max load, load range,
+  // and UTQG are intentionally hidden here — they're cryptic for most buyers
+  // and the efficiency grade already summarizes their effect on range. They
+  // still live in the database, admin form, CSV import/export, and the
+  // compare page for power users who want the full spec sheet.
   const specs = [
     ['Size', `${safeString(size)} (${safeString(diameter)}${safeString(diameter) && !safeString(diameter).includes('"') ? '"' : ''})`],
     ['Category', safeString(category)],
@@ -448,13 +453,9 @@ export function createSingleCard(row) {
     ['Mileage Warranty', warranty ? `${Number(validateNumeric(warranty, NUMERIC_BOUNDS.warranty)).toLocaleString()} miles` : '-'],
     ['Weight', weight ? `${validateNumeric(weight, NUMERIC_BOUNDS.weight)} lb` : '-'],
     ['3PMS Rated', safeString(tpms)],
-    ['Tread Depth', safeString(tread)],
     ['Load Index', safeString(loadIndex)],
-    ['Max Load', maxLoad ? `${validateNumeric(maxLoad, { min: 0, max: 10000 })} lb` : '-'],
-    ['Load Range', safeString(loadRange)],
     ['Speed Rating', safeString(speed)],
-    ['Max PSI', safeString(psi)],
-    ['UTQG', safeString(utqg) || 'None']
+    ['Max PSI', safeString(psi)]
   ];
 
   specs.forEach(([label, value]) => {
