@@ -64,6 +64,13 @@ class RTG_Roamer_Sync {
 
         $url = ! empty( $settings['roamer_sync_url'] ) ? $settings['roamer_sync_url'] : self::DEFAULT_URL;
 
+        // Only notify on failures when running unattended (cron). Manual
+        // admin runs surface errors directly in the UI, so a duplicate
+        // email would just be noise.
+        $is_cron        = defined( 'DOING_CRON' ) && DOING_CRON;
+        $notify_enabled = $settings['roamer_notify_enabled'] ?? true;
+        $should_notify  = $is_cron && $notify_enabled;
+
         // Fetch the feed.
         $response = wp_remote_get( $url, array(
             'timeout'   => self::REQUEST_TIMEOUT,
@@ -71,23 +78,31 @@ class RTG_Roamer_Sync {
         ) );
 
         if ( is_wp_error( $response ) ) {
+            $reason = $response->get_error_message();
             $result = array(
                 'status'  => 'error',
-                'message' => $response->get_error_message(),
+                'message' => $reason,
                 'time'    => current_time( 'mysql' ),
             );
             update_option( self::STATS_OPTION, $result, false );
+            if ( $should_notify ) {
+                RTG_Mailer::send_roamer_sync_failure_notification( $reason, $url );
+            }
             return $result;
         }
 
         $http_code = wp_remote_retrieve_response_code( $response );
         if ( $http_code !== 200 ) {
+            $reason = 'HTTP ' . $http_code;
             $result = array(
                 'status'  => 'error',
-                'message' => 'HTTP ' . $http_code,
+                'message' => $reason,
                 'time'    => current_time( 'mysql' ),
             );
             update_option( self::STATS_OPTION, $result, false );
+            if ( $should_notify ) {
+                RTG_Mailer::send_roamer_sync_failure_notification( $reason, $url );
+            }
             return $result;
         }
 
@@ -95,12 +110,16 @@ class RTG_Roamer_Sync {
         $data = json_decode( $body, true );
 
         if ( ! is_array( $data ) || empty( $data['tires'] ) ) {
+            $reason = 'Invalid JSON structure or empty tires array.';
             $result = array(
                 'status'  => 'error',
-                'message' => 'Invalid JSON structure or empty tires array.',
+                'message' => $reason,
                 'time'    => current_time( 'mysql' ),
             );
             update_option( self::STATS_OPTION, $result, false );
+            if ( $should_notify ) {
+                RTG_Mailer::send_roamer_sync_failure_notification( $reason, $url );
+            }
             return $result;
         }
 
@@ -234,7 +253,6 @@ class RTG_Roamer_Sync {
         );
 
         // Detect newly appeared ambiguous/unmatched tires and send notification.
-        $notify_enabled = $settings['roamer_notify_enabled'] ?? true;
         if ( $notify_enabled && ( ! empty( $ambiguous_list ) || ! empty( $unmatched_list ) ) ) {
             $prev_stats = get_option( self::STATS_OPTION, array() );
             self::maybe_send_notification( $prev_stats, $ambiguous_list, $unmatched_list );

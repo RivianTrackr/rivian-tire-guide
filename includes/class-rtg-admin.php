@@ -126,10 +126,18 @@ class RTG_Admin {
             echo '<p style="margin:4px 0;color:#666;">';
             $notices = array();
             if ( $missing_links > 0 ) {
-                $notices[] = sprintf( '%d missing links', $missing_links );
+                $notices[] = sprintf(
+                    /* translators: %d is the number of tires missing affiliate links. */
+                    _n( '%d missing link', '%d missing links', $missing_links, 'rivian-tire-guide' ),
+                    $missing_links
+                );
             }
             if ( $missing_images > 0 ) {
-                $notices[] = sprintf( '%d missing images', $missing_images );
+                $notices[] = sprintf(
+                    /* translators: %d is the number of tires missing images. */
+                    _n( '%d missing image', '%d missing images', $missing_images, 'rivian-tire-guide' ),
+                    $missing_images
+                );
             }
             echo esc_html( implode( ' · ', $notices ) );
             echo '</p>';

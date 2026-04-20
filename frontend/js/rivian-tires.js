@@ -420,8 +420,27 @@ document.addEventListener("DOMContentLoaded", () => {
       const badge = toggleBtn.querySelector('.mobile-filter-badge');
       const badgeHTML = badge ? ` <span class="mobile-filter-badge">${badge.textContent}</span>` : '';
       toggleBtn.innerHTML = `<i class="fa-solid fa-sliders" aria-hidden="true"></i>&nbsp; ${isOpen ? "Hide" : "Show"} Filters${badgeHTML}`;
+
+      // Move keyboard focus into the drawer on open (WCAG 2.1 focus mgmt).
+      if (isOpen) {
+        const firstFocusable = filterContent.querySelector(
+          'select, input:not([type="hidden"]), button, [tabindex]:not([tabindex="-1"])'
+        );
+        if (firstFocusable && typeof firstFocusable.focus === 'function') {
+          firstFocusable.focus({ preventScroll: true });
+        }
+      }
     });
   }
+
+  // Wire switch-slider proxy clicks (keyboard + pointer) to their checkbox.
+  // Replaces legacy inline onclick= handlers for accessibility.
+  document.querySelectorAll('.switch-slider[data-toggle-target]').forEach(slider => {
+    const targetId = slider.dataset.toggleTarget;
+    const target = targetId ? document.getElementById(targetId) : null;
+    if (!target) return;
+    slider.addEventListener('click', () => target.click());
+  });
 
   const trigger = getDOMElement("wheelDrawerTrigger");
   const drawer = getDOMElement("wheelDrawer");

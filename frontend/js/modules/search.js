@@ -4,8 +4,7 @@
  * Smart search — index building, fuzzy matching, and button-based search.
  *
  * The user types a query and explicitly clicks the "Search" button (or
- * presses Enter) to filter locally, or clicks the "AI" button to get
- * AI-powered recommendations.
+ * presses Enter) to filter the local tire list.
  */
 
 import { state } from './state.js';
@@ -23,8 +22,6 @@ let searchIndex = {
 };
 
 export function buildSearchIndex() {
-  console.time('Building search index');
-
   Object.values(searchIndex).forEach(index => index.clear());
 
   state.allRows.forEach((row, rowIndex) => {

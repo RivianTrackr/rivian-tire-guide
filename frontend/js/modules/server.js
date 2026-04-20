@@ -51,7 +51,19 @@ export function fetchTiresFromServer(page) {
   body.append('sort', sortMap[sortVal] || sortVal);
 
   const tireCountEl = getDOMElement("tireCount");
-  if (tireCountEl) tireCountEl.textContent = 'Loading...';
+  const tireCardsEl = getDOMElement("tireCards");
+
+  // Only surface a loading state if the request is genuinely slow (>500ms).
+  // Fast responses shouldn't flash a spinner/overlay.
+  const loadingTimer = setTimeout(() => {
+    if (tireCountEl) tireCountEl.textContent = 'Loading...';
+    if (tireCardsEl) tireCardsEl.classList.add('rtg-cards-loading');
+  }, 500);
+
+  const clearLoadingState = () => {
+    clearTimeout(loadingTimer);
+    if (tireCardsEl) tireCardsEl.classList.remove('rtg-cards-loading');
+  };
 
   return fetch(rtgData.settings.ajaxurl, {
     method: 'POST',
@@ -60,6 +72,7 @@ export function fetchTiresFromServer(page) {
   })
   .then(res => res.json())
   .then(json => {
+    clearLoadingState();
     if (!json.success) {
       console.error('Server tire fetch failed:', json);
       return;
@@ -148,6 +161,7 @@ export function fetchTiresFromServer(page) {
     loadTireRatings(tireIds);
   })
   .catch(err => {
+    clearLoadingState();
     if (err.name !== 'AbortError') console.error('Fetch error:', err);
   });
 }

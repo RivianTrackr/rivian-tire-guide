@@ -6,10 +6,40 @@ if ( ! defined( 'ABSPATH' ) ) {
 class RTG_Ajax {
 
     /**
-     * Maximum review submissions per window per user/IP.
+     * Review-write rate limit (per user/guest fingerprint).
+     * Reviews are expensive to moderate and spammy, so the ceiling is tight.
      */
     const RATE_LIMIT_MAX    = 3;
     const RATE_LIMIT_WINDOW = 300; // seconds (5 minutes)
+
+    /**
+     * Public read-endpoint rate limit (per fingerprint).
+     * Generous enough for interactive filtering and normal browsing.
+     */
+    const PUBLIC_READ_LIMIT  = 120;
+    const PUBLIC_READ_WINDOW = 60; // seconds
+
+    /**
+     * Public analytics (track_click / track_search) rate limit.
+     * Higher ceiling so typing in the search box isn't throttled.
+     */
+    const PUBLIC_TRACK_LIMIT  = 240;
+    const PUBLIC_TRACK_WINDOW = 60; // seconds
+
+    /**
+     * Sort keys allowed from the client when calling get_tires().
+     * Centralized here so validation stays in one place; the frontend sort
+     * dropdown is the canonical list of user-visible sorts.
+     */
+    const ALLOWED_SORTS = array(
+        'efficiency_score',
+        'price-asc',
+        'price-desc',
+        'warranty-desc',
+        'weight-asc',
+        'newest',
+        'roamer-efficiency',
+    );
 
     /**
      * Resolve a stable per-visitor identifier for rate limiting.
@@ -187,8 +217,8 @@ class RTG_Ajax {
 
         $user_id = get_current_user_id();
 
-        // Rate limiting: max submissions per minute per user.
-        if ( $this->is_rate_limited( $user_id ) ) {
+        // Rate limiting: max submissions per window per user.
+        if ( $this->check_rate_limit( 'review_user', (string) $user_id, self::RATE_LIMIT_MAX, self::RATE_LIMIT_WINDOW ) ) {
             $this->log_security_event( 'rate_limit_hit', __METHOD__, array( 'uid' => $user_id ) );
             wp_send_json_error( 'Too many rating submissions. Please wait a moment and try again.' );
         }
@@ -225,9 +255,6 @@ class RTG_Ajax {
         if ( ! $tire ) {
             wp_send_json_error( 'Tire not found.' );
         }
-
-        // Record this submission for rate limiting.
-        $this->record_rate_limit( $user_id );
 
         // Determine the review status that will be applied.
         $is_admin           = user_can( $user_id, 'manage_options' );
@@ -273,7 +300,7 @@ class RTG_Ajax {
 
         // Fingerprint-based rate limiting for guests (resists naive IP spoofing).
         $fingerprint = $this->get_client_fingerprint();
-        if ( $this->is_guest_rate_limited( $fingerprint ) ) {
+        if ( $this->check_rate_limit( 'review_guest', $fingerprint, self::RATE_LIMIT_MAX, self::RATE_LIMIT_WINDOW ) ) {
             $this->log_security_event( 'rate_limit_hit', __METHOD__ );
             wp_send_json_error( 'Too many submissions. Please wait a moment and try again.' );
         }
@@ -283,7 +310,7 @@ class RTG_Ajax {
 
         $tire_id      = sanitize_text_field( $post['tire_id'] ?? '' );
         $rating       = intval( $post['rating'] ?? 0 );
-        $guest_name   = sanitize_text_field( $post['guest_name'] ?? '' );
+        $guest_name   = trim( sanitize_text_field( $post['guest_name'] ?? '' ) );
         $guest_email  = sanitize_email( $post['guest_email'] ?? '' );
         $review_title = sanitize_text_field( $post['review_title'] ?? '' );
         $review_text  = sanitize_textarea_field( $post['review_text'] ?? '' );
@@ -298,8 +325,8 @@ class RTG_Ajax {
             wp_send_json_error( 'Rating must be between 1 and 5.' );
         }
 
-        // Validate guest name.
-        if ( empty( $guest_name ) || mb_strlen( $guest_name ) > 100 ) {
+        // Validate guest name. Trim first so whitespace-only submissions fail.
+        if ( '' === $guest_name || mb_strlen( $guest_name ) > 100 ) {
             wp_send_json_error( 'Name is required (100 characters max).' );
         }
 
@@ -332,9 +359,6 @@ class RTG_Ajax {
         if ( RTG_Database::guest_review_exists( $guest_email, $tire_id ) ) {
             wp_send_json_error( 'You have already reviewed this tire.' );
         }
-
-        // Record rate limit hit.
-        $this->record_guest_rate_limit( $fingerprint );
 
         // Save the guest review (always pending).
         RTG_Database::set_guest_rating( $tire_id, $guest_name, $guest_email, $rating, $review_title, $review_text );
@@ -389,36 +413,41 @@ class RTG_Ajax {
     }
 
     /**
-     * Check if a guest IP has exceeded the rate limit.
+     * Atomically increment a rate-limit counter and report whether the caller
+     * has exceeded $limit within $window seconds.
      *
-     * @param string $ip Client IP address.
-     * @return bool True if rate-limited.
+     * When a persistent object cache is available (Redis, Memcached) we use
+     * `wp_cache_add` + `wp_cache_incr` for a race-free increment. Otherwise
+     * we fall back to the transient approach — best-effort, but still bounded
+     * because even under pathological concurrency the counter only drifts by
+     * the number of simultaneous writers, not unbounded.
+     *
+     * @param string $bucket      Logical bucket (e.g. "review", "read").
+     * @param string $fingerprint Opaque per-client identifier.
+     * @param int    $limit       Max requests allowed in the window.
+     * @param int    $window      Window length in seconds.
+     * @return bool True when the request should be blocked.
      */
-    private function is_guest_rate_limited( $fingerprint ) {
-        $transient_key = 'rtg_rate_guest_' . md5( $fingerprint );
-        $attempts      = get_transient( $transient_key );
+    private function check_rate_limit( $bucket, $fingerprint, $limit, $window ) {
+        $key = 'rtg_' . $bucket . '_' . md5( $fingerprint );
 
-        if ( false === $attempts ) {
-            return false;
+        if ( function_exists( 'wp_using_ext_object_cache' ) && wp_using_ext_object_cache() ) {
+            $group = 'rtg_rate_limit';
+            if ( wp_cache_add( $key, 1, $group, $window ) ) {
+                return 1 > $limit;
+            }
+            $count = wp_cache_incr( $key, 1, $group );
+            return (int) $count > $limit;
         }
 
-        return (int) $attempts >= self::RATE_LIMIT_MAX;
-    }
-
-    /**
-     * Record a guest rate-limit hit.
-     *
-     * @param string $fingerprint Opaque client identifier.
-     */
-    private function record_guest_rate_limit( $fingerprint ) {
-        $transient_key = 'rtg_rate_guest_' . md5( $fingerprint );
-        $attempts      = get_transient( $transient_key );
-
-        if ( false === $attempts ) {
-            set_transient( $transient_key, 1, self::RATE_LIMIT_WINDOW );
-        } else {
-            set_transient( $transient_key, (int) $attempts + 1, self::RATE_LIMIT_WINDOW );
-        }
+        // Transient fallback. Reads a hint, writes the incremented value.
+        // Not strictly atomic, but the blast radius under concurrency is just
+        // a few extra requests slipping through per window — acceptable for
+        // a best-effort soft limit in a shared-nothing PHP-FPM environment.
+        $current = get_transient( $key );
+        $new     = ( false === $current ) ? 1 : (int) $current + 1;
+        set_transient( $key, $new, $window );
+        return $new > $limit;
     }
 
     /**
@@ -490,44 +519,16 @@ class RTG_Ajax {
     }
 
     /**
-     * Check if a user has exceeded the rate limit for rating submissions.
-     *
-     * @param int $user_id WordPress user ID.
-     * @return bool True if rate-limited.
-     */
-    private function is_rate_limited( $user_id ) {
-        $transient_key = 'rtg_rate_' . $user_id;
-        $attempts      = get_transient( $transient_key );
-
-        if ( false === $attempts ) {
-            return false;
-        }
-
-        return (int) $attempts >= self::RATE_LIMIT_MAX;
-    }
-
-    /**
-     * Record a rating submission for rate limiting.
-     *
-     * @param int $user_id WordPress user ID.
-     */
-    private function record_rate_limit( $user_id ) {
-        $transient_key = 'rtg_rate_' . $user_id;
-        $attempts      = get_transient( $transient_key );
-
-        if ( false === $attempts ) {
-            set_transient( $transient_key, 1, self::RATE_LIMIT_WINDOW );
-        } else {
-            set_transient( $transient_key, (int) $attempts + 1, self::RATE_LIMIT_WINDOW );
-        }
-    }
-
-    /**
      * Server-side filtered + paginated tire listing.
      * Used when the 'server_side_pagination' setting is enabled.
      */
     public function get_tires() {
         check_ajax_referer( 'rtg_tire_nonce', 'nonce' );
+
+        // Soft rate limit to blunt scrapers that harvest the nonce from the page.
+        if ( $this->check_rate_limit( 'read', $this->get_client_fingerprint(), self::PUBLIC_READ_LIMIT, self::PUBLIC_READ_WINDOW ) ) {
+            wp_send_json_error( 'Too many requests. Please slow down.', 429 );
+        }
 
         $settings = get_option( 'rtg_settings', array() );
         $per_page = intval( $settings['rows_per_page'] ?? 12 );
@@ -553,13 +554,8 @@ class RTG_Ajax {
             $filters['warranty_min'] = $warranty_min;
         }
 
-        $allowed_sorts = array(
-            'efficiency_score', 'price-asc', 'price-desc',
-            'warranty-desc', 'weight-asc',
-            'newest', 'roamer-efficiency',
-        );
         $sort = sanitize_text_field( $_POST['sort'] ?? 'efficiency_score' );
-        if ( ! in_array( $sort, $allowed_sorts, true ) ) {
+        if ( ! in_array( $sort, self::ALLOWED_SORTS, true ) ) {
             $sort = 'efficiency_score';
         }
 
@@ -582,6 +578,10 @@ class RTG_Ajax {
      */
     public function get_filter_options() {
         check_ajax_referer( 'rtg_tire_nonce', 'nonce' );
+
+        if ( $this->check_rate_limit( 'read', $this->get_client_fingerprint(), self::PUBLIC_READ_LIMIT, self::PUBLIC_READ_WINDOW ) ) {
+            wp_send_json_error( 'Too many requests. Please slow down.', 429 );
+        }
 
         global $wpdb;
         $table = RTG_Database::tires_table_public();
@@ -737,6 +737,11 @@ class RTG_Ajax {
             wp_send_json_error( 'Security check failed.' );
         }
 
+        // Drop (not error) when throttled — analytics is best-effort.
+        if ( $this->check_rate_limit( 'track', $this->get_client_fingerprint(), self::PUBLIC_TRACK_LIMIT, self::PUBLIC_TRACK_WINDOW ) ) {
+            wp_send_json_success();
+        }
+
         $tire_id   = sanitize_text_field( $_POST['tire_id'] ?? '' );
         $link_type = sanitize_text_field( $_POST['link_type'] ?? 'purchase' );
 
@@ -761,6 +766,11 @@ class RTG_Ajax {
     public function track_search() {
         if ( ! check_ajax_referer( 'rtg_analytics_nonce', 'nonce', false ) ) {
             wp_send_json_error( 'Security check failed.' );
+        }
+
+        // Drop (not error) when throttled — analytics is best-effort.
+        if ( $this->check_rate_limit( 'track', $this->get_client_fingerprint(), self::PUBLIC_TRACK_LIMIT, self::PUBLIC_TRACK_WINDOW ) ) {
+            wp_send_json_success();
         }
 
         $search_query = sanitize_text_field( wp_unslash( $_POST['search_query'] ?? '' ) );
@@ -990,24 +1000,31 @@ class RTG_Ajax {
             wp_send_json_error( 'Invalid or missing tire_id.' );
         }
 
-        // Support single or multiple roamer IDs.
+        // Support single or multiple roamer IDs. Every ID must pass the same
+        // validation as a local tire_id to protect against a malformed JSON
+        // payload slipping through to RTG_Database::update_tire().
         $roamer_ids = array();
         if ( ! empty( $_POST['roamer_tire_ids'] ) ) {
             $raw = json_decode( stripslashes( $_POST['roamer_tire_ids'] ), true );
             if ( is_array( $raw ) ) {
+                // Cap the batch size so a giant array can't stall the request.
+                $raw = array_slice( $raw, 0, 50 );
                 foreach ( $raw as $rid ) {
                     $clean = sanitize_text_field( $rid );
-                    if ( ! empty( $clean ) ) {
+                    if ( '' !== $clean && RTG_Database::validate_tire_id( $clean ) ) {
                         $roamer_ids[] = $clean;
                     }
                 }
             }
         } elseif ( ! empty( $_POST['roamer_tire_id'] ) ) {
-            $roamer_ids[] = sanitize_text_field( $_POST['roamer_tire_id'] );
+            $clean = sanitize_text_field( $_POST['roamer_tire_id'] );
+            if ( RTG_Database::validate_tire_id( $clean ) ) {
+                $roamer_ids[] = $clean;
+            }
         }
 
         if ( empty( $roamer_ids ) ) {
-            wp_send_json_error( 'Missing roamer_tire_id(s).' );
+            wp_send_json_error( 'Missing or invalid roamer_tire_id(s).' );
         }
 
         // Look up Roamer data from stored sync stats.
@@ -1160,9 +1177,10 @@ class RTG_Ajax {
         if ( ! empty( $_POST['roamer_tire_ids'] ) ) {
             $raw = json_decode( stripslashes( $_POST['roamer_tire_ids'] ), true );
             if ( is_array( $raw ) ) {
+                $raw = array_slice( $raw, 0, 50 );
                 foreach ( $raw as $rid ) {
                     $clean = sanitize_text_field( $rid );
-                    if ( ! empty( $clean ) ) {
+                    if ( '' !== $clean && RTG_Database::validate_tire_id( $clean ) ) {
                         $roamer_ids[] = $clean;
                     }
                 }
@@ -1170,7 +1188,7 @@ class RTG_Ajax {
         }
 
         if ( empty( $roamer_ids ) ) {
-            wp_send_json_error( 'Missing roamer_tire_ids.' );
+            wp_send_json_error( 'Missing or invalid roamer_tire_ids.' );
         }
 
         // Append to the persistent hidden list.
@@ -1226,9 +1244,10 @@ class RTG_Ajax {
         if ( ! empty( $_POST['roamer_tire_ids'] ) ) {
             $raw = json_decode( stripslashes( $_POST['roamer_tire_ids'] ), true );
             if ( is_array( $raw ) ) {
+                $raw = array_slice( $raw, 0, 50 );
                 foreach ( $raw as $rid ) {
                     $clean = sanitize_text_field( $rid );
-                    if ( ! empty( $clean ) ) {
+                    if ( '' !== $clean && RTG_Database::validate_tire_id( $clean ) ) {
                         $roamer_ids[] = $clean;
                     }
                 }
@@ -1236,7 +1255,7 @@ class RTG_Ajax {
         }
 
         if ( empty( $roamer_ids ) ) {
-            wp_send_json_error( 'Missing roamer_tire_ids.' );
+            wp_send_json_error( 'Missing or invalid roamer_tire_ids.' );
         }
 
         $hidden = get_option( RTG_Roamer_Sync::HIDDEN_OPTION, array() );

@@ -383,6 +383,96 @@ class RTG_Mailer {
     }
 
     /**
+     * Notify the site admin when a Roamer sync run fails.
+     *
+     * Sent only from scheduled cron runs (not manual admin runs, which show
+     * errors in the UI). Throttled to one email per failure reason per 12h
+     * so a sustained outage doesn't spam the admin inbox.
+     *
+     * @param string $reason   Short error reason (e.g. HTTP 500, Invalid JSON).
+     * @param string $feed_url URL that was fetched.
+     * @return bool Whether the email was sent (false if suppressed or skipped).
+     */
+    public static function send_roamer_sync_failure_notification( $reason, $feed_url ) {
+        $admin_email = get_option( 'admin_email' );
+        if ( ! $admin_email ) {
+            return false;
+        }
+
+        // Throttle: one email per 12h per reason signature so a sustained
+        // outage (e.g. feed down for a day) produces at most two emails.
+        $throttle_key = 'rtg_roamer_fail_' . md5( $reason );
+        if ( false !== get_transient( $throttle_key ) ) {
+            return false;
+        }
+        set_transient( $throttle_key, 1, 12 * HOUR_IN_SECONDS );
+
+        $site_name = esc_html( get_bloginfo( 'name' ) );
+        $sync_url  = admin_url( 'admin.php?page=rtg-roamer-sync' );
+        $subject   = 'Tire Guide: Roamer sync failed';
+
+        $body = '<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="margin: 0; padding: 0; background-color: #f5f5f7; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f7; padding: 40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+  <tr>
+    <td style="background-color: #1d1d1f; padding: 24px 32px; text-align: center;">
+      <h1 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 600;">' . $site_name . '</h1>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 32px;">
+      <h2 style="margin: 0 0 16px 0; color: #1d1d1f; font-size: 22px; font-weight: 600;">Roamer Sync Failed</h2>
+      <p style="margin: 0 0 20px 0; color: #6e6e73; font-size: 16px; line-height: 1.5;">
+        The scheduled Rivian Roamer efficiency sync could not complete. Real-world efficiency data will be stale until this is resolved.
+      </p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fff3f3; border: 1px solid #ffdada; border-radius: 8px; margin: 0 0 24px 0;">
+        <tr>
+          <td style="padding: 16px 20px;">
+            <div style="font-size: 13px; font-weight: 600; color: #c41e3a; margin-bottom: 4px;">Reason</div>
+            <div style="font-family: \'SF Mono\', Monaco, monospace; font-size: 13px; color: #1d1d1f;">' . esc_html( $reason ) . '</div>
+            <div style="font-size: 13px; font-weight: 600; color: #c41e3a; margin: 12px 0 4px;">Feed URL</div>
+            <div style="font-family: \'SF Mono\', Monaco, monospace; font-size: 12px; color: #6e6e73; word-break: break-all;">' . esc_html( $feed_url ) . '</div>
+          </td>
+        </tr>
+      </table>
+      <p style="margin: 0 0 20px 0; color: #6e6e73; font-size: 14px; line-height: 1.5;">
+        Further failures with the same reason are suppressed for 12 hours so your inbox is not flooded during an extended outage.
+      </p>
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td align="center">
+            <a href="' . esc_url( $sync_url ) . '" style="display: inline-block; background-color: #0071e3; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Open Roamer Sync</a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 20px 32px; border-top: 1px solid #e5e5e5; text-align: center;">
+      <p style="margin: 0; color: #86868b; font-size: 12px;">
+        Failure notifications can be disabled from the Roamer Sync settings in ' . $site_name . '.
+      </p>
+    </td>
+  </tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>';
+
+        $headers = array( 'Content-Type: text/html; charset=UTF-8' );
+        if ( $site_name ) {
+            $headers[] = 'From: ' . $site_name . ' <' . $admin_email . '>';
+        }
+
+        return wp_mail( $admin_email, $subject, $body, $headers );
+    }
+
+    /**
      * Get the tire guide page URL with a tire parameter.
      *
      * @param string $tire_id Tire identifier for deep linking.

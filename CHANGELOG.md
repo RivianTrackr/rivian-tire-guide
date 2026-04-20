@@ -4,6 +4,65 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.47.0] - 2026-04-20
+
+### Security
+- **Rate limiting hardened end-to-end.** Replaced the read-then-write
+  transient pattern with an atomic `wp_cache_add` / `wp_cache_incr` path
+  when a persistent object cache is available, falling back to transients
+  otherwise. Rate-limit counters no longer drift under concurrent writes
+  when Redis/Memcached is present.
+- **Public AJAX endpoints now rate limited.** `rtg_get_tires`,
+  `rtg_get_filter_options`, `rtg_track_click`, and `rtg_track_search`
+  previously relied only on a nonce that is exposed in page source, so a
+  scraper could harvest it and hammer the endpoint. Reads now cap at 120
+  req/min per fingerprint; analytics caps at 240 req/min and drops silently
+  when throttled so user typing isn't penalized. Reviews keep the existing
+  tighter 3-per-5-minute limit in its own bucket so normal browsing can't
+  starve review submissions or vice versa.
+- **Guest name validation now trims first.** `submit_guest_tire_rating`
+  rejected `""` but accepted `"   "` — whitespace-only submissions are now
+  rejected with the same error.
+- **Roamer assign/hide/restore batches now validate each tire ID** against
+  the canonical regex and cap the batch at 50 entries. A malformed JSON
+  payload can no longer slip a bad ID into `update_tire()`.
+
+### Added
+- **Admin email on Roamer sync failure.** When a scheduled cron sync can't
+  reach the feed (wp_error, non-200, or invalid JSON), the admin gets an
+  HTML email with the failure reason and a link to the Roamer Sync page.
+  Throttled to one email per reason per 12h so an extended outage doesn't
+  flood the inbox. Manual admin runs don't email (errors already show in
+  the UI). Honors the existing `roamer_notify_enabled` setting.
+- **Slow-response loading state for server-side pagination.** `#tireCards`
+  gets a dimmed, input-blocking overlay after 500ms of fetch latency so
+  fast responses don't flash a spinner but slow ones give feedback.
+- **Rate-limit concurrency test.** New PHPUnit test issues max + 2 rapid
+  guest submissions and asserts the overflow is blocked.
+
+### Changed
+- **Ratings no longer block card render.** `loadTireRatings` now runs in
+  parallel with `renderCards`, and rating blocks are swapped in via
+  `updateRatingDisplay` once the batch response arrives. Saves ~200ms of
+  perceived latency on the first paint for each page.
+- **Switch-slider toggles no longer use inline `onclick`.** The 3PMS/OEM
+  filter pills now use `data-toggle-target` + a delegated listener wired
+  up in `rivian-tires.js`, which plays nicer with strict CSP headers.
+- **Mobile filter drawer manages keyboard focus on open.** The first
+  focusable control inside `#mobileFilterContent` receives focus when the
+  drawer opens, matching the WCAG 2.1 focus-management pattern used by
+  the other modals/drawers.
+- **Admin dashboard widget strings are now `_n()`-translatable.** "Missing
+  links / missing images" copy goes through `_n()` + `__()` so translators
+  can pluralize properly.
+- **Sort whitelist centralized.** `RTG_Ajax::ALLOWED_SORTS` is the single
+  source of truth for the sort keys accepted by `get_tires()`.
+
+### Removed
+- **Stale AI references in frontend code.** `search.js` no longer mentions
+  the removed "AI" button in its module docstring; the leftover
+  `console.time('Building search index')` production log is gone.
+
 ## [1.46.0] - 2026-04-15
 
 ### Removed

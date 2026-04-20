@@ -392,6 +392,59 @@ class Test_RTG_Ajax extends WP_Ajax_UnitTestCase {
         $this->assertNotContains( $tire_id, $favorites );
     }
 
+    // -------------------------------------------------------
+    // Rate limiting
+    // -------------------------------------------------------
+
+    /**
+     * Issue the configured max + 2 rapid guest submissions for the same tire
+     * and assert the limit actually blocks the overflow. Exercises the
+     * shared check_rate_limit() counter path, which is the closest proxy
+     * to a concurrent flood in a single-process test environment.
+     */
+    public function test_guest_rate_limit_blocks_after_window_max() {
+        $tire_id = 'ratelimit-guest-001';
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => $tire_id ) ) );
+
+        // Guests are identified by fingerprint (UA + IP). Pin both so every
+        // iteration resolves to the same bucket.
+        $_SERVER['REMOTE_ADDR']     = '203.0.113.7';
+        $_SERVER['HTTP_USER_AGENT'] = 'RateLimitTest/1.0';
+
+        $max       = RTG_Ajax::RATE_LIMIT_MAX;
+        $submitted = 0;
+        $blocked   = 0;
+
+        for ( $i = 0; $i < $max + 2; $i++ ) {
+            $_POST = array(
+                'nonce'        => wp_create_nonce( 'tire_rating_nonce' ),
+                'tire_id'      => $tire_id,
+                'rating'       => 4,
+                'guest_name'   => 'Test Guest ' . $i,
+                'guest_email'  => 'rl+' . $i . '@example.com',
+                'review_title' => 'Title',
+                'review_text'  => 'Body ' . $i,
+            );
+            $this->_last_response = '';
+
+            try {
+                $this->_handleAjax( 'nopriv_submit_guest_tire_rating' );
+            } catch ( WPAjaxDieContinueException $e ) {
+                // Expected.
+            }
+
+            $response = json_decode( $this->_last_response, true );
+            if ( ! empty( $response['success'] ) ) {
+                $submitted++;
+            } elseif ( isset( $response['data'] ) && false !== stripos( $response['data'], 'too many' ) ) {
+                $blocked++;
+            }
+        }
+
+        $this->assertGreaterThanOrEqual( 1, $blocked, 'Rate limit should block at least one overflow request.' );
+        $this->assertLessThanOrEqual( $max, $submitted, 'Submissions within window should not exceed the configured max.' );
+    }
+
     public function test_add_favorite_rejects_nonexistent_tire() {
         $user_id = $this->factory()->user->create( array( 'role' => 'subscriber' ) );
         wp_set_current_user( $user_id );

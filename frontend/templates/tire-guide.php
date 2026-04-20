@@ -82,7 +82,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             </div>
           </span>
           <input type="checkbox" id="filter3pms" aria-label="3PMS Rated" />
-          <span class="switch-slider" onclick="document.getElementById('filter3pms').click()"></span>
+          <span class="switch-slider" data-toggle-target="filter3pms"></span>
         </div>
         <div class="switch-label">
           <span class="switch-text">
@@ -94,7 +94,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             </div>
           </span>
           <input type="checkbox" id="filterOEM" aria-label="OEM"/>
-          <span class="switch-slider" onclick="document.getElementById('filterOEM').click()"></span>
+          <span class="switch-slider" data-toggle-target="filterOEM"></span>
         </div>
       </div>
     </div>

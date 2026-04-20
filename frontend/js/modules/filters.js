@@ -9,7 +9,7 @@ import { rtgIcon, safeString, getDOMElement, debounce, updateSliderBackground, s
 import { VALIDATION_PATTERNS, NUMERIC_BOUNDS, ALLOWED_SORT_OPTIONS, sanitizeInput, validateNumeric } from './validation.js';
 import { RTG_ANALYTICS } from './analytics.js';
 import { renderCards, preloadNextPageImages } from './cards.js';
-import { loadTireRatings } from './ratings.js';
+import { loadTireRatings, updateRatingDisplay } from './ratings.js';
 import { isPreciseMatch } from './search.js';
 import { isServerSide, serverSideFilterAndRender } from './server.js';
 
@@ -234,27 +234,35 @@ function render() {
 
   const tireIds = visible.map(row => row[0]).filter(Boolean);
 
-  loadTireRatings(tireIds).then(() => {
-    renderCards(visible);
-    renderPaginationControls(state.filteredRows);
+  // Kick off ratings fetch in parallel — don't block the card render on it.
+  // Cards render immediately with a "No reviews" placeholder, and we swap in
+  // the real rating display once the batch response arrives. Sort-by-rating
+  // paths load ratings earlier in filterAndRender(), so they're already warm.
+  const ratingsPromise = loadTireRatings(tireIds);
 
-    const noResults = getDOMElement("noResults");
-    const tireCards = getDOMElement("tireCards");
-    if (state.filteredRows.length === 0) {
-      renderSmartNoResults();
-      noResults.style.display = "block";
-      tireCards.style.display = "none";
-    } else {
-      noResults.style.display = "none";
-      tireCards.style.display = "grid";
-    }
+  renderCards(visible);
+  renderPaginationControls(state.filteredRows);
 
-    if ('requestIdleCallback' in window) {
-      requestIdleCallback(() => preloadNextPageImages());
-    } else {
-      setTimeout(preloadNextPageImages, 100);
-    }
+  const noResults = getDOMElement("noResults");
+  const tireCards = getDOMElement("tireCards");
+  if (state.filteredRows.length === 0) {
+    renderSmartNoResults();
+    noResults.style.display = "block";
+    tireCards.style.display = "none";
+  } else {
+    noResults.style.display = "none";
+    tireCards.style.display = "grid";
+  }
+
+  ratingsPromise.then(() => {
+    tireIds.forEach(id => updateRatingDisplay(id));
   });
+
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => preloadNextPageImages());
+  } else {
+    setTimeout(preloadNextPageImages, 100);
+  }
 }
 
 // Delegated once at module load: every click inside #paginationControls
