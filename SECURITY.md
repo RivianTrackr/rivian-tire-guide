@@ -4,8 +4,8 @@
 
 | Version | Supported |
 |---------|-----------|
-| 1.30.x  | Yes       |
-| < 1.30  | No        |
+| 1.47.x  | Yes       |
+| < 1.47  | No        |
 
 ## Reporting a Vulnerability
 
@@ -43,7 +43,7 @@ This plugin implements the following security practices:
 - **Authorization:** `current_user_can('manage_options')` checks on all admin actions.
 - **Input Sanitization:** `sanitize_text_field()`, `sanitize_textarea_field()`, `esc_url_raw()`, `intval()`, `floatval()` on all user input.
 - **Output Escaping:** `esc_html()`, `esc_url()`, `esc_attr()`, `esc_textarea()` on all output.
-- **Rate Limiting:** Transient-based rate limiter on review submissions (3 per 5-minute window per user; IP-based for guests). REST API rate limiting (60 reads/min, 10 writes/min). AI query rate limiting (configurable per-IP).
+- **Rate Limiting:** Transient-based rate limiter on review submissions (3 per 5-minute window per user; IP-based for guests). REST API rate limiting (60 reads/min, 10 writes/min). Public AJAX endpoints (catalog reads, click/search tracking) capped at 120–240 req/min per fingerprint.
 - **Data Validation:** Tire existence checks before accepting ratings; regex validation on tire IDs (`/^[a-zA-Z0-9\-_]+$/`, max 50 chars); review field length limits (title 200 chars, body 5,000 chars).
 - **External Data Fetch Security:** Rivian Roamer sync uses `wp_remote_get()` with HTTPS enforcement and 15-second timeout. All incoming JSON data is sanitized via `sanitize_text_field()` and validated before database insertion. The sync URL is configurable but stored via `esc_url_raw()`.
 - **CSS Injection Prevention:** `sanitize_hex_color()` re-validation at render time for theme color overrides.

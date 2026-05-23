@@ -1,6 +1,6 @@
 # Rivian Tire Guide
 
-A comprehensive WordPress plugin that provides an interactive tire catalog for Rivian vehicle owners. Features advanced filtering, side-by-side comparison, user and guest reviews, AI-powered recommendations, affiliate link management, analytics, and an efficiency scoring system to help drivers choose the best tires for range and performance.
+A comprehensive WordPress plugin that provides an interactive tire catalog for Rivian vehicle owners. Features advanced filtering, side-by-side comparison, user and guest reviews, affiliate link management, analytics, and an efficiency scoring system to help drivers choose the best tires for range and performance.
 
 ## Features
 
@@ -20,12 +20,6 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Guest Reviews** — Non-logged-in visitors can submit reviews with name and email. Includes honeypot spam prevention and IP-based rate limiting.
 - **Review Moderation** — Admin approval queue with pending/approved/rejected status tabs. Admin-submitted reviews auto-approve; user and guest reviews default to pending.
 - **Email Notifications** — Admins receive styled HTML email notifications for new guest reviews. Reviewers receive approval notification emails.
-
-### AI Tire Advisor
-- **Natural Language Search** — Powered by Anthropic's Claude API. Visitors type queries like "best winter tire for my Rivian with 20 inch wheels" and receive AI-ranked recommendations from the tire catalog.
-- **Response Caching** — Identical queries cached for 1 hour to reduce API costs.
-- **Per-IP Rate Limiting** — Configurable rate limit (default: 10 queries/minute) to control API usage.
-- **Admin Settings** — Enable/disable toggle, API key input, model selector (Claude Haiku 4.5 or Claude Sonnet 4), and rate limit configuration.
 
 ### Efficiency Scoring
 - **Proprietary Algorithm** — Weighted formula (0-100 score, A/B/C/D/F grade) estimating range-friendliness based on weight, tread depth, load range, speed rating, UTQG, category, width, and 3PMS certification.
@@ -55,7 +49,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Affiliate Links Dashboard** — Centralized view of all purchase and review links with link classification (affiliate vs. direct), filter tabs, and inline AJAX editing.
 - **Stock Wheels Guide** — Manage stock wheel data for Rivian models.
 - **Analytics** — Visual analytics with Chart.js (see Analytics section above).
-- **Settings** — Rows per page, compare slug, user reviews slug, server-side pagination toggle, theme colors (14 CSS custom properties), dropdown options (brands, sizes, categories, load ranges, speed ratings, size-to-diameter mapping, load index-to-lbs mapping), affiliate domains, AI settings, and analytics retention.
+- **Settings** — Rows per page, compare slug, user reviews slug, server-side pagination toggle, theme colors (14 CSS custom properties), dropdown options (brands, sizes, categories, load ranges, speed ratings, size-to-diameter mapping, load index-to-lbs mapping), affiliate domains, and analytics retention.
 
 ### SEO & Social
 - **Schema.org Structured Data** — Automatic JSON-LD output (Product, AggregateRating, Review, ItemList) for rich search results.
@@ -87,7 +81,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 
 ## Requirements
 
-- WordPress 5.8+
+- WordPress 5.8+ (tested up to 7.0)
 - PHP 7.4+
 - MySQL 5.7+ / MariaDB 10.3+
 - Node.js 18+ (for building minified assets)
@@ -105,7 +99,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
    ```
 3. Activate the plugin via **Plugins > Installed Plugins** in the WordPress admin.
 4. The plugin will automatically create the required database tables and run migrations.
-5. Navigate to **Tire Guide > Settings** to configure display options, theme colors, and AI settings.
+5. Navigate to **Tire Guide > Settings** to configure display options and theme colors.
 6. Add the shortcode `[rivian_tire_guide]` to any page or post.
 
 ## Usage
@@ -152,7 +146,6 @@ Navigate to **Tire Guide > Settings** to configure:
 - **Theme Colors** — 14 hex color values for full theme customization (accent, backgrounds, text, borders, stars).
 - **Dropdown Options** — Manage brands, categories, sizes, diameters, load ranges, speed ratings, load index mappings, and size-to-diameter mappings.
 - **Affiliate Link Domains** — Configure affiliate network domains for link classification.
-- **AI Tire Recommendations** — Enable/disable, API key, model selection, and rate limiting.
 - **Analytics Retention** — Data retention period (7-365 days).
 
 ## File Structure
@@ -169,13 +162,12 @@ rivian-tire-guide/
 │   ├── class-rtg-database.php       # All database operations & caching
 │   ├── class-rtg-admin.php          # Admin UI, CSV import/export, settings
 │   ├── class-rtg-frontend.php       # Shortcode rendering & asset enqueue
-│   ├── class-rtg-ajax.php           # AJAX endpoints (ratings, reviews, favorites, analytics, AI)
+│   ├── class-rtg-ajax.php           # AJAX endpoints (ratings, reviews, favorites, analytics)
 │   ├── class-rtg-compare.php        # Comparison page routing & CSP headers
 │   ├── class-rtg-schema.php         # Schema.org JSON-LD structured data
 │   ├── class-rtg-meta.php           # Open Graph & Twitter Card meta tags
 │   ├── class-rtg-rest-api.php       # REST API endpoints
 │   ├── class-rtg-roamer-sync.php    # Rivian Roamer efficiency data sync
-│   ├── class-rtg-ai.php             # Claude API integration
 │   └── class-rtg-mailer.php         # HTML email notifications
 ├── admin/
 │   ├── views/                       # Admin page templates (11 views)
@@ -189,7 +181,7 @@ rivian-tire-guide/
 │       ├── compare.js               # Comparison page script
 │       ├── rtg-shared.js            # Shared URL validation & escaping
 │       ├── user-reviews.js          # User reviews page script
-│       └── modules/                 # 14 focused ES modules
+│       └── modules/                 # Focused ES modules
 │           ├── state.js             # Global state management
 │           ├── helpers.js           # DOM utilities, debounce, icons
 │           ├── validation.js        # Input sanitization & patterns
@@ -201,7 +193,6 @@ rivian-tire-guide/
 │           ├── ratings.js           # Review modal & drawer
 │           ├── search.js            # Smart search autocomplete
 │           ├── server.js            # Server-side pagination
-│           ├── ai-recommend.js      # AI search interface
 │           ├── tooltips.js          # Filter help tooltips
 │           └── image-modal.js       # Image lightbox
 ├── tests/
@@ -229,7 +220,7 @@ The plugin creates 6 tables (all prefixed with `wp_rtg_`):
 | `rtg_click_events` | Affiliate link click tracking |
 | `rtg_search_events` | Search and filter analytics |
 
-Schema changes are managed via a numbered migration system (`rtg_db_version` option, currently v12).
+Schema changes are managed via a numbered migration system (`rtg_db_version` option, currently v14).
 
 ## Efficiency Score
 
@@ -295,7 +286,6 @@ This plugin follows WordPress security best practices:
 - Capability checks (`manage_options`) on all admin actions
 - Rate limiting on review submissions (3 per 5 minutes per user/IP)
 - Rate limiting on REST API endpoints (60/min reads, 10/min writes)
-- Rate limiting on AI queries (configurable per-IP)
 - URL domain allowlisting for affiliate, review, and image links
 - Content-Security-Policy headers on the standalone comparison page
 - HTML escaping on all dynamic content in JavaScript templates

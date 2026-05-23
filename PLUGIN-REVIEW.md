@@ -1,7 +1,7 @@
 # Rivian Tire Guide — Enhancement Roadmap
 
-**Plugin:** Rivian Tire Guide v1.24.3
-**Updated:** 2026-03-04
+**Plugin:** Rivian Tire Guide v1.47.1
+**Updated:** 2026-05-22
 **Scope:** 35 planned enhancements across catalog, user features, admin tooling, and technical/SEO improvements
 
 > All 41 original review items (security, performance, code quality, UX, testing) were completed as of v1.20.0. This document tracks the **next phase** of development.
@@ -65,8 +65,8 @@
 ### 1.8 — Seasonal tire recommendations (based on date/location)
 **Priority:** Low
 **Status:** Pending
-**Scope:** Use the existing `category` field (All-Season, All-Terrain, Winter, etc.) to surface seasonal suggestions. Show a banner or highlighted section based on current month (e.g., "Winter tire season — check these options"). Optional: use browser geolocation or a zip code input to tailor recommendations by climate zone. Could integrate with the existing AI recommendation engine in `class-rtg-ai.php`.
-**Files:** `class-rtg-frontend.php`, `frontend/js/modules/cards.js`, optionally `class-rtg-ai.php`
+**Scope:** Use the existing `category` field (All-Season, All-Terrain, Winter, etc.) to surface seasonal suggestions. Show a banner or highlighted section based on current month (e.g., "Winter tire season — check these options"). Optional: use browser geolocation or a zip code input to tailor recommendations by climate zone.
+**Files:** `class-rtg-frontend.php`, `frontend/js/modules/cards.js`
 
 ### 1.9 — "Related tires" / "Customers also viewed" suggestions
 **Priority:** Medium
