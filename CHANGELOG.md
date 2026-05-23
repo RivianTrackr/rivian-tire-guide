@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.47.1] - 2026-05-22
+
+### Changed
+- **Declared compatibility with WordPress 7.0.** Added `Tested up to: 7.0`
+  to the plugin header after auditing the 7.0 dev notes. No code changes
+  were required: the plugin ships no Gutenberg blocks, uses none of the
+  author link functions whose signatures changed in 7.0, and the AI
+  feature removed in 1.46.0 left no residual references that would
+  conflict with the new core AI Client API.
+
 ## [1.47.0] - 2026-04-20
 
 ### Security
