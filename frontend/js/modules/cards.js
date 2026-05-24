@@ -262,20 +262,23 @@ export function createSingleCard(row) {
   compareOverlay.appendChild(compareCheckbox);
   compareOverlay.appendChild(compareIcon);
 
-  // Favorite button overlay
-  const favBtn = document.createElement('button');
-  favBtn.className = 'tire-card-fav-btn';
-  favBtn.dataset.tireId = tireId;
-  const isFav = state.userFavorites.has(tireId);
-  favBtn.classList.toggle('is-favorite', isFav);
-  favBtn.setAttribute('aria-label', isFav ? 'Remove from favorites' : 'Add to favorites');
-  favBtn.innerHTML = isFav
-    ? rtgIcon('heart', 16)
-    : rtgIcon('heart-outline', 16);
-  favBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    toggleFavorite(tireId);
-  });
+  // Favorite button overlay (logged-in users only)
+  let favBtn = null;
+  if (state.isLoggedIn) {
+    favBtn = document.createElement('button');
+    favBtn.className = 'tire-card-fav-btn';
+    favBtn.dataset.tireId = tireId;
+    const isFav = state.userFavorites.has(tireId);
+    favBtn.classList.toggle('is-favorite', isFav);
+    favBtn.setAttribute('aria-label', isFav ? 'Remove from favorites' : 'Add to favorites');
+    favBtn.innerHTML = isFav
+      ? rtgIcon('heart', 16)
+      : rtgIcon('heart-outline', 16);
+    favBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleFavorite(tireId);
+    });
+  }
 
   // Share button overlay
   const shareBtn = document.createElement('button');
@@ -323,12 +326,12 @@ export function createSingleCard(row) {
 
     imageContainer.appendChild(img);
     imageContainer.appendChild(compareOverlay);
-    imageContainer.appendChild(favBtn);
+    if (favBtn) imageContainer.appendChild(favBtn);
     imageContainer.appendChild(shareBtn);
     card.appendChild(imageContainer);
   } else {
     card.appendChild(compareOverlay);
-    card.appendChild(favBtn);
+    if (favBtn) card.appendChild(favBtn);
     card.appendChild(shareBtn);
   }
 

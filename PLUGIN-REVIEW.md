@@ -1,7 +1,7 @@
 # Rivian Tire Guide — Enhancement Roadmap
 
-**Plugin:** Rivian Tire Guide v1.47.1
-**Updated:** 2026-05-22
+**Plugin:** Rivian Tire Guide v1.48.0
+**Updated:** 2026-05-23
 **Scope:** 35 planned enhancements across catalog, user features, admin tooling, and technical/SEO improvements
 
 > All 41 original review items (security, performance, code quality, UX, testing) were completed as of v1.20.0. This document tracks the **next phase** of development.
