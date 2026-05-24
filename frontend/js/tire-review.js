@@ -383,7 +383,6 @@
     document.getElementById('rvGuestNameField').style.display = '';
     document.getElementById('rvGuestEmailField').style.display = '';
     document.getElementById('rvGuestNotice').style.display = '';
-    document.getElementById('rvLoginBanner').style.display = '';
 
     // Update labels — fields are required for guests.
     document.getElementById('rvTitleLabel').textContent = 'Review Title';

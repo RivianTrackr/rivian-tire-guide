@@ -4,6 +4,30 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.48.0] - 2026-05-23
+
+### Removed
+- **Member sign-up entry point from the review flow.** WordPress
+  registration is now disabled site-wide, so the "Sign up · or · Log in"
+  banner that appeared above the submit button for guest reviewers had
+  nowhere productive to send people. Removed the banner from both the
+  standalone review page and the inline review modal on the catalog,
+  deleted the associated CSS, and dropped the now-unused `register_url`
+  from the localized review-data arrays in `class-rtg-frontend.php` and
+  `class-rtg-tire-review.php`. Existing members are unaffected: the
+  member review submission path (`submit_tire_rating`) is unchanged and
+  `/wp-login.php` is still reachable for those who already have an
+  account.
+
+### Changed
+- **Favorites heart button is hidden for non-logged-in visitors.** The
+  heart overlay on each tire card previously redirected guests to
+  `wp-login.php`, which now dead-ends since registration is off. The
+  button is no longer rendered for guests in `cards.js`; existing
+  members continue to see it as before. The "Filter to my favorites"
+  toggle in the filter bar was already gated by `is_user_logged_in()`
+  server-side and needed no change.
+
 ## [1.47.1] - 2026-05-22
 
 ### Changed

@@ -491,45 +491,6 @@ if ( ! empty( $guide_pages ) ) {
       margin-top: 4px;
     }
 
-    /* Login banner */
-    .rv-login-banner {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 13px;
-      color: var(--rtg-text-muted);
-      background: color-mix(in srgb, var(--rtg-accent) 6%, rgba(13,27,42,0.8));
-      border: 1px solid color-mix(in srgb, var(--rtg-accent) 20%, transparent);
-      border-radius: 8px;
-      padding: 12px 14px;
-      margin: 6px 24px 16px;
-      line-height: 1.4;
-    }
-    .rv-login-banner-icon {
-      color: var(--rtg-accent);
-      flex-shrink: 0;
-      font-size: 18px;
-    }
-    .rv-login-banner-content {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .rv-login-banner-content p { margin: 0; font-size: 13px; }
-    .rv-login-banner-actions {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .rv-login-link {
-      color: var(--rtg-accent);
-      text-decoration: none;
-      font-weight: 600;
-    }
-    .rv-login-link:hover { text-decoration: underline; }
-    .rv-login-or { color: var(--rtg-text-muted); font-size: 13px; }
-
     /* Honeypot */
     .rv-hp { position: absolute; left: -9999px; top: -9999px; opacity: 0; height: 0; width: 0; }
 
@@ -678,7 +639,6 @@ if ( ! empty( $guide_pages ) ) {
       .rv-stars-section { padding: 16px; }
       .rv-form-header { padding: 16px; }
       .rv-form-footer { padding: 14px 16px; }
-      .rv-login-banner { margin: 6px 16px 14px; flex-direction: column; align-items: flex-start; }
       .rv-toast-container { top: 10px; right: 10px; left: 10px; }
     }
   </style>
@@ -769,19 +729,6 @@ if ( ! empty( $guide_pages ) ) {
       <!-- Guest notice -->
       <div class="rv-field" id="rvGuestNotice" style="display:none">
         <div class="rv-guest-notice">Your review will be visible after admin approval.</div>
-      </div>
-
-      <!-- Login banner for guests -->
-      <div class="rv-login-banner" id="rvLoginBanner" style="display:none">
-        <div class="rv-login-banner-icon"><i class="fa-solid fa-user" aria-hidden="true"></i></div>
-        <div class="rv-login-banner-content">
-          <p>Create an account to edit reviews and favorite tires.</p>
-          <div class="rv-login-banner-actions">
-            <a href="<?php echo esc_url( wp_registration_url() ); ?>" class="rv-login-link">Sign up</a>
-            <span class="rv-login-or">or</span>
-            <a href="<?php echo esc_url( wp_login_url( home_url( '/' ) ) ); ?>" class="rv-login-link">Log in</a>
-          </div>
-        </div>
       </div>
 
       <!-- Submit -->
