@@ -10,7 +10,7 @@ import { rtgColor, rtgIcon } from './helpers.js';
 export const TOOLTIP_DATA = {
   'Load Index': {
     title: 'Load Index',
-    content: 'Rivian vehicles require tires with a minimum load index of 116 to safely carry the vehicle\'s weight. Using a lower load index can affect safety, handling, and durability.'
+    content: 'Rivian vehicles require tires with a high enough load index to safely carry the vehicle\'s weight. R1 vehicles (R1T, R1S) require a minimum load index of 116, while R2 vehicles require a minimum of 112. Using a lower load index can affect safety, handling, and durability.'
   },
   '3PMS Rated': {
     title: '3PMS Rating',
