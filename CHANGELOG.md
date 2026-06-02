@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.48.1] - 2026-06-01
+
+### Changed
+- **Load index tooltip now distinguishes R1 and R2 minimums.** The
+  "Load Index" info tooltip previously stated a single blanket minimum
+  load index of 116 for all Rivian vehicles. It now clarifies that R1
+  vehicles (R1T, R1S) require a minimum load index of 116 while R2
+  vehicles require a minimum of 112. Updated the string in
+  `frontend/js/modules/tooltips.js` and rebuilt the frontend bundle.
+
 ## [1.48.0] - 2026-05-23
 
 ### Removed
