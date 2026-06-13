@@ -180,7 +180,7 @@
 }
 .search-input:focus {
   outline: none !important;
-  background-color: #1f2937 !important;
+  background-color: #1f2228 !important;
   box-shadow: 0 0 0 2px var(--rtg-accent) !important;
   border-color: var(--rtg-accent) !important;
   border-radius: 8px !important;
@@ -383,7 +383,7 @@
   position: relative;
   width: 44px;
   height: 24px;
-  background-color: #475569;
+  background-color: #4a4e55;
   border-radius: 9999px;
   transition: background-color 0.2s ease;
   flex-shrink: 0;
@@ -1800,7 +1800,7 @@
 .rtg-review-guest-notice {
   font-size: 13px;
   color: var(--rtg-text-muted, #99968f);
-  background: var(--rtg-bg-secondary, #0d1b2a);
+  background: var(--rtg-bg-secondary, #121418);
   border-radius: 6px;
   padding: 10px 12px;
   margin-top: 10px;

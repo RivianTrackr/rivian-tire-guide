@@ -69,7 +69,7 @@ const COL = {
 
 // --- Efficiency badge colors ---
 const GRADE_COLORS = {
-  A: "#5ec095", B: "#a3e635", C: "#facc15", D: "#f97316", F: "#b91c1c"
+  A: "#34c759", B: "#7dc734", C: "#facc15", D: "#f97316", F: "#b91c1c"
 };
 
 // --- Determine "best" values for highlighting ---
@@ -99,7 +99,7 @@ function findBestValues(tires) {
 function effBadge(score, grade) {
   const s = escapeHTML(score || "-");
   const g = escapeHTML((grade || "-").toUpperCase());
-  const color = GRADE_COLORS[g] || "#94a3b8";
+  const color = GRADE_COLORS[g] || "#a19e97";
   return `<span class="cmp-eff-badge">
     <span class="cmp-eff-grade" style="background:${color}">${g}</span>
     <span class="cmp-eff-score">${s}/100</span>
@@ -247,7 +247,7 @@ function renderComparison(rows, indexes) {
       const mi = Math.round((parseFloat(t[COL.roamerTotalKm]) || 0) * 0.621371);
       const veh = parseInt(t[COL.roamerVehicleCount]) || 0;
       return '<span style="display:inline-block;background:rgba(59,130,246,0.15);border-radius:6px;padding:2px 8px;font-weight:700;color:#60a5fa;">' + miPerKwh + ' mi/kWh</span>' +
-        '<br><span style="font-size:11px;color:#94a3b8;">' + mi.toLocaleString() + ' mi tracked, ' + veh + ' vehicle' + (veh !== 1 ? 's' : '') + '</span>';
+        '<br><span style="font-size:11px;color:#a19e97;">' + mi.toLocaleString() + ' mi tracked, ' + veh + ' vehicle' + (veh !== 1 ? 's' : '') + '</span>';
     }, 'roamerEfficiency'],
     ['Speed Rating', t => t[COL.speedRating] || "-"],
     ['UTQG', t => t[COL.utqg] || "None"],
