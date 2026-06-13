@@ -2,18 +2,18 @@
 :root {
   --rtg-accent: #fba919;
   --rtg-accent-hover: #fba919;
-  --rtg-bg-primary: #121e2b;
-  --rtg-bg-card: #121e2b;
-  --rtg-bg-input: #374151;
-  --rtg-bg-deep: #0f1a26;
-  --rtg-text-primary: #e5e7eb;
-  --rtg-text-light: #e5e7eb;
-  --rtg-text-muted: #e5e7eb;
-  --rtg-text-heading: #e5e7eb;
-  --rtg-border: #374151;
+  --rtg-bg-primary: #16191e;
+  --rtg-bg-card: #16191e;
+  --rtg-bg-input: #3a3e45;
+  --rtg-bg-deep: #121418;
+  --rtg-text-primary: #ece9e4;
+  --rtg-text-light: #ece9e4;
+  --rtg-text-muted: #ece9e4;
+  --rtg-text-heading: #ece9e4;
+  --rtg-border: #3a3e45;
   --rtg-star-filled: #fba919;
   --rtg-star-user: #4ade80;
-  --rtg-star-empty: #2d3a49;
+  --rtg-star-empty: #2c2f34;
 }
 
 /* === Mobile Filter Toggle === */
@@ -107,7 +107,7 @@
 
 .rtg-search-btn:hover {
   background: var(--rtg-accent) !important;
-  color: #0f172a !important;
+  color: #15130e !important;
 }
 
 .rtg-search-btn:active {
@@ -176,7 +176,7 @@
   transition: all 0.2s ease !important;
 }
 .search-input::placeholder {
-  color: #9ca3af !important;
+  color: #a6a39c !important;
 }
 .search-input:focus {
   outline: none !important;
@@ -220,7 +220,7 @@
 }
 .rtg-vehicle-btn.active {
   background: var(--rtg-accent);
-  color: #0f172a;
+  color: #15130e;
 }
 .rtg-vehicle-btn.active:hover {
   background: var(--rtg-accent-hover);
@@ -282,7 +282,7 @@
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--rtg-accent) 25%, transparent);
 }
 .filter-group select option:disabled {
-  color: #6b7280;
+  color: #79766f;
 }
 
 /* === Range Sliders === */
@@ -611,7 +611,7 @@
 .info-tooltip-trigger {
   background: none;
   border: none;
-  color: #94a3b8;
+  color: #a19e97;
   font-size: 14px;
   cursor: pointer;
   padding: 2px;
@@ -653,7 +653,7 @@
   padding: 0 6px;
   font-size: 11px;
   font-weight: 700;
-  color: #0f172a;
+  color: #15130e;
   background: var(--rtg-accent);
   border-radius: 10px;
   margin-left: 6px;
@@ -683,7 +683,7 @@
   margin-left: 6px;
   font-size: 18px;
   font-weight: 600;
-  color: #9ca3af;
+  color: #a6a39c;
   cursor: pointer;
 }
 .tooltip-content {
@@ -919,7 +919,7 @@
 .tire-card-eff-grade {
   padding: 4px 10px;
   font-weight: 800;
-  color: #0f172a;
+  color: #15130e;
   font-size: 12px;
   display: flex;
   align-items: center;
@@ -941,7 +941,7 @@
 .tire-card-specs {
   display: flex;
   flex-direction: column;
-  border-top: 1px solid rgba(51, 65, 85, 0.4);
+  border-top: 1px solid rgba(52, 56, 63, 0.4);
 }
 .tire-card-spec {
   display: flex;
@@ -949,7 +949,7 @@
   align-items: center;
   gap: 12px;
   padding: 6px 0;
-  border-bottom: 1px solid rgba(51, 65, 85, 0.25);
+  border-bottom: 1px solid rgba(52, 56, 63, 0.25);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -1002,12 +1002,12 @@
 }
 .tire-card-cta-primary {
   background: var(--rtg-accent);
-  color: #0f172a;
+  color: #15130e;
 }
 .tire-card-cta-primary:hover {
   background: var(--rtg-accent-hover);
   text-decoration: none;
-  color: #0f172a;
+  color: #15130e;
 }
 .tire-card-cta-review {
   background: #7c3aed;
@@ -1048,7 +1048,7 @@
   height: 28px;
   border-radius: 6px;
   border: 2px solid rgba(255, 255, 255, 0.5);
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(13, 15, 19, 0.55);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -1057,7 +1057,7 @@
 }
 .tire-card-compare-overlay:hover .compare-overlay-icon {
   border-color: var(--rtg-accent);
-  background: rgba(15, 23, 42, 0.75);
+  background: rgba(13, 15, 19, 0.75);
 }
 /* Checkmark when selected */
 .compare-checkbox:checked + .compare-overlay-icon {
@@ -1068,7 +1068,7 @@
   content: '';
   width: 6px;
   height: 12px;
-  border: solid #0f172a;
+  border: solid #15130e;
   border-width: 0 2.5px 2.5px 0;
   transform: rotate(45deg) translate(-1px, -1px);
 }
@@ -1087,7 +1087,7 @@
   height: 28px;
   border-radius: 6px;
   border: 2px solid rgba(255, 255, 255, 0.5);
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(13, 15, 19, 0.55);
   backdrop-filter: blur(4px);
   color: rgba(255, 255, 255, 0.8);
   font-size: 12px;
@@ -1099,13 +1099,13 @@
 }
 .tire-card-share-btn:hover {
   border-color: var(--rtg-accent);
-  background: rgba(15, 23, 42, 0.75);
+  background: rgba(13, 15, 19, 0.75);
   color: var(--rtg-accent);
 }
 .tire-card-share-btn.copied {
   background: var(--rtg-accent);
   border-color: var(--rtg-accent);
-  color: #0f172a;
+  color: #15130e;
 }
 /* When card has no image, position relative to card */
 .tire-card > .tire-card-share-btn {
@@ -1272,7 +1272,7 @@
 }
 .compare-bar-btn-go {
   background-color: var(--rtg-accent);
-  color: #0f172a;
+  color: #15130e;
 }
 .compare-bar-btn-go:hover {
   background-color: var(--rtg-accent-hover);
@@ -1490,7 +1490,7 @@
   align-items: center;
 }
 .rating-stars .star {
-  color: var(--rtg-star-empty, #2d3a49);
+  color: var(--rtg-star-empty, #2c2f34);
   display: flex;
   align-items: center;
   user-select: none;
@@ -1559,7 +1559,7 @@
   line-height: 1;
 }
 .rating-average {
-  color: var(--rtg-text-light, #f1f5f9);
+  color: var(--rtg-text-light, #f6f4f0);
   font-weight: 600;
 }
 /* === Review Actions (below stars) === */
@@ -1581,9 +1581,9 @@
   transition: color 0.2s ease;
 }
 .view-reviews-btn {
-  color: var(--rtg-text-light, #f1f5f9);
-  background: color-mix(in srgb, var(--rtg-text-light, #f1f5f9) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--rtg-text-light, #f1f5f9) 15%, transparent);
+  color: var(--rtg-text-light, #f6f4f0);
+  background: color-mix(in srgb, var(--rtg-text-light, #f6f4f0) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rtg-text-light, #f6f4f0) 15%, transparent);
   border-radius: 6px;
   padding: 4px 10px;
   display: inline-flex;
@@ -1595,9 +1595,9 @@
   color: var(--rtg-accent, #fba919);
 }
 .view-reviews-btn:hover {
-  color: var(--rtg-text-light, #f1f5f9);
-  background: color-mix(in srgb, var(--rtg-text-light, #f1f5f9) 15%, transparent);
-  border-color: color-mix(in srgb, var(--rtg-text-light, #f1f5f9) 25%, transparent);
+  color: var(--rtg-text-light, #f6f4f0);
+  background: color-mix(in srgb, var(--rtg-text-light, #f6f4f0) 15%, transparent);
+  border-color: color-mix(in srgb, var(--rtg-text-light, #f6f4f0) 25%, transparent);
   text-decoration: none;
 }
 .write-review-btn {
@@ -1645,8 +1645,8 @@
   opacity: 1;
 }
 .rtg-review-modal {
-  background: var(--rtg-bg-card, #1e293b);
-  border: 1px solid var(--rtg-border, #1e3044);
+  background: var(--rtg-bg-card, #1e2126);
+  border: 1px solid var(--rtg-border, #23262c);
   border-radius: 16px;
   width: 100%;
   max-width: 520px;
@@ -1664,7 +1664,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px 12px;
-  border-bottom: 1px solid var(--rtg-border, #1e3044);
+  border-bottom: 1px solid var(--rtg-border, #23262c);
 }
 .rtg-review-modal-header h3 {
   margin: 0;
@@ -1676,14 +1676,14 @@
   background: none;
   border: none;
   font-size: 24px;
-  color: var(--rtg-text-muted, #8493a5);
+  color: var(--rtg-text-muted, #99968f);
   cursor: pointer;
   padding: 0;
   line-height: 1;
   transition: color 0.2s ease;
 }
 .rtg-review-modal-close:hover {
-  color: var(--rtg-text-light, #f1f5f9);
+  color: var(--rtg-text-light, #f6f4f0);
 }
 
 /* Modal star selector */
@@ -1695,7 +1695,7 @@
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: var(--rtg-text-muted, #8493a5);
+  color: var(--rtg-text-muted, #99968f);
   margin-bottom: 8px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -1706,7 +1706,7 @@
   gap: 8px;
 }
 .rtg-review-star {
-  color: var(--rtg-star-empty, #2d3a49);
+  color: var(--rtg-star-empty, #2c2f34);
   cursor: pointer;
   transition: color 0.15s ease, transform 0.15s ease, filter 0.15s ease;
   user-select: none;
@@ -1743,7 +1743,7 @@
   margin-top: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: var(--rtg-text-light, #f1f5f9);
+  color: var(--rtg-text-light, #f6f4f0);
 }
 
 /* Modal fields */
@@ -1754,16 +1754,16 @@
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: var(--rtg-text-muted, #8493a5);
+  color: var(--rtg-text-muted, #99968f);
   margin-bottom: 6px;
 }
 .rtg-review-input {
   width: 100%;
   padding: 10px 14px;
-  background: var(--rtg-bg-input, #0f172a);
-  border: 1px solid var(--rtg-border, #1e3044);
+  background: var(--rtg-bg-input, #15130e);
+  border: 1px solid var(--rtg-border, #23262c);
   border-radius: 8px;
-  color: var(--rtg-text-primary, #e2e8f0);
+  color: var(--rtg-text-primary, #e9e6e1);
   font-size: 14px;
   font-family: inherit;
   transition: border-color 0.2s ease;
@@ -1776,10 +1776,10 @@
 .rtg-review-textarea {
   width: 100%;
   padding: 10px 14px;
-  background: var(--rtg-bg-input, #0f172a);
-  border: 1px solid var(--rtg-border, #1e3044);
+  background: var(--rtg-bg-input, #15130e);
+  border: 1px solid var(--rtg-border, #23262c);
   border-radius: 8px;
-  color: var(--rtg-text-primary, #e2e8f0);
+  color: var(--rtg-text-primary, #e9e6e1);
   font-size: 14px;
   font-family: inherit;
   resize: vertical;
@@ -1794,12 +1794,12 @@
 .rtg-review-char-count {
   text-align: right;
   font-size: 12px;
-  color: var(--rtg-text-muted, #8493a5);
+  color: var(--rtg-text-muted, #99968f);
   margin-top: 4px;
 }
 .rtg-review-guest-notice {
   font-size: 13px;
-  color: var(--rtg-text-muted, #8493a5);
+  color: var(--rtg-text-muted, #99968f);
   background: var(--rtg-bg-secondary, #0d1b2a);
   border-radius: 6px;
   padding: 10px 12px;
@@ -1813,7 +1813,7 @@
   justify-content: flex-end;
   gap: 12px;
   padding: 16px 24px;
-  border-top: 1px solid var(--rtg-border, #1e3044);
+  border-top: 1px solid var(--rtg-border, #23262c);
 }
 .rtg-review-error {
   flex: 1;
@@ -1822,10 +1822,10 @@
 }
 .rtg-review-btn-cancel {
   background: none;
-  border: 1px solid var(--rtg-border, #1e3044);
+  border: 1px solid var(--rtg-border, #23262c);
   border-radius: 8px;
   padding: 10px 20px;
-  color: var(--rtg-text-light, #f1f5f9);
+  color: var(--rtg-text-light, #f6f4f0);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -1833,14 +1833,14 @@
   font-family: inherit;
 }
 .rtg-review-btn-cancel:hover {
-  background: var(--rtg-bg-input, #0f172a);
+  background: var(--rtg-bg-input, #15130e);
 }
 .rtg-review-btn-submit {
   background: var(--rtg-accent, #fba919);
   border: none;
   border-radius: 8px;
   padding: 10px 24px;
-  color: #0f172a;
+  color: #15130e;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
@@ -1896,8 +1896,8 @@
   width: 100%;
   max-width: 480px;
   height: 100%;
-  background: var(--rtg-bg-card, #1e293b);
-  border-left: 1px solid var(--rtg-border, #1e3044);
+  background: var(--rtg-bg-card, #1e2126);
+  border-left: 1px solid var(--rtg-border, #23262c);
   display: flex;
   flex-direction: column;
   box-shadow: -10px 0 40px rgba(0, 0, 0, 0.4);
@@ -1909,7 +1909,7 @@
 }
 .rtg-reviews-drawer-header {
   padding: 20px 24px;
-  border-bottom: 1px solid var(--rtg-border, #1e3044);
+  border-bottom: 1px solid var(--rtg-border, #23262c);
   position: relative;
 }
 .rtg-reviews-drawer-header h3 {
@@ -1926,13 +1926,13 @@
   background: none;
   border: none;
   font-size: 28px;
-  color: var(--rtg-text-muted, #8493a5);
+  color: var(--rtg-text-muted, #99968f);
   cursor: pointer;
   line-height: 1;
   transition: color 0.2s ease;
 }
 .rtg-reviews-drawer-close:hover {
-  color: var(--rtg-text-light, #f1f5f9);
+  color: var(--rtg-text-light, #f6f4f0);
 }
 
 /* Reviews summary */
@@ -1952,7 +1952,7 @@
   gap: 2px;
 }
 .rtg-mini-star {
-  color: var(--rtg-star-empty, #2d3a49);
+  color: var(--rtg-star-empty, #2c2f34);
   display: inline-flex;
   line-height: 0;
 }
@@ -1976,7 +1976,7 @@
   opacity: 1;
 }
 .rtg-reviews-total {
-  color: var(--rtg-text-muted, #8493a5);
+  color: var(--rtg-text-muted, #99968f);
 }
 
 /* Reviews content */
@@ -1988,7 +1988,7 @@
 .rtg-reviews-loading,
 .rtg-reviews-empty {
   text-align: center;
-  color: var(--rtg-text-muted, #8493a5);
+  color: var(--rtg-text-muted, #99968f);
   padding: 40px 0;
   font-size: 14px;
 }
@@ -2000,7 +2000,7 @@
 .rtg-reviews-empty-heading {
   font-size: 16px;
   font-weight: 600;
-  color: var(--rtg-text-light, #f1f5f9);
+  color: var(--rtg-text-light, #f6f4f0);
   margin-bottom: 6px;
 }
 .rtg-reviews-empty-cta {
@@ -2008,7 +2008,7 @@
   margin-top: 16px;
   padding: 8px 20px;
   background: var(--rtg-accent, #fba919);
-  color: #0f172a;
+  color: #15130e;
   border: none;
   border-radius: 6px;
   font-size: 13px;
@@ -2023,7 +2023,7 @@
 /* Individual review card */
 .rtg-review-card {
   padding: 16px 0;
-  border-bottom: 1px solid var(--rtg-border, #1e3044);
+  border-bottom: 1px solid var(--rtg-border, #23262c);
 }
 .rtg-review-card:last-child {
   border-bottom: none;
@@ -2038,7 +2038,7 @@
 .rtg-review-author {
   font-weight: 700;
   font-size: 14px;
-  color: var(--rtg-text-light, #f1f5f9);
+  color: var(--rtg-text-light, #f6f4f0);
 }
 a.rtg-review-author-link {
   text-decoration: none;
@@ -2058,7 +2058,7 @@ a.rtg-review-author-link:hover {
 }
 .rtg-review-date {
   font-size: 12px;
-  color: var(--rtg-text-muted, #8493a5);
+  color: var(--rtg-text-muted, #99968f);
   margin-left: auto;
 }
 .rtg-review-card-title {
@@ -2079,14 +2079,14 @@ a.rtg-review-card-title-link:hover {
 }
 .rtg-review-card-body {
   font-size: 14px;
-  color: var(--rtg-text-primary, #e2e8f0);
+  color: var(--rtg-text-primary, #e9e6e1);
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
 }
 .rtg-review-rating-only {
   font-style: italic;
-  color: var(--rtg-text-muted, #8493a5);
+  color: var(--rtg-text-muted, #99968f);
 }
 
 /* Reviews pagination */
@@ -2099,11 +2099,11 @@ a.rtg-review-card-title-link:hover {
   margin-top: 8px;
 }
 .rtg-reviews-page-btn {
-  background: var(--rtg-bg-input, #0f172a);
-  border: 1px solid var(--rtg-border, #1e3044);
+  background: var(--rtg-bg-input, #15130e);
+  border: 1px solid var(--rtg-border, #23262c);
   border-radius: 6px;
   padding: 6px 16px;
-  color: var(--rtg-text-light, #f1f5f9);
+  color: var(--rtg-text-light, #f6f4f0);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -2116,7 +2116,7 @@ a.rtg-review-card-title-link:hover {
 }
 .rtg-reviews-page-info {
   font-size: 13px;
-  color: var(--rtg-text-muted, #8493a5);
+  color: var(--rtg-text-muted, #99968f);
 }
 
 /* Mobile responsive — full-screen takeover */
@@ -2124,7 +2124,7 @@ a.rtg-review-card-title-link:hover {
   .rtg-review-modal-overlay {
     align-items: flex-end;
     padding: 0;
-    background: var(--rtg-bg-card, #1e293b);
+    background: var(--rtg-bg-card, #1e2126);
     backdrop-filter: none;
   }
   .rtg-review-modal {
@@ -2150,7 +2150,7 @@ a.rtg-review-card-title-link:hover {
     position: sticky;
     top: 0;
     z-index: 1;
-    background: var(--rtg-bg-card, #1e293b);
+    background: var(--rtg-bg-card, #1e2126);
     flex-direction: row-reverse;
   }
   .rtg-review-modal-header::before {
@@ -2200,8 +2200,8 @@ a.rtg-review-card-title-link:hover {
     position: sticky;
     bottom: 0;
     z-index: 1;
-    background: var(--rtg-bg-card, #1e293b);
-    border-top: 1px solid var(--rtg-border, #1e3044);
+    background: var(--rtg-bg-card, #1e2126);
+    border-top: 1px solid var(--rtg-border, #23262c);
     flex-direction: column;
     gap: 8px;
   }
@@ -2243,8 +2243,8 @@ a.rtg-review-card-title-link:hover {
   font-size: 14px;
   font-weight: 500;
   color: #fff;
-  background: var(--rtg-bg-card, #1e293b);
-  border: 1px solid var(--rtg-border, #1e3044);
+  background: var(--rtg-bg-card, #1e2126);
+  border: 1px solid var(--rtg-border, #23262c);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
   transform: translateX(120%);
   opacity: 0;
@@ -2514,7 +2514,7 @@ a.rtg-review-card-title-link:hover {
 }
 .rtg-user-reviews-subtitle {
   font-size: 14px;
-  color: var(--rtg-text-muted, #8493a5);
+  color: var(--rtg-text-muted, #99968f);
   margin: 0;
 }
 .rtg-user-reviews-list {
@@ -2531,14 +2531,14 @@ a.rtg-review-card-title-link:hover {
   gap: 12px;
   margin-bottom: 10px;
   padding-bottom: 10px;
-  border-bottom: 1px solid var(--rtg-border, #1e3044);
+  border-bottom: 1px solid var(--rtg-border, #23262c);
 }
 .rtg-user-review-tire-img {
   width: 48px;
   height: 48px;
   object-fit: contain;
   border-radius: 6px;
-  background: var(--rtg-bg-deep, #0f172a);
+  background: var(--rtg-bg-deep, #15130e);
   flex-shrink: 0;
 }
 .rtg-user-review-tire-name {
@@ -2563,9 +2563,9 @@ a.rtg-user-review-tire-link:hover {
   margin-top: 24px;
 }
 .rtg-pagination-btn {
-  background: var(--rtg-bg-primary, #121e2b);
-  color: var(--rtg-text-primary, #e5e7eb);
-  border: 1px solid var(--rtg-border, #1e3044);
+  background: var(--rtg-bg-primary, #16191e);
+  color: var(--rtg-text-primary, #ece9e4);
+  border: 1px solid var(--rtg-border, #23262c);
   padding: 8px 16px;
   border-radius: 8px;
   font-size: 14px;
@@ -2582,7 +2582,7 @@ a.rtg-user-review-tire-link:hover {
   font-weight: 500;
   display: flex;
   align-items: center;
-  color: var(--rtg-text-primary, #e5e7eb);
+  color: var(--rtg-text-primary, #ece9e4);
 }
 
 /* Info tooltip button used inside efficiency badges and spec rows.
@@ -2590,7 +2590,7 @@ a.rtg-user-review-tire-link:hover {
 .info-tooltip-trigger {
   background: none;
   border: none;
-  color: var(--rtg-text-muted, #9ca3af);
+  color: var(--rtg-text-muted, #a6a39c);
   font-size: 14px;
   cursor: pointer;
   padding: 2px;
@@ -2630,7 +2630,7 @@ a.rtg-user-review-tire-link:hover {
   height: 28px;
   border-radius: 6px;
   border: 2px solid rgba(255, 255, 255, 0.5);
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(13, 15, 19, 0.55);
   backdrop-filter: blur(4px);
   color: rgba(255, 255, 255, 0.8);
   font-size: 13px;
@@ -2643,7 +2643,7 @@ a.rtg-user-review-tire-link:hover {
 }
 .tire-card-fav-btn:hover {
   border-color: #ef4444;
-  background: rgba(15, 23, 42, 0.75);
+  background: rgba(13, 15, 19, 0.75);
   color: #ef4444;
 }
 .tire-card-fav-btn.is-favorite {

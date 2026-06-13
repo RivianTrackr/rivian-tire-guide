@@ -1,6 +1,6 @@
 # RivianTrackr — Branding & Design System
 
-Design tokens and conventions for RivianTrackr projects. All values sourced from the Rivian Tire Guide plugin (v1.28.0).
+Design tokens and conventions for RivianTrackr projects. All values sourced from the Rivian Tire Guide plugin (v1.49.0, "ink & brass" theme).
 
 ---
 
@@ -18,22 +18,26 @@ Design tokens and conventions for RivianTrackr projects. All values sourced from
 
 CSS custom properties prefixed with `--rtg-`. This is the user-facing theme.
 
+> "Ink & brass": near-neutral charcoal surfaces with a faint cool cast, warm-neutral
+> text like ink on paper, and gold as the only saturated accent. Display titles
+> (24px+) are weight 700 with negative tracking (-0.5px).
+
 | Token                | CSS Variable          | Value     | Usage                          |
 |----------------------|-----------------------|-----------|--------------------------------|
 | Primary Accent       | `--rtg-accent`        | `#fba919` | Buttons, links, active states  |
 | Accent Hover         | `--rtg-accent-hover`  | `#fba919` | Hover state for accent items   |
-| Background (Primary) | `--rtg-bg-primary`    | `#121e2b` | Page / section background      |
-| Background (Card)    | `--rtg-bg-card`       | `#121e2b` | Card surfaces                  |
-| Background (Input)   | `--rtg-bg-input`      | `#374151` | Form inputs, select fields     |
-| Background (Deep)    | `--rtg-bg-deep`       | `#0f1a26` | Deeper containers, footers     |
-| Text (Primary)       | `--rtg-text-primary`  | `#e5e7eb` | Body text                      |
-| Text (Light)         | `--rtg-text-light`    | `#e5e7eb` | Emphasized text                |
-| Text (Muted)         | `--rtg-text-muted`    | `#e5e7eb` | Secondary / helper text        |
-| Text (Heading)       | `--rtg-text-heading`  | `#e5e7eb` | Headings, titles               |
-| Border / Divider     | `--rtg-border`        | `#374151` | Card borders, dividers, rules  |
+| Background (Primary) | `--rtg-bg-primary`    | `#16191e` | Page / section background      |
+| Background (Card)    | `--rtg-bg-card`       | `#16191e` | Card surfaces                  |
+| Background (Input)   | `--rtg-bg-input`      | `#3a3e45` | Form inputs, select fields     |
+| Background (Deep)    | `--rtg-bg-deep`       | `#121418` | Deeper containers, footers     |
+| Text (Primary)       | `--rtg-text-primary`  | `#ece9e4` | Body text                      |
+| Text (Light)         | `--rtg-text-light`    | `#ece9e4` | Emphasized text                |
+| Text (Muted)         | `--rtg-text-muted`    | `#ece9e4` | Secondary / helper text        |
+| Text (Heading)       | `--rtg-text-heading`  | `#ece9e4` | Headings, titles               |
+| Border / Divider     | `--rtg-border`        | `#3a3e45` | Card borders, dividers, rules  |
 | Stars (Filled)       | `--rtg-star-filled`   | `#fba919` | Filled rating stars            |
 | Stars (Your Rating)  | `--rtg-star-user`     | `#4ade80` | User's own rating stars        |
-| Stars (Empty)        | `--rtg-star-empty`    | `#2d3a49` | Empty / unfilled stars         |
+| Stars (Empty)        | `--rtg-star-empty`    | `#2c2f34` | Empty / unfilled stars         |
 
 ---
 
@@ -144,7 +148,7 @@ Reduced motion: all transitions and animations are disabled when `prefers-reduce
 
 ## Button Conventions
 
-- Buttons with `background: var(--rtg-accent)` (`#fba919`) use **dark text** `#0f172a`, not white.
+- Buttons with `background: var(--rtg-accent)` (`#fba919`) use **dark text** `#15130e`, not white.
 - Secondary / outline buttons use `color: var(--rtg-accent)` with transparent or border-only backgrounds.
 - Destructive buttons (delete, dismiss) use red (`#ef4444` / `#ee383a`).
 - Review/special-action buttons use purple (`#7c3aed`).
@@ -165,4 +169,4 @@ linear-gradient(135deg, #fba919, #d2de24, #86c440, #5ec095, #34c5ec, #2b96d2, #3
 
 - **Focus rings**: `2px solid var(--rtg-accent)` with `2px` offset
 - **Reduced motion**: `@media (prefers-reduced-motion: reduce)` — disables all transitions and animations
-- **Color contrast**: Accent buttons use dark text (`#0f172a`) on gold (`#fba919`) for WCAG compliance
+- **Color contrast**: Accent buttons use dark text (`#15130e`) on gold (`#fba919`) for WCAG compliance

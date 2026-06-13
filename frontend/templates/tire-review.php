@@ -96,18 +96,18 @@ if ( ! empty( $guide_pages ) ) {
     :root {
       --rtg-accent: #5ec095;
       --rtg-accent-hover: #4ade80;
-      --rtg-bg-primary: #1e293b;
-      --rtg-bg-card: #121e2b;
-      --rtg-bg-input: #374151;
+      --rtg-bg-primary: #1e2126;
+      --rtg-bg-card: #16191e;
+      --rtg-bg-input: #3a3e45;
       --rtg-bg-deep: #111827;
       --rtg-text-primary: #e5e5e5;
-      --rtg-text-light: #f1f5f9;
-      --rtg-text-muted: #94a3b8;
+      --rtg-text-light: #f6f4f0;
+      --rtg-text-muted: #a19e97;
       --rtg-text-heading: #ffffff;
       --rtg-border: #334155;
       --rtg-star-filled: #fba919;
       --rtg-star-user: #4ade80;
-      --rtg-star-empty: #2d3a49;
+      --rtg-star-empty: #2c2f34;
       <?php if ( $rtg_css_vars ) echo $rtg_css_vars; ?>
     }
 
@@ -117,8 +117,9 @@ if ( ! empty( $guide_pages ) ) {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: var(--rtg-bg-deep);
       color: var(--rtg-text-primary);
-      line-height: 1.5;
+      line-height: 1.6;
       -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     /* --- Top bar --- */
@@ -161,6 +162,7 @@ if ( ! empty( $guide_pages ) ) {
     .rv-title {
       font-size: 26px;
       font-weight: 700;
+      letter-spacing: -0.5px;
       color: var(--rtg-text-heading);
       margin-bottom: 6px;
     }
@@ -224,7 +226,7 @@ if ( ! empty( $guide_pages ) ) {
       padding: 10px 14px;
       cursor: pointer;
       transition: background .1s;
-      border-bottom: 1px solid rgba(51,65,85,0.3);
+      border-bottom: 1px solid rgba(52,56,63,0.3);
     }
     .rv-dropdown-item:last-child { border-bottom: none; }
     .rv-dropdown-item:hover,
@@ -479,7 +481,7 @@ if ( ! empty( $guide_pages ) ) {
     .rv-guest-notice {
       font-size: 13px;
       color: var(--rtg-text-muted);
-      background: rgba(13, 27, 42, 0.6);
+      background: rgba(14, 16, 20, 0.6);
       border-radius: 6px;
       padding: 10px 12px;
       margin-top: 10px;
@@ -513,7 +515,7 @@ if ( ! empty( $guide_pages ) ) {
       border: none;
       border-radius: 8px;
       padding: 10px 24px;
-      color: #0f172a;
+      color: #15130e;
       font-size: 14px;
       font-weight: 700;
       cursor: pointer;
@@ -576,7 +578,7 @@ if ( ! empty( $guide_pages ) ) {
     .rv-btn-primary {
       background: var(--rtg-accent);
       border-color: var(--rtg-accent);
-      color: #0f172a;
+      color: #15130e;
     }
     .rv-btn-primary:hover { background: var(--rtg-accent-hover); border-color: var(--rtg-accent-hover); }
 

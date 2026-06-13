@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.49.0] - 2026-06-12
+
+### Changed
+- **Restyled the frontend to the new "ink & brass" theme**, matching the sitewide refresh on riviantrackr.com. The navy/slate dark palette is replaced with near-neutral charcoal surfaces (`#121418` deep bg, `#16191e` cards, `#3a3e45` borders/inputs) and warm-neutral text (`#ece9e4` body, `#a6a39c` secondary, `#79766f` muted) — cool surfaces, warm text, gold (`#fba919`) as the only saturated accent. Slate grays in the compare/review templates (`#1e293b`, `#1e3044`, `#8493a5`, `#94a3b8`, `#f1f5f9`, `#e2e8f0`) map to warm-neutral equivalents; star-empty becomes `#2c2f34`; text-on-accent becomes `#15130e`. Gold, purple CTA, success/error, star-user green, and the light admin theme are unchanged.
+- **Updated the admin theme-color defaults** (settings page + reset values in `admin-scripts.js`) to the new palette. Note: installs with previously saved custom theme colors keep their saved values — use "Reset to defaults" on the settings page to adopt the new palette.
+- **Typography alignment with the site type system:** page titles on the compare and tire-review templates (24–26px/700) gain −0.5px tracking; standalone template body line-height 1.5 → 1.6; added Firefox font-smoothing parity (`-moz-osx-font-smoothing`).
+- Updated `BRANDING.md` and `CLAUDE.md` dark-theme tokens to document the new palette.
+
 ## [1.48.1] - 2026-06-01
 
 ### Changed
