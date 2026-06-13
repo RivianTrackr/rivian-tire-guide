@@ -4,6 +4,13 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.49.1] - 2026-06-12
+
+### Fixed
+- **Compare & review follow-ups for the ink & brass theme.** The compare and tire-review standalone templates had drifted token fallbacks (`--rtg-bg-deep: #111827`, `--rtg-border: #334155`) plus a navy section-header hover (`#1a2537`) that the 1.49.0 conversion missed — now `#121418` / `#3a3e45` / `#1f2228`. Also converted the focused-search background, the toggle off-track, and the guest-notice background fallback in the main stylesheet.
+- **Compare grade colors now match the documented A–F scale**: grade A `#5ec095 → #34c759`, grade B `#a3e635 → #7dc734` (C/D/F already matched); the no-grade fallback gray is warm-neutral (`#a19e97`).
+- Review toast "info" accent aligned to the system info color (`#3b82f6 → #60a5fa`).
+
 ## [1.49.0] - 2026-06-12
 
 ### Changed

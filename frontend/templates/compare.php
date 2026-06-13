@@ -39,12 +39,12 @@
       --rtg-bg-primary: #1e2126;
       --rtg-bg-card: #16191e;
       --rtg-bg-input: #3a3e45;
-      --rtg-bg-deep: #111827;
+      --rtg-bg-deep: #121418;
       --rtg-text-primary: #e5e5e5;
       --rtg-text-light: #f6f4f0;
       --rtg-text-muted: #a19e97;
       --rtg-text-heading: #ffffff;
-      --rtg-border: #334155;
+      --rtg-border: #3a3e45;
       <?php if ( $rtg_css_vars ) echo $rtg_css_vars; ?>
     }
 
@@ -243,7 +243,7 @@
       cursor: pointer;
       user-select: none;
     }
-    .cmp-section-header:hover { background: #1a2537; }
+    .cmp-section-header:hover { background: #1f2228; }
     .cmp-section-icon {
       color: var(--rtg-accent);
       font-size: 16px;
