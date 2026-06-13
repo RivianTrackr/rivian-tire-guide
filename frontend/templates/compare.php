@@ -113,7 +113,7 @@
       border-color: var(--rtg-accent);
       color: #15130e;
     }
-    .cmp-btn-primary:hover { background: var(--rtg-accent-hover); border-color: var(--rtg-accent-hover); }
+    .cmp-btn-primary:hover { background: var(--rtg-accent-hover); border-color: var(--rtg-accent-hover); color: #15130e; text-decoration: none; }
 
     /* --- Page --- */
     .cmp-page { max-width: 1200px; margin: 0 auto; padding: 24px 20px 60px; }
@@ -337,12 +337,12 @@
       background: var(--rtg-accent);
       color: #15130e;
     }
-    .cmp-cta-primary:hover { background: var(--rtg-accent-hover); }
+    .cmp-cta-primary:hover { background: var(--rtg-accent-hover); color: #15130e; text-decoration: none; }
     .cmp-cta-review {
       background: #7c3aed;
       color: #fff;
     }
-    .cmp-cta-review:hover { background: #6d28d9; }
+    .cmp-cta-review:hover { background: #6d28d9; color: #fff; text-decoration: none; }
 
     /* --- Empty state --- */
     .cmp-empty {

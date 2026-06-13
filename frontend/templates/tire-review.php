@@ -580,7 +580,7 @@ if ( ! empty( $guide_pages ) ) {
       border-color: var(--rtg-accent);
       color: #15130e;
     }
-    .rv-btn-primary:hover { background: var(--rtg-accent-hover); border-color: var(--rtg-accent-hover); }
+    .rv-btn-primary:hover { background: var(--rtg-accent-hover); border-color: var(--rtg-accent-hover); color: #15130e; text-decoration: none; }
 
     /* --- Footer --- */
     .rv-footer {
