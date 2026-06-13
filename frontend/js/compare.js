@@ -253,7 +253,7 @@ function renderComparison(rows, indexes) {
     ['UTQG', t => t[COL.utqg] || "None"],
     ['3PMS Rated', t => {
       const v = (t[COL.threePms] || "").toLowerCase();
-      return v === "yes" ? '<span style="color:var(--rtg-accent);font-weight:600">' + rtgIcon('check', 14) + ' Yes</span>' : 'No';
+      return v === "yes" ? '<span style="color:#4ade80;font-weight:600">' + rtgIcon('check', 14) + ' Yes</span>' : 'No';
     }],
   ], tires, best, n);
 
