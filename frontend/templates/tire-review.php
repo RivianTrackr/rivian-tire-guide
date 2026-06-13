@@ -94,16 +94,16 @@ if ( ! empty( $guide_pages ) ) {
   <?php wp_head(); ?>
   <style>
     :root {
-      --rtg-accent: #5ec095;
-      --rtg-accent-hover: #4ade80;
+      --rtg-accent: #fba919;
+      --rtg-accent-hover: #ffbe4a;
       --rtg-bg-primary: #1e2126;
       --rtg-bg-card: #16191e;
       --rtg-bg-input: #3a3e45;
       --rtg-bg-deep: #121418;
-      --rtg-text-primary: #e5e5e5;
+      --rtg-text-primary: #ece9e4;
       --rtg-text-light: #f6f4f0;
       --rtg-text-muted: #a19e97;
-      --rtg-text-heading: #ffffff;
+      --rtg-text-heading: #f6f4f0;
       --rtg-border: #3a3e45;
       --rtg-star-filled: #fba919;
       --rtg-star-user: #4ade80;
@@ -623,8 +623,8 @@ if ( ! empty( $guide_pages ) ) {
     }
     .rv-toast.visible { opacity: 1; transform: translateX(0); }
     .rv-toast-icon { flex-shrink: 0; }
-    .rv-toast-success { border-left: 3px solid var(--rtg-accent); }
-    .rv-toast-success .rv-toast-icon { color: var(--rtg-accent); }
+    .rv-toast-success { border-left: 3px solid #34c759; }
+    .rv-toast-success .rv-toast-icon { color: #34c759; }
     .rv-toast-info { border-left: 3px solid #60a5fa; }
     .rv-toast-info .rv-toast-icon { color: #60a5fa; }
 

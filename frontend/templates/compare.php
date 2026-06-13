@@ -34,16 +34,16 @@
   ?>
   <style>
     :root {
-      --rtg-accent: #5ec095;
-      --rtg-accent-hover: #4ade80;
+      --rtg-accent: #fba919;
+      --rtg-accent-hover: #ffbe4a;
       --rtg-bg-primary: #1e2126;
       --rtg-bg-card: #16191e;
       --rtg-bg-input: #3a3e45;
       --rtg-bg-deep: #121418;
-      --rtg-text-primary: #e5e5e5;
+      --rtg-text-primary: #ece9e4;
       --rtg-text-light: #f6f4f0;
       --rtg-text-muted: #a19e97;
-      --rtg-text-heading: #ffffff;
+      --rtg-text-heading: #f6f4f0;
       --rtg-border: #3a3e45;
       <?php if ( $rtg_css_vars ) echo $rtg_css_vars; ?>
     }

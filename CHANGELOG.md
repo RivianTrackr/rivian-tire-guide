@@ -4,6 +4,13 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.49.2] - 2026-06-12
+
+### Fixed
+- **Compare and tire-review pages now use the gold brand accent.** Both standalone templates overrode `--rtg-accent` to green (`#5ec095` / hover `#4ade80`), so best-value highlights, buttons, links, and focus states rendered green instead of amber. Accent is now `#fba919` / `#ffbe4a` like the rest of the site. Button text on gold was already dark (`#15130e`), so contrast is unaffected.
+- Kept semantically-green elements green now that the accent is gold: the review success toast pins to `#34c759` (system success) and the compare "Yes" feature checkmarks pin to `#4ade80` (matching the green-check / amber-best convention from the spec tables). The 3PMS/EV/studded category tags are unchanged.
+- Template text tokens aligned to spec: `--rtg-text-primary` `#e5e5e5 → #ece9e4` (warm), `--rtg-text-heading` `#ffffff → #f6f4f0`.
+
 ## [1.49.1] - 2026-06-12
 
 ### Fixed
