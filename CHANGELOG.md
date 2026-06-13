@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.49.3] - 2026-06-12
+
+### Fixed
+- **"View Tire" (and other anchor buttons) turned unreadable on hover.** The compare and tire-review templates load the theme stylesheet via `wp_head()`, and the theme's global `a:hover { color: #ffbe4a }` outranks a button's non-hover text color — so hovering a gold button turned its text light-gold on a light-gold background. Hover rules for `.cmp-cta-primary`, `.cmp-cta-review`, `.cmp-btn-primary`, and `.rv-btn-primary` now pin their text color (and `text-decoration: none`) explicitly.
+
 ## [1.49.2] - 2026-06-12
 
 ### Fixed
