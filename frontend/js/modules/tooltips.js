@@ -35,6 +35,10 @@ export const TOOLTIP_DATA = {
   'Real-World Efficiency': {
     title: 'Real-World Efficiency (mi/kWh)',
     content: 'This is real-world energy efficiency data collected from Rivian owners via <a href="https://rivianroamer.com/join?with=riviantrackr" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:underline;">Rivian Roamer</a>. It measures how many miles the vehicle travels per kilowatt-hour of battery energy while using these tires. <br><br> Higher values mean better range efficiency. The data is based on actual driving sessions and updates regularly.'
+  },
+  'Rolling Resistance': {
+    title: 'Rolling Resistance (Crr)',
+    content: 'An estimated rolling-resistance coefficient (Crr) derived from real-world <a href="https://rivianroamer.com/join?with=riviantrackr" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:underline;">Rivian Roamer</a> efficiency data. Lower is better — a lower Crr means less energy is lost to the tire flexing as it rolls, which helps range. For reference, multiplying by 1,000 gives the more familiar "kg per tonne" figure (e.g. 0.0095 ≈ 9.5 kg/t). <br><br> This is a comparative estimate, not a lab measurement. It is calculated by attributing differences in measured energy use between tires to differences in rolling resistance, holding vehicle and conditions roughly constant, and is only shown for tires with enough Roamer data to be meaningful.'
   }
 };
 

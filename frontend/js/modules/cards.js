@@ -206,7 +206,7 @@ export function createSingleCard(row) {
     tireId, size, diameter, brand, model, category, price, warranty, weight, tpms,
     tread, loadIndex, maxLoad, loadRange, speed, psi, utqg, tags, link, image,
     efficiencyScore, efficiencyGrade, reviewLink, /* createdAt */ ,
-    roamerEfficiency, roamerTotalKm, roamerVehicleCount, roamerVehicleBreakdown
+    roamerEfficiency, roamerTotalKm, roamerVehicleCount, roamerVehicleBreakdown, roamerCrr
   ] = row;
 
   if (!VALIDATION_PATTERNS.tireId.test(tireId)) {
@@ -467,6 +467,12 @@ export function createSingleCard(row) {
   const utqgValue = safeString(utqg).trim();
   if (utqgValue && utqgValue.toLowerCase() !== 'none') {
     specs.push(['UTQG', utqgValue]);
+  }
+
+  // Rolling resistance — only shown when derived from real-world Roamer data.
+  const crrValue = parseFloat(roamerCrr);
+  if (Number.isFinite(crrValue) && crrValue > 0) {
+    specs.push(['Rolling Resistance', crrValue.toFixed(4)]);
   }
 
   specs.forEach(([label, value]) => {

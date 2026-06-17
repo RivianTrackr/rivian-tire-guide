@@ -134,6 +134,7 @@ class RTG_Database {
                 (string) $tire['roamer_total_km'],
                 (string) $tire['roamer_vehicle_count'],
                 (string) ( $tire['roamer_vehicle_breakdown'] ?? '' ),
+                (string) ( $tire['roamer_crr'] ?? 0 ),
             );
         }
 
@@ -208,6 +209,7 @@ class RTG_Database {
                 (string) $tire['roamer_total_km'],
                 (string) $tire['roamer_vehicle_count'],
                 (string) ( $tire['roamer_vehicle_breakdown'] ?? '' ),
+                (string) ( $tire['roamer_crr'] ?? 0 ),
             );
         }
 
@@ -329,6 +331,7 @@ class RTG_Database {
                 case 'weight_lb':
                 case 'roamer_efficiency':
                 case 'roamer_total_km':
+                case 'roamer_crr':
                     $formats[] = '%f';
                     break;
                 case 'mileage_warranty':
@@ -712,6 +715,7 @@ class RTG_Database {
                 (string) $tire['roamer_total_km'],
                 (string) $tire['roamer_vehicle_count'],
                 (string) ( $tire['roamer_vehicle_breakdown'] ?? '' ),
+                (string) ( $tire['roamer_crr'] ?? 0 ),
             );
         }
 
@@ -1059,6 +1063,103 @@ class RTG_Database {
                     'efficiency_score' => $efficiency['efficiency_score'],
                     'efficiency_grade' => $efficiency['efficiency_grade'],
                 ) );
+                $count++;
+            }
+        }
+
+        self::flush_cache();
+
+        // Rolling-resistance estimates depend on the whole fleet, so refresh
+        // them whenever efficiency is recalculated.
+        self::recalculate_all_roamer_crr();
+
+        return $count;
+    }
+
+    // --- Rolling Resistance (Crr) from Roamer real-world data ---
+
+    /**
+     * Estimated rolling-resistance coefficient (Crr) the fleet mean is pegged
+     * to. The differential model derives every other tire's Crr relative to
+     * this anchor. ~0.0095 is typical for an all-season light-truck tire, which
+     * the Roamer fleet is dominated by.
+     */
+    const ROAMER_CRR_ANCHOR = 0.0095;
+
+    /** Representative Rivian mass with payload, in kilograms. */
+    const ROAMER_CRR_MASS_KG = 3250;
+
+    /** Assumed battery-to-wheels drivetrain efficiency. */
+    const ROAMER_CRR_DRIVETRAIN_EFF = 0.85;
+
+    /** Minimum vehicle count for a Roamer sample to be trusted. */
+    const ROAMER_CRR_MIN_VEHICLES = 2;
+
+    /** Minimum distance (km) for a Roamer sample to be trusted (~1,000 mi). */
+    const ROAMER_CRR_MIN_KM = 1609;
+
+    /** Sane clamp range for a derived passenger/light-truck Crr. */
+    const ROAMER_CRR_FLOOR = 0.005;
+    const ROAMER_CRR_CEIL  = 0.025;
+
+    /**
+     * Recalculate the estimated rolling-resistance coefficient for every tire
+     * from Rivian Roamer real-world efficiency data.
+     *
+     * Method — differential anchoring. Absolute Crr cannot be isolated from
+     * aggregate mi/kWh (aero, auxiliary loads and driving style dominate and
+     * are not separable). Instead we hold everything except the tire constant
+     * and attribute *differences* in energy use to *differences* in Crr:
+     *
+     *   Wh/mi = (1/eff) * [ Crr*m*g*k + aero + aux ]   (aero, aux ~ constant)
+     *   Crr_tire = ANCHOR + (Wh/mi_tire - Wh/mi_fleetmean) * eff / (m*g*k)
+     *
+     * where k = metres-per-mile / seconds-per-hour converts force to Wh/mi.
+     * Tires without a trustworthy Roamer sample get 0 (the "no data" sentinel).
+     *
+     * @return int Number of tires whose stored Crr changed.
+     */
+    public static function recalculate_all_roamer_crr() {
+        $tires = self::get_all_tires();
+
+        // Wh/mi delta per unit Crr, at the battery:  m*g*(metres/mile)/3600 / eff.
+        $wh_per_mi_per_crr = ( self::ROAMER_CRR_MASS_KG * 9.80665 * 1609.344 / 3600 )
+            / self::ROAMER_CRR_DRIVETRAIN_EFF;
+
+        // Qualifying samples → consumption in Wh/mi.
+        $wh_per_mi = array();
+        foreach ( $tires as $tire ) {
+            $eff      = floatval( $tire['roamer_efficiency'] ?? 0 );
+            $vehicles = intval( $tire['roamer_vehicle_count'] ?? 0 );
+            $km       = floatval( $tire['roamer_total_km'] ?? 0 );
+
+            if (
+                $eff > 0 &&
+                $vehicles >= self::ROAMER_CRR_MIN_VEHICLES &&
+                $km >= self::ROAMER_CRR_MIN_KM
+            ) {
+                $wh_per_mi[ $tire['tire_id'] ] = 1000 / $eff;
+            }
+        }
+
+        // Fleet-mean consumption is the calibration anchor.
+        $fleet_mean = count( $wh_per_mi ) > 0 ? array_sum( $wh_per_mi ) / count( $wh_per_mi ) : 0;
+
+        $count = 0;
+        foreach ( $tires as $tire ) {
+            $tire_id = $tire['tire_id'];
+
+            if ( isset( $wh_per_mi[ $tire_id ] ) && $fleet_mean > 0 ) {
+                $crr = self::ROAMER_CRR_ANCHOR
+                    + ( $wh_per_mi[ $tire_id ] - $fleet_mean ) / $wh_per_mi_per_crr;
+                $crr = max( self::ROAMER_CRR_FLOOR, min( self::ROAMER_CRR_CEIL, $crr ) );
+                $crr = round( $crr, 4 );
+            } else {
+                $crr = 0;
+            }
+
+            if ( abs( floatval( $tire['roamer_crr'] ?? 0 ) - $crr ) > 0.00005 ) {
+                self::update_tire( $tire_id, array( 'roamer_crr' => $crr ) );
                 $count++;
             }
         }

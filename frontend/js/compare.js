@@ -64,7 +64,8 @@ const COL = {
   loadIndex: 11, maxLoad: 12, loadRange: 13, speedRating: 14,
   psi: 15, utqg: 16, tags: 17, link: 18, image: 19,
   effScore: 20, effGrade: 21, reviewLink: 22, createdAt: 23,
-  roamerEfficiency: 24, roamerTotalKm: 25, roamerVehicleCount: 26, roamerVehicleBreakdown: 27
+  roamerEfficiency: 24, roamerTotalKm: 25, roamerVehicleCount: 26, roamerVehicleBreakdown: 27,
+  roamerCrr: 28
 };
 
 // --- Efficiency badge colors ---
@@ -91,6 +92,10 @@ function findBestValues(tires) {
 
   const roamerVals = tires.map(t => parseFloat(t[COL.roamerEfficiency])).filter(n => !isNaN(n) && n > 0);
   if (roamerVals.length > 1) best.roamerEfficiency = Math.max(...roamerVals);
+
+  // Lower rolling resistance is better.
+  const crrVals = tires.map(t => parseFloat(t[COL.roamerCrr])).filter(n => !isNaN(n) && n > 0);
+  if (crrVals.length > 1) best.roamerCrr = Math.min(...crrVals);
 
   return best;
 }
@@ -249,6 +254,10 @@ function renderComparison(rows, indexes) {
       return '<span style="display:inline-block;background:rgba(59,130,246,0.15);border-radius:6px;padding:2px 8px;font-weight:700;color:#60a5fa;">' + miPerKwh + ' mi/kWh</span>' +
         '<br><span style="font-size:11px;color:#a19e97;">' + mi.toLocaleString() + ' mi tracked, ' + veh + ' vehicle' + (veh !== 1 ? 's' : '') + '</span>';
     }, 'roamerEfficiency'],
+    ['Rolling Resistance (Crr)', t => {
+      const c = parseFloat(t[COL.roamerCrr]);
+      return (!c || c <= 0) ? '-' : c.toFixed(4);
+    }, 'roamerCrr'],
     ['Speed Rating', t => t[COL.speedRating] || "-"],
     ['UTQG', t => t[COL.utqg] || "None"],
     ['3PMS Rated', t => {
