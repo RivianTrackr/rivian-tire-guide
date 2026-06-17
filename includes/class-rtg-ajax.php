@@ -1125,6 +1125,9 @@ class RTG_Ajax {
             update_option( RTG_Roamer_Sync::STATS_OPTION, $stats, false );
         }
 
+        // Derived rolling-resistance depends on the whole fleet.
+        RTG_Database::recalculate_all_roamer_crr();
+
         wp_send_json_success( array( 'updated' => $result ) );
     }
 
@@ -1156,6 +1159,9 @@ class RTG_Ajax {
         if ( false === $result ) {
             wp_send_json_error( 'Failed to unlink tire.' );
         }
+
+        // Removing a sample shifts the fleet mean for everyone else.
+        RTG_Database::recalculate_all_roamer_crr();
 
         wp_send_json_success( array( 'unlinked' => $tire_id ) );
     }

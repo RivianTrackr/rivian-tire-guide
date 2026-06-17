@@ -4,6 +4,12 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.50.0] - 2026-06-17
+
+### Added
+- **Per-tire rolling resistance (Crr), derived from real-world Rivian Roamer data.** A new estimated rolling-resistance coefficient now appears on tire cards ("Rolling Resistance") and the compare page ("Rolling Resistance (Crr)", lowest = best). It is computed by *differential anchoring*: absolute Crr can't be isolated from aggregate mi/kWh (aero, auxiliary loads, and driving style dominate and aren't separable), so each tire's Crr is derived from differences in measured energy use relative to the fleet mean, holding vehicle and conditions roughly constant — `Crr = 0.0095 + (Wh/mi − fleet_mean) · η / (m·g·k)`. The fleet mean is pegged to a typical all-season light-truck Crr (0.0095); model constants (mass 3250 kg, drivetrain efficiency 0.85, clamp 0.005–0.025) live in `RTG_Database`. Shown only for tires with a trustworthy sample (≥2 vehicles and ≥1,609 km / ~1,000 mi tracked); others store `0` and display nothing. The card/compare tooltips state plainly that it's a comparative estimate, not a lab measurement, and note the `×1000 = kg/tonne` shorthand.
+- Stored as a derived `roamer_crr` column (DB v15 migration; existing Roamer-linked tires backfilled on upgrade) and exposed in the REST API. Recomputed fleet-wide automatically after every Roamer mutation (bulk sync, manual assign, unlink) and whenever efficiency is recalculated, since each tire's value depends on the whole fleet.
+
 ## [1.49.3] - 2026-06-12
 
 ### Fixed
