@@ -39,6 +39,7 @@ class RTG_Ajax {
         'weight-asc',
         'newest',
         'roamer-efficiency',
+        'rolling-resistance',
     );
 
     /**

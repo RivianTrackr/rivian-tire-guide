@@ -491,6 +491,16 @@ function applySorting(sortOption) {
         return bVal - aVal;
       });
       break;
+    case "rolling-resistance":
+      state.filteredRows.sort((a, b) => {
+        const aVal = parseFloat(a[28]) || 0;
+        const bVal = parseFloat(b[28]) || 0;
+        // Tires without a Crr estimate go to bottom; lower Crr is better.
+        if (aVal > 0 && bVal === 0) return -1;
+        if (aVal === 0 && bVal > 0) return 1;
+        return aVal - bVal;
+      });
+      break;
   }
 }
 

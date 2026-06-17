@@ -659,6 +659,8 @@ class RTG_Database {
             'weight-asc'        => 'weight_lb ASC',
             'newest'            => 'created_at DESC',
             'roamer-efficiency' => 'roamer_efficiency DESC',
+            // Lower Crr is better; tires without an estimate (0) sort last.
+            'rolling-resistance' => '(roamer_crr = 0) ASC, roamer_crr ASC',
         );
         return $sort_map[ $sort ] ?? 'efficiency_score DESC';
     }
