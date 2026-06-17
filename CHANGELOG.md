@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.50.1] - 2026-06-17
+
+### Added
+- **"Rolling Resistance: Low → High" sort option.** The tire-guide sort dropdown can now order tires by their estimated rolling-resistance coefficient (`roamer_crr`), lowest first. Tires without a Crr estimate sort to the bottom in both client-side and server-side pagination (`(roamer_crr = 0) ASC, roamer_crr ASC`). Added to the allowed-sort lists (client URL state, AJAX, and the shortcode `sort=""` attribute); mirrors the existing "Real-World Efficiency" sort and, like it, is not exposed in the REST API sort enum.
+
 ## [1.50.0] - 2026-06-17
 
 ### Added
