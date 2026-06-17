@@ -105,7 +105,6 @@ if ( ! defined( 'ABSPATH' ) ) {
         <select id="sortBy" aria-label="Sort tires by">
         <option value="efficiencyGrade">Efficiency Grade</option>
         <option value="roamer-efficiency" selected>Real-World Efficiency</option>
-        <option value="rolling-resistance">Rolling Resistance: Low → High</option>
         <option value="most-reviewed">Most Reviewed</option>
         <option value="newest">Newest Added</option>
         <option value="price-asc">Price: Low → High</option>

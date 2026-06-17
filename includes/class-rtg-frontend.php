@@ -153,7 +153,7 @@ class RTG_Frontend {
             $prefilters['category'] = sanitize_text_field( $shortcode_atts['category'] );
         }
         if ( ! empty( $shortcode_atts['sort'] ) ) {
-            $allowed_sorts = array( 'efficiencyGrade', 'rolling-resistance', 'price-asc', 'price-desc', 'warranty-desc', 'weight-asc', 'newest', 'rating-desc', 'most-reviewed' );
+            $allowed_sorts = array( 'efficiencyGrade', 'price-asc', 'price-desc', 'warranty-desc', 'weight-asc', 'newest', 'rating-desc', 'most-reviewed' );
             $sort_val = sanitize_text_field( $shortcode_atts['sort'] );
             if ( in_array( $sort_val, $allowed_sorts, true ) ) {
                 $prefilters['sort'] = $sort_val;

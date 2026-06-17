@@ -260,9 +260,6 @@ class RTG_Roamer_Sync {
 
         update_option( self::STATS_OPTION, $result, false );
 
-        // Roamer data changed for the fleet — refresh derived rolling-resistance.
-        RTG_Database::recalculate_all_roamer_crr();
-
         return $result;
     }
 

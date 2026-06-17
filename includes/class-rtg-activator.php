@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 15;
+    const DB_VERSION = 16;
 
     public static function activate() {
         self::create_tables();
@@ -88,7 +88,6 @@ class RTG_Activator {
             roamer_total_km DECIMAL(10,1) NOT NULL DEFAULT 0,
             roamer_vehicle_count INT UNSIGNED NOT NULL DEFAULT 0,
             roamer_vehicle_breakdown TEXT,
-            roamer_crr DECIMAL(5,4) NOT NULL DEFAULT 0,
             roamer_synced_at DATETIME NULL DEFAULT NULL,
             sort_order INT UNSIGNED NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -189,7 +188,9 @@ class RTG_Activator {
             12 => 'migrate_12_add_roamer_columns',
             13 => 'migrate_13_roamer_drop_sessions_add_breakdown',
             14 => 'migrate_14_ensure_vehicle_breakdown_column',
-            15 => 'migrate_15_add_roamer_crr',
+            // Note: migration 15 (add roamer_crr) was shipped in 1.50.0 then
+            // reverted. Migration 16 drops the column on sites that ran 15.
+            16 => 'migrate_16_drop_roamer_crr',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -359,22 +360,18 @@ class RTG_Activator {
     }
 
     /**
-     * Migration 15: Add roamer_crr column.
-     * Stores the estimated rolling-resistance coefficient derived from
-     * Rivian Roamer real-world efficiency data. Computed by
-     * RTG_Database::recalculate_all_roamer_crr(); a derived value, so it is
-     * never set on insert (column DEFAULT 0 applies until the next recalc).
+     * Migration 16: Drop the roamer_crr column.
+     * The rolling-resistance estimate (added by the reverted migration 15 in
+     * 1.50.0) was removed in 1.50.2. This drops the now-unused column on any
+     * site that ran migration 15 before the rollback.
      */
-    private static function migrate_15_add_roamer_crr() {
+    private static function migrate_16_drop_roamer_crr() {
         global $wpdb;
         $table = $wpdb->prefix . 'rtg_tires';
 
         $cols = $wpdb->get_col( "SHOW COLUMNS FROM {$table}" );
-        if ( ! in_array( 'roamer_crr', $cols, true ) ) {
-            $wpdb->query( "ALTER TABLE {$table} ADD COLUMN roamer_crr DECIMAL(5,4) NOT NULL DEFAULT 0 AFTER roamer_vehicle_breakdown" );
+        if ( in_array( 'roamer_crr', $cols, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table} DROP COLUMN roamer_crr" );
         }
-
-        // Backfill values for sites that already have Roamer data.
-        RTG_Database::recalculate_all_roamer_crr();
     }
 }

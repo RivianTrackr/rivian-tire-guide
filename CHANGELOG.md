@@ -4,16 +4,10 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.50.1] - 2026-06-17
+## [1.50.2] - 2026-06-17
 
-### Added
-- **"Rolling Resistance: Low → High" sort option.** The tire-guide sort dropdown can now order tires by their estimated rolling-resistance coefficient (`roamer_crr`), lowest first. Tires without a Crr estimate sort to the bottom in both client-side and server-side pagination (`(roamer_crr = 0) ASC, roamer_crr ASC`). Added to the allowed-sort lists (client URL state, AJAX, and the shortcode `sort=""` attribute); mirrors the existing "Real-World Efficiency" sort and, like it, is not exposed in the REST API sort enum.
-
-## [1.50.0] - 2026-06-17
-
-### Added
-- **Per-tire rolling resistance (Crr), derived from real-world Rivian Roamer data.** A new estimated rolling-resistance coefficient now appears on tire cards ("Rolling Resistance") and the compare page ("Rolling Resistance (Crr)", lowest = best). It is computed by *differential anchoring*: absolute Crr can't be isolated from aggregate mi/kWh (aero, auxiliary loads, and driving style dominate and aren't separable), so each tire's Crr is derived from differences in measured energy use relative to the fleet mean, holding vehicle and conditions roughly constant — `Crr = 0.0095 + (Wh/mi − fleet_mean) · η / (m·g·k)`. The fleet mean is pegged to a typical all-season light-truck Crr (0.0095); model constants (mass 3250 kg, drivetrain efficiency 0.85, clamp 0.005–0.025) live in `RTG_Database`. Shown only for tires with a trustworthy sample (≥2 vehicles and ≥1,609 km / ~1,000 mi tracked); others store `0` and display nothing. The card/compare tooltips state plainly that it's a comparative estimate, not a lab measurement, and note the `×1000 = kg/tonne` shorthand.
-- Stored as a derived `roamer_crr` column (DB v15 migration; existing Roamer-linked tires backfilled on upgrade) and exposed in the REST API. Recomputed fleet-wide automatically after every Roamer mutation (bulk sync, manual assign, unlink) and whenever efficiency is recalculated, since each tire's value depends on the whole fleet.
+### Removed
+- **Reverted the per-tire rolling-resistance feature (added in 1.50.0, sort option in 1.50.1).** The estimate was derived from Roamer real-world efficiency, which conflates rolling resistance with aerodynamic drag, vehicle mass, HVAC/accessory load, terrain, temperature, and driver behavior — too many variables to represent the actual rolling resistance of the tread. Rather than present an energy-derived estimate as a measured tire property, the feature is removed: the "Rolling Resistance" card/compare rows, the "Rolling Resistance: Low → High" sort, the REST `roamer_crr` field, and the `RTG_Database` calculation are all gone. Real rolling resistance is a lab-measured value (ISO 28580 / EU tyre label); a sourcing assessment showed coverage is too partial for this catalog (US-market brands and large Rivian sizes are largely absent from EU label / lab-test data) to build on now. The `roamer_crr` DB column is dropped via migration 16. Roamer real-world efficiency (mi/kWh) is unaffected.
 
 ## [1.49.3] - 2026-06-12
 
