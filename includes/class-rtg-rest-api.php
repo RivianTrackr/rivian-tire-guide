@@ -190,7 +190,6 @@ class RTG_REST_API {
                 'roamer_total_miles'       => round( floatval( $tire['roamer_total_km'] ?? 0 ) * 0.621371, 1 ),
                 'roamer_vehicle_count'     => intval( $tire['roamer_vehicle_count'] ?? 0 ),
                 'roamer_vehicle_breakdown' => json_decode( $tire['roamer_vehicle_breakdown'] ?? '', true ) ?: new stdClass(),
-                'roamer_crr'               => floatval( $tire['roamer_crr'] ?? 0 ),
                 'roamer_synced_at'         => $tire['roamer_synced_at'] ?? null,
                 'rating_average'      => $rating ? floatval( $rating['average'] ) : null,
                 'rating_count'        => $rating ? intval( $rating['count'] ) : 0,

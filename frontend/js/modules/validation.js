@@ -26,7 +26,6 @@ export const NUMERIC_BOUNDS = {
 
 export const ALLOWED_SORT_OPTIONS = [
   "efficiencyGrade", "roamer-efficiency",
-  "rolling-resistance",
   "price-asc", "price-desc",
   "warranty-desc", "weight-asc",
   "reviewed", "rating-desc",
