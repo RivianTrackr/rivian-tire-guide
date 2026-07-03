@@ -115,14 +115,10 @@ if ( ! empty( $guide_pages ) ) {
     .rv-breadcrumb span[aria-current] { color: var(--rtg-text-primary); }
 
     /* --- Page container --- */
+    /* No width/padding overrides: the .rv-root wrapper is sized natively by
+       the theme's constrained entry-content (gutters included). */
     .rv-page {
-      /* Full content width — matches the main guide. */
-      width: 100%;
       padding: 32px 0 80px;
-    }
-    /* No theme gutter below its content max-width — provide our own. */
-    @media (max-width: 1024px) {
-      .rv-page { padding-left: 16px; padding-right: 16px; }
     }
     .rv-title {
       font-size: 28px;
@@ -582,7 +578,7 @@ if ( ! empty( $guide_pages ) ) {
 
     /* --- Responsive --- */
     @media (max-width: 640px) {
-      .rv-page { padding: 20px 16px 60px; }
+      .rv-page { padding: 20px 0 60px; }
       .rv-title { font-size: 23px; }
       .rv-tire-card { flex-direction: column; text-align: center; padding: 16px; }
       .rv-tire-img { width: 90px; height: 90px; }
