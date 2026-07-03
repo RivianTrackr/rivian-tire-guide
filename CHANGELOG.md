@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.53.0] - 2026-07-02
+
+### Changed
+- **Individual tire pages now render inside the active theme** (header/nav/footer) instead of as standalone documents, while keeping the same `/tires/{slug}/` URLs. A new theme-agnostic `RTG_Theme_Render` helper presents the request as a singular page (works for classic and block themes) and injects the server-rendered tire content into `the_content`; the tire template's CSS was re-scoped under a `.rtg-tp` container so it no longer resets/overrides theme styles.
+
+### Added
+- **All in One SEO integration for tire pages.** Per-tire `<title>`, meta description, and canonical are delegated to AIOSEO via its filters (`aioseo_title` / `aioseo_description` / `aioseo_canonical_url`), with core `document_title` / canonical fallbacks when no SEO plugin is active. `Product` + `BreadcrumbList` JSON-LD is emitted on `wp_head`, and every tire URL is registered into the AIOSEO XML sitemap via `aioseo_sitemap_additional_pages` — closing the sitemap gap from the initial launch.
+
+> **Staging note:** this release changes how tire pages render and how their SEO tags are produced. Verify on staging before deploying — check that the page shows the theme chrome, that AIOSEO outputs the correct per-tire title/description/canonical (view source + AIOSEO's tools), that `/tires/{slug}/` appears in the sitemap, and that unknown slugs still 404. Review and Compare pages are unchanged in this release (still standalone) and are the next step.
+
 ## [1.52.1] - 2026-07-02
 
 ### Fixed
