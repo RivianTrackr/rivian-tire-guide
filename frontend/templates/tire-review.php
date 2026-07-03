@@ -73,7 +73,7 @@ if ( ! empty( $guide_pages ) ) {
     .rv-root {
       --rtg-accent: #fba919;
       --rtg-accent-hover: #ffbe4a;
-      --rtg-bg-primary: #1e2126;
+      --rtg-bg-primary: #16191e;
       --rtg-bg-card: #16191e;
       --rtg-bg-input: #3a3e45;
       --rtg-bg-deep: #121418;
@@ -91,44 +91,28 @@ if ( ! empty( $guide_pages ) ) {
     .rv-root *, .rv-root *::before, .rv-root *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     .rv-root {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--rtg-bg-deep);
+      /* Inherit the theme font — matches the main guide, which does the same. */
+      font-family: inherit;
+      /* No panel background: sit on the theme page bg like the tire pages. */
       color: var(--rtg-text-primary);
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
 
-    /* --- Top bar --- */
-    .rv-topbar {
-      background: var(--rtg-bg-primary);
-      border-bottom: 1px solid var(--rtg-border);
-      padding: 12px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      position: sticky;
-      top: 0;
-      z-index: 50;
-    }
-    .rv-topbar-left {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    .rv-logo { height: 32px; width: auto; }
-    .rv-back {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+    /* --- Breadcrumb (matches the tire page pattern) --- */
+    .rv-breadcrumb {
+      font-size: 13px;
       color: var(--rtg-text-muted);
-      text-decoration: none;
-      font-size: 14px;
-      font-weight: 500;
-      transition: color .15s;
+      margin: 0 0 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
     }
-    .rv-back:hover { color: var(--rtg-accent); text-decoration: none; }
+    .rv-breadcrumb a { color: var(--rtg-text-muted); text-decoration: none; }
+    .rv-breadcrumb a:hover { color: var(--rtg-accent); }
+    .rv-breadcrumb span[aria-current] { color: var(--rtg-text-primary); }
 
     /* --- Page container --- */
     .rv-page {
@@ -137,7 +121,7 @@ if ( ! empty( $guide_pages ) ) {
       padding: 32px 20px 80px;
     }
     .rv-title {
-      font-size: 26px;
+      font-size: 28px;
       font-weight: 700;
       letter-spacing: -0.5px;
       color: var(--rtg-text-heading);
@@ -560,19 +544,6 @@ if ( ! empty( $guide_pages ) ) {
     .rv-btn-primary:hover { background: var(--rtg-accent-hover); border-color: var(--rtg-accent-hover); color: #15130e; text-decoration: none; }
 
     /* --- Footer --- */
-    .rv-footer {
-      text-align: center;
-      padding: 32px 20px;
-      font-size: 13px;
-      color: var(--rtg-text-muted);
-    }
-    .rv-footer a {
-      color: var(--rtg-accent);
-      text-decoration: none;
-      font-weight: 500;
-    }
-    .rv-footer a:hover { text-decoration: underline; }
-
     /* --- Toast notifications --- */
     .rv-toast-container {
       position: fixed;
@@ -607,10 +578,8 @@ if ( ! empty( $guide_pages ) ) {
 
     /* --- Responsive --- */
     @media (max-width: 640px) {
-      .rv-topbar { padding: 10px 16px; }
-      .rv-topbar .rv-back span { display: none; }
       .rv-page { padding: 20px 14px 60px; }
-      .rv-title { font-size: 22px; }
+      .rv-title { font-size: 23px; }
       .rv-tire-card { flex-direction: column; text-align: center; padding: 16px; }
       .rv-tire-img { width: 90px; height: 90px; }
       .rv-tire-rating-row { justify-content: center; }
@@ -624,21 +593,15 @@ if ( ! empty( $guide_pages ) ) {
 
 <div class="rtg-embed rv-root">
 
-  <!-- Top bar -->
-  <div class="rv-topbar">
-    <div class="rv-topbar-left">
-      <a href="<?php echo esc_url( $tire_guide_url ); ?>">
-        <img src="https://riviantrackr.com/wp-content/uploads/2024/01/RivianTrackrLogo.webp" class="rv-logo" alt="RivianTrackr" />
-      </a>
-      <a href="<?php echo esc_url( $tire_guide_url ); ?>" class="rv-back">
-        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-        <span>Back to Tire Guide</span>
-      </a>
-    </div>
-  </div>
-
   <!-- Content -->
   <div class="rv-page">
+    <nav class="rv-breadcrumb" aria-label="Breadcrumb">
+      <a href="<?php echo esc_url( home_url( '/' ) ); ?>">Home</a>
+      <span aria-hidden="true">&rsaquo;</span>
+      <a href="<?php echo esc_url( $tire_guide_url ); ?>">Tire Guide</a>
+      <span aria-hidden="true">&rsaquo;</span>
+      <span aria-current="page">Write a Review</span>
+    </nav>
     <h1 class="rv-title">Review a Tire</h1>
     <p class="rv-subtitle">Select a tire and share your experience to help fellow Rivian owners.</p>
 
@@ -731,10 +694,6 @@ if ( ! empty( $guide_pages ) ) {
     </div>
   </div>
 
-  <!-- Footer -->
-  <div class="rv-footer">
-    <a href="<?php echo esc_url( $tire_guide_url ); ?>">Rivian Tire Guide</a> &mdash; Powered by RivianTrackr
-  </div>
 
 </div>
 <?php

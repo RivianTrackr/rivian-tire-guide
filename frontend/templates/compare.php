@@ -38,7 +38,7 @@ $rtg_settings = get_option( 'rtg_settings', array() );
     .cmp-root {
       --rtg-accent: #fba919;
       --rtg-accent-hover: #ffbe4a;
-      --rtg-bg-primary: #1e2126;
+      --rtg-bg-primary: #16191e;
       --rtg-bg-card: #16191e;
       --rtg-bg-input: #3a3e45;
       --rtg-bg-deep: #121418;
@@ -54,44 +54,35 @@ $rtg_settings = get_option( 'rtg_settings', array() );
     .cmp-placeholder-icon { color: var(--rtg-border); }
 
     .cmp-root {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--rtg-bg-deep);
+      /* Inherit the theme font — matches the main guide, which does the same. */
+      font-family: inherit;
+      /* No panel background: sit on the theme page bg like the tire pages. */
       color: var(--rtg-text-primary);
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
 
-    /* --- Top bar --- */
-    .cmp-topbar {
-      background: var(--rtg-bg-primary);
-      border-bottom: 1px solid var(--rtg-border);
-      padding: 12px 24px;
+    /* --- Breadcrumb row (matches the tire page pattern) + actions --- */
+    .cmp-crumb-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      position: sticky;
-      top: 0;
-      z-index: 50;
+      flex-wrap: wrap;
+      margin: 0 0 20px;
     }
-    .cmp-topbar-left {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    .cmp-logo { height: 32px; width: auto; }
-    .cmp-back {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+    .cmp-breadcrumb {
+      font-size: 13px;
       color: var(--rtg-text-muted);
-      text-decoration: none;
-      font-size: 14px;
-      font-weight: 500;
-      transition: color .15s;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
     }
-    .cmp-back:hover { color: var(--rtg-accent); text-decoration: none; }
+    .cmp-breadcrumb a { color: var(--rtg-text-muted); text-decoration: none; }
+    .cmp-breadcrumb a:hover { color: var(--rtg-accent); }
+    .cmp-breadcrumb span[aria-current] { color: var(--rtg-text-primary); }
     .cmp-topbar-actions { display: flex; gap: 8px; }
     .cmp-btn {
       display: inline-flex;
@@ -120,7 +111,7 @@ $rtg_settings = get_option( 'rtg_settings', array() );
     /* --- Page --- */
     .cmp-page { max-width: 1200px; margin: 0 auto; padding: 24px 20px 60px; }
     .cmp-title {
-      font-size: 24px;
+      font-size: 28px;
       font-weight: 700;
       letter-spacing: -0.5px;
       color: var(--rtg-text-heading);
@@ -360,10 +351,8 @@ $rtg_settings = get_option( 'rtg_settings', array() );
 
     /* --- Responsive: mobile --- */
     @media (max-width: 768px) {
-      .cmp-topbar { padding: 10px 16px; }
-      .cmp-topbar .cmp-back span { display: none; }
       .cmp-page { padding: 16px 12px 40px; }
-      .cmp-title { font-size: 20px; margin-bottom: 16px; }
+      .cmp-title { font-size: 23px; margin-bottom: 16px; }
       .cmp-subtitle { margin-bottom: 16px; }
 
       .cmp-tire-header {
@@ -405,7 +394,7 @@ $rtg_settings = get_option( 'rtg_settings', array() );
     /* --- Print --- */
     @media print {
       .cmp-root { background: #fff; color: #1a1a1a; }
-      .cmp-topbar { display: none; }
+      .cmp-crumb-row { display: none; }
       .cmp-section, .cmp-tire-header { border-color: #ddd; }
       .cmp-section-header { background: #f5f5f5; }
       .cmp-row-label { background: #fafafa; }
@@ -420,31 +409,27 @@ $rtg_settings = get_option( 'rtg_settings', array() );
 
 <div class="rtg-embed cmp-root">
 
-  <!-- Top bar -->
-  <div class="cmp-topbar">
-    <div class="cmp-topbar-left">
-      <a href="<?php echo esc_url( home_url( '/rivian-tire-guide/' ) ); ?>">
-        <img src="https://riviantrackr.com/wp-content/uploads/2024/01/RivianTrackrLogo.webp" class="cmp-logo" alt="RivianTrackr" />
-      </a>
-      <a href="<?php echo esc_url( home_url( '/rivian-tire-guide/' ) ); ?>" class="cmp-back">
-        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-        <span>Back to Tire Guide</span>
-      </a>
-    </div>
-    <div class="cmp-topbar-actions">
-      <button type="button" class="cmp-btn" id="shareBtn">
-        <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
-        <span>Share</span>
-      </button>
-      <button type="button" class="cmp-btn" onclick="window.print()">
-        <i class="fa-solid fa-print" aria-hidden="true"></i>
-        <span>Print</span>
-      </button>
-    </div>
-  </div>
-
   <!-- Content -->
   <div class="cmp-page">
+    <div class="cmp-crumb-row">
+      <nav class="cmp-breadcrumb" aria-label="Breadcrumb">
+        <a href="<?php echo esc_url( home_url( '/' ) ); ?>">Home</a>
+        <span aria-hidden="true">&rsaquo;</span>
+        <a href="<?php echo esc_url( home_url( '/rivian-tire-guide/' ) ); ?>">Tire Guide</a>
+        <span aria-hidden="true">&rsaquo;</span>
+        <span aria-current="page">Compare</span>
+      </nav>
+      <div class="cmp-topbar-actions">
+        <button type="button" class="cmp-btn" id="shareBtn">
+          <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
+          <span>Share</span>
+        </button>
+        <button type="button" class="cmp-btn" onclick="window.print()">
+          <i class="fa-solid fa-print" aria-hidden="true"></i>
+          <span>Print</span>
+        </button>
+      </div>
+    </div>
     <h1 class="cmp-title">Tire Comparison</h1>
     <div id="comparisonContent">
       <div class="cmp-empty">
