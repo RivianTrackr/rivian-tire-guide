@@ -168,6 +168,7 @@ class RTG_Frontend {
             'settings' => array(
                 'rowsPerPage'     => intval( $settings['rows_per_page'] ?? 12 ),
                 'compareUrl'      => home_url( '/' . $compare_slug . '/' ),
+                'tirePageUrl'     => home_url( '/' . RTG_Tire_Page::slug_base() . '/' ),
                 'userReviewsUrl'  => home_url( '/' . sanitize_title( $user_reviews_slug ) . '/' ),
                 'serverSide'      => $server_side,
                 'ajaxurl'         => admin_url( 'admin-ajax.php' ),

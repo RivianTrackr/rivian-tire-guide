@@ -886,6 +886,13 @@
   color: var(--rtg-text-heading);
   line-height: 1.2;
 }
+.tire-card-model-link {
+  color: inherit;
+  text-decoration: none;
+}
+.tire-card-model-link:hover {
+  color: var(--rtg-accent);
+}
 
 /* Tags row */
 .tire-card-tags {

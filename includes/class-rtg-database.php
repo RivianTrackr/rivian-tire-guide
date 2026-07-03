@@ -47,6 +47,88 @@ class RTG_Database {
         return (bool) preg_match( '/^[a-zA-Z0-9\-_]+$/', $tire_id ) && strlen( $tire_id ) <= 50;
     }
 
+    // --- Tire slugs (individual tire pages) ---
+
+    /**
+     * Build a URL slug base from a tire's brand, model, and size.
+     * Deterministic; uniqueness is enforced separately by sync_tire_slug().
+     *
+     * @return string Sanitized slug base (may be empty for blank inputs).
+     */
+    public static function generate_tire_slug( $brand, $model, $size ) {
+        return sanitize_title( trim( "$brand $model $size" ) );
+    }
+
+    /**
+     * Compute and persist a unique slug for a tire. Called after insert/update.
+     *
+     * Collisions (a different tire sharing the same brand+model+size) get the
+     * tire_id appended, so every tire resolves to exactly one canonical URL.
+     *
+     * @param string $tire_id Tire identifier.
+     * @return string The slug that was stored (empty string if the tire is missing).
+     */
+    public static function sync_tire_slug( $tire_id ) {
+        global $wpdb;
+        $table = self::tires_table();
+
+        $tire = self::get_tire( $tire_id );
+        if ( ! $tire ) {
+            return '';
+        }
+
+        $base = self::generate_tire_slug( $tire['brand'], $tire['model'], $tire['size'] );
+        if ( '' === $base ) {
+            // Nothing to slugify — fall back to the tire_id.
+            $base = sanitize_title( $tire_id );
+        }
+
+        $slug     = $base;
+        $conflict = $wpdb->get_var( $wpdb->prepare(
+            "SELECT tire_id FROM {$table} WHERE slug = %s AND tire_id != %s LIMIT 1",
+            $slug,
+            $tire_id
+        ) );
+        if ( $conflict ) {
+            $slug = $base . '-' . sanitize_title( $tire_id );
+        }
+
+        if ( ! isset( $tire['slug'] ) || $tire['slug'] !== $slug ) {
+            $wpdb->update( $table, array( 'slug' => $slug ), array( 'tire_id' => $tire_id ), array( '%s' ), array( '%s' ) );
+            self::flush_cache();
+        }
+
+        return $slug;
+    }
+
+    /**
+     * Get a single tire by its URL slug.
+     *
+     * @param string $slug Tire slug.
+     * @return array|null Tire row as associative array, or null if not found.
+     */
+    public static function get_tire_by_slug( $slug ) {
+        global $wpdb;
+        $table = self::tires_table();
+        return $wpdb->get_row(
+            $wpdb->prepare( "SELECT * FROM {$table} WHERE slug = %s", $slug ),
+            ARRAY_A
+        );
+    }
+
+    /**
+     * Backfill slugs for every tire. Used by migration 17.
+     */
+    public static function backfill_slugs() {
+        global $wpdb;
+        $table = self::tires_table();
+        $ids   = $wpdb->get_col( "SELECT tire_id FROM {$table}" );
+        foreach ( $ids as $tire_id ) {
+            self::sync_tire_slug( $tire_id );
+        }
+        self::flush_cache();
+    }
+
     // --- Tire CRUD ---
 
     /**
@@ -134,6 +216,7 @@ class RTG_Database {
                 (string) $tire['roamer_total_km'],
                 (string) $tire['roamer_vehicle_count'],
                 (string) ( $tire['roamer_vehicle_breakdown'] ?? '' ),
+                (string) ( $tire['slug'] ?? '' ),
             );
         }
 
@@ -208,6 +291,7 @@ class RTG_Database {
                 (string) $tire['roamer_total_km'],
                 (string) $tire['roamer_vehicle_count'],
                 (string) ( $tire['roamer_vehicle_breakdown'] ?? '' ),
+                (string) ( $tire['slug'] ?? '' ),
             );
         }
 
@@ -302,6 +386,7 @@ class RTG_Database {
 
         $result = $wpdb->insert( $table, $data, $formats );
         if ( $result !== false ) {
+            self::sync_tire_slug( $data['tire_id'] );
             self::flush_cache();
             return $wpdb->insert_id;
         }
@@ -345,6 +430,12 @@ class RTG_Database {
         }
 
         $result = $wpdb->update( $table, $data, array( 'tire_id' => $tire_id ), $formats, array( '%s' ) );
+
+        // Keep the URL slug in sync when identifying fields change.
+        if ( isset( $data['brand'] ) || isset( $data['model'] ) || isset( $data['size'] ) ) {
+            self::sync_tire_slug( $tire_id );
+        }
+
         self::flush_cache();
         return $result;
     }
