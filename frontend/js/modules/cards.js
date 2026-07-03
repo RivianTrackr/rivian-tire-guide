@@ -494,35 +494,31 @@ export function createSingleCard(row) {
     specsContainer.appendChild(specRow);
   });
 
-  // Tags row — at the bottom of specs as supplementary info.
+  bodyEl.appendChild(specsContainer);
+
+  // Chips — category + tags (matches the tire page's chip treatment).
+  // 'OEM' is excluded: the corner badge already covers it.
+  const chipValues = [];
+  if (safeString(category).trim()) {
+    chipValues.push(safeString(category).trim());
+  }
   if (tags && safeString(tags).trim()) {
-    const tagList = safeString(tags).split(/[,|]/).map(tag => tag.trim()).filter(tag => tag && tag.toLowerCase() !== 'oem');
-
-    if (tagList.length > 0) {
-      const tagSpecRow = document.createElement('div');
-      tagSpecRow.className = 'tire-card-spec';
-
-      const tagLabel = document.createElement('span');
-      tagLabel.className = 'tire-card-spec-label';
-      tagLabel.textContent = 'Tags';
-
-      const tagValue = document.createElement('span');
-      tagValue.className = 'tire-card-spec-value tire-card-tag-list';
-
-      tagList.forEach(tag => {
-        const tagEl = document.createElement('span');
-        tagEl.className = 'tire-card-tag';
-        tagEl.textContent = safeString(tag, 30);
-        tagValue.appendChild(tagEl);
-      });
-
-      tagSpecRow.appendChild(tagLabel);
-      tagSpecRow.appendChild(tagValue);
-      specsContainer.appendChild(tagSpecRow);
-    }
+    safeString(tags).split(/[,|]/).map(tag => tag.trim())
+      .filter(tag => tag && tag.toLowerCase() !== 'oem')
+      .forEach(tag => chipValues.push(safeString(tag, 30)));
+  }
+  if (chipValues.length > 0) {
+    const chipsRow = document.createElement('div');
+    chipsRow.className = 'tire-card-chips';
+    chipValues.forEach(value => {
+      const chipEl = document.createElement('span');
+      chipEl.className = 'tire-card-chip';
+      chipEl.textContent = value;
+      chipsRow.appendChild(chipEl);
+    });
+    bodyEl.appendChild(chipsRow);
   }
 
-  bodyEl.appendChild(specsContainer);
   card.appendChild(bodyEl);
 
   const actionsContainer = document.createElement('div');
@@ -543,12 +539,20 @@ export function createSingleCard(row) {
     actionsContainer.appendChild(comingSoon);
   }
 
+  // Link row below the CTA: internal tire-page link + demoted official
+  // review link (was a second full-width button competing with the CTA).
+  const linksRow = document.createElement('div');
+  linksRow.className = 'tire-card-links';
+
+  if (tirePageUrl) {
+    const detailsLink = document.createElement('a');
+    detailsLink.className = 'tire-card-details-link';
+    detailsLink.href = tirePageUrl;
+    detailsLink.innerHTML = 'Full Specs &amp; Reviews&nbsp;' + rtgIcon('arrow-right', 12);
+    linksRow.appendChild(detailsLink);
+  }
+
   if (safeReviewLink) {
-    const reviewButton = document.createElement('a');
-    reviewButton.href = safeReviewLink;
-    reviewButton.target = '_blank';
-    reviewButton.rel = 'noopener noreferrer';
-    reviewButton.className = 'tire-card-cta tire-card-cta-review';
     let isVideo = false;
     try {
       const urlObj = new URL(safeReviewLink);
@@ -564,19 +568,17 @@ export function createSingleCard(row) {
     } catch (e) {
       isVideo = false;
     }
-    const iconName = isVideo ? 'circle-play' : 'newspaper';
-    const label = isVideo ? 'Watch Official Review' : 'Read Official Review';
-    reviewButton.innerHTML = `${label}&nbsp;${rtgIcon(iconName, 14)}`;
-    actionsContainer.appendChild(reviewButton);
+    const reviewEl = document.createElement('a');
+    reviewEl.href = safeReviewLink;
+    reviewEl.target = '_blank';
+    reviewEl.rel = 'noopener noreferrer';
+    reviewEl.className = 'tire-card-review-link';
+    reviewEl.innerHTML = rtgIcon(isVideo ? 'circle-play' : 'newspaper', 12) + '&nbsp;' + (isVideo ? 'Review Video' : 'Official Review');
+    linksRow.appendChild(reviewEl);
   }
 
-  // Internal link to the tire's own page (full spec sheet + owner reviews).
-  if (tirePageUrl) {
-    const detailsLink = document.createElement('a');
-    detailsLink.className = 'tire-card-details-link';
-    detailsLink.href = tirePageUrl;
-    detailsLink.innerHTML = 'Full Specs &amp; Reviews&nbsp;' + rtgIcon('arrow-right', 12);
-    actionsContainer.appendChild(detailsLink);
+  if (linksRow.children.length > 0) {
+    actionsContainer.appendChild(linksRow);
   }
 
   card.appendChild(actionsContainer);

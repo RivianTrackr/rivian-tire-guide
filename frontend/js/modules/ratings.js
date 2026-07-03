@@ -324,28 +324,15 @@ export function createRatingHTML(tireId, average = 0, count = 0, userRating = 0)
     reviewActions.appendChild(viewReviewsBtn);
   }
 
-  if (state.isLoggedIn) {
-    const hasReview = state.userReviews[tireId]?.rating;
-    const writeBtn = document.createElement('button');
-    writeBtn.className = 'review-action-link write-review-btn';
-    writeBtn.dataset.tireId = tireId;
-    writeBtn.textContent = hasReview ? 'Edit Review' : 'Write a Review';
-    reviewActions.appendChild(writeBtn);
-  } else {
-    const hasPending = state.guestPendingReviews && state.guestPendingReviews.has(tireId);
-    if (hasPending) {
-      const pendingBadge = document.createElement('span');
-      pendingBadge.className = 'review-action-link rtg-review-pending-badge';
-      pendingBadge.textContent = 'Review Pending';
-      reviewActions.appendChild(pendingBadge);
-    } else {
-      // Guest review button — opens modal with name/email fields.
-      const guestBtn = document.createElement('button');
-      guestBtn.className = 'review-action-link write-review-btn';
-      guestBtn.dataset.tireId = tireId;
-      guestBtn.textContent = 'Write a Review';
-      reviewActions.appendChild(guestBtn);
-    }
+  // The Write/Edit Review pill was removed from cards (1.55.2): review
+  // writing lives on the tire page and the standalone review page, and the
+  // card's interactive stars still handle quick ratings. Guests keep the
+  // pending badge so they know their review awaits moderation.
+  if (!state.isLoggedIn && state.guestPendingReviews && state.guestPendingReviews.has(tireId)) {
+    const pendingBadge = document.createElement('span');
+    pendingBadge.className = 'review-action-link rtg-review-pending-badge';
+    pendingBadge.textContent = 'Review Pending';
+    reviewActions.appendChild(pendingBadge);
   }
 
   container.appendChild(reviewActions);
