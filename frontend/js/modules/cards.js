@@ -374,14 +374,20 @@ export function createSingleCard(row) {
 
   // Key stats row — Average Price + Real-World Efficiency, elevated above
   // the spec rows (they're the top decision drivers; efficiency is also the
-  // default sort). Blocks are skipped when the data is missing.
+  // default sort). Both blocks always render so the two-up grid stays
+  // consistent across cards; a missing value shows a muted "no data yet"
+  // placeholder instead of collapsing to one oversized block. The row is
+  // skipped entirely only when BOTH values are missing.
   const statsRow = document.createElement('div');
   statsRow.className = 'tire-card-stats';
 
   const priceNum = validateNumeric(price, NUMERIC_BOUNDS.price, 0);
-  if (priceNum > 0) {
+  const roamerVal = parseFloat(roamerEfficiency);
+  const hasRoamer = Number.isFinite(roamerVal) && roamerVal > 0;
+
+  if (priceNum > 0 || hasRoamer) {
     const priceStat = document.createElement('div');
-    priceStat.className = 'tire-card-stat';
+    priceStat.className = 'tire-card-stat' + (priceNum > 0 ? '' : ' tire-card-stat-empty');
 
     const priceLabel = document.createElement('div');
     priceLabel.className = 'tire-card-stat-label';
@@ -389,15 +395,55 @@ export function createSingleCard(row) {
 
     const priceValue = document.createElement('div');
     priceValue.className = 'tire-card-stat-value';
-    priceValue.textContent = `$${priceNum}`;
+    priceValue.textContent = priceNum > 0 ? `$${priceNum}` : '—';
 
     priceStat.appendChild(priceLabel);
     priceStat.appendChild(priceValue);
+    if (priceNum <= 0) {
+      const priceMeta = document.createElement('div');
+      priceMeta.className = 'tire-card-stat-meta';
+      priceMeta.textContent = 'no data yet';
+      priceStat.appendChild(priceMeta);
+    }
     statsRow.appendChild(priceStat);
   }
 
-  const roamerVal = parseFloat(roamerEfficiency);
-  if (Number.isFinite(roamerVal) && roamerVal > 0) {
+  if (priceNum > 0 && !hasRoamer) {
+    // Efficiency placeholder — keeps the two-up grid and explains the gap.
+    const emptyStat = document.createElement('div');
+    emptyStat.className = 'tire-card-stat tire-card-stat-roamer tire-card-stat-empty';
+
+    const emptyLabel = document.createElement('div');
+    emptyLabel.className = 'tire-card-stat-label';
+    emptyLabel.textContent = 'Efficiency';
+
+    const emptyValue = document.createElement('div');
+    emptyValue.className = 'tire-card-stat-value';
+
+    const emptyDash = document.createElement('span');
+    emptyDash.textContent = '—';
+
+    const emptyInfoBtn = document.createElement('button');
+    emptyInfoBtn.innerHTML = '' + rtgIcon('circle-info', 14) + '';
+    emptyInfoBtn.className = 'info-tooltip-trigger';
+    emptyInfoBtn.dataset.tooltipKey = 'Real-World Efficiency';
+    emptyInfoBtn.setAttribute('aria-label', 'More info about Real-World Efficiency');
+    emptyInfoBtn.setAttribute('type', 'button');
+
+    emptyValue.appendChild(emptyDash);
+    emptyValue.appendChild(emptyInfoBtn);
+
+    const emptyMeta = document.createElement('div');
+    emptyMeta.className = 'tire-card-stat-meta';
+    emptyMeta.textContent = 'no data yet';
+
+    emptyStat.appendChild(emptyLabel);
+    emptyStat.appendChild(emptyValue);
+    emptyStat.appendChild(emptyMeta);
+    statsRow.appendChild(emptyStat);
+  }
+
+  if (hasRoamer) {
     const roamerStat = document.createElement('div');
     roamerStat.className = 'tire-card-stat tire-card-stat-roamer';
 
@@ -463,10 +509,14 @@ export function createSingleCard(row) {
   // or cryptic when scanning a grid, and the full spec sheet lives one click
   // away on the individual tire page (plus the compare page, admin form, and
   // CSV import/export). Average Price moved up into the key-stats row.
+  // Note: row values are strings, so "0" is truthy — compare the parsed
+  // number instead, or missing data renders as "0 miles" / "0 lb".
+  const warrantyNum = Number(validateNumeric(warranty, NUMERIC_BOUNDS.warranty, 0));
+  const weightNum = Number(validateNumeric(weight, NUMERIC_BOUNDS.weight, 0));
   const specs = [
     ['Size', `${safeString(size)} (${safeString(diameter)}${safeString(diameter) && !safeString(diameter).includes('"') ? '"' : ''})`],
-    ['Mileage Warranty', warranty ? `${Number(validateNumeric(warranty, NUMERIC_BOUNDS.warranty)).toLocaleString()} miles` : '-'],
-    ['Weight', weight ? `${validateNumeric(weight, NUMERIC_BOUNDS.weight)} lb` : '-'],
+    ['Mileage Warranty', warrantyNum > 0 ? `${warrantyNum.toLocaleString()} miles` : '-'],
+    ['Weight', weightNum > 0 ? `${weightNum} lb` : '-'],
     ['3PMS Rated', safeString(tpms)]
   ];
 

@@ -4,6 +4,12 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.56.1] - 2026-07-03
+
+### Fixed
+- **Cards without efficiency data no longer show one oversized price block.** The key-stats row now always renders both blocks — a missing Real-World Efficiency (or price) shows a muted em-dash with "no data yet" (the efficiency placeholder keeps its info tooltip), so the two-up grid stays consistent across every card and rows align.
+- **Missing warranty/weight rendered as "0 miles" / "0 lb".** Row values are strings, so "0" passed the truthiness check meant to render a dash; the parsed number is compared instead.
+
 ## [1.56.0] - 2026-07-03
 
 ### Changed
