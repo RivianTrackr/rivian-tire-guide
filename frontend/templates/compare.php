@@ -109,7 +109,8 @@ $rtg_settings = get_option( 'rtg_settings', array() );
     .cmp-btn-primary:hover { background: var(--rtg-accent-hover); border-color: var(--rtg-accent-hover); color: #15130e; text-decoration: none; }
 
     /* --- Page --- */
-    .cmp-page { max-width: 1200px; margin: 0 auto; padding: 24px 20px 60px; }
+    /* Full content width — matches the main guide. */
+    .cmp-page { width: 100%; padding: 24px 0 60px; }
     .cmp-title {
       font-size: 28px;
       font-weight: 700;
@@ -351,7 +352,7 @@ $rtg_settings = get_option( 'rtg_settings', array() );
 
     /* --- Responsive: mobile --- */
     @media (max-width: 768px) {
-      .cmp-page { padding: 16px 12px 40px; }
+      .cmp-page { padding: 16px 0 40px; }
       .cmp-title { font-size: 23px; margin-bottom: 16px; }
       .cmp-subtitle { margin-bottom: 16px; }
 

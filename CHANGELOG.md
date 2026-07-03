@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.53.3] - 2026-07-03
+
+### Changed
+- **Tire, Review, and Compare pages now span the full theme content width, like the main guide.** Each page had its own centered max-width cap left over from the standalone era (tire 900px, review 640px, compare 1200px); those are removed so all pages fill the theme's content area. Their own horizontal padding was also dropped (desktop and mobile) since the theme's content gutters provide it — matching how the guide shortcode behaves.
+
 ## [1.53.2] - 2026-07-03
 
 ### Changed
