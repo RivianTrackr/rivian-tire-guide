@@ -233,6 +233,16 @@ function deleteTireRating(tireId) {
   });
 }
 
+// Resolve the canonical tire-page URL for a tire from the localized base +
+// the row's slug (index 28). Returns '' when either is unavailable.
+function tirePageUrlFor(tireId) {
+  const base = (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.tirePageUrl) ? rtgData.settings.tirePageUrl : '';
+  if (!base || !Array.isArray(state.allRows)) return '';
+  const row = state.allRows.find(r => Array.isArray(r) && r[0] === tireId);
+  const slug = row && typeof row[28] === 'string' ? row[28].trim() : '';
+  return slug ? base + encodeURIComponent(slug) + '/' : '';
+}
+
 export function createRatingHTML(tireId, average = 0, count = 0, userRating = 0) {
   if (!VALIDATION_PATTERNS.tireId.test(tireId)) {
     console.error('Invalid tire ID in rating creation');
@@ -303,7 +313,8 @@ export function createRatingHTML(tireId, average = 0, count = 0, userRating = 0)
   ratingInfo.appendChild(averageSpan);
 
   // Review count as inline text next to the rating (matches the tire page's
-  // "5.0 · 1 rating" pattern). Still a button — clicking opens the drawer.
+  // "5.0 · 1 rating" pattern). Links to the tire page's Owner Reviews
+  // section — the reviews drawer was removed in 1.56.0.
   const reviewCount = state.tireRatings[tireId]?.review_count || 0;
   if (reviewCount > 0) {
     const sep = document.createElement('span');
@@ -312,12 +323,20 @@ export function createRatingHTML(tireId, average = 0, count = 0, userRating = 0)
     sep.textContent = '·';
     ratingInfo.appendChild(sep);
 
-    const countBtn = document.createElement('button');
-    countBtn.className = 'view-reviews-btn rating-review-count';
-    countBtn.dataset.tireId = tireId;
-    countBtn.setAttribute('type', 'button');
-    countBtn.textContent = `${reviewCount} review${reviewCount !== 1 ? 's' : ''}`;
-    ratingInfo.appendChild(countBtn);
+    const label = `${reviewCount} review${reviewCount !== 1 ? 's' : ''}`;
+    const pageUrl = tirePageUrlFor(tireId);
+    if (pageUrl) {
+      const countLink = document.createElement('a');
+      countLink.className = 'rating-review-count';
+      countLink.href = pageUrl + '#rtg-tp-reviews';
+      countLink.textContent = label;
+      ratingInfo.appendChild(countLink);
+    } else {
+      const countSpan = document.createElement('span');
+      countSpan.className = 'rating-review-count rating-review-count-static';
+      countSpan.textContent = label;
+      ratingInfo.appendChild(countSpan);
+    }
   }
 
   ratingDisplay.appendChild(starsContainer);
@@ -717,263 +736,6 @@ export function openReviewModal(tireId, preselectedRating = 0) {
         errorMsg.textContent = typeof err === 'string' ? err : (err.message || 'Failed to submit. Please try again.');
       });
   });
-}
-
-// ── Reviews Drawer ──
-
-export function openReviewsDrawer(tireId) {
-  const existing = document.getElementById('rtg-reviews-drawer');
-  if (existing) existing.remove();
-
-  const card = document.querySelector(`[data-tire-id="${CSS.escape(tireId)}"].tire-card`);
-  const brand = card ? card.querySelector('.tire-card-brand')?.textContent || '' : '';
-  const model = card ? card.querySelector('.tire-card-model')?.textContent || '' : '';
-
-  const overlay = document.createElement('div');
-  overlay.id = 'rtg-reviews-drawer';
-  overlay.className = 'rtg-reviews-drawer-overlay';
-  overlay.setAttribute('role', 'dialog');
-  overlay.setAttribute('aria-modal', 'true');
-  overlay.setAttribute('aria-label', 'Reviews');
-
-  const drawer = document.createElement('div');
-  drawer.className = 'rtg-reviews-drawer';
-
-  const header = document.createElement('div');
-  header.className = 'rtg-reviews-drawer-header';
-
-  const titleEl = document.createElement('h3');
-  titleEl.textContent = brand && model ? `Reviews for ${brand} ${model}` : 'Reviews';
-
-  const ratingData = state.tireRatings[tireId] || { average: 0, count: 0 };
-  const summaryEl = document.createElement('div');
-  summaryEl.className = 'rtg-reviews-summary';
-  if (ratingData.average > 0) {
-    summaryEl.innerHTML = `<span class="rtg-reviews-avg">${ratingData.average.toFixed(1)}</span> <span class="rtg-reviews-stars-mini">${renderStarsHTML(ratingData.average)}</span> <span class="rtg-reviews-total">${ratingData.count} review${ratingData.count !== 1 ? 's' : ''}</span>`;
-  }
-
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'rtg-reviews-drawer-close';
-  closeBtn.setAttribute('aria-label', 'Close');
-  closeBtn.innerHTML = '&times;';
-
-  header.appendChild(titleEl);
-  header.appendChild(summaryEl);
-  header.appendChild(closeBtn);
-
-  const content = document.createElement('div');
-  content.className = 'rtg-reviews-content';
-  content.innerHTML = '<div class="rtg-reviews-loading">Loading reviews...</div>';
-
-  drawer.appendChild(header);
-  drawer.appendChild(content);
-  overlay.appendChild(drawer);
-  document.body.appendChild(overlay);
-
-  requestAnimationFrame(() => overlay.classList.add('active'));
-
-  function closeDrawer() {
-    overlay.classList.remove('active');
-    setTimeout(() => overlay.remove(), 200);
-  }
-
-  closeBtn.addEventListener('click', closeDrawer);
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) closeDrawer();
-  });
-  document.addEventListener('keydown', function escHandler(e) {
-    if (e.key === 'Escape') {
-      closeDrawer();
-      document.removeEventListener('keydown', escHandler);
-    }
-  });
-
-  loadReviews(tireId, content, 1);
-}
-
-function loadReviews(tireId, container, page) {
-  const formData = new FormData();
-  formData.append('action', 'get_tire_reviews');
-  formData.append('tire_id', tireId);
-  formData.append('page', page.toString());
-  if (tireRatingAjax.nonce) {
-    formData.append('nonce', tireRatingAjax.nonce);
-  }
-
-  fetch(tireRatingAjax.ajaxurl, {
-    method: 'POST',
-    body: formData
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (!data.success || !data.data.reviews.length) {
-      const emptyDiv = document.createElement('div');
-      emptyDiv.className = 'rtg-reviews-empty';
-
-      const iconEl = document.createElement('div');
-      iconEl.className = 'rtg-reviews-empty-icon';
-      iconEl.textContent = '\u270D\uFE0F';
-
-      const headingEl = document.createElement('div');
-      headingEl.className = 'rtg-reviews-empty-heading';
-      headingEl.textContent = 'No reviews yet';
-
-      const subEl = document.createElement('div');
-      subEl.textContent = 'Be the first to share your experience with this tire!';
-
-      emptyDiv.appendChild(iconEl);
-      emptyDiv.appendChild(headingEl);
-      emptyDiv.appendChild(subEl);
-
-      // Show CTA for both logged-in users and guests.
-      const ctaBtn = document.createElement('button');
-      ctaBtn.className = 'rtg-reviews-empty-cta';
-      ctaBtn.textContent = 'Write a Review';
-      ctaBtn.addEventListener('click', () => {
-        const overlayEl = container.closest('.rtg-reviews-drawer-overlay');
-        if (overlayEl) {
-          overlayEl.classList.remove('active');
-          setTimeout(() => overlayEl.remove(), 200);
-        }
-        openReviewModal(tireId, state.userRatings[tireId] || 0);
-      });
-      emptyDiv.appendChild(ctaBtn);
-
-      container.innerHTML = '';
-      container.appendChild(emptyDiv);
-      return;
-    }
-
-    container.innerHTML = '';
-
-    data.data.reviews.forEach(review => {
-      container.appendChild(createReviewCard(review));
-    });
-
-    if (data.data.total_pages > 1) {
-      const pag = document.createElement('div');
-      pag.className = 'rtg-reviews-pagination';
-
-      if (page > 1) {
-        const prevBtn = document.createElement('button');
-        prevBtn.className = 'rtg-reviews-page-btn';
-        prevBtn.textContent = 'Previous';
-        prevBtn.addEventListener('click', () => loadReviews(tireId, container, page - 1));
-        pag.appendChild(prevBtn);
-      }
-
-      const pageInfo = document.createElement('span');
-      pageInfo.className = 'rtg-reviews-page-info';
-      pageInfo.textContent = `Page ${page} of ${data.data.total_pages}`;
-      pag.appendChild(pageInfo);
-
-      if (page < data.data.total_pages) {
-        const nextBtn = document.createElement('button');
-        nextBtn.className = 'rtg-reviews-page-btn';
-        nextBtn.textContent = 'Next';
-        nextBtn.addEventListener('click', () => loadReviews(tireId, container, page + 1));
-        pag.appendChild(nextBtn);
-      }
-
-      container.appendChild(pag);
-    }
-  })
-  .catch(() => {
-    container.innerHTML = '<div class="rtg-reviews-empty">Failed to load reviews. Please try again.</div>';
-  });
-}
-
-function createReviewCard(review) {
-  const card = document.createElement('div');
-  card.className = 'rtg-review-card';
-
-  const header = document.createElement('div');
-  header.className = 'rtg-review-card-header';
-
-  const userReviewsUrl = (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.userReviewsUrl) ? rtgData.settings.userReviewsUrl : '';
-  let authorEl;
-  if (review.user_id && parseInt(review.user_id) > 0 && userReviewsUrl) {
-    authorEl = document.createElement('a');
-    authorEl.href = userReviewsUrl + '?reviewer=' + encodeURIComponent(review.user_id);
-    authorEl.className = 'rtg-review-author rtg-review-author-link';
-    authorEl.textContent = review.display_name || 'Anonymous';
-  } else {
-    authorEl = document.createElement('span');
-    authorEl.className = 'rtg-review-author';
-    authorEl.textContent = review.display_name || 'Anonymous';
-  }
-
-  const starsEl = document.createElement('span');
-  starsEl.className = 'rtg-review-card-stars';
-  starsEl.innerHTML = renderStarsHTML(review.rating);
-
-  const dateEl = document.createElement('span');
-  dateEl.className = 'rtg-review-date';
-  dateEl.textContent = formatReviewDate(review.updated_at || review.created_at);
-
-  header.appendChild(authorEl);
-  header.appendChild(starsEl);
-  header.appendChild(dateEl);
-
-  card.appendChild(header);
-
-  if (review.review_title) {
-    const titleEl = document.createElement('div');
-    titleEl.className = 'rtg-review-card-title';
-    titleEl.textContent = review.review_title;
-    card.appendChild(titleEl);
-  }
-
-  if (review.review_text) {
-    const bodyEl = document.createElement('div');
-    bodyEl.className = 'rtg-review-card-body';
-    bodyEl.textContent = review.review_text;
-    card.appendChild(bodyEl);
-  } else {
-    const ratingOnly = document.createElement('div');
-    ratingOnly.className = 'rtg-review-card-body rtg-review-rating-only';
-    ratingOnly.textContent = 'Star rating only \u2014 no written review.';
-    card.appendChild(ratingOnly);
-  }
-
-  return card;
-}
-
-export function renderStarsHTML(rating) {
-  const rounded = Math.round(rating * 2) / 2;
-  let html = '';
-  for (let i = 1; i <= 5; i++) {
-    let cls = 'rtg-mini-star';
-    if (rounded >= i) cls += ' filled';
-    else if (rounded >= i - 0.5) cls += ' half-filled';
-    html += `<span class="${cls}">${starSVGMarkup(18)}</span>`;
-  }
-  return html;
-}
-
-function formatReviewDate(dateStr) {
-  const normalized = dateStr && !dateStr.includes('T') && !dateStr.includes('Z')
-    ? dateStr.replace(' ', 'T') + 'Z'
-    : dateStr;
-  const date = new Date(normalized);
-
-  const wpTz = (typeof tireRatingAjax !== 'undefined' && tireRatingAjax.timezone) || undefined;
-  const opts = wpTz ? { timeZone: wpTz } : {};
-
-  const nowParts = new Intl.DateTimeFormat('en-CA', { ...opts, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-  const dateParts = new Intl.DateTimeFormat('en-CA', { ...opts, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
-  const nowDay = new Date(nowParts + 'T00:00:00');
-  const reviewDay = new Date(dateParts + 'T00:00:00');
-  const diffDays = Math.round((nowDay - reviewDay) / (1000 * 60 * 60 * 24));
-
-  if (diffDays <= 0) return 'Today';
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays < 30) return `${diffDays} days ago`;
-  if (diffDays < 365) {
-    const months = Math.floor(diffDays / 30);
-    return `${months} month${months !== 1 ? 's' : ''} ago`;
-  }
-  return date.toLocaleDateString('en-US', { ...opts, month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 // ── Toast Notifications ──

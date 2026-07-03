@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.56.0] - 2026-07-03
+
+### Changed
+- **The review count on guide cards now links to the tire page's Owner Reviews section** (`/tires/{slug}/#rtg-tp-reviews`) instead of opening the in-guide reviews slide-out. With the tire pages carrying full, server-rendered reviews, the drawer was a redundant second reviews UI.
+
+### Removed
+- **The reviews slide-out drawer.** `openReviewsDrawer` and its list/pagination renderers, the delegated open handler, and all drawer-specific CSS are gone (~350 lines). Kept: the review modal (star-click writing flow), the guest "Review Pending" badge, and the shared review-card styles used by the user-reviews page.
+
 ## [1.55.4] - 2026-07-03
 
 ### Fixed
