@@ -114,8 +114,8 @@ $roamer_eff = (float) ( $tire['roamer_efficiency'] ?? 0 );
     --rtg-tp-border: #3a3e45;
     --rtg-tp-star-empty: #2c2f34;
     <?php if ( $rtg_tp_css_vars ) echo $rtg_tp_css_vars; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized hex above ?>
-    max-width: 900px;
-    margin: 0 auto;
+    /* Full content width — matches the main guide. */
+    width: 100%;
     color: var(--rtg-tp-text);
     font-size: 15px;
     line-height: 1.6;

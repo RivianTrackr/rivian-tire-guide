@@ -116,9 +116,9 @@ if ( ! empty( $guide_pages ) ) {
 
     /* --- Page container --- */
     .rv-page {
-      max-width: 640px;
-      margin: 0 auto;
-      padding: 32px 20px 80px;
+      /* Full content width — matches the main guide. */
+      width: 100%;
+      padding: 32px 0 80px;
     }
     .rv-title {
       font-size: 28px;
@@ -578,7 +578,7 @@ if ( ! empty( $guide_pages ) ) {
 
     /* --- Responsive --- */
     @media (max-width: 640px) {
-      .rv-page { padding: 20px 14px 60px; }
+      .rv-page { padding: 20px 0 60px; }
       .rv-title { font-size: 23px; }
       .rv-tire-card { flex-direction: column; text-align: center; padding: 16px; }
       .rv-tire-img { width: 90px; height: 90px; }
