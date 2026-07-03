@@ -1,12 +1,14 @@
-<!DOCTYPE html>
-<html <?php language_attributes(); ?>>
-<head>
-  <meta charset="<?php bloginfo( 'charset' ); ?>">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RivianTrackr Tire Comparison</title>
-  <?php wp_head(); ?>
-  <?php
-  $rtg_settings = get_option( 'rtg_settings', array() );
+<?php
+/**
+ * Tire comparison — content partial rendered INSIDE the active theme via
+ * RTG_Theme_Render (or the [rivian_tire_compare] shortcode). JS builds the
+ * comparison into #comparisonContent. All CSS is scoped under .cmp-root so
+ * it never touches the surrounding theme.
+ */
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+$rtg_settings = get_option( 'rtg_settings', array() );
   $rtg_theme    = $rtg_settings['theme_colors'] ?? array();
   $rtg_var_map  = array(
       'accent'       => '--rtg-accent',
@@ -33,7 +35,7 @@
   $compare_slug = $rtg_settings['compare_slug'] ?? 'tire-compare';
   ?>
   <style>
-    :root {
+    .cmp-root {
       --rtg-accent: #fba919;
       --rtg-accent-hover: #ffbe4a;
       --rtg-bg-primary: #1e2126;
@@ -48,10 +50,10 @@
       <?php if ( $rtg_css_vars ) echo $rtg_css_vars; ?>
     }
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    .cmp-root *, .cmp-root *::before, .cmp-root *::after { box-sizing: border-box; margin: 0; padding: 0; }
     .cmp-placeholder-icon { color: var(--rtg-border); }
 
-    body {
+    .cmp-root {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: var(--rtg-bg-deep);
       color: var(--rtg-text-primary);
@@ -402,7 +404,7 @@
 
     /* --- Print --- */
     @media print {
-      body { background: #fff; color: #1a1a1a; }
+      .cmp-root { background: #fff; color: #1a1a1a; }
       .cmp-topbar { display: none; }
       .cmp-section, .cmp-tire-header { border-color: #ddd; }
       .cmp-section-header { background: #f5f5f5; }
@@ -415,8 +417,8 @@
       .cmp-btn { display: none !important; }
     }
   </style>
-</head>
-<body>
+
+<div class="rtg-embed cmp-root">
 
   <!-- Top bar -->
   <div class="cmp-topbar">
@@ -456,6 +458,6 @@
     </div>
   </div>
 
-  <?php wp_footer(); ?>
-</body>
-</html>
+</div>
+<?php
+// End tire comparison content partial.

@@ -69,31 +69,8 @@ if ( ! empty( $guide_pages ) ) {
     $tire_guide_url = get_permalink( $guide_pages[0] );
 }
 ?>
-<!DOCTYPE html>
-<html <?php language_attributes(); ?>>
-<head>
-  <meta charset="<?php bloginfo( 'charset' ); ?>">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?php echo esc_html( $og_title ); ?></title>
-
-  <!-- Open Graph / Twitter Card -->
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="<?php echo esc_attr( $og_title ); ?>" />
-  <meta property="og:description" content="<?php echo esc_attr( $og_description ); ?>" />
-  <meta property="og:url" content="<?php echo esc_url( $og_url ); ?>" />
-  <?php if ( $og_image ) : ?>
-  <meta property="og:image" content="<?php echo esc_url( $og_image ); ?>" />
-  <?php endif; ?>
-  <meta name="twitter:card" content="<?php echo $og_image ? 'summary_large_image' : 'summary'; ?>" />
-  <meta name="twitter:title" content="<?php echo esc_attr( $og_title ); ?>" />
-  <meta name="twitter:description" content="<?php echo esc_attr( $og_description ); ?>" />
-  <?php if ( $og_image ) : ?>
-  <meta name="twitter:image" content="<?php echo esc_url( $og_image ); ?>" />
-  <?php endif; ?>
-
-  <?php wp_head(); ?>
-  <style>
-    :root {
+<style>
+    .rv-root {
       --rtg-accent: #fba919;
       --rtg-accent-hover: #ffbe4a;
       --rtg-bg-primary: #1e2126;
@@ -111,9 +88,9 @@ if ( ! empty( $guide_pages ) ) {
       <?php if ( $rtg_css_vars ) echo $rtg_css_vars; ?>
     }
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    .rv-root *, .rv-root *::before, .rv-root *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body {
+    .rv-root {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: var(--rtg-bg-deep);
       color: var(--rtg-text-primary);
@@ -644,8 +621,8 @@ if ( ! empty( $guide_pages ) ) {
       .rv-toast-container { top: 10px; right: 10px; left: 10px; }
     }
   </style>
-</head>
-<body>
+
+<div class="rtg-embed rv-root">
 
   <!-- Top bar -->
   <div class="rv-topbar">
@@ -759,6 +736,6 @@ if ( ! empty( $guide_pages ) ) {
     <a href="<?php echo esc_url( $tire_guide_url ); ?>">Rivian Tire Guide</a> &mdash; Powered by RivianTrackr
   </div>
 
-  <?php wp_footer(); ?>
-</body>
-</html>
+</div>
+<?php
+// End tire review content partial.
