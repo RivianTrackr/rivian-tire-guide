@@ -394,52 +394,43 @@ export function createSingleCard(row) {
     priceLabel.textContent = 'Avg Price';
 
     const priceValue = document.createElement('div');
-    priceValue.className = 'tire-card-stat-value';
-    priceValue.textContent = priceNum > 0 ? `$${priceNum}` : '—';
+    priceValue.className = 'tire-card-stat-value' + (priceNum > 0 ? '' : ' tire-card-stat-value-na');
+    priceValue.textContent = priceNum > 0 ? `$${priceNum}` : 'No data yet';
 
     priceStat.appendChild(priceLabel);
     priceStat.appendChild(priceValue);
-    if (priceNum <= 0) {
-      const priceMeta = document.createElement('div');
-      priceMeta.className = 'tire-card-stat-meta';
-      priceMeta.textContent = 'no data yet';
-      priceStat.appendChild(priceMeta);
-    }
     statsRow.appendChild(priceStat);
   }
 
   if (priceNum > 0 && !hasRoamer) {
-    // Efficiency placeholder — keeps the two-up grid and explains the gap.
+    // Efficiency placeholder — keeps the two-up grid without shouting:
+    // the info trigger sits on the label row and the value is one quiet
+    // muted line, so the placeholder recedes next to real data.
     const emptyStat = document.createElement('div');
-    emptyStat.className = 'tire-card-stat tire-card-stat-roamer tire-card-stat-empty';
+    emptyStat.className = 'tire-card-stat tire-card-stat-empty';
 
     const emptyLabel = document.createElement('div');
     emptyLabel.className = 'tire-card-stat-label';
-    emptyLabel.textContent = 'Efficiency';
 
-    const emptyValue = document.createElement('div');
-    emptyValue.className = 'tire-card-stat-value';
-
-    const emptyDash = document.createElement('span');
-    emptyDash.textContent = '—';
+    const emptyLabelText = document.createElement('span');
+    emptyLabelText.textContent = 'Efficiency';
 
     const emptyInfoBtn = document.createElement('button');
-    emptyInfoBtn.innerHTML = '' + rtgIcon('circle-info', 14) + '';
+    emptyInfoBtn.innerHTML = '' + rtgIcon('circle-info', 12) + '';
     emptyInfoBtn.className = 'info-tooltip-trigger';
     emptyInfoBtn.dataset.tooltipKey = 'Real-World Efficiency';
     emptyInfoBtn.setAttribute('aria-label', 'More info about Real-World Efficiency');
     emptyInfoBtn.setAttribute('type', 'button');
 
-    emptyValue.appendChild(emptyDash);
-    emptyValue.appendChild(emptyInfoBtn);
+    emptyLabel.appendChild(emptyLabelText);
+    emptyLabel.appendChild(emptyInfoBtn);
 
-    const emptyMeta = document.createElement('div');
-    emptyMeta.className = 'tire-card-stat-meta';
-    emptyMeta.textContent = 'no data yet';
+    const emptyValue = document.createElement('div');
+    emptyValue.className = 'tire-card-stat-value tire-card-stat-value-na';
+    emptyValue.textContent = 'No data yet';
 
     emptyStat.appendChild(emptyLabel);
     emptyStat.appendChild(emptyValue);
-    emptyStat.appendChild(emptyMeta);
     statsRow.appendChild(emptyStat);
   }
 

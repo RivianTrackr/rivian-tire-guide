@@ -937,6 +937,9 @@
   padding: 8px 12px;
 }
 .tire-card-stat-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
@@ -962,6 +965,13 @@
   color: #60a5fa;
 }
 .tire-card-stat-empty .tire-card-stat-value {
+  color: var(--rtg-text-muted);
+}
+.tire-card-stat-value-na {
+  font-size: 13px;
+  font-weight: 500;
+  font-style: italic;
+  line-height: 1.66;
   color: var(--rtg-text-muted);
 }
 
