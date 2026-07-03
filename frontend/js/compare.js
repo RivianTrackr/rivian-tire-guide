@@ -67,11 +67,6 @@ const COL = {
   roamerEfficiency: 24, roamerTotalKm: 25, roamerVehicleCount: 26, roamerVehicleBreakdown: 27
 };
 
-// --- Efficiency badge colors ---
-const GRADE_COLORS = {
-  A: "#34c759", B: "#7dc734", C: "#facc15", D: "#f97316", F: "#b91c1c"
-};
-
 // --- Determine "best" values for highlighting ---
 function findBestValues(tires) {
   const best = {};
@@ -86,24 +81,10 @@ function findBestValues(tires) {
   const warranties = tires.map(t => parseInt(t[COL.warranty])).filter(n => !isNaN(n) && n > 0);
   if (warranties.length > 1) best.warranty = Math.max(...warranties);
 
-  const scores = tires.map(t => parseInt(t[COL.effScore])).filter(n => !isNaN(n) && n > 0);
-  if (scores.length > 1) best.effScore = Math.max(...scores);
-
   const roamerVals = tires.map(t => parseFloat(t[COL.roamerEfficiency])).filter(n => !isNaN(n) && n > 0);
   if (roamerVals.length > 1) best.roamerEfficiency = Math.max(...roamerVals);
 
   return best;
-}
-
-// --- Build efficiency badge HTML ---
-function effBadge(score, grade) {
-  const s = escapeHTML(score || "-");
-  const g = escapeHTML((grade || "-").toUpperCase());
-  const color = GRADE_COLORS[g] || "#a19e97";
-  return `<span class="cmp-eff-badge">
-    <span class="cmp-eff-grade" style="background:${color}">${g}</span>
-    <span class="cmp-eff-score">${s}/100</span>
-  </span>`;
 }
 
 // --- Build tag HTML ---
@@ -217,10 +198,6 @@ function renderComparison(rows, indexes) {
             <span class="cmp-tire-meta-label">Weight</span>
             <span class="cmp-tire-meta-value">${fmtWeight(t[COL.weight])}</span>
           </div>
-          <div class="cmp-tire-meta-item">
-            <span class="cmp-tire-meta-label">Efficiency</span>
-            <span class="cmp-tire-meta-value">${effBadge(t[COL.effScore], t[COL.effGrade])}</span>
-          </div>
         </div>
       </div>
     </div>`;
@@ -239,7 +216,6 @@ function renderComparison(rows, indexes) {
   ], tires, best, n);
 
   html += specSection('gauge-high', 'Performance', [
-    ['Efficiency', t => effBadge(t[COL.effScore], t[COL.effGrade]), 'effScore'],
     ['Real-World Efficiency', t => {
       const v = parseFloat(t[COL.roamerEfficiency]);
       if (!v || v === 0) return '-';

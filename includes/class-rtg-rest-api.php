@@ -253,6 +253,7 @@ class RTG_REST_API {
 
         // Validate sort value.
         $allowed_sorts = array(
+            'roamer-efficiency',
             'efficiency_score',
             'price-asc',
             'price-desc',
@@ -261,7 +262,7 @@ class RTG_REST_API {
             'newest',
         );
         if ( ! in_array( $sort, $allowed_sorts, true ) ) {
-            $sort = 'efficiency_score';
+            $sort = 'roamer-efficiency';
         }
 
         $page     = max( 1, $page );
@@ -524,8 +525,9 @@ class RTG_REST_API {
             'sort'      => array(
                 'description'       => 'Sort order for results.',
                 'type'              => 'string',
-                'default'           => 'efficiency_score',
+                'default'           => 'roamer-efficiency',
                 'enum'              => array(
+                    'roamer-efficiency',
                     'efficiency_score',
                     'price-asc',
                     'price-desc',

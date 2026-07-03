@@ -204,27 +204,6 @@
       color: var(--rtg-text-heading);
     }
 
-    /* --- Efficiency badge --- */
-    .cmp-eff-badge {
-      display: inline-flex;
-      align-items: center;
-      font-size: 13px;
-      border-radius: 6px;
-      overflow: hidden;
-      line-height: 1;
-    }
-    .cmp-eff-grade {
-      padding: 4px 10px;
-      font-weight: 800;
-      color: #15130e;
-    }
-    .cmp-eff-score {
-      padding: 4px 10px;
-      font-weight: 600;
-      background: var(--rtg-bg-primary);
-      color: var(--rtg-text-light);
-    }
-
     /* --- Spec sections --- */
     .cmp-section {
       background: var(--rtg-bg-card);

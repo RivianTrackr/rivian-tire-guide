@@ -205,7 +205,7 @@ export function createSingleCard(row) {
   const [
     tireId, size, diameter, brand, model, category, price, warranty, weight, tpms,
     tread, loadIndex, maxLoad, loadRange, speed, psi, utqg, tags, link, image,
-    efficiencyScore, efficiencyGrade, reviewLink, /* createdAt */ ,
+    /* efficiencyScore */ , /* efficiencyGrade */ , reviewLink, /* createdAt */ ,
     roamerEfficiency, roamerTotalKm, roamerVehicleCount, roamerVehicleBreakdown
   ] = row;
 
@@ -352,89 +352,51 @@ export function createSingleCard(row) {
   ratingDiv.innerHTML = ratingHTML;
   bodyEl.appendChild(ratingDiv);
 
-  // Tags (efficiency grade and others)
+  // Tags row — real-world (Roamer) efficiency pill and others.
   const tagsContainer = document.createElement('div');
   tagsContainer.className = 'tire-card-tags';
 
-  if (efficiencyGrade) {
-    const grade = safeString(efficiencyGrade).trim().toUpperCase();
-    if (['A', 'B', 'C', 'D', 'F'].includes(grade)) {
-      const gradeColor = {
-        A: "#5ec095", B: "#a3e635", C: "#facc15",
-        D: "#f97316", F: "#b91c1c"
-      }[grade];
+  // Roamer real-world efficiency pill (mi/kWh from owner vehicles).
+  const roamerVal = parseFloat(roamerEfficiency);
+  if (Number.isFinite(roamerVal) && roamerVal > 0) {
+    const roamerTag = document.createElement('span');
+    roamerTag.className = 'tire-card-eff';
 
-      const gradeTag = document.createElement('span');
-      gradeTag.className = 'tire-card-eff';
+    const roamerLabel = document.createElement('span');
+    roamerLabel.className = 'tire-card-eff-grade';
+    roamerLabel.style.backgroundColor = '#3b82f6';
+    roamerLabel.textContent = roamerVal.toFixed(2);
 
-      const gradeLabel = document.createElement('span');
-      gradeLabel.className = 'tire-card-eff-grade';
-      gradeLabel.style.backgroundColor = gradeColor;
-      gradeLabel.textContent = grade;
+    const roamerScore = document.createElement('span');
+    roamerScore.className = 'tire-card-eff-score';
 
-      const scoreSection = document.createElement('span');
-      scoreSection.className = 'tire-card-eff-score';
+    const roamerText = document.createElement('span');
+    roamerText.textContent = 'mi/kWh';
 
-      const scoreText = document.createElement('span');
-      scoreText.textContent = `Efficiency (${escapeHTML(safeString(efficiencyScore))}/100)`;
-
-      const infoButton = document.createElement('button');
-      infoButton.innerHTML = '' + rtgIcon('circle-info', 14) + '';
-      infoButton.className = 'info-tooltip-trigger';
-      infoButton.dataset.tooltipKey = 'Efficiency Score';
-      infoButton.setAttribute('aria-label', 'More info about Efficiency Score');
-      infoButton.setAttribute('type', 'button');
-
-      scoreSection.appendChild(scoreText);
-      scoreSection.appendChild(infoButton);
-
-      gradeTag.appendChild(gradeLabel);
-      gradeTag.appendChild(scoreSection);
-      tagsContainer.appendChild(gradeTag);
-
-      // Roamer real-world efficiency — separate pill matching efficiency badge style.
-      const roamerVal = parseFloat(roamerEfficiency);
-      if (Number.isFinite(roamerVal) && roamerVal > 0) {
-        const roamerTag = document.createElement('span');
-        roamerTag.className = 'tire-card-eff';
-
-        const roamerLabel = document.createElement('span');
-        roamerLabel.className = 'tire-card-eff-grade';
-        roamerLabel.style.backgroundColor = '#3b82f6';
-        roamerLabel.textContent = roamerVal.toFixed(2);
-
-        const roamerScore = document.createElement('span');
-        roamerScore.className = 'tire-card-eff-score';
-
-        const roamerText = document.createElement('span');
-        roamerText.textContent = 'mi/kWh';
-
-        const roamerInfoBtn = document.createElement('button');
-        roamerInfoBtn.innerHTML = '' + rtgIcon('circle-info', 14) + '';
-        roamerInfoBtn.className = 'info-tooltip-trigger';
-        roamerInfoBtn.dataset.tooltipKey = 'Real-World Efficiency';
-        const totalMi = Math.round((parseFloat(roamerTotalKm) || 0) * 0.621371);
-        const veh = parseInt(roamerVehicleCount) || 0;
-        const extraParts = [];
-        if (totalMi > 0) {
-          extraParts.push(totalMi.toLocaleString() + ' mi tracked');
-        }
-        if (veh > 0) {
-          extraParts.push(veh.toLocaleString() + ' vehicle' + (veh !== 1 ? 's' : ''));
-        }
-        if (extraParts.length > 0) {
-          roamerInfoBtn.dataset.tooltipExtra = extraParts.join(' · ');
-        }
-        roamerInfoBtn.setAttribute('aria-label', 'More info about Real-World Efficiency');
-        roamerInfoBtn.setAttribute('type', 'button');
-
-        roamerScore.appendChild(roamerText);
-        roamerScore.appendChild(roamerInfoBtn);
-        roamerTag.appendChild(roamerLabel);
-        roamerTag.appendChild(roamerScore);
-        tagsContainer.appendChild(roamerTag);
-      }
+    const roamerInfoBtn = document.createElement('button');
+    roamerInfoBtn.innerHTML = '' + rtgIcon('circle-info', 14) + '';
+    roamerInfoBtn.className = 'info-tooltip-trigger';
+    roamerInfoBtn.dataset.tooltipKey = 'Real-World Efficiency';
+    const totalMi = Math.round((parseFloat(roamerTotalKm) || 0) * 0.621371);
+    const veh = parseInt(roamerVehicleCount) || 0;
+    const extraParts = [];
+    if (totalMi > 0) {
+      extraParts.push(totalMi.toLocaleString() + ' mi tracked');
     }
+    if (veh > 0) {
+      extraParts.push(veh.toLocaleString() + ' vehicle' + (veh !== 1 ? 's' : ''));
+    }
+    if (extraParts.length > 0) {
+      roamerInfoBtn.dataset.tooltipExtra = extraParts.join(' · ');
+    }
+    roamerInfoBtn.setAttribute('aria-label', 'More info about Real-World Efficiency');
+    roamerInfoBtn.setAttribute('type', 'button');
+
+    roamerScore.appendChild(roamerText);
+    roamerScore.appendChild(roamerInfoBtn);
+    roamerTag.appendChild(roamerLabel);
+    roamerTag.appendChild(roamerScore);
+    tagsContainer.appendChild(roamerTag);
   }
 
   if (tagsContainer.children.length > 0) {
@@ -446,8 +408,7 @@ export function createSingleCard(row) {
 
   // Specs shown on the default card view. Tread depth, max load, load range,
   // and max PSI are intentionally hidden here — they're cryptic for most
-  // buyers and the efficiency grade already summarizes the ones that affect
-  // range. They still live in the database, admin form, CSV import/export,
+  // buyers. They still live in the database, admin form, CSV import/export,
   // and the compare page for power users who want the full spec sheet.
   //
   // UTQG is shown only when the tire actually has a UTQG value — when it's
