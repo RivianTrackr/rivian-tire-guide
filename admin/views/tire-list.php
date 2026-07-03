@@ -81,21 +81,21 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
     <!-- Search & Filters -->
     <form method="get">
         <input type="hidden" name="page" value="rtg-tires">
-        <div class="rtg-search-box" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-            <input type="search" id="tire-search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="Search by brand, model, ID, or tags..." style="min-width:220px;">
-            <select name="filter_brand" style="min-width:140px;">
+        <div class="rtg-search-box">
+            <input type="search" id="tire-search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="Search by brand, model, ID, or tags...">
+            <select name="filter_brand">
                 <option value="">All Brands</option>
                 <?php foreach ( $filter_brands as $b ) : ?>
                     <option value="<?php echo esc_attr( $b ); ?>" <?php selected( $admin_filters['brand'], $b ); ?>><?php echo esc_html( $b ); ?></option>
                 <?php endforeach; ?>
             </select>
-            <select name="filter_size" style="min-width:140px;">
+            <select name="filter_size">
                 <option value="">All Sizes</option>
                 <?php foreach ( $filter_sizes as $sz ) : ?>
                     <option value="<?php echo esc_attr( $sz ); ?>" <?php selected( $admin_filters['size'], $sz ); ?>><?php echo esc_html( $sz ); ?></option>
                 <?php endforeach; ?>
             </select>
-            <select name="filter_category" style="min-width:140px;">
+            <select name="filter_category">
                 <option value="">All Categories</option>
                 <?php foreach ( $filter_categories as $cat ) : ?>
                     <option value="<?php echo esc_attr( $cat ); ?>" <?php selected( $admin_filters['category'], $cat ); ?>><?php echo esc_html( $cat ); ?></option>

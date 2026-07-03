@@ -4,6 +4,12 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.58.1] - 2026-07-04
+
+### Fixed
+- **Admin tire-list filter bar cleaned up.** The search field and the three dropdowns rendered at mismatched widths (a base 400px input cap) and wrapped into a ragged two-row layout. The bar is now one tidy responsive row: search takes twice a dropdown's share, all controls share the same height (the Filter button included), and inline styles moved into the stylesheet.
+- The bulk-edit screen (1.58.0) used the wrong wrapper class (`rtg-admin` instead of `rtg-wrap`), so its inputs and cards missed the plugin's admin styling.
+
 ## [1.58.0] - 2026-07-04
 
 ### Added

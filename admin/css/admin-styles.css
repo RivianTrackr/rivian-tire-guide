@@ -826,13 +826,34 @@
 
 .rtg-search-box {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 8px;
     margin-bottom: 20px;
 }
 
+/* One tidy row: the search field takes twice the share of a dropdown, all
+   controls share the same height, and the base 400px input cap is lifted
+   so widths are governed by the flex ratios instead. */
 .rtg-search-box input[type="search"] {
-    min-width: 280px;
+    flex: 2 1 260px;
+    min-width: 220px;
+    max-width: none;
+}
+
+.rtg-search-box select {
+    flex: 1 1 160px;
+    min-width: 140px;
+    max-width: none;
+    width: auto;
+}
+
+.rtg-search-box .rtg-btn {
+    flex: 0 0 auto;
+    /* Match the inputs' height (10px padding + 15px text vs 8px + 14px). */
+    padding-top: 10px;
+    padding-bottom: 10px;
+    font-size: 15px;
 }
 
 /* ==========================================================================
