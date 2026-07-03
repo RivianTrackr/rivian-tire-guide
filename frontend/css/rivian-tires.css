@@ -992,6 +992,22 @@
   gap: 8px;
   padding: 12px 16px 16px;
 }
+.tire-card-details-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--rtg-accent);
+  text-decoration: none;
+  padding: 4px 0 0;
+  transition: color 0.15s ease;
+}
+.tire-card-details-link:hover {
+  color: var(--rtg-accent-hover);
+  text-decoration: none;
+}
 @media screen and (min-width: 601px) {
   .tire-card-body {
     padding: 16px 20px 0;
