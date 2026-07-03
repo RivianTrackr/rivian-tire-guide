@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.55.1] - 2026-07-03
+
+### Added
+- **"Full Specs & Reviews →" link on guide cards.** Each card now ends with a gold text link to the tire's own page — a clear path to the full spec sheet and owner reviews now that cards carry only the decision drivers, and stronger internal linking into the SEO tire pages. Rendered only when the tire has a slug/page.
+
 ## [1.55.0] - 2026-07-03
 
 ### Changed

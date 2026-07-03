@@ -570,6 +570,15 @@ export function createSingleCard(row) {
     actionsContainer.appendChild(reviewButton);
   }
 
+  // Internal link to the tire's own page (full spec sheet + owner reviews).
+  if (tirePageUrl) {
+    const detailsLink = document.createElement('a');
+    detailsLink.className = 'tire-card-details-link';
+    detailsLink.href = tirePageUrl;
+    detailsLink.innerHTML = 'Full Specs &amp; Reviews&nbsp;' + rtgIcon('arrow-right', 12);
+    actionsContainer.appendChild(detailsLink);
+  }
+
   card.appendChild(actionsContainer);
 
   // Tight LRU ceiling. Map iteration order is insertion order, so evicting
