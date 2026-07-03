@@ -647,9 +647,42 @@ export function openReviewModal(tireId, preselectedRating = 0) {
     titleInput.focus();
   }
 
+  // Remember the opener so keyboard focus returns there on close.
+  const returnFocusTo = document.activeElement;
+
   function closeModal() {
     overlay.classList.remove('active');
+    document.removeEventListener('keydown', modalKeydown);
     setTimeout(() => overlay.remove(), 200);
+    if (returnFocusTo && typeof returnFocusTo.focus === 'function') {
+      returnFocusTo.focus({ preventScroll: true });
+    }
+  }
+
+  // Escape closes; Tab is trapped inside the dialog (wraps at both ends).
+  // One listener, always removed in closeModal — the old Escape-only
+  // handler leaked when the modal was closed via button/backdrop.
+  function modalKeydown(e) {
+    if (e.key === 'Escape') {
+      closeModal();
+      return;
+    }
+    if (e.key !== 'Tab') return;
+
+    const focusables = overlay.querySelectorAll(
+      'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+    );
+    if (!focusables.length) return;
+
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
   }
 
   closeBtn.addEventListener('click', closeModal);
@@ -657,12 +690,7 @@ export function openReviewModal(tireId, preselectedRating = 0) {
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) closeModal();
   });
-  document.addEventListener('keydown', function escHandler(e) {
-    if (e.key === 'Escape') {
-      closeModal();
-      document.removeEventListener('keydown', escHandler);
-    }
-  });
+  document.addEventListener('keydown', modalKeydown);
 
   submitBtn.addEventListener('click', () => {
     if (selectedRating < 1 || selectedRating > 5) {

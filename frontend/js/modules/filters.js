@@ -702,13 +702,41 @@ export function setupSliderHandlers() {
   });
 }
 
+/**
+ * Raise the price slider ceiling to cover the most expensive tire in the
+ * catalog — with the template's hardcoded max, pricier tires would be
+ * silently filtered out of the default view. Rounds up to the next $50;
+ * never drops below the template default (600) or above the validation cap.
+ */
+export function adaptPriceSlider(maxPrice) {
+  const input = getDOMElement("priceMax");
+  const output = getDOMElement("priceVal");
+  const numMax = Number(maxPrice);
+  if (!input || !Number.isFinite(numMax) || numMax <= 0) return;
+
+  const ceiling = Math.min(NUMERIC_BOUNDS.price.max, Math.max(600, Math.ceil(numMax / 50) * 50));
+  if (ceiling === Number(input.max)) return;
+
+  const wasAtMax = Number(input.value) >= Number(input.max);
+  input.max = String(ceiling);
+  if (wasAtMax) {
+    // User hadn't narrowed the filter — keep "show everything" semantics.
+    input.value = String(ceiling);
+    if (output) output.textContent = `≤ $${ceiling}`;
+  }
+  updateSliderBackground(input);
+}
+
 export function resetFilters() {
+  const priceInput = getDOMElement("priceMax");
+  const priceCeiling = priceInput ? Number(priceInput.max) || 600 : 600;
+
   const elements = [
     { id: "searchInput", value: "" },
     { id: "filterSize", value: "" },
     { id: "filterBrand", value: "" },
     { id: "filterCategory", value: "" },
-    { id: "priceMax", value: 600 },
+    { id: "priceMax", value: priceCeiling },
     { id: "warrantyMin", value: 0 },
     { id: "sortBy", value: "roamer-efficiency" }
   ];
@@ -725,7 +753,7 @@ export function resetFilters() {
   });
 
   const displayUpdates = [
-    { id: "priceVal", text: "\u2264 $600" },
+    { id: "priceVal", text: `\u2264 $${priceCeiling}` },
     { id: "warrantyVal", text: "\u2265 0 miles" }
   ];
 
@@ -789,8 +817,9 @@ export function renderActiveFilterChips() {
 
   const priceEl = getDOMElement("priceMax");
   const priceVal = priceEl ? parseInt(priceEl.value) : 600;
-  if (priceVal < 600) {
-    chips.push({ label: "Max Price", value: "\u2264 $" + priceVal, clear: () => { priceEl.value = 600; const lbl = getDOMElement("priceVal"); if (lbl) lbl.textContent = "\u2264 $600"; updateSliderBackground(priceEl); } });
+  const priceCeil = priceEl ? (Number(priceEl.max) || 600) : 600;
+  if (priceVal < priceCeil) {
+    chips.push({ label: "Max Price", value: "\u2264 $" + priceVal, clear: () => { priceEl.value = priceCeil; const lbl = getDOMElement("priceVal"); if (lbl) lbl.textContent = "\u2264 $" + priceCeil; updateSliderBackground(priceEl); } });
   }
 
   const warrantyEl = getDOMElement("warrantyMin");
@@ -911,10 +940,10 @@ export function renderSmartNoResults() {
     });
   }
 
-  if (priceEl && parseInt(priceEl.value) < 600) {
+  if (priceEl && parseInt(priceEl.value) < (Number(priceEl.max) || 600)) {
     suggestions.push({
       label: rtgIcon('dollar-sign', 14) + ' Increase price limit to max',
-      action: () => { priceEl.value = 600; getDOMElement("priceVal").textContent = "\u2264 $600"; updateSliderBackground(priceEl); state.lastFilterState = null; filterAndRender(); }
+      action: () => { const ceil = Number(priceEl.max) || 600; priceEl.value = ceil; getDOMElement("priceVal").textContent = "\u2264 $" + ceil; updateSliderBackground(priceEl); state.lastFilterState = null; filterAndRender(); }
     });
   }
 

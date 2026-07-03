@@ -93,12 +93,56 @@ class RTG_Database {
             $slug = $base . '-' . sanitize_title( $tire_id );
         }
 
-        if ( ! isset( $tire['slug'] ) || $tire['slug'] !== $slug ) {
+        $old_slug = isset( $tire['slug'] ) ? (string) $tire['slug'] : '';
+        if ( $old_slug !== $slug ) {
             $wpdb->update( $table, array( 'slug' => $slug ), array( 'tire_id' => $tire_id ), array( '%s' ), array( '%s' ) );
+
+            // Remember the old slug so previously indexed/shared URLs 301 to
+            // the new one instead of 404ing (see RTG_Tire_Page::maybe_render).
+            if ( '' !== $old_slug ) {
+                self::remember_slug_redirect( $old_slug, $tire_id );
+            }
+
             self::flush_cache();
         }
 
         return $slug;
+    }
+
+    /**
+     * Record an old slug → tire_id mapping for 301 redirects after renames.
+     * Stored in an option, newest last, capped so it can't grow unbounded.
+     *
+     * @param string $old_slug Previous slug.
+     * @param string $tire_id  Tire identifier it should resolve to.
+     */
+    private static function remember_slug_redirect( $old_slug, $tire_id ) {
+        $map = get_option( 'rtg_slug_redirects', array() );
+        if ( ! is_array( $map ) ) {
+            $map = array();
+        }
+
+        // Re-inserting moves the entry to the end (freshest).
+        unset( $map[ $old_slug ] );
+        $map[ $old_slug ] = $tire_id;
+
+        $cap = 500;
+        if ( count( $map ) > $cap ) {
+            $map = array_slice( $map, -$cap, null, true );
+        }
+
+        update_option( 'rtg_slug_redirects', $map, false );
+    }
+
+    /**
+     * Resolve a retired slug to its tire_id, if a redirect is recorded.
+     *
+     * @param string $slug Old slug from the URL.
+     * @return string Tire ID or '' when unknown.
+     */
+    public static function lookup_slug_redirect( $slug ) {
+        $map = get_option( 'rtg_slug_redirects', array() );
+        return ( is_array( $map ) && isset( $map[ $slug ] ) ) ? (string) $map[ $slug ] : '';
     }
 
     /**

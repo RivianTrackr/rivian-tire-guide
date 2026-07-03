@@ -12,8 +12,53 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class RTG_Meta {
 
+    /**
+     * Canonical tire-page URL for the current ?tire= deep link, when resolvable.
+     *
+     * @var string
+     */
+    private $deep_link_canonical = '';
+
     public function __construct() {
+        // Detect early (before SEO plugins output their tags on wp_head).
+        add_action( 'wp', array( $this, 'detect_tire_deep_link' ) );
         add_action( 'wp_head', array( $this, 'output_meta_tags' ), 5 );
+    }
+
+    /**
+     * When a guide-page ?tire= deep link resolves to a tire with its own page,
+     * point the canonical at /tires/{slug}/ so the query-arg URL never competes
+     * with the dedicated tire page in search.
+     */
+    public function detect_tire_deep_link() {
+        if ( is_admin() || ! is_singular() ) {
+            return;
+        }
+
+        global $post;
+        if ( ! is_a( $post, 'WP_Post' ) || ! has_shortcode( $post->post_content, 'rivian_tire_guide' ) ) {
+            return;
+        }
+
+        $tire_id = isset( $_GET['tire'] ) ? sanitize_text_field( wp_unslash( $_GET['tire'] ) ) : '';
+        if ( ! $tire_id || ! preg_match( '/^[A-Za-z0-9_-]+$/', $tire_id ) ) {
+            return;
+        }
+
+        $tire = RTG_Database::get_tire( $tire_id );
+        if ( ! $tire || empty( $tire['slug'] ) ) {
+            return;
+        }
+
+        $this->deep_link_canonical = RTG_Tire_Page::tire_url( $tire['slug'] );
+
+        add_filter( 'aioseo_canonical_url', array( $this, 'filter_canonical' ), 20 );
+        add_filter( 'wpseo_canonical', array( $this, 'filter_canonical' ), 20 );
+        add_filter( 'rank_math/frontend/canonical', array( $this, 'filter_canonical' ), 20 );
+    }
+
+    public function filter_canonical( $url ) {
+        return $this->deep_link_canonical ? $this->deep_link_canonical : $url;
     }
 
     /**
@@ -143,9 +188,14 @@ class RTG_Meta {
     }
 
     /**
-     * Build the canonical URL for a tire deep-link.
+     * Build the canonical URL for a tire deep-link — the dedicated tire page
+     * when the tire has a slug, otherwise the legacy query-arg URL.
      */
     private function get_tire_url( $tire_id ) {
+        $tire = RTG_Database::get_tire( $tire_id );
+        if ( $tire && ! empty( $tire['slug'] ) ) {
+            return RTG_Tire_Page::tire_url( $tire['slug'] );
+        }
         $base = get_permalink();
         return add_query_arg( 'tire', rawurlencode( $tire_id ), $base );
     }

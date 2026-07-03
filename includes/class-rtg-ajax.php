@@ -600,6 +600,7 @@ class RTG_Ajax {
             'brands'         => array_map( 'sanitize_text_field', $brands ),
             'categories'     => array_map( 'sanitize_text_field', $categories ),
             'vehicleSizeMap' => RTG_Database::get_vehicle_size_map(),
+            'maxPrice'       => (float) $wpdb->get_var( "SELECT MAX(price) FROM {$table}" ),
         ) );
     }
 
