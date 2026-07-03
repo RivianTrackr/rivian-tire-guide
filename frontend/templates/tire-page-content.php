@@ -273,7 +273,8 @@ $spec_groups = array(
   .rtg-tp .rtg-tp-spec-row { display: flex; justify-content: space-between; gap: 16px; padding: 10px 18px; border-bottom: 1px solid var(--rtg-tp-divider); }
   .rtg-tp .rtg-tp-spec-row:last-child { border-bottom: none; }
   .rtg-tp .rtg-tp-spec-label { color: var(--rtg-tp-muted); font-size: 14px; }
-  .rtg-tp .rtg-tp-spec-value { color: var(--rtg-tp-text); font-size: 14px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+  /* Monospace values — matches the main guide's tire-card spec styling. */
+  .rtg-tp .rtg-tp-spec-value { color: var(--rtg-tp-text); font-size: 14px; font-weight: 500; text-align: right; font-family: monospace; }
 
   /* --- Reviews --- */
   .rtg-tp .rtg-tp-reviews-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 32px 0 14px; }
@@ -364,7 +365,7 @@ $spec_groups = array(
 
       <div class="rtg-tp-ctas">
         <?php if ( $link ) : ?>
-        <a class="rtg-tp-cta rtg-tp-cta-primary" href="<?php echo esc_url( $link ); ?>" target="_blank" rel="nofollow sponsored noopener">View Tire &rarr;</a>
+        <a class="rtg-tp-cta rtg-tp-cta-primary" href="<?php echo esc_url( $link ); ?>" target="_blank" rel="nofollow sponsored noopener">View Tire&nbsp;<i class="fa-solid fa-up-right-from-square" aria-hidden="true" style="font-size:13px"></i></a>
         <?php endif; ?>
         <a class="rtg-tp-cta rtg-tp-cta-secondary" href="<?php echo esc_url( $review_url ); ?>">Write a Review</a>
       </div>
