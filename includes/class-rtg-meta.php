@@ -56,7 +56,7 @@ class RTG_Meta {
         }
         $title .= ' — Rivian Tire Guide';
 
-        $description = $this->build_description( $tire );
+        $description = self::build_description( $tire );
         $url         = $this->get_tire_url( $tire_id );
         $image       = ! empty( $tire['image'] ) ? esc_url( $tire['image'] ) : '';
 
@@ -108,8 +108,9 @@ class RTG_Meta {
 
     /**
      * Build a social-friendly description for a tire.
+     * Public + static so the standalone tire page can reuse it.
      */
-    private function build_description( $tire ) {
+    public static function build_description( $tire ) {
         $parts = array();
 
         if ( ! empty( $tire['brand'] ) && ! empty( $tire['model'] ) ) {

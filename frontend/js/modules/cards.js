@@ -206,7 +206,7 @@ export function createSingleCard(row) {
     tireId, size, diameter, brand, model, category, price, warranty, weight, tpms,
     tread, loadIndex, maxLoad, loadRange, speed, psi, utqg, tags, link, image,
     /* efficiencyScore */ , /* efficiencyGrade */ , reviewLink, /* createdAt */ ,
-    roamerEfficiency, roamerTotalKm, roamerVehicleCount, roamerVehicleBreakdown
+    roamerEfficiency, roamerTotalKm, roamerVehicleCount, roamerVehicleBreakdown, slug
   ] = row;
 
   if (!VALIDATION_PATTERNS.tireId.test(tireId)) {
@@ -345,7 +345,18 @@ export function createSingleCard(row) {
 
   const modelEl = document.createElement('div');
   modelEl.className = 'tire-card-model';
-  modelEl.textContent = safeString(model);
+  // Link the title to the individual tire page (crawlable, canonical URL).
+  const tirePageBase = (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.tirePageUrl) ? rtgData.settings.tirePageUrl : '';
+  const safeSlug = safeString(slug).trim();
+  if (tirePageBase && safeSlug) {
+    const modelLink = document.createElement('a');
+    modelLink.className = 'tire-card-model-link';
+    modelLink.href = tirePageBase + encodeURIComponent(safeSlug) + '/';
+    modelLink.textContent = safeString(model);
+    modelEl.appendChild(modelLink);
+  } else {
+    modelEl.textContent = safeString(model);
+  }
   bodyEl.appendChild(modelEl);
 
   const ratingDiv = document.createElement('div');

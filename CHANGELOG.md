@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+- **Individual, crawlable tire pages (2.0 Pillar 2, Phase 2A).** Every tire now has a server-rendered, indexable URL at `/tires/{slug}/` — tire content (specs, price, Roamer efficiency, owner reviews) is in the initial HTML, not injected by JS. Adds a `slug` column (migration 17, auto-generated from brand+model+size and backfilled), a new `RTG_Tire_Page` route mirroring the standalone review-page pattern, per-tire `<title>`/meta/canonical/OG tags, and dedicated `Product` + `BreadcrumbList` JSON-LD (the `RTG_Schema` product builder was factored out for reuse instead of only emitting a catalog-wide `ItemList`). Tire-card titles now link to these pages; legacy `/tires/{tire_id}/` URLs 301 to the canonical slug. Remaining SEO work (sitemap entries, `?tire=` canonical consolidation, admin slug setting, on-page click tracking) is tracked in ROADMAP-2.0.md.
+
 ## [1.51.0] - 2026-07-02
 
 ### Changed

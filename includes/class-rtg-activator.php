@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 16;
+    const DB_VERSION = 17;
 
     public static function activate() {
         self::create_tables();
@@ -79,6 +79,7 @@ class RTG_Activator {
             tags VARCHAR(500) NOT NULL DEFAULT '',
             link TEXT NOT NULL,
             image TEXT NOT NULL,
+            slug VARCHAR(200) NOT NULL DEFAULT '',
             efficiency_score INT UNSIGNED NOT NULL DEFAULT 0,
             efficiency_grade CHAR(1) NOT NULL DEFAULT '',
             bundle_link TEXT NOT NULL,
@@ -101,7 +102,8 @@ class RTG_Activator {
             KEY idx_warranty (mileage_warranty),
             KEY idx_weight (weight_lb),
             KEY idx_efficiency (efficiency_score),
-            KEY idx_roamer_tire_id (roamer_tire_id)
+            KEY idx_roamer_tire_id (roamer_tire_id),
+            KEY idx_slug (slug)
         ) $charset_collate;
 
         CREATE TABLE {$ratings_table} (
@@ -191,6 +193,7 @@ class RTG_Activator {
             // Note: migration 15 (add roamer_crr) was shipped in 1.50.0 then
             // reverted. Migration 16 drops the column on sites that ran 15.
             16 => 'migrate_16_drop_roamer_crr',
+            17 => 'migrate_17_add_slug_column',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -373,5 +376,33 @@ class RTG_Activator {
         if ( in_array( 'roamer_crr', $cols, true ) ) {
             $wpdb->query( "ALTER TABLE {$table} DROP COLUMN roamer_crr" );
         }
+    }
+
+    /**
+     * Migration 17: Add the slug column for individual tire pages, backfill
+     * slugs for all existing tires, and flag a rewrite-rule flush so the new
+     * /{slug}/{tire}/ route registers on this request.
+     *
+     * dbDelta adds the column and index above; the explicit ALTERs here are a
+     * safety net for environments where dbDelta misses them.
+     */
+    private static function migrate_17_add_slug_column() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'rtg_tires';
+
+        $cols = $wpdb->get_col( "SHOW COLUMNS FROM {$table}" );
+        if ( ! in_array( 'slug', $cols, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table} ADD COLUMN slug VARCHAR(200) NOT NULL DEFAULT '' AFTER image" );
+        }
+
+        $indexes = $wpdb->get_results( "SHOW INDEX FROM {$table} WHERE Key_name = 'idx_slug'" );
+        if ( empty( $indexes ) ) {
+            $wpdb->query( "ALTER TABLE {$table} ADD KEY idx_slug (slug)" );
+        }
+
+        RTG_Database::backfill_slugs();
+
+        // Register the new rewrite rule on this request.
+        update_option( 'rtg_flush_rewrite', 1 );
     }
 }

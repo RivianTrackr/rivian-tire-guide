@@ -90,6 +90,9 @@ function rtg_init() {
     // Standalone tire review page.
     new RTG_Tire_Review();
 
+    // Individual, crawlable tire pages (/tires/{slug}/).
+    new RTG_Tire_Page();
+
     // Schema.org structured data.
     new RTG_Schema();
 

@@ -36,132 +36,8 @@ class RTG_Schema {
         $items = array();
 
         foreach ( $tires as $tire ) {
-            $item = array(
-                '@type'       => 'Product',
-                'name'        => $this->build_product_name( $tire ),
-                'brand'       => array(
-                    '@type' => 'Brand',
-                    'name'  => $tire['brand'],
-                ),
-                'category'    => 'Tires',
-                'description' => $this->build_description( $tire ),
-            );
-
-            // SKU / identifier.
-            if ( ! empty( $tire['tire_id'] ) ) {
-                $item['sku'] = $tire['tire_id'];
-            }
-
-            // Image.
-            if ( ! empty( $tire['image'] ) ) {
-                $item['image'] = esc_url( $tire['image'] );
-            }
-
-            // Offer (price).
-            if ( ! empty( $tire['price'] ) && $tire['price'] > 0 ) {
-                $item['offers'] = array(
-                    '@type'         => 'Offer',
-                    'price'         => number_format( (float) $tire['price'], 2, '.', '' ),
-                    'priceCurrency' => 'USD',
-                    'availability'  => 'https://schema.org/InStock',
-                );
-
-                if ( ! empty( $tire['link'] ) ) {
-                    $item['offers']['url'] = esc_url( $tire['link'] );
-                }
-            }
-
-            // Additional properties.
-            $additional = array();
-
-            if ( ! empty( $tire['size'] ) ) {
-                $additional[] = array(
-                    '@type' => 'PropertyValue',
-                    'name'  => 'Tire Size',
-                    'value' => $tire['size'],
-                );
-            }
-
-            if ( ! empty( $tire['load_index'] ) ) {
-                $additional[] = array(
-                    '@type' => 'PropertyValue',
-                    'name'  => 'Load Index',
-                    'value' => $tire['load_index'],
-                );
-            }
-
-            if ( ! empty( $tire['speed_rating'] ) ) {
-                $additional[] = array(
-                    '@type' => 'PropertyValue',
-                    'name'  => 'Speed Rating',
-                    'value' => $tire['speed_rating'],
-                );
-            }
-
-            if ( ! empty( $tire['utqg'] ) ) {
-                $additional[] = array(
-                    '@type' => 'PropertyValue',
-                    'name'  => 'UTQG',
-                    'value' => $tire['utqg'],
-                );
-            }
-
-            if ( ! empty( $tire['weight_lb'] ) && $tire['weight_lb'] > 0 ) {
-                $additional[] = array(
-                    '@type'    => 'QuantitativeValue',
-                    'name'     => 'Weight',
-                    'value'    => (float) $tire['weight_lb'],
-                    'unitCode' => 'LBR',
-                );
-            }
-
-            if ( ! empty( $additional ) ) {
-                $item['additionalProperty'] = $additional;
-            }
-
-            // Aggregate rating from user reviews.
-            $tire_id = $tire['tire_id'];
-            if ( isset( $ratings[ $tire_id ] ) && $ratings[ $tire_id ]['count'] > 0 ) {
-                $item['aggregateRating'] = array(
-                    '@type'       => 'AggregateRating',
-                    'ratingValue' => $ratings[ $tire_id ]['average'],
-                    'bestRating'  => 5,
-                    'worstRating' => 1,
-                    'ratingCount' => $ratings[ $tire_id ]['count'],
-                );
-
-                // Include individual text reviews for rich snippet eligibility.
-                if ( $ratings[ $tire_id ]['review_count'] > 0 ) {
-                    $reviews = RTG_Database::get_tire_reviews( $tire_id, 5 );
-                    if ( ! empty( $reviews ) ) {
-                        $item['review'] = array();
-                        foreach ( $reviews as $review ) {
-                            $item['review'][] = array(
-                                '@type'        => 'Review',
-                                'author'       => array(
-                                    '@type' => 'Person',
-                                    'name'  => $review['display_name'],
-                                ),
-                                'datePublished' => date( 'Y-m-d', strtotime( $review['updated_at'] ?? $review['created_at'] ) ),
-                                'reviewRating'  => array(
-                                    '@type'      => 'Rating',
-                                    'ratingValue' => (int) $review['rating'],
-                                    'bestRating'  => 5,
-                                    'worstRating' => 1,
-                                ),
-                                'name'         => ! empty( $review['review_title'] ) ? $review['review_title'] : null,
-                                'reviewBody'   => $review['review_text'],
-                            );
-                        }
-                        // Filter out null name fields.
-                        foreach ( $item['review'] as &$r ) {
-                            $r = array_filter( $r, function( $v ) { return $v !== null; } );
-                        }
-                    }
-                }
-            }
-
-            $items[] = $item;
+            $rating  = $ratings[ $tire['tire_id'] ] ?? null;
+            $items[] = self::build_product_item( $tire, $rating );
         }
 
         $schema = array(
@@ -187,12 +63,168 @@ class RTG_Schema {
     }
 
     /**
+     * Build a single Schema.org Product node for one tire.
+     *
+     * Shared by the catalog ItemList (on the shortcode page) and the standalone
+     * per-tire page. Pass $rating (keys: average, count, review_count) to embed
+     * AggregateRating + Review; omit it to skip ratings.
+     *
+     * @param array      $tire   Tire row (associative).
+     * @param array|null $rating Optional aggregate rating data for the tire.
+     * @return array Product node (no @context — caller adds it for a standalone node).
+     */
+    public static function build_product_item( $tire, $rating = null ) {
+        $item = array(
+            '@type'       => 'Product',
+            'name'        => self::build_product_name( $tire ),
+            'brand'       => array(
+                '@type' => 'Brand',
+                'name'  => $tire['brand'],
+            ),
+            'category'    => 'Tires',
+            'description' => self::build_description( $tire ),
+        );
+
+        // SKU / identifier.
+        if ( ! empty( $tire['tire_id'] ) ) {
+            $item['sku'] = $tire['tire_id'];
+        }
+
+        // Image.
+        if ( ! empty( $tire['image'] ) ) {
+            $item['image'] = esc_url( $tire['image'] );
+        }
+
+        // Offer (price).
+        if ( ! empty( $tire['price'] ) && $tire['price'] > 0 ) {
+            $item['offers'] = array(
+                '@type'         => 'Offer',
+                'price'         => number_format( (float) $tire['price'], 2, '.', '' ),
+                'priceCurrency' => 'USD',
+                'availability'  => 'https://schema.org/InStock',
+            );
+
+            if ( ! empty( $tire['link'] ) ) {
+                $item['offers']['url'] = esc_url( $tire['link'] );
+            }
+        }
+
+        // Additional properties.
+        $additional = array();
+
+        if ( ! empty( $tire['size'] ) ) {
+            $additional[] = array(
+                '@type' => 'PropertyValue',
+                'name'  => 'Tire Size',
+                'value' => $tire['size'],
+            );
+        }
+
+        if ( ! empty( $tire['load_index'] ) ) {
+            $additional[] = array(
+                '@type' => 'PropertyValue',
+                'name'  => 'Load Index',
+                'value' => $tire['load_index'],
+            );
+        }
+
+        if ( ! empty( $tire['speed_rating'] ) ) {
+            $additional[] = array(
+                '@type' => 'PropertyValue',
+                'name'  => 'Speed Rating',
+                'value' => $tire['speed_rating'],
+            );
+        }
+
+        if ( ! empty( $tire['utqg'] ) ) {
+            $additional[] = array(
+                '@type' => 'PropertyValue',
+                'name'  => 'UTQG',
+                'value' => $tire['utqg'],
+            );
+        }
+
+        if ( ! empty( $tire['weight_lb'] ) && $tire['weight_lb'] > 0 ) {
+            $additional[] = array(
+                '@type'    => 'QuantitativeValue',
+                'name'     => 'Weight',
+                'value'    => (float) $tire['weight_lb'],
+                'unitCode' => 'LBR',
+            );
+        }
+
+        if ( ! empty( $additional ) ) {
+            $item['additionalProperty'] = $additional;
+        }
+
+        // Aggregate rating from user reviews.
+        if ( is_array( $rating ) && ! empty( $rating['count'] ) ) {
+            $item['aggregateRating'] = array(
+                '@type'       => 'AggregateRating',
+                'ratingValue' => $rating['average'],
+                'bestRating'  => 5,
+                'worstRating' => 1,
+                'ratingCount' => $rating['count'],
+            );
+
+            // Include individual text reviews for rich snippet eligibility.
+            if ( ! empty( $rating['review_count'] ) ) {
+                $reviews = RTG_Database::get_tire_reviews( $tire['tire_id'], 5 );
+                if ( ! empty( $reviews ) ) {
+                    $item['review'] = array();
+                    foreach ( $reviews as $review ) {
+                        $item['review'][] = array(
+                            '@type'        => 'Review',
+                            'author'       => array(
+                                '@type' => 'Person',
+                                'name'  => $review['display_name'],
+                            ),
+                            'datePublished' => date( 'Y-m-d', strtotime( $review['updated_at'] ?? $review['created_at'] ) ),
+                            'reviewRating'  => array(
+                                '@type'      => 'Rating',
+                                'ratingValue' => (int) $review['rating'],
+                                'bestRating'  => 5,
+                                'worstRating' => 1,
+                            ),
+                            'name'         => ! empty( $review['review_title'] ) ? $review['review_title'] : null,
+                            'reviewBody'   => $review['review_text'],
+                        );
+                    }
+                    // Filter out null name fields.
+                    foreach ( $item['review'] as &$r ) {
+                        $r = array_filter( $r, function( $v ) { return $v !== null; } );
+                    }
+                    unset( $r );
+                }
+            }
+        }
+
+        return $item;
+    }
+
+    /**
+     * Build a standalone Product node (with @context) for a single tire page.
+     * Fetches the tire's own rating data.
+     *
+     * @param array $tire Tire row (associative).
+     * @return array Product node including @context.
+     */
+    public static function build_single_product( $tire ) {
+        $ratings = RTG_Database::get_tire_ratings( array( $tire['tire_id'] ) );
+        $rating  = $ratings[ $tire['tire_id'] ] ?? null;
+
+        $item = self::build_product_item( $tire, $rating );
+
+        return array_merge( array( '@context' => 'https://schema.org' ), $item );
+    }
+
+    /**
      * Build a descriptive product name from tire data.
      *
      * @param array $tire Tire data row.
      * @return string Product name.
      */
-    private function build_product_name( $tire ) {
+    private static function build_product_name( $tire ) {
         $parts = array_filter( array(
             $tire['brand'] ?? '',
             $tire['model'] ?? '',
@@ -208,7 +240,7 @@ class RTG_Schema {
      * @param array $tire Tire data row.
      * @return string Description string.
      */
-    private function build_description( $tire ) {
+    private static function build_description( $tire ) {
         $parts = array();
 
         if ( ! empty( $tire['brand'] ) && ! empty( $tire['model'] ) ) {
