@@ -913,35 +913,44 @@
   white-space: nowrap;
 }
 
-/* Efficiency badge — matches compare page */
-.tire-card-eff {
-  display: inline-flex;
-  align-items: center;
-  font-size: 13px;
-  border-radius: 6px;
-  overflow: hidden;
-  line-height: 1;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-.tire-card-eff-grade {
-  padding: 4px 10px;
-  font-weight: 800;
-  color: #15130e;
-  font-size: 12px;
+/* Key stats row — price + real-world efficiency (matches tire-page hero stats) */
+.tire-card-stats {
   display: flex;
-  align-items: center;
-  height: 24px;
+  gap: 8px;
+  margin: 10px 0 4px;
 }
-.tire-card-eff-score {
-  padding: 4px 10px;
+.tire-card-stat {
+  flex: 1;
+  min-width: 0;
+  background: var(--rtg-bg-deep);
+  border: 1px solid color-mix(in srgb, var(--rtg-border) 55%, transparent);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+.tire-card-stat-label {
+  font-size: 10px;
   font-weight: 600;
-  background: var(--rtg-bg-primary);
-  color: var(--rtg-text-light);
-  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--rtg-text-muted);
+  margin-bottom: 2px;
+}
+.tire-card-stat-value {
   display: flex;
   align-items: center;
-  height: 24px;
-  gap: 4px;
+  gap: 5px;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--rtg-text-heading);
+  font-variant-numeric: tabular-nums;
+}
+.tire-card-stat-unit {
+  font-size: 11px;
+  font-weight: 600;
+}
+.tire-card-stat-roamer .tire-card-stat-value {
+  color: #60a5fa;
 }
 
 /* Spec rows */
