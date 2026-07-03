@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.57.1] - 2026-07-04
+
+### Added
+- **Official review link on individual tire pages.** Tires with a review link now show a secondary CTA in the hero — "Watch Official Review" (play icon) for YouTube/TikTok links or "Read Official Review" (article icon) otherwise — matching the guide cards. Clicks are tracked as `review`-type events, same as the guide.
+
 ## [1.57.0] - 2026-07-03
 
 ### Added
