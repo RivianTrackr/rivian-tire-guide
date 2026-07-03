@@ -131,6 +131,84 @@
 
   // --- Unmatched Roamer tires: multi-select assign ---
 
+  // Full option list captured once so the dropdown can be regrouped per
+  // selection without losing anything.
+  var unmatchedAllOptions = null;
+
+  // Regroup the assign dropdown around the selected Roamer tire names:
+  // name-matching guide tires float to a "Name matches" group on top, the
+  // rest stay available under "All tires". With no selection (or no
+  // matches) the plain full list is shown.
+  function filterAssignOptions() {
+    var $select = $('#rtg-unmatched-assign-tire');
+    if (!$select.length) return;
+
+    if (!unmatchedAllOptions) {
+      unmatchedAllOptions = $select.find('option').slice(1).map(function () {
+        return { value: this.value, label: $(this).text().replace(/\s+/g, ' ').trim() };
+      }).get();
+    }
+
+    var names = $('.rtg-unmatched-cb:checked').map(function () {
+      return $(this).data('name') || '';
+    }).get().filter(Boolean);
+
+    var current = $select.val();
+
+    function norm(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
+    function squash(s) { return norm(s).replace(/ /g, ''); }
+
+    // A guide-tire label matches a Roamer name when the squashed name is a
+    // substring (handles "M/S 2" vs "M/S2"), or when at least 60% of the
+    // name's tokens appear in the label.
+    function matches(label, name) {
+      var n = norm(name);
+      if (!n) return false;
+      if (squash(label).indexOf(squash(name)) !== -1) return true;
+      var tokens = n.split(' ');
+      var haystack = ' ' + norm(label) + ' ';
+      var hits = 0;
+      for (var i = 0; i < tokens.length; i++) {
+        if (haystack.indexOf(' ' + tokens[i] + ' ') !== -1) hits++;
+      }
+      return hits / tokens.length >= 0.6;
+    }
+
+    var matched = [];
+    var rest = [];
+    unmatchedAllOptions.forEach(function (o) {
+      var isMatch = names.length > 0 && names.some(function (n) { return matches(o.label, n); });
+      (isMatch ? matched : rest).push(o);
+    });
+
+    $select.empty().append($('<option>').val('').text('Assign selected to...'));
+
+    function appendOptions($parent, items) {
+      items.forEach(function (o) {
+        $parent.append($('<option>').val(o.value).text(o.label));
+      });
+    }
+
+    if (names.length > 0 && matched.length > 0) {
+      var $matchGroup = $('<optgroup>').attr('label', 'Name matches (' + matched.length + ')');
+      appendOptions($matchGroup, matched);
+      $select.append($matchGroup);
+
+      var $restGroup = $('<optgroup>').attr('label', 'All tires');
+      appendOptions($restGroup, rest);
+      $select.append($restGroup);
+    } else {
+      appendOptions($select, unmatchedAllOptions);
+    }
+
+    // Keep the current pick when it survived the regroup.
+    if (current && $select.find('option[value="' + current + '"]').length) {
+      $select.val(current);
+    } else {
+      $select.val('');
+    }
+  }
+
   function updateUnmatchedBar() {
     var checked = $('.rtg-unmatched-cb:checked');
     var $bar = $('#rtg-unmatched-assign-bar');
@@ -140,6 +218,7 @@
     var $select = $('#rtg-unmatched-assign-tire');
 
     if (checked.length > 0) {
+      filterAssignOptions();
       $bar.css('display', 'flex');
       $count.text(checked.length + ' selected');
       $btn.prop('disabled', !$select.val());
