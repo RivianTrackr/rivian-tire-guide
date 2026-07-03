@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.58.0] - 2026-07-04
+
+### Added
+- **Slug visibility in admin.** The tire list gains a sortable Slug column (linked to the public page) and the row's View action now opens `/tires/{slug}/`; the edit form shows the slug with the full public URL and lets you edit it — manual edits are uniqueness-checked and create a 301 redirect from the old slug (the field regenerates automatically when brand/model/size change, and an untouched field never undoes that).
+- **Bulk edit.** Select tires in the list, choose the new "Edit" bulk action, and set Category, Average Price, Mileage Warranty, and/or Tags (append or replace, deduplicated) across the whole selection — blank fields keep each tire's current value.
+
+### Changed
+- **Efficiency score de-emphasized in admin**, matching its removal from the frontend (1.51.0): the tire list's Grade column (replaced by Slug) and "Recalculate Grades" button are gone, the edit form's live-preview card and its AJAX calculator JS are removed, and the dashboard's grade-distribution chart is dropped. The score still auto-calculates on save and remains stored.
+- **Dashboard's "Avg Efficiency Score" stat replaced with "Content Gaps"** — the count of tires missing images or links (highlighted red when non-zero), an actionable metric instead of one users never see.
+
 ## [1.57.1] - 2026-07-04
 
 ### Added

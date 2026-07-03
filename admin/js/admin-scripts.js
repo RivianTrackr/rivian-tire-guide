@@ -2,8 +2,6 @@
 (function($) {
     'use strict';
 
-    var efficiencyTimer = null;
-
     $(document).ready(function() {
         // Image preview on URL change (supports prefix-based input).
         var $imageInput = $('#image');
@@ -113,62 +111,11 @@
             $('#max_load_lb').val(maxLoad);
         });
 
-        // --- Real-time efficiency calculator on the edit form ---
-        // Uses AJAX to call the canonical PHP formula (eliminates duplicate JS logic).
-        if ($('#rtg-efficiency-preview').length) {
-            var effFields = '#size, #weight_lb, #tread, #load_range, #speed_rating, #utqg, #category, #three_pms';
-
-            $(effFields).on('input change', function() {
-                updateEfficiencyPreview();
-            });
-
-            // Run once on load to sync.
-            updateEfficiencyPreview();
-        }
+        // (The real-time efficiency calculator was removed in 1.58.0 along
+        // with the edit form's efficiency card — the score still auto-
+        // calculates server-side on save; the metric is no longer surfaced
+        // in admin since it was retired from the frontend in 1.51.0.)
     });
-
-    function updateEfficiencyPreview() {
-        // Debounce to avoid excessive AJAX calls during rapid input.
-        if (efficiencyTimer) {
-            clearTimeout(efficiencyTimer);
-        }
-
-        efficiencyTimer = setTimeout(function() {
-            // Bail if rtgAdmin is not available (missing nonce localization).
-            if (typeof rtgAdmin === 'undefined') {
-                return;
-            }
-
-            $.post(rtgAdmin.ajaxurl, {
-                action:       'rtg_calculate_efficiency',
-                nonce:        rtgAdmin.nonce,
-                size:         $('#size').val() || '',
-                weight_lb:    $('#weight_lb').val() || '0',
-                tread:        $('#tread').val() || '',
-                load_range:   $('#load_range').val() || '',
-                speed_rating: $('#speed_rating').val() || '',
-                utqg:         $('#utqg').val() || '',
-                category:     $('#category').val() || '',
-                three_pms:    $('#three_pms').val() || 'No'
-            }, function(response) {
-                if (response.success) {
-                    var score = response.data.efficiency_score;
-                    var grade = response.data.efficiency_grade;
-
-                    var gradeClasses = {
-                        A: 'rtg-grade-a', B: 'rtg-grade-b', C: 'rtg-grade-c',
-                        D: 'rtg-grade-d', F: 'rtg-grade-f'
-                    };
-
-                    $('#rtg-eff-grade')
-                        .removeClass('rtg-grade-a rtg-grade-b rtg-grade-c rtg-grade-d rtg-grade-f rtg-grade-none')
-                        .addClass(gradeClasses[grade] || '')
-                        .text(grade);
-                    $('#rtg-eff-score').text(score);
-                }
-            });
-        }, 300);
-    }
 
     // ==========================================================================
     // Share Image Generator (Canvas-based)

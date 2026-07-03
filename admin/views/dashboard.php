@@ -89,8 +89,8 @@ $grade_colors = array(
             <div class="rtg-stat-label">Average Price</div>
         </div>
         <div class="rtg-stat-card">
-            <div class="rtg-stat-value"><?php echo esc_html( $avg_efficiency ); ?></div>
-            <div class="rtg-stat-label">Avg Efficiency Score</div>
+            <div class="rtg-stat-value" <?php echo ( $missing_images + $missing_links ) > 0 ? 'style="color:#c41e3a;"' : ''; ?>><?php echo esc_html( $missing_images + $missing_links ); ?></div>
+            <div class="rtg-stat-label">Content Gaps (Images / Links)</div>
         </div>
         <div class="rtg-stat-card">
             <div class="rtg-stat-value"><?php echo esc_html( $total_reviews ); ?></div>
@@ -163,34 +163,6 @@ $grade_colors = array(
                                 <span class="rtg-bar-label"><?php echo esc_html( $row['size'] ); ?></span>
                                 <span class="rtg-bar-track">
                                     <span class="rtg-bar-fill" style="width: <?php echo esc_attr( round( ( (int) $row['count'] / $max_size ) * 100 ) ); ?>%;"></span>
-                                </span>
-                                <span class="rtg-bar-count"><?php echo esc_html( $row['count'] ); ?></span>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php endif; ?>
-            </div>
-        </div>
-
-        <!-- Efficiency Grade Distribution -->
-        <div class="rtg-card">
-            <div class="rtg-card-header"><h2>Efficiency Grade Distribution</h2></div>
-            <div class="rtg-card-body">
-                <?php if ( empty( $stats['by_grade'] ) ) : ?>
-                    <p style="color: var(--rtg-text-muted);">No grade data available.</p>
-                <?php else : ?>
-                    <?php $max_grade = $max_of( $stats['by_grade'] ); ?>
-                    <ul class="rtg-bar-list rtg-grade-bar-list">
-                        <?php foreach ( $stats['by_grade'] as $row ) :
-                            $g     = strtoupper( $row['efficiency_grade'] );
-                            $color = $grade_colors[ $g ] ?? '#d2d2d7';
-                        ?>
-                            <li class="rtg-bar-item">
-                                <span class="rtg-bar-label">
-                                    <span class="rtg-badge rtg-grade-<?php echo esc_attr( strtolower( $g ) ); ?>"><?php echo esc_html( $g ); ?></span>
-                                </span>
-                                <span class="rtg-bar-track">
-                                    <span class="rtg-bar-fill" style="width: <?php echo esc_attr( round( ( (int) $row['count'] / $max_grade ) * 100 ) ); ?>%; background: <?php echo esc_attr( $color ); ?>;"></span>
                                 </span>
                                 <span class="rtg-bar-count"><?php echo esc_html( $row['count'] ); ?></span>
                             </li>
