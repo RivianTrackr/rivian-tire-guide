@@ -224,6 +224,13 @@ export function createSingleCard(row) {
   const safeImage = safeImageURL(image);
   const safeReviewLink = safeReviewLinkURL(reviewLink);
 
+  // Canonical individual tire page URL (/tires/{slug}/). Empty when the slug
+  // or localized base is unavailable — callers fall back to the legacy
+  // ?tire= deep link on the guide page.
+  const tirePageBase = (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.tirePageUrl) ? rtgData.settings.tirePageUrl : '';
+  const safeSlug = safeString(slug).trim();
+  const tirePageUrl = (tirePageBase && safeSlug) ? tirePageBase + encodeURIComponent(safeSlug) + '/' : '';
+
   const card = document.createElement("div");
   card.className = "tire-card";
   card.dataset.tireId = tireId;
@@ -287,10 +294,14 @@ export function createSingleCard(row) {
   shareBtn.innerHTML = rtgIcon('share', 16);
   shareBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    const url = new URL(window.location.href);
-    url.search = '';
-    url.searchParams.set('tire', tireId);
-    const shareUrl = url.toString();
+    // Share the canonical tire page; fall back to the legacy ?tire= deep link.
+    let shareUrl = tirePageUrl;
+    if (!shareUrl) {
+      const url = new URL(window.location.href);
+      url.search = '';
+      url.searchParams.set('tire', tireId);
+      shareUrl = url.toString();
+    }
     const shareTitle = `${safeString(brand)} ${safeString(model)}`;
 
     function showCopied() {
@@ -346,12 +357,10 @@ export function createSingleCard(row) {
   const modelEl = document.createElement('div');
   modelEl.className = 'tire-card-model';
   // Link the title to the individual tire page (crawlable, canonical URL).
-  const tirePageBase = (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.tirePageUrl) ? rtgData.settings.tirePageUrl : '';
-  const safeSlug = safeString(slug).trim();
-  if (tirePageBase && safeSlug) {
+  if (tirePageUrl) {
     const modelLink = document.createElement('a');
     modelLink.className = 'tire-card-model-link';
-    modelLink.href = tirePageBase + encodeURIComponent(safeSlug) + '/';
+    modelLink.href = tirePageUrl;
     modelLink.textContent = safeString(model);
     modelEl.appendChild(modelLink);
   } else {
