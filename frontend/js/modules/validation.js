@@ -211,8 +211,14 @@ export function validateAndSanitizeCSVRow(row) {
     const cell = row[i];
 
     if (typeof cell === "string") {
-      // Index 27 (vehicle_breakdown) contains JSON — preserve quotes.
-      if (i === 27) {
+      // Some columns must NOT have <>"'& stripped:
+      //   18 link, 19 image, 22 review_link — URLs where & separates query
+      //     params (stripping it corrupts the destination); each is validated
+      //     by its own strict allowlist helper (safeLinkURL / safeImageURL /
+      //     safeReviewLinkURL) before use, so <>"' can't slip through.
+      //   27 vehicle_breakdown — JSON, needs its quotes.
+      //   28 slug — identifier, url-encoded at use.
+      if (i === 18 || i === 19 || i === 22 || i === 27 || i === 28) {
         sanitized[i] = cell;
       } else {
         sanitized[i] = cell.replace(/[<>\"'&]/g, "").trim();
