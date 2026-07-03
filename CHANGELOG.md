@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.54.2] - 2026-07-03
+
+### Fixed
+- **Page width/gutters now governed natively by the theme (Blocksy) instead of plugin overrides.** Investigation of the live DOM showed the in-theme pages render as direct children of Blocksy's *constrained* `entry-content`, which already sizes content natively — `width: var(--theme-container-width)` (responsive edge gutters included), centered, capped at the theme's block max-width. The 1.53.3 `width: 100%` override stomped that rule (which is what made mobile go flush), and 1.54.1's 16px padding patched the symptom while double-insetting content against the theme's own gutters. Both overrides are removed: tire, review, and compare pages now size exactly like every other piece of content on the site, at every viewport.
+
 ## [1.54.1] - 2026-07-03
 
 ### Fixed

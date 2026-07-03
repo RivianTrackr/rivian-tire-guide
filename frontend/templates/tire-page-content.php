@@ -185,8 +185,10 @@ $spec_groups = array(
     --rtg-tp-star-empty: #2c2f34;
     --rtg-tp-divider: color-mix(in srgb, var(--rtg-tp-border) 55%, transparent);
     <?php if ( $rtg_tp_css_vars ) echo $rtg_tp_css_vars; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized hex above ?>
-    /* Full content width — matches the main guide. */
-    width: 100%;
+    /* No width/padding overrides: as a direct child of the theme's constrained
+       entry-content, Blocksy sizes this natively (container width incl.
+       responsive edge gutters, centered, capped at the block max-width) —
+       identical to every other piece of content on the site. */
     color: var(--rtg-tp-text);
     font-size: 15px;
     line-height: 1.6;
@@ -292,12 +294,6 @@ $spec_groups = array(
   .rtg-tp .rtg-tp-reviews-empty-title { font-size: 20px; font-weight: 700; color: var(--rtg-tp-heading); margin: 0 0 6px; }
   .rtg-tp .rtg-tp-reviews-empty-text { font-size: 14px; color: var(--rtg-tp-muted); max-width: 460px; margin: 0 auto 20px; line-height: 1.6; }
 
-  /* The theme's bare page template has no horizontal gutter below its content
-     max-width — provide our own side padding so content never sits flush
-     against the screen edge (matches the guide page's gutters). */
-  @media (max-width: 1024px) {
-    .rtg-tp { padding-left: 16px; padding-right: 16px; }
-  }
   @media (max-width: 700px) {
     .rtg-tp .rtg-tp-hero { gap: 20px; }
     .rtg-tp .rtg-tp-img { flex-basis: 100%; }
