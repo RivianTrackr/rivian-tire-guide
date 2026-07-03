@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.54.1] - 2026-07-03
+
+### Fixed
+- **Content sat flush against the screen edge on mobile.** The 1.53.3 full-width change relied on the theme for horizontal gutters, but the theme's bare page template only centers a max-width column — below that width (phones/tablets) it provides no side padding at all. The tire, review, and compare pages now carry their own 16px side gutter under 1024px (and in their small-screen overrides), matching how the main guide page reads on mobile.
+
 ## [1.54.0] - 2026-07-03
 
 ### Changed
