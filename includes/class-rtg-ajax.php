@@ -1028,6 +1028,19 @@ class RTG_Ajax {
             wp_send_json_error( 'Missing or invalid roamer_tire_id(s).' );
         }
 
+        // Enforce a 1:1 mapping — a guide tire that already carries Roamer
+        // data can't be assigned again (that would silently overwrite the
+        // existing link). Re-assigning the same Roamer ID is allowed
+        // (idempotent); anything else requires unlinking first.
+        $target = RTG_Database::get_tire( $tire_id );
+        if ( ! $target ) {
+            wp_send_json_error( 'Guide tire not found.' );
+        }
+        $existing_link = (string) ( $target['roamer_tire_id'] ?? '' );
+        if ( '' !== $existing_link && ! in_array( $existing_link, $roamer_ids, true ) ) {
+            wp_send_json_error( 'This guide tire is already linked to Roamer data. Unlink it first to reassign.' );
+        }
+
         // Look up Roamer data from stored sync stats.
         $stats      = get_option( RTG_Roamer_Sync::STATS_OPTION, array() );
         $all_roamer = array_merge(

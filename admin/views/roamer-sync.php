@@ -214,11 +214,13 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                     </thead>
                     <tbody>
                         <?php foreach ( $stats['ambiguous_list'] as $amb ) :
-                            // Look up candidate tires for display.
+                            // Look up candidate tires for display — skipping
+                            // candidates already linked to other Roamer data
+                            // (1:1 mapping).
                             $candidates_info = array();
                             foreach ( $amb['candidates'] as $cid ) {
                                 $ct = RTG_Database::get_tire( $cid );
-                                if ( $ct ) {
+                                if ( $ct && empty( $ct['roamer_tire_id'] ) ) {
                                     $candidates_info[] = $ct;
                                 }
                             }
@@ -228,6 +230,11 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                                 <td><?php echo esc_html( $amb['size'] ); ?></td>
                                 <td><strong><?php echo esc_html( number_format( $amb['efficiency'], 2 ) ); ?></strong></td>
                                 <td><?php echo esc_html( number_format( floatval( $amb['total_km'] ?? 0 ) * 0.621371, 0 ) ); ?> mi</td>
+                                <?php if ( empty( $candidates_info ) ) : ?>
+                                <td colspan="2">
+                                    <span style="color:#86868b;font-size:13px;">All candidate tires are already linked to Roamer data — unlink one to reassign.</span>
+                                </td>
+                                <?php else : ?>
                                 <td>
                                     <select class="rtg-roamer-assign-select" data-roamer-id="<?php echo esc_attr( $amb['roamer_tire_id'] ); ?>">
                                         <option value="">Select tire...</option>
@@ -241,6 +248,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                                 <td>
                                     <button type="button" class="button button-small button-primary rtg-roamer-assign-btn" data-roamer-id="<?php echo esc_attr( $amb['roamer_tire_id'] ); ?>" disabled>Assign</button>
                                 </td>
+                                <?php endif; ?>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -257,7 +265,12 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
             return ( floatval( $b['total_km'] ?? 0 ) <=> floatval( $a['total_km'] ?? 0 ) );
         } );
 
-        $all_tires = RTG_Database::get_all_tires();
+        // Only unlinked guide tires are assignable — a guide tire already
+        // carrying Roamer data must be unlinked before it can be reassigned
+        // (1:1 mapping, enforced server-side too).
+        $all_tires = array_values( array_filter( RTG_Database::get_all_tires(), function ( $t ) {
+            return empty( $t['roamer_tire_id'] );
+        } ) );
         usort( $all_tires, function ( $a, $b ) {
             $cmp = strcasecmp( $a['brand'], $b['brand'] );
             return $cmp !== 0 ? $cmp : strcasecmp( $a['model'], $b['model'] );

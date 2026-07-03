@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.58.3] - 2026-07-04
+
+### Fixed
+- **Roamer assignments now enforce a strict 1:1 mapping.** A guide tire that already carries Roamer data can no longer be assigned again from either the Unmatched or Ambiguous sections — previously a second assignment would silently overwrite the existing link. Enforced in three layers: the "Assign selected to..." dropdown lists only unlinked guide tires, ambiguous-match candidates that are already linked are skipped (with a note when a row has no assignable candidates left), and the assign AJAX handler rejects already-linked targets server-side (re-assigning the same Roamer ID stays allowed as a no-op). To intentionally remap a tire, unlink it first.
+
 ## [1.58.2] - 2026-07-04
 
 ### Changed
