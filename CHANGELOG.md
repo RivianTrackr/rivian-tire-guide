@@ -4,6 +4,15 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.54.0] - 2026-07-03
+
+### Changed
+- **Individual tire pages redesigned as a proper product-detail layout.** The previous page had a sparse hero (title + stars + a full-width efficiency banner + one button surrounded by dead space), a flat spec grid that left an awkward empty filler cell, and a bare two-line reviews section. The new layout, built on the ink & brass design system:
+  - **Hero**: gold brand eyebrow, 32px title, rating row that links to the reviews section (or invites the first review), category/3PMS/OEM chips, a key-stats row (Real-World Efficiency in Roamer blue with tracked-miles context, Average Price, Mileage Warranty, Weight — empties skipped), and a dual CTA row (gold "View Tire" + secondary "Write a Review").
+  - **Specifications**: two grouped cards — "Size & Fitment" and "Construction & Performance" — with icon headers and label/value rows (no more orphan grid cells; empty rows skipped).
+  - **Owner Reviews**: header shows the rating count with a Write-a-Review button, and the no-reviews case gets a real empty state (icon, heading, invitation copy, gold CTA) instead of a text line.
+  - Mobile: hero stacks, stats go 2-up, CTAs go full-width; `prefers-reduced-motion` disables transitions.
+
 ## [1.53.3] - 2026-07-03
 
 ### Changed
