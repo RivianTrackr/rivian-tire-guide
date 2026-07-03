@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.58.2] - 2026-07-04
+
+### Changed
+- **Roamer Sync: the "Assign selected to..." dropdown now surfaces name matches first.** When unmatched Roamer tires are selected, guide tires whose names match (squashed-substring or ≥60% token overlap, so "M/S 2" matches "M/S2") float into a "Name matches" group at the top of the dropdown; everything else stays available under "All tires". With no matches the plain full list is shown, and the current pick is preserved across regroups.
+
 ## [1.58.1] - 2026-07-04
 
 ### Fixed

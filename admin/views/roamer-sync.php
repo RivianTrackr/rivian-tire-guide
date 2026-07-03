@@ -298,7 +298,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                     <tbody>
                         <?php foreach ( $unmatched_sorted as $tire ) : ?>
                             <tr>
-                                <td><input type="checkbox" class="rtg-unmatched-cb" value="<?php echo esc_attr( $tire['roamer_tire_id'] ); ?>"></td>
+                                <td><input type="checkbox" class="rtg-unmatched-cb" value="<?php echo esc_attr( $tire['roamer_tire_id'] ); ?>" data-name="<?php echo esc_attr( $tire['name'] ); ?>"></td>
                                 <td><strong><?php echo esc_html( $tire['name'] ); ?></strong></td>
                                 <td><?php echo esc_html( $tire['size'] ); ?></td>
                                 <td><?php echo esc_html( number_format( $tire['efficiency'], 2 ) ); ?></td>
