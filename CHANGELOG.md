@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.56.2] - 2026-07-03
+
+### Fixed
+- **Quieter empty-stat placeholder.** The 1.56.1 placeholder (large em-dash + separate "no data yet" line) drew more attention than real data. The info trigger now sits on the label row ("EFFICIENCY ⓘ") and the value is a single muted italic "No data yet" line — the placeholder recedes next to populated stats, and both blocks keep equal height. Applied to the missing-price case too.
+
 ## [1.56.1] - 2026-07-03
 
 ### Fixed
