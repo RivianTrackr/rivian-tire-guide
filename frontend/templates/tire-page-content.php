@@ -207,14 +207,16 @@ $spec_groups = array(
   .rtg-tp .rtg-tp-hero { display: flex; gap: 32px; flex-wrap: wrap; margin: 0 0 28px; }
   .rtg-tp .rtg-tp-img {
     flex: 0 0 380px; max-width: 100%;
-    background: var(--rtg-tp-card); border: 1px solid var(--rtg-tp-border);
+    /* White surface + inner padding: show the full tire, uncropped. */
+    background: #fff; border: 1px solid var(--rtg-tp-border);
     border-radius: 12px; overflow: hidden; aspect-ratio: 1 / 1;
     display: flex; align-items: center; justify-content: center;
+    padding: 20px;
     align-self: flex-start;
     transition: border-color 0.15s ease;
   }
   .rtg-tp .rtg-tp-img:hover { border-color: color-mix(in srgb, var(--rtg-tp-accent) 35%, var(--rtg-tp-border)); }
-  .rtg-tp .rtg-tp-img img { width: 100%; height: 100%; object-fit: cover; margin: 0; display: block; }
+  .rtg-tp .rtg-tp-img img { width: 100%; height: 100%; object-fit: contain; margin: 0; display: block; }
   .rtg-tp .rtg-tp-info { flex: 1 1 380px; min-width: 280px; }
   .rtg-tp .rtg-tp-brand { font-size: 13px; font-weight: 700; color: var(--rtg-tp-accent); text-transform: uppercase; letter-spacing: .8px; margin: 0 0 2px; }
   .rtg-tp h1.rtg-tp-title { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.2; color: var(--rtg-tp-heading); margin: 0 0 10px; padding: 0; }
