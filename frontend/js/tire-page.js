@@ -18,16 +18,18 @@
   }
 
   document.addEventListener('click', function (e) {
-    var link = e.target.closest ? e.target.closest('.rtg-tp-cta-primary') : null;
+    var link = e.target.closest ? e.target.closest('.rtg-tp-cta-primary, .rtg-tp-review-link') : null;
     if (!link) {
       return;
     }
+
+    var linkType = link.classList.contains('rtg-tp-review-link') ? 'review' : 'purchase';
 
     try {
       var data = new FormData();
       data.append('action', 'rtg_track_click');
       data.append('tire_id', cfg.tireId);
-      data.append('link_type', 'purchase');
+      data.append('link_type', linkType);
       data.append('nonce', cfg.nonce);
 
       if (navigator.sendBeacon) {

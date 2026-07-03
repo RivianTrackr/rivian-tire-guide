@@ -33,6 +33,16 @@ $link     = ! empty( $tire['link'] ) ? esc_url( $tire['link'] ) : '';
 $heading = trim( "$brand $model" ) ?: 'Tire';
 $heading .= $size ? " ($size)" : '';
 
+// Official review link (article or video) — shown as a secondary CTA.
+$review_link_url = ! empty( $tire['review_link'] ) ? esc_url( $tire['review_link'] ) : '';
+$review_is_video = false;
+if ( $review_link_url ) {
+    $review_host     = strtolower( (string) wp_parse_url( $review_link_url, PHP_URL_HOST ) );
+    $review_is_video = '' !== RTG_Tire_Page::youtube_id_from_url( $review_link_url )
+        || 'tiktok.com' === $review_host
+        || substr( $review_host, -11 ) === '.tiktok.com';
+}
+
 $ratings_map = RTG_Database::get_tire_ratings( array( $tire_id ) );
 $rating      = $ratings_map[ $tire_id ] ?? array( 'average' => 0, 'count' => 0 );
 $avg         = (float) ( $rating['average'] ?? 0 );
@@ -370,6 +380,11 @@ $spec_groups = array(
       <div class="rtg-tp-ctas">
         <?php if ( $link ) : ?>
         <a class="rtg-tp-cta rtg-tp-cta-primary" href="<?php echo esc_url( $link ); ?>" target="_blank" rel="nofollow sponsored noopener">View Tire&nbsp;<i class="fa-solid fa-up-right-from-square" aria-hidden="true" style="font-size:13px"></i></a>
+        <?php endif; ?>
+        <?php if ( $review_link_url ) : ?>
+        <a class="rtg-tp-cta rtg-tp-cta-secondary rtg-tp-review-link" href="<?php echo esc_url( $review_link_url ); ?>" target="_blank" rel="noopener noreferrer">
+          <i class="fa-solid <?php echo $review_is_video ? 'fa-circle-play' : 'fa-newspaper'; ?>" aria-hidden="true" style="font-size:13px"></i>&nbsp;<?php echo $review_is_video ? 'Watch Official Review' : 'Read Official Review'; ?>
+        </a>
         <?php endif; ?>
         <a class="rtg-tp-cta rtg-tp-cta-secondary" href="<?php echo esc_url( $review_url ); ?>">Write a Review</a>
       </div>
