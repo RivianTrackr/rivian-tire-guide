@@ -40,6 +40,29 @@ $rtg_set     = get_option( 'rtg_settings', array() );
 $review_slug = sanitize_title( $rtg_set['tire_review_slug'] ?? 'tire-review' );
 $review_url  = add_query_arg( 'tire', rawurlencode( $tire_id ), home_url( '/' . $review_slug . '/' ) );
 
+// Admin theme-color overrides (same mechanism as the compare/review templates).
+$rtg_tp_theme   = $rtg_set['theme_colors'] ?? array();
+$rtg_tp_var_map = array(
+    'accent'       => '--rtg-tp-accent',
+    'accent_hover' => '--rtg-tp-accent-hover',
+    'bg_card'      => '--rtg-tp-card',
+    'bg_deep'      => '--rtg-tp-deep',
+    'text_primary' => '--rtg-tp-text',
+    'text_heading' => '--rtg-tp-heading',
+    'text_muted'   => '--rtg-tp-muted',
+    'border'       => '--rtg-tp-border',
+    'star_empty'   => '--rtg-tp-star-empty',
+);
+$rtg_tp_css_vars = '';
+foreach ( $rtg_tp_var_map as $rtg_tp_key => $rtg_tp_prop ) {
+    if ( ! empty( $rtg_tp_theme[ $rtg_tp_key ] ) ) {
+        $rtg_tp_color = sanitize_hex_color( $rtg_tp_theme[ $rtg_tp_key ] );
+        if ( $rtg_tp_color ) {
+            $rtg_tp_css_vars .= $rtg_tp_prop . ':' . $rtg_tp_color . ';';
+        }
+    }
+}
+
 $breadcrumb_items = array(
     array( 'name' => 'Home', 'url' => home_url( '/' ) ),
     array( 'name' => 'Tire Guide', 'url' => $guide_url ),
@@ -90,6 +113,7 @@ $roamer_eff = (float) ( $tire['roamer_efficiency'] ?? 0 );
     --rtg-tp-muted: #a19e97;
     --rtg-tp-border: #3a3e45;
     --rtg-tp-star-empty: #2c2f34;
+    <?php if ( $rtg_tp_css_vars ) echo $rtg_tp_css_vars; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized hex above ?>
     max-width: 900px;
     margin: 0 auto;
     color: var(--rtg-tp-text);

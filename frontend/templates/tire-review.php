@@ -73,7 +73,7 @@ if ( ! empty( $guide_pages ) ) {
     .rv-root {
       --rtg-accent: #fba919;
       --rtg-accent-hover: #ffbe4a;
-      --rtg-bg-primary: #1e2126;
+      --rtg-bg-primary: #16191e;
       --rtg-bg-card: #16191e;
       --rtg-bg-input: #3a3e45;
       --rtg-bg-deep: #121418;
@@ -91,7 +91,8 @@ if ( ! empty( $guide_pages ) ) {
     .rv-root *, .rv-root *::before, .rv-root *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     .rv-root {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      /* Inherit the theme font — matches the main guide, which does the same. */
+      font-family: inherit;
       background: var(--rtg-bg-deep);
       color: var(--rtg-text-primary);
       line-height: 1.6;
@@ -108,16 +109,12 @@ if ( ! empty( $guide_pages ) ) {
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      position: sticky;
-      top: 0;
-      z-index: 50;
     }
     .rv-topbar-left {
       display: flex;
       align-items: center;
       gap: 16px;
     }
-    .rv-logo { height: 32px; width: auto; }
     .rv-back {
       display: inline-flex;
       align-items: center;
@@ -627,9 +624,6 @@ if ( ! empty( $guide_pages ) ) {
   <!-- Top bar -->
   <div class="rv-topbar">
     <div class="rv-topbar-left">
-      <a href="<?php echo esc_url( $tire_guide_url ); ?>">
-        <img src="https://riviantrackr.com/wp-content/uploads/2024/01/RivianTrackrLogo.webp" class="rv-logo" alt="RivianTrackr" />
-      </a>
       <a href="<?php echo esc_url( $tire_guide_url ); ?>" class="rv-back">
         <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
         <span>Back to Tire Guide</span>

@@ -38,7 +38,7 @@ $rtg_settings = get_option( 'rtg_settings', array() );
     .cmp-root {
       --rtg-accent: #fba919;
       --rtg-accent-hover: #ffbe4a;
-      --rtg-bg-primary: #1e2126;
+      --rtg-bg-primary: #16191e;
       --rtg-bg-card: #16191e;
       --rtg-bg-input: #3a3e45;
       --rtg-bg-deep: #121418;
@@ -54,7 +54,8 @@ $rtg_settings = get_option( 'rtg_settings', array() );
     .cmp-placeholder-icon { color: var(--rtg-border); }
 
     .cmp-root {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      /* Inherit the theme font — matches the main guide, which does the same. */
+      font-family: inherit;
       background: var(--rtg-bg-deep);
       color: var(--rtg-text-primary);
       line-height: 1.6;
@@ -71,16 +72,12 @@ $rtg_settings = get_option( 'rtg_settings', array() );
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      position: sticky;
-      top: 0;
-      z-index: 50;
     }
     .cmp-topbar-left {
       display: flex;
       align-items: center;
       gap: 16px;
     }
-    .cmp-logo { height: 32px; width: auto; }
     .cmp-back {
       display: inline-flex;
       align-items: center;
@@ -423,9 +420,6 @@ $rtg_settings = get_option( 'rtg_settings', array() );
   <!-- Top bar -->
   <div class="cmp-topbar">
     <div class="cmp-topbar-left">
-      <a href="<?php echo esc_url( home_url( '/rivian-tire-guide/' ) ); ?>">
-        <img src="https://riviantrackr.com/wp-content/uploads/2024/01/RivianTrackrLogo.webp" class="cmp-logo" alt="RivianTrackr" />
-      </a>
       <a href="<?php echo esc_url( home_url( '/rivian-tire-guide/' ) ); ?>" class="cmp-back">
         <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
         <span>Back to Tire Guide</span>
