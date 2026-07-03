@@ -2755,6 +2755,39 @@ a.rtg-user-review-tire-link:hover {
   outline: 2px solid var(--rtg-accent);
   outline-offset: 2px;
 }
+.tire-card-cta:focus-visible,
+.tire-card-details-link:focus-visible,
+.tire-card-review-link:focus-visible,
+.tire-card-model-link:focus-visible,
+.tire-card-share-btn:focus-visible,
+.tire-card-fav-btn:focus-visible,
+.info-tooltip-trigger:focus-visible,
+.tire-card-compare-overlay input:focus-visible + .compare-overlay-icon {
+  outline: 2px solid var(--rtg-accent);
+  outline-offset: 2px;
+}
+/* Reduced motion — remaining animated surfaces. !important also overrides
+   the tooltip modal's inline animation styles set from JS. */
+@media (prefers-reduced-motion: reduce) {
+  .tire-card-cta,
+  .tire-card-share-btn,
+  .tire-card-fav-btn,
+  .tire-card-details-link,
+  .tire-card-review-link,
+  .rating-review-count,
+  .range-slider,
+  .rtg-cards-loading {
+    transition: none !important;
+  }
+  .tooltip-modal-overlay,
+  .tooltip-modal,
+  .rtg-review-modal-overlay,
+  .rtg-review-modal,
+  .rtg-toast {
+    animation: none !important;
+    transition: none !important;
+  }
+}
 .no-results-suggestion-btn:focus-visible {
   outline: 2px solid var(--rtg-accent);
   outline-offset: 2px;

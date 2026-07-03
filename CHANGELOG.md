@@ -4,6 +4,24 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.57.0] - 2026-07-03
+
+### Added
+- **Affiliate click tracking on individual tire pages.** The tire page's "View Tire" CTA now reports to the same `rtg_track_click` analytics endpoint the guide cards use (via `sendBeacon`, so the outbound navigation is never blocked) — clicks from the SEO pages finally show up in the analytics dashboard. New `tire-page.js` bundle, enqueued only on tire pages.
+- **Slug rename protection.** When a tire's brand/model/size edit changes its slug, the old slug is recorded (capped option map) and old URLs 301 to the new canonical — previously indexed or shared tire links can no longer 404 after a rename.
+- **VideoObject structured data** on tire pages whose review link is a YouTube video (name, description, YouTube thumbnail, content/embed URLs). `uploadDate` is approximated from the tire's `created_at` since the video's true publish date isn't stored.
+
+### Changed
+- **`?tire=` deep links now canonical to the tire page.** The guide page's single-tire deep links point their canonical (AIOSEO/Yoast/Rank Math filters) and OG URL at `/tires/{slug}/`, so the query-arg URLs consolidate to the dedicated pages instead of competing with them.
+- **Blocksy's hidden hero `<h1 class="page-title">` suppressed** on the in-theme plugin pages via the `blocksy:hero:custom-source` filter — removes the duplicate h1 from the SEO pages' DOM (no-op on other themes).
+- **Price slider ceiling now adapts to the catalog.** The hardcoded $600 max silently hid any pricier tire from the default view; the slider max now rises to the most expensive tire (rounded up to $50) in both client and server modes, and Clear All / filter chips / no-results suggestions use the dynamic ceiling.
+
+### Accessibility
+- **Review modal**: focus is trapped inside the dialog (Tab wraps), Escape and button/backdrop closes all remove the key listener (it previously leaked), and focus returns to the opening element on close.
+- **Focus-visible outlines** added for all tire-card interactive elements (CTAs, links, share/favorite buttons, info-tooltip triggers, and the compare checkbox via its overlay icon).
+- **`aria-busy`** is set on the cards container during server-side fetches.
+- **`prefers-reduced-motion`** coverage extended to remaining animated surfaces, including the tooltip and review modals (whose inline animation styles are now overridden) and toasts.
+
 ## [1.56.2] - 2026-07-03
 
 ### Fixed

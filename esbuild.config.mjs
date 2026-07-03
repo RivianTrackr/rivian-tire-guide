@@ -38,6 +38,14 @@ const builds = [
     minify: true,
     drop: ['console', 'debugger'],
   },
+  // --- Frontend JS (individual tire page: click tracking) ---
+  {
+    ...jsDefaults,
+    entryPoints: ['frontend/js/tire-page.js'],
+    outfile: 'frontend/js/tire-page.min.js',
+    minify: true,
+    drop: ['console', 'debugger'],
+  },
   // --- Frontend JS (user reviews) ---
   {
     ...jsDefaults,

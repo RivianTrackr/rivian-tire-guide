@@ -24,7 +24,7 @@ import {
   populateVehicleToggle, getSelectedVehicle, setActiveVehicle, cascadeVehicleToSizes,
   applyFiltersFromURL, applyCompareFromURL, applyTireDeepLink,
   applyShortcodePrefilters, renderActiveFilterChips,
-  setUpdateCompareBar
+  setUpdateCompareBar, adaptPriceSlider
 } from './modules/filters.js';
 import { isServerSide, fetchTiresFromServer, fetchDropdownOptions, serverSideFilterAndRender } from './modules/server.js';
 
@@ -293,6 +293,14 @@ if (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.serve
     .map(validateAndSanitizeCSVRow)
     .filter(row => row && row.length && row[0]);
   state.filteredRows = state.allRows;
+
+  // Raise the price-slider ceiling to the most expensive tire so nothing is
+  // silently excluded by the template's hardcoded max.
+  const maxPrice = state.allRows.reduce((max, row) => {
+    const p = parseFloat(row[6]);
+    return Number.isFinite(p) && p > max ? p : max;
+  }, 0);
+  adaptPriceSlider(maxPrice);
 
   if (typeof tireRatingAjax !== 'undefined') {
     state.isLoggedIn = tireRatingAjax.is_logged_in === true || tireRatingAjax.is_logged_in === '1' || tireRatingAjax.is_logged_in === 1;

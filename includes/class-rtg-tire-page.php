@@ -69,6 +69,19 @@ class RTG_Tire_Page {
         $key  = sanitize_title( wp_unslash( $raw ) );
         $tire = $key ? RTG_Database::get_tire_by_slug( $key ) : null;
 
+        // Retired slug (tire was renamed)? 301 to the current canonical URL
+        // so previously indexed/shared links keep working.
+        if ( ! $tire && $key ) {
+            $redirect_tire_id = RTG_Database::lookup_slug_redirect( $key );
+            if ( $redirect_tire_id ) {
+                $target = RTG_Database::get_tire( $redirect_tire_id );
+                if ( $target && ! empty( $target['slug'] ) && $target['slug'] !== $key ) {
+                    wp_safe_redirect( self::tire_url( $target['slug'] ), 301 );
+                    exit;
+                }
+            }
+        }
+
         // Fall back to a raw tire_id lookup, then 301 to the canonical slug URL.
         if ( ! $tire && RTG_Database::validate_tire_id( $raw ) ) {
             $by_id = RTG_Database::get_tire( $raw );
@@ -97,6 +110,24 @@ class RTG_Tire_Page {
 
         $canonical   = self::tire_url( $tire['slug'] ?? $tire['tire_id'] );
         $description = RTG_Meta::build_description( $tire );
+
+        // Affiliate click tracking for the "View Tire" CTA — same analytics
+        // endpoint the guide cards report to.
+        $suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : (
+            file_exists( RTG_PLUGIN_DIR . 'frontend/js/tire-page.min.js' ) ? '.min' : ''
+        );
+        wp_enqueue_script(
+            'rtg-tire-page',
+            RTG_PLUGIN_URL . 'frontend/js/tire-page' . $suffix . '.js',
+            array(),
+            RTG_VERSION,
+            true
+        );
+        wp_localize_script( 'rtg-tire-page', 'rtgTirePage', array(
+            'ajaxurl' => admin_url( 'admin-ajax.php' ),
+            'nonce'   => wp_create_nonce( 'rtg_analytics_nonce' ),
+            'tireId'  => $tire['tire_id'],
+        ) );
 
         // Make the resolved tire available to the content partial + head callback.
         $GLOBALS['rtg_tire_page_tire'] = $tire;
@@ -157,6 +188,55 @@ class RTG_Tire_Page {
 
         echo "\n" . '<script type="application/ld+json">' . wp_json_encode( $product, JSON_UNESCAPED_SLASHES ) . '</script>' . "\n";
         echo '<script type="application/ld+json">' . wp_json_encode( $breadcrumb, JSON_UNESCAPED_SLASHES ) . '</script>' . "\n";
+
+        // VideoObject for YouTube review videos — rich-result eligibility.
+        $yt_id = self::youtube_id_from_url( $tire['review_link'] ?? '' );
+        if ( $yt_id ) {
+            $video = array(
+                '@context'     => 'https://schema.org',
+                '@type'        => 'VideoObject',
+                'name'         => $heading . ' — Official Review',
+                'description'  => 'Video review of the ' . $heading . ' tire for Rivian vehicles.',
+                'thumbnailUrl' => 'https://i.ytimg.com/vi/' . $yt_id . '/hqdefault.jpg',
+                'contentUrl'   => esc_url_raw( $tire['review_link'] ),
+                'embedUrl'     => 'https://www.youtube.com/embed/' . $yt_id,
+                // Approximation: the video's true publish date isn't stored;
+                // the tire's created_at is the closest known date. uploadDate
+                // is required for video rich results, so we use it rather
+                // than omit the video entirely.
+                'uploadDate'   => gmdate( 'c', strtotime( $tire['created_at'] ?? 'now' ) ),
+            );
+            echo '<script type="application/ld+json">' . wp_json_encode( $video, JSON_UNESCAPED_SLASHES ) . '</script>' . "\n";
+        }
+    }
+
+    /**
+     * Extract a YouTube video ID from a watch/short URL, or '' when the URL
+     * isn't a recognizable YouTube video link.
+     *
+     * @param string $url Review link URL.
+     * @return string Video ID or ''.
+     */
+    public static function youtube_id_from_url( $url ) {
+        if ( ! is_string( $url ) || '' === $url ) {
+            return '';
+        }
+
+        $host = wp_parse_url( $url, PHP_URL_HOST );
+        $host = is_string( $host ) ? strtolower( $host ) : '';
+
+        if ( 'youtu.be' === $host ) {
+            $path = (string) wp_parse_url( $url, PHP_URL_PATH );
+            $id   = trim( $path, '/' );
+        } elseif ( 'youtube.com' === $host || substr( $host, -12 ) === '.youtube.com' ) {
+            $query = (string) wp_parse_url( $url, PHP_URL_QUERY );
+            parse_str( $query, $params );
+            $id = $params['v'] ?? '';
+        } else {
+            return '';
+        }
+
+        return preg_match( '/^[A-Za-z0-9_-]{6,20}$/', $id ) ? $id : '';
     }
 
     /**

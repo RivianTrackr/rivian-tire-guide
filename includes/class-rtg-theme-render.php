@@ -84,6 +84,13 @@ class RTG_Theme_Render {
 
         status_header( 200 );
 
+        // Blocksy renders a (visually hidden) hero <h1 class="page-title">
+        // from the virtual post's title — a duplicate h1 on SEO pages.
+        // Returning false (non-null) from blocksy:hero:custom-source makes
+        // blocksy_get_page_title_source() falsy, which suppresses the hero
+        // section entirely for this request. No-op on non-Blocksy themes.
+        add_filter( 'blocksy:hero:custom-source', '__return_false' );
+
         // Our content is pre-built HTML; stop wpautop from injecting stray tags.
         remove_filter( 'the_content', 'wpautop' );
         add_filter( 'the_content', array( __CLASS__, 'filter_the_content' ), 9 );

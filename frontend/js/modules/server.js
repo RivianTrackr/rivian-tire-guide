@@ -12,7 +12,7 @@ import { renderCards } from './cards.js';
 import { VALIDATION_PATTERNS } from './validation.js';
 import { loadTireRatings } from './ratings.js';
 import { rtgIcon } from './helpers.js';
-import { updateURLFromFilters, renderSmartNoResults, renderActiveFilterChips, applyFiltersFromURL, populateDropdown, getSelectedVehicle, populateVehicleToggle } from './filters.js';
+import { updateURLFromFilters, renderSmartNoResults, renderActiveFilterChips, applyFiltersFromURL, populateDropdown, getSelectedVehicle, populateVehicleToggle, adaptPriceSlider } from './filters.js';
 
 export function isServerSide() {
   return state.serverSideMode && typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.ajaxurl;
@@ -56,12 +56,18 @@ export function fetchTiresFromServer(page) {
   // Fast responses shouldn't flash a spinner/overlay.
   const loadingTimer = setTimeout(() => {
     if (tireCountEl) tireCountEl.textContent = 'Loading...';
-    if (tireCardsEl) tireCardsEl.classList.add('rtg-cards-loading');
+    if (tireCardsEl) {
+      tireCardsEl.classList.add('rtg-cards-loading');
+      tireCardsEl.setAttribute('aria-busy', 'true');
+    }
   }, 500);
 
   const clearLoadingState = () => {
     clearTimeout(loadingTimer);
-    if (tireCardsEl) tireCardsEl.classList.remove('rtg-cards-loading');
+    if (tireCardsEl) {
+      tireCardsEl.classList.remove('rtg-cards-loading');
+      tireCardsEl.removeAttribute('aria-busy');
+    }
   };
 
   return fetch(rtgData.settings.ajaxurl, {
@@ -212,6 +218,11 @@ export function fetchDropdownOptions() {
       state.VALID_SIZES = d.sizes || [];
       state.VALID_BRANDS = d.brands || [];
       state.VALID_CATEGORIES = d.categories || [];
+
+      // Raise the price-slider ceiling to the catalog's real maximum.
+      if (d.maxPrice) {
+        adaptPriceSlider(d.maxPrice);
+      }
 
       // Update vehicle state from server response.
       if (d.vehicleSizeMap) {
