@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.54.3] - 2026-07-03
+
+### Changed
+- **The tire-card share button now copies/shares the canonical tire page URL** (`/tires/{slug}/`) instead of the legacy `?tire=` deep link on the guide page — shared links land on the dedicated, indexable tire page (and accrue link equity to it). Falls back to the `?tire=` deep link when a slug isn't available. Existing `?tire=` links keep working unchanged.
+
 ## [1.54.2] - 2026-07-03
 
 ### Fixed
