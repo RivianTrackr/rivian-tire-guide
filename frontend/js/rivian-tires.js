@@ -14,7 +14,7 @@ import { VALIDATION_PATTERNS, validateAndSanitizeCSVRow } from './modules/valida
 import { RTG_ANALYTICS } from './modules/analytics.js';
 import { showTooltipModal, createFilterTooltip } from './modules/tooltips.js';
 import { initializeSmartSearch } from './modules/search.js';
-import { openReviewModal, openReviewsDrawer, loadTireRatings } from './modules/ratings.js';
+import { openReviewModal, loadTireRatings } from './modules/ratings.js';
 import { renderCards } from './modules/cards.js';
 import { loadFavorites } from './modules/favorites.js';
 import { updateCompareBar, openComparison, clearCompare, setupCompareCheckboxes } from './modules/compare.js';
@@ -64,26 +64,9 @@ function setupEventDelegation() {
       return;
     }
 
-    // Write/Edit review button
-    const writeBtn = e.target.closest('.write-review-btn');
-    if (writeBtn) {
-      const tireId = writeBtn.dataset.tireId;
-      if (VALIDATION_PATTERNS.tireId.test(tireId)) {
-        const existingRating = state.userRatings[tireId] || 0;
-        openReviewModal(tireId, existingRating);
-      }
-      return;
-    }
-
-    // View reviews button
-    const viewBtn = e.target.closest('.view-reviews-btn');
-    if (viewBtn) {
-      const tireId = viewBtn.dataset.tireId;
-      if (VALIDATION_PATTERNS.tireId.test(tireId)) {
-        openReviewsDrawer(tireId);
-      }
-      return;
-    }
+    // (The write-review pill and reviews drawer were removed in 1.55.2 /
+    // 1.56.0 — the review count now links to the tire page's reviews
+    // section, and review writing happens via the stars or review page.)
   });
 
   document.addEventListener('mouseenter', function(e) {
