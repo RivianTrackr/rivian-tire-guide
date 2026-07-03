@@ -4,6 +4,15 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.55.2] - 2026-07-03
+
+### Added
+- **Category + tag chips on guide cards.** Cards now show accent-tinted chips (matching the tire page's chip treatment) for the tire's category and tags (e.g. All-Terrain, EV Rated) under the spec rows — restoring category visibility that left the card with the 1.55.0 spec slimming, and replacing the old bottom "Tags" spec row. OEM stays as the corner badge.
+
+### Changed
+- **One primary CTA per card.** The full-width purple "Watch/Read Official Review" button is demoted to a small text link next to "Full Specs & Reviews" — it competed with the affiliate CTA and made cards uneven heights. Review-link click analytics keep working (the tracker now also matches the new link class).
+- **"Write a Review"/"Edit Review" pill removed from cards.** Review writing lives on the tire page and the standalone review page; the card's interactive stars still handle quick ratings, the review-count pill still opens the drawer, and guests still see the "Review Pending" badge. Dead CSS for the removed pill and button was cleaned up.
+
 ## [1.55.1] - 2026-07-03
 
 ### Added

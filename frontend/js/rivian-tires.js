@@ -113,10 +113,12 @@ function setupEventDelegation() {
     stars.forEach(s => s.classList.remove('hover'));
   }, true);
 
-  // Affiliate click tracking via event delegation.
+  // Affiliate click tracking via event delegation. The official-review link
+  // was demoted from a .tire-card-cta-review button to a .tire-card-review-link
+  // text link (1.55.2) — both classes are tracked for compatibility.
   document.addEventListener('click', function(e) {
     const link = e.target.closest(
-      '.tire-card-cta-primary, .tire-card-cta-review'
+      '.tire-card-cta-primary, .tire-card-cta-review, .tire-card-review-link'
     );
     if (!link) return;
 
@@ -127,7 +129,7 @@ function setupEventDelegation() {
     if (!tireId || !VALIDATION_PATTERNS.tireId.test(tireId)) return;
 
     let linkType = 'purchase';
-    if (link.classList.contains('tire-card-cta-review')) linkType = 'review';
+    if (link.classList.contains('tire-card-cta-review') || link.classList.contains('tire-card-review-link')) linkType = 'review';
 
     RTG_ANALYTICS.trackClick(tireId, linkType);
   });

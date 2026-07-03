@@ -900,16 +900,25 @@
   flex-wrap: wrap;
   gap: 6px;
 }
-.tire-card-tag {
+
+/* Chips — category + tags (matches the tire page's chip treatment) */
+.tire-card-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.tire-card-chip {
   display: inline-flex;
   align-items: center;
   font-size: 11px;
   font-weight: 600;
-  padding: 3px 8px;
-  background-color: var(--rtg-border);
-  color: var(--rtg-text-light);
-  border-radius: 4px;
   line-height: 1;
+  padding: 6px 10px;
+  border-radius: 20px;
+  color: var(--rtg-text-primary);
+  background: color-mix(in srgb, var(--rtg-accent) 12%, var(--rtg-bg-deep));
+  border: 1px solid color-mix(in srgb, var(--rtg-accent) 25%, transparent);
   white-space: nowrap;
 }
 
@@ -992,20 +1001,40 @@
   gap: 8px;
   padding: 12px 16px 16px;
 }
+.tire-card-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 2px;
+}
 .tire-card-details-link {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 4px;
   font-size: 13px;
   font-weight: 600;
   color: var(--rtg-accent);
   text-decoration: none;
-  padding: 4px 0 0;
   transition: color 0.15s ease;
 }
 .tire-card-details-link:hover {
   color: var(--rtg-accent-hover);
+  text-decoration: none;
+}
+.tire-card-review-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--rtg-text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.tire-card-review-link:hover {
+  color: var(--rtg-accent);
   text-decoration: none;
 }
 @media screen and (min-width: 601px) {
@@ -1040,15 +1069,6 @@
   background: var(--rtg-accent-hover);
   text-decoration: none;
   color: #15130e;
-}
-.tire-card-cta-review {
-  background: #7c3aed;
-  color: #fff;
-}
-.tire-card-cta-review:hover {
-  background: #6d28d9;
-  text-decoration: none;
-  color: #fff;
 }
 .tire-card-cta-disabled {
   background-color: var(--rtg-bg-primary);
@@ -1630,21 +1650,6 @@
   color: var(--rtg-text-light, #f6f4f0);
   background: color-mix(in srgb, var(--rtg-text-light, #f6f4f0) 15%, transparent);
   border-color: color-mix(in srgb, var(--rtg-text-light, #f6f4f0) 25%, transparent);
-  text-decoration: none;
-}
-.write-review-btn {
-  color: var(--rtg-accent, #fba919);
-  background: color-mix(in srgb, var(--rtg-accent, #fba919) 8%, transparent);
-  border: 1px solid color-mix(in srgb, var(--rtg-accent, #fba919) 25%, transparent);
-  border-radius: 6px;
-  padding: 4px 10px;
-  display: inline-flex;
-  align-items: center;
-}
-.write-review-btn:hover {
-  background: color-mix(in srgb, var(--rtg-accent, #fba919) 15%, transparent);
-  border-color: color-mix(in srgb, var(--rtg-accent, #fba919) 40%, transparent);
-  color: var(--rtg-accent-hover, #4daa80);
   text-decoration: none;
 }
 .rtg-review-pending-badge {
