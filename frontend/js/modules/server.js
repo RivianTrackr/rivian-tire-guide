@@ -46,9 +46,8 @@ export function fetchTiresFromServer(page) {
   body.append('warranty_min', warVal > 0 ? warVal.toString() : '0');
 
   const sortBy = getDOMElement("sortBy");
-  const sortVal = sortBy?.value || 'efficiency_score';
-  const sortMap = { efficiencyGrade: 'efficiency_score' };
-  body.append('sort', sortMap[sortVal] || sortVal);
+  const sortVal = sortBy?.value || 'roamer-efficiency';
+  body.append('sort', sortVal);
 
   const tireCountEl = getDOMElement("tireCount");
   const tireCardsEl = getDOMElement("tireCards");

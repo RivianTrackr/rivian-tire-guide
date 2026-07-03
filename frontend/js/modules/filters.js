@@ -416,15 +416,6 @@ export function filterAndRender() {
 }
 
 function applySorting(sortOption) {
-  if (!sortOption || sortOption === "efficiencyGrade") {
-    state.filteredRows.sort((a, b) => {
-      const aScore = validateNumeric(a[20], { min: 0, max: 100 }, 0);
-      const bScore = validateNumeric(b[20], { min: 0, max: 100 }, 0);
-      return bScore - aScore;
-    });
-    return;
-  }
-
   switch (sortOption) {
     case "reviewed":
       state.filteredRows.sort((a, b) => {
@@ -482,6 +473,7 @@ function applySorting(sortOption) {
       state.filteredRows.sort((a, b) => safeString(b[23]).localeCompare(safeString(a[23])));
       break;
     case "roamer-efficiency":
+    default:
       state.filteredRows.sort((a, b) => {
         const aVal = parseFloat(a[24]) || 0;
         const bVal = parseFloat(b[24]) || 0;

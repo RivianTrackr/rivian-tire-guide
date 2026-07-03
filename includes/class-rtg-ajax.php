@@ -554,9 +554,9 @@ class RTG_Ajax {
             $filters['warranty_min'] = $warranty_min;
         }
 
-        $sort = sanitize_text_field( $_POST['sort'] ?? 'efficiency_score' );
+        $sort = sanitize_text_field( $_POST['sort'] ?? 'roamer-efficiency' );
         if ( ! in_array( $sort, self::ALLOWED_SORTS, true ) ) {
-            $sort = 'efficiency_score';
+            $sort = 'roamer-efficiency';
         }
 
         $page = max( 1, intval( $_POST['page'] ?? 1 ) );

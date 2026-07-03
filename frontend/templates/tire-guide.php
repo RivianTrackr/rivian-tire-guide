@@ -103,7 +103,6 @@ if ( ! defined( 'ABSPATH' ) ) {
       <div class="rtg-sort-actions">
         <label for="sortBy" class="screen-reader-text">Sort tires by</label>
         <select id="sortBy" aria-label="Sort tires by">
-        <option value="efficiencyGrade">Efficiency Grade</option>
         <option value="roamer-efficiency" selected>Real-World Efficiency</option>
         <option value="most-reviewed">Most Reviewed</option>
         <option value="newest">Newest Added</option>
