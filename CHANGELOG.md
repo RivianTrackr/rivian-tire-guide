@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Compare + Review topbars used an off-palette background (`#1e2126` → `#16191e`), still rendered a standalone-era RivianTrackr logo (redundant now that the theme header sits directly above — removed), and were `position: sticky` (which fights the theme's own header in-theme — now static).
   - Compare + Review hardcoded an `'Inter'`-first font stack; they now inherit the theme font, matching the main guide's behavior.
   - The tire page partial regained the admin theme-color override support that was dropped in the 1.53.0 in-theme conversion (Compare/Review had kept theirs).
+  - **Compare + Review layout unified with the tire page pattern.** Both pages dropped their standalone-era full-bleed `bg-deep` panel (they now sit directly on the theme page background, like the tire pages) and replaced the "Back to Tire Guide" topbar with the same Home › Tire Guide › … breadcrumb the tire pages use (Compare keeps its Share/Print buttons on the breadcrumb row). Page titles aligned to the tire page scale (28px, 23px mobile), and the review page's redundant "Powered by RivianTrackr" footer was removed (the theme footer is right below it now).
 
 ## [1.53.1] - 2026-07-03
 
