@@ -4,6 +4,17 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.53.0] - 2026-07-02
+
+### Changed
+- **Tire, "Write a Review", and "Compare" pages now render inside the active theme** (header/nav/footer) instead of as standalone documents, while keeping their existing URLs. A new theme-agnostic `RTG_Theme_Render` helper presents each request as a singular page (works for classic and block themes) and injects the server-rendered content into `the_content` (with `wpautop` disabled so inline markup/styles survive). Each page's CSS was re-scoped under a container (`.rtg-tp` / `.cmp-root` / `.rv-root`) so it no longer resets or overrides theme styles. The Review and Compare pages are marked `noindex` (utility views).
+
+### Added
+- **All in One SEO integration for tire pages.** Per-tire `<title>`, meta description, and canonical are delegated to AIOSEO via its filters (`aioseo_title` / `aioseo_description` / `aioseo_canonical_url`), with core `document_title` / canonical fallbacks when no SEO plugin is active. `Product` + `BreadcrumbList` JSON-LD is emitted on `wp_head`, and every tire URL is registered into the AIOSEO XML sitemap via `aioseo_sitemap_additional_pages` — closing the sitemap gap from the initial launch.
+- **`[rivian_tire_review]` and `[rivian_tire_compare]` shortcodes** so the review and compare UIs can also be dropped onto any theme page, in addition to their dedicated URLs.
+
+> **Staging note:** this release changes how these pages render and how the tire pages' SEO tags are produced. Verify on staging before deploying — check that each page shows the theme chrome; that AIOSEO outputs the correct per-tire title/description/canonical for tire pages (view source + AIOSEO's tools); that `/tires/{slug}/` appears in the sitemap; that unknown tire slugs still 404; that the review/compare apps still work in-theme (Font Awesome icons present, layout intact); and that the shortcodes render correctly on a normal page.
+
 ## [1.52.1] - 2026-07-02
 
 ### Fixed
