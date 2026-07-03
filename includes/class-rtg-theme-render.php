@@ -88,6 +88,12 @@ class RTG_Theme_Render {
         remove_filter( 'the_content', 'wpautop' );
         add_filter( 'the_content', array( __CLASS__, 'filter_the_content' ), 9 );
 
+        // Themes print the page title themselves above the_content, but our
+        // content partials render their own <h1> — blank the virtual post's
+        // DISPLAY title so it isn't shown twice. The document <title> and
+        // AIOSEO tags are unaffected (handled by the filters below).
+        add_filter( 'the_title', array( __CLASS__, 'filter_the_title' ), 20, 2 );
+
         // Title / description / canonical / robots via core + AIOSEO filters.
         add_filter( 'pre_get_document_title', array( __CLASS__, 'filter_document_title' ), 20 );
         add_filter( 'document_title_parts', array( __CLASS__, 'filter_document_title_parts' ), 20 );
@@ -117,6 +123,18 @@ class RTG_Theme_Render {
         ob_start();
         call_user_func( self::$active['content'] );
         return ob_get_clean();
+    }
+
+    /**
+     * Suppress the theme-rendered page title for the virtual post (ID 0).
+     * Real posts (nav menu items, widgets, other loops) have non-zero IDs
+     * and pass through untouched.
+     */
+    public static function filter_the_title( $title, $post_id = null ) {
+        if ( self::$active && 0 === (int) $post_id ) {
+            return '';
+        }
+        return $title;
     }
 
     public static function filter_document_title( $title ) {

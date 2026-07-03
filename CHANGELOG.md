@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.53.1] - 2026-07-03
+
+### Fixed
+- **Duplicate page title on in-theme pages.** Themes print their own page-title `<h1>` above `the_content`, and the tire/review/compare content partials each render their own heading — so the title appeared twice (e.g. "Toyo Open Country A/T III (305/45R22) — Rivian Tire Guide" from the theme, then the tire `<h1>` again). `RTG_Theme_Render` now blanks the virtual post's display title via the `the_title` filter (scoped to the virtual post's ID `0`, so real posts, nav menus, and widgets are untouched). The browser-tab `<title>`, AIOSEO tags, and OG title are unaffected.
+
 ## [1.53.0] - 2026-07-02
 
 ### Changed
