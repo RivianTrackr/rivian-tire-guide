@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.55.3] - 2026-07-03
+
+### Changed
+- **Review count moved inline next to the star rating.** The "N reviews" pill below the stars is now plain text in the rating row — "4.0 · 3 reviews", matching the tire page's "5.0 · 1 rating" pattern. It's still clickable (underlined, opens the reviews drawer as before). The actions row below the stars now only appears for the guest "Review Pending" badge, saving another line of card height.
+
 ## [1.55.2] - 2026-07-03
 
 ### Added

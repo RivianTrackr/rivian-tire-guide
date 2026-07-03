@@ -1614,6 +1614,24 @@
   color: var(--rtg-text-light, #f6f4f0);
   font-weight: 600;
 }
+.rating-count-sep {
+  color: var(--rtg-text-muted, #a19e97);
+}
+.rating-review-count {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--rtg-text-muted, #a19e97);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.rating-review-count:hover {
+  color: var(--rtg-accent, #fba919);
+}
 /* === Review Actions (below stars) === */
 .review-actions {
   display: flex;

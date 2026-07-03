@@ -5,7 +5,7 @@
  */
 
 import { state } from './state.js';
-import { rtgColor, rtgIcon, starSVGMarkup, getDOMElement } from './helpers.js';
+import { rtgColor, starSVGMarkup, getDOMElement } from './helpers.js';
 import { VALIDATION_PATTERNS, NUMERIC_BOUNDS, validateNumeric } from './validation.js';
 
 export function initializeRatingSystem() {
@@ -302,40 +302,42 @@ export function createRatingHTML(tireId, average = 0, count = 0, userRating = 0)
 
   ratingInfo.appendChild(averageSpan);
 
+  // Review count as inline text next to the rating (matches the tire page's
+  // "5.0 · 1 rating" pattern). Still a button — clicking opens the drawer.
+  const reviewCount = state.tireRatings[tireId]?.review_count || 0;
+  if (reviewCount > 0) {
+    const sep = document.createElement('span');
+    sep.className = 'rating-count-sep';
+    sep.setAttribute('aria-hidden', 'true');
+    sep.textContent = '·';
+    ratingInfo.appendChild(sep);
+
+    const countBtn = document.createElement('button');
+    countBtn.className = 'view-reviews-btn rating-review-count';
+    countBtn.dataset.tireId = tireId;
+    countBtn.setAttribute('type', 'button');
+    countBtn.textContent = `${reviewCount} review${reviewCount !== 1 ? 's' : ''}`;
+    ratingInfo.appendChild(countBtn);
+  }
+
   ratingDisplay.appendChild(starsContainer);
   ratingDisplay.appendChild(ratingInfo);
   container.appendChild(ratingDisplay);
 
-  // Review actions row
-  const reviewActions = document.createElement('div');
-  reviewActions.className = 'review-actions';
-
-  const reviewCount = state.tireRatings[tireId]?.review_count || 0;
-
-  if (reviewCount > 0) {
-    const viewReviewsBtn = document.createElement('button');
-    viewReviewsBtn.className = 'review-action-link view-reviews-btn';
-    viewReviewsBtn.dataset.tireId = tireId;
-    const reviewIcon = document.createElement('span');
-    reviewIcon.innerHTML = rtgIcon('message', 14);
-    reviewIcon.style.display = 'inline-flex';
-    viewReviewsBtn.appendChild(reviewIcon);
-    viewReviewsBtn.appendChild(document.createTextNode(` ${reviewCount} review${reviewCount !== 1 ? 's' : ''}`));
-    reviewActions.appendChild(viewReviewsBtn);
-  }
-
-  // The Write/Edit Review pill was removed from cards (1.55.2): review
-  // writing lives on the tire page and the standalone review page, and the
-  // card's interactive stars still handle quick ratings. Guests keep the
-  // pending badge so they know their review awaits moderation.
+  // The Write/Edit Review pill was removed from cards (1.55.2) and the
+  // review-count pill moved inline next to the stars (1.55.3): this row now
+  // only carries the guest "Review Pending" badge, and is skipped otherwise.
   if (!state.isLoggedIn && state.guestPendingReviews && state.guestPendingReviews.has(tireId)) {
+    const reviewActions = document.createElement('div');
+    reviewActions.className = 'review-actions';
+
     const pendingBadge = document.createElement('span');
     pendingBadge.className = 'review-action-link rtg-review-pending-badge';
     pendingBadge.textContent = 'Review Pending';
     reviewActions.appendChild(pendingBadge);
-  }
 
-  container.appendChild(reviewActions);
+    container.appendChild(reviewActions);
+  }
 
   return container.outerHTML;
 }
