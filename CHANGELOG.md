@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.55.4] - 2026-07-03
+
+### Fixed
+- **The inline review count still rendered as a pill.** The 1.55.3 inline text styling was overridden by a leftover `.view-reviews-btn` pill block (tinted background, border, radius) that sat later in the stylesheet. That block is removed — the count now renders as plain muted underlined text next to the rating, exactly like the tire page's "· 1 rating". Still clickable (opens the reviews drawer); the focus-visible outline is kept for keyboard users.
+
 ## [1.55.3] - 2026-07-03
 
 ### Changed
