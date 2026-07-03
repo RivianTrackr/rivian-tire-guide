@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.52.1] - 2026-07-02
+
+### Fixed
+- **Affiliate/review/image links with query strings were silently broken.** The client-side row sanitizer (`validateAndSanitizeCSVRow`) stripped `< > " ' &` from every string cell, which deleted the `&` separators inside URLs — e.g. `?tireMake=…&tireModel=…&partnum=…` collapsed into a single param, so retailers like TireRack couldn't resolve the product and redirected clicks to their homepage. The affiliate link (index 18), image (19), and review link (22) columns — plus the slug (28) — are now excluded from that strip, matching the existing exception for the JSON `vehicle_breakdown` column (27). These fields are still validated by their own strict allowlist helpers (`safeLinkURL` / `safeImageURL` / `safeReviewLinkURL`) before use, so nothing unsafe slips through. Stored data was never affected — the `&` were always correct in the database; only the rendered link was corrupted.
+
 ## [1.52.0] - 2026-07-02
 
 ### Added
