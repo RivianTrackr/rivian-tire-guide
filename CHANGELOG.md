@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.55.0] - 2026-07-03
+
+### Changed
+- **Guide cards slimmed to the decision drivers, with price and efficiency elevated.** Cards previously carried up to 9 spec rows; now that every tire has a dedicated page carrying the full sheet, cards show only Size, Mileage Warranty, Weight, and 3PMS (Category, Load Index, Speed Rating, and UTQG moved off the card). Average Price and Real-World Efficiency — the top decision factors, and efficiency is also the default sort — are promoted from a mid-list row and a small pill into a prominent two-up **key-stats row** under the rating (matching the tire page's hero stats; the efficiency stat keeps its info tooltip with tracked-miles context). Cards are roughly a third shorter, making the grid much easier to scan and compare. The now-unused Roamer pill styles (`.tire-card-eff*`) were removed.
+
 ## [1.54.3] - 2026-07-03
 
 ### Changed

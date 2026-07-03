@@ -372,26 +372,48 @@ export function createSingleCard(row) {
   ratingDiv.innerHTML = ratingHTML;
   bodyEl.appendChild(ratingDiv);
 
-  // Tags row — real-world (Roamer) efficiency pill and others.
-  const tagsContainer = document.createElement('div');
-  tagsContainer.className = 'tire-card-tags';
+  // Key stats row — Average Price + Real-World Efficiency, elevated above
+  // the spec rows (they're the top decision drivers; efficiency is also the
+  // default sort). Blocks are skipped when the data is missing.
+  const statsRow = document.createElement('div');
+  statsRow.className = 'tire-card-stats';
 
-  // Roamer real-world efficiency pill (mi/kWh from owner vehicles).
+  const priceNum = validateNumeric(price, NUMERIC_BOUNDS.price, 0);
+  if (priceNum > 0) {
+    const priceStat = document.createElement('div');
+    priceStat.className = 'tire-card-stat';
+
+    const priceLabel = document.createElement('div');
+    priceLabel.className = 'tire-card-stat-label';
+    priceLabel.textContent = 'Avg Price';
+
+    const priceValue = document.createElement('div');
+    priceValue.className = 'tire-card-stat-value';
+    priceValue.textContent = `$${priceNum}`;
+
+    priceStat.appendChild(priceLabel);
+    priceStat.appendChild(priceValue);
+    statsRow.appendChild(priceStat);
+  }
+
   const roamerVal = parseFloat(roamerEfficiency);
   if (Number.isFinite(roamerVal) && roamerVal > 0) {
-    const roamerTag = document.createElement('span');
-    roamerTag.className = 'tire-card-eff';
+    const roamerStat = document.createElement('div');
+    roamerStat.className = 'tire-card-stat tire-card-stat-roamer';
 
-    const roamerLabel = document.createElement('span');
-    roamerLabel.className = 'tire-card-eff-grade';
-    roamerLabel.style.backgroundColor = '#3b82f6';
-    roamerLabel.textContent = roamerVal.toFixed(2);
+    const roamerStatLabel = document.createElement('div');
+    roamerStatLabel.className = 'tire-card-stat-label';
+    roamerStatLabel.textContent = 'Efficiency';
 
-    const roamerScore = document.createElement('span');
-    roamerScore.className = 'tire-card-eff-score';
+    const roamerStatValue = document.createElement('div');
+    roamerStatValue.className = 'tire-card-stat-value';
 
-    const roamerText = document.createElement('span');
-    roamerText.textContent = 'mi/kWh';
+    const roamerNum = document.createElement('span');
+    roamerNum.textContent = roamerVal.toFixed(2);
+
+    const roamerUnit = document.createElement('span');
+    roamerUnit.className = 'tire-card-stat-unit';
+    roamerUnit.textContent = 'mi/kWh';
 
     const roamerInfoBtn = document.createElement('button');
     roamerInfoBtn.innerHTML = '' + rtgIcon('circle-info', 14) + '';
@@ -412,12 +434,21 @@ export function createSingleCard(row) {
     roamerInfoBtn.setAttribute('aria-label', 'More info about Real-World Efficiency');
     roamerInfoBtn.setAttribute('type', 'button');
 
-    roamerScore.appendChild(roamerText);
-    roamerScore.appendChild(roamerInfoBtn);
-    roamerTag.appendChild(roamerLabel);
-    roamerTag.appendChild(roamerScore);
-    tagsContainer.appendChild(roamerTag);
+    roamerStatValue.appendChild(roamerNum);
+    roamerStatValue.appendChild(roamerUnit);
+    roamerStatValue.appendChild(roamerInfoBtn);
+    roamerStat.appendChild(roamerStatLabel);
+    roamerStat.appendChild(roamerStatValue);
+    statsRow.appendChild(roamerStat);
   }
+
+  if (statsRow.children.length > 0) {
+    bodyEl.appendChild(statsRow);
+  }
+
+  // Tags row — kept for future pills; only appended when populated.
+  const tagsContainer = document.createElement('div');
+  tagsContainer.className = 'tire-card-tags';
 
   if (tagsContainer.children.length > 0) {
     bodyEl.appendChild(tagsContainer);
@@ -426,29 +457,18 @@ export function createSingleCard(row) {
   const specsContainer = document.createElement('div');
   specsContainer.className = 'tire-card-specs';
 
-  // Specs shown on the default card view. Tread depth, max load, load range,
-  // and max PSI are intentionally hidden here — they're cryptic for most
-  // buyers. They still live in the database, admin form, CSV import/export,
-  // and the compare page for power users who want the full spec sheet.
-  //
-  // UTQG is shown only when the tire actually has a UTQG value — when it's
-  // empty or literally "None" the row is skipped so the card doesn't
-  // advertise missing data.
+  // Specs shown on the default card view — only the decision drivers.
+  // Category, Load Index, Speed Rating, UTQG, tread depth, max load, load
+  // range, and max PSI are intentionally not on the card: they're secondary
+  // or cryptic when scanning a grid, and the full spec sheet lives one click
+  // away on the individual tire page (plus the compare page, admin form, and
+  // CSV import/export). Average Price moved up into the key-stats row.
   const specs = [
     ['Size', `${safeString(size)} (${safeString(diameter)}${safeString(diameter) && !safeString(diameter).includes('"') ? '"' : ''})`],
-    ['Category', safeString(category)],
-    ['Average Price', price ? `$${validateNumeric(price, NUMERIC_BOUNDS.price)}` : '-'],
     ['Mileage Warranty', warranty ? `${Number(validateNumeric(warranty, NUMERIC_BOUNDS.warranty)).toLocaleString()} miles` : '-'],
     ['Weight', weight ? `${validateNumeric(weight, NUMERIC_BOUNDS.weight)} lb` : '-'],
-    ['3PMS Rated', safeString(tpms)],
-    ['Load Index', safeString(loadIndex)],
-    ['Speed Rating', safeString(speed)]
+    ['3PMS Rated', safeString(tpms)]
   ];
-
-  const utqgValue = safeString(utqg).trim();
-  if (utqgValue && utqgValue.toLowerCase() !== 'none') {
-    specs.push(['UTQG', utqgValue]);
-  }
 
   specs.forEach(([label, value]) => {
     const specRow = document.createElement('div');
