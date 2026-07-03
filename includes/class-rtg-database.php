@@ -135,6 +135,49 @@ class RTG_Database {
     }
 
     /**
+     * Apply an admin-chosen slug to a tire (manual override of the generated
+     * one). Enforces uniqueness (tire_id suffix on conflict) and records a
+     * 301 redirect from the previous slug.
+     *
+     * @param string $tire_id   Tire identifier.
+     * @param string $requested Desired slug (will be sanitized).
+     * @return string The slug actually stored ('' if the tire is missing).
+     */
+    public static function set_tire_slug( $tire_id, $requested ) {
+        global $wpdb;
+        $table = self::tires_table();
+
+        $tire = self::get_tire( $tire_id );
+        if ( ! $tire ) {
+            return '';
+        }
+
+        $slug    = sanitize_title( $requested );
+        $current = (string) ( $tire['slug'] ?? '' );
+        if ( '' === $slug || $slug === $current ) {
+            return $current;
+        }
+
+        $conflict = $wpdb->get_var( $wpdb->prepare(
+            "SELECT tire_id FROM {$table} WHERE slug = %s AND tire_id != %s LIMIT 1",
+            $slug,
+            $tire_id
+        ) );
+        if ( $conflict ) {
+            $slug .= '-' . sanitize_title( $tire_id );
+        }
+
+        $wpdb->update( $table, array( 'slug' => $slug ), array( 'tire_id' => $tire_id ), array( '%s' ), array( '%s' ) );
+
+        if ( '' !== $current ) {
+            self::remember_slug_redirect( $current, $tire_id );
+        }
+
+        self::flush_cache();
+        return $slug;
+    }
+
+    /**
      * Resolve a retired slug to its tire_id, if a redirect is recorded.
      *
      * @param string $slug Old slug from the URL.
@@ -596,7 +639,7 @@ class RTG_Database {
         global $wpdb;
         $table = self::tires_table();
 
-        $allowed_orderby = array( 'id', 'tire_id', 'brand', 'model', 'size', 'category', 'price', 'mileage_warranty', 'weight_lb', 'efficiency_score', 'efficiency_grade', 'load_index' );
+        $allowed_orderby = array( 'id', 'tire_id', 'brand', 'model', 'size', 'category', 'price', 'mileage_warranty', 'weight_lb', 'efficiency_score', 'efficiency_grade', 'load_index', 'slug' );
         if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
             $orderby = 'id';
         }

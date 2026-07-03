@@ -11,6 +11,8 @@ $notices = array(
     'updated'      => array( 'success', 'Tire updated successfully.' ),
     'deleted'      => array( 'success', 'Tire deleted successfully.' ),
     'bulk_deleted' => array( 'success', 'Selected tires deleted successfully.' ),
+    'bulk_edited'  => array( 'success', 'Selected tires updated successfully.' ),
+    'bulk_edit_empty' => array( 'error', 'No changes were entered — nothing was updated.' ),
     'duplicated'   => array( 'success', 'Tire duplicated successfully. You are now editing the copy.' ),
     'recalculated' => array( 'success', 'Efficiency scores recalculated. ' . $recalc_count . ' tire(s) updated.' ),
     'error'        => array( 'error', 'An error occurred.' ),
@@ -74,7 +76,6 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
     <div class="rtg-page-header">
         <h1 class="rtg-page-title">Tire Guide</h1>
         <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit' ) ); ?>" class="rtg-page-title-action">Add New</a>
-        <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=rtg-tires&action=recalculate_efficiency' ), 'rtg_recalculate_efficiency' ) ); ?>" class="rtg-page-title-action" style="background:#f5f5f7;color:#1d1d1f;" onclick="return confirm('Recalculate efficiency scores for all tires?');">Recalculate Grades</a>
     </div>
 
     <!-- Search & Filters -->
@@ -118,6 +119,7 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
                 <div class="rtg-bulk-actions">
                     <select name="rtg_bulk_action">
                         <option value="">Bulk Actions</option>
+                        <option value="bulk_edit">Edit</option>
                         <option value="delete">Delete</option>
                     </select>
                     <button type="submit" class="rtg-btn rtg-btn-secondary">Apply</button>
@@ -162,8 +164,8 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
                             <th class="sortable <?php echo $orderby === 'price' ? 'sorted' : ''; ?>">
                                 <a href="<?php echo esc_url( $sort_url( 'price' ) ); ?>">Price<?php echo $sort_indicator( 'price' ); ?></a>
                             </th>
-                            <th class="sortable <?php echo $orderby === 'efficiency_grade' ? 'sorted' : ''; ?>">
-                                <a href="<?php echo esc_url( $sort_url( 'efficiency_grade' ) ); ?>">Grade<?php echo $sort_indicator( 'efficiency_grade' ); ?></a>
+                            <th class="sortable <?php echo $orderby === 'slug' ? 'sorted' : ''; ?>">
+                                <a href="<?php echo esc_url( $sort_url( 'slug' ) ); ?>">Slug<?php echo $sort_indicator( 'slug' ); ?></a>
                             </th>
                             <th>Tags</th>
                         </tr>
@@ -208,7 +210,11 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
                                             <span class="duplicate">
                                                 <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=rtg-tires&action=duplicate&tire_id=' . $tire['tire_id'] ), 'rtg_duplicate_' . $tire['tire_id'] ) ); ?>">Duplicate</a> |
                                             </span>
-                                            <?php if ( $rtg_guide_url ) : ?>
+                                            <?php if ( ! empty( $tire['slug'] ) ) : ?>
+                                            <span class="view">
+                                                <a href="<?php echo esc_url( RTG_Tire_Page::tire_url( $tire['slug'] ) ); ?>" target="_blank" rel="noopener noreferrer">View Page</a> |
+                                            </span>
+                                            <?php elseif ( $rtg_guide_url ) : ?>
                                             <span class="view">
                                                 <a href="<?php echo esc_url( add_query_arg( 'tire', $tire['tire_id'], $rtg_guide_url ) ); ?>" target="_blank" rel="noopener noreferrer">View</a> |
                                             </span>
@@ -225,13 +231,11 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
                                     <td><?php echo esc_html( $tire['category'] ); ?></td>
                                     <td>$<?php echo esc_html( number_format( $tire['price'], 2 ) ); ?></td>
                                     <td>
-                                        <?php
-                                        $grade = strtoupper( $tire['efficiency_grade'] );
-                                        $grade_class = $grade ? 'rtg-grade-' . strtolower( $grade ) : 'rtg-grade-none';
-                                        ?>
-                                        <span class="rtg-grade <?php echo esc_attr( $grade_class ); ?>">
-                                            <?php echo esc_html( $grade ?: '-' ); ?>
-                                        </span>
+                                        <?php if ( ! empty( $tire['slug'] ) ) : ?>
+                                            <a href="<?php echo esc_url( RTG_Tire_Page::tire_url( $tire['slug'] ) ); ?>" target="_blank" rel="noopener noreferrer" style="font-family:monospace;font-size:12px;"><?php echo esc_html( $tire['slug'] ); ?></a>
+                                        <?php else : ?>
+                                            <span style="color:#86868b;">—</span>
+                                        <?php endif; ?>
                                     </td>
                                     <td><?php echo esc_html( $tire['tags'] ); ?></td>
                                 </tr>

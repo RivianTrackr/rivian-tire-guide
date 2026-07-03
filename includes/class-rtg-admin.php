@@ -384,6 +384,16 @@ class RTG_Admin {
             $this->handle_bulk_delete();
         }
 
+        // Bulk edit: step 1 — selection posted from the list, redirect to the form.
+        if ( isset( $_POST['rtg_bulk_action'] ) && $_POST['rtg_bulk_action'] === 'bulk_edit' ) {
+            $this->handle_bulk_edit_select();
+        }
+
+        // Bulk edit: step 2 — apply the posted field changes.
+        if ( isset( $_POST['rtg_bulk_edit_save'] ) ) {
+            $this->handle_bulk_edit_save();
+        }
+
         // Handle wheel save.
         if ( isset( $_POST['rtg_wheel_save'] ) ) {
             $this->handle_wheel_save();
@@ -535,6 +545,13 @@ class RTG_Admin {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
         }
+
+        // Bulk edit form (step between selecting tires and applying changes).
+        if ( isset( $_GET['action'] ) && 'bulk_edit' === $_GET['action'] && ! empty( $_GET['ids'] ) ) {
+            require_once RTG_PLUGIN_DIR . 'admin/views/tire-bulk-edit.php';
+            return;
+        }
+
         require_once RTG_PLUGIN_DIR . 'admin/views/tire-list.php';
     }
 
@@ -706,6 +723,17 @@ class RTG_Admin {
                 exit;
             }
             RTG_Database::update_tire( $existing['tire_id'], $data );
+
+            // Manual slug override — applied only when the admin actually
+            // changed the field (compared against the PRE-save slug, so an
+            // untouched field doesn't undo the automatic re-slug that
+            // update_tire performs when brand/model/size change).
+            $posted_slug = sanitize_title( wp_unslash( $post['slug'] ?? '' ) );
+            $pre_slug    = (string) ( $existing['slug'] ?? '' );
+            if ( '' !== $posted_slug && $posted_slug !== $pre_slug ) {
+                RTG_Database::set_tire_slug( $existing['tire_id'], $posted_slug );
+            }
+
             wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=updated' ) );
         } else {
             // Check uniqueness.
@@ -748,6 +776,107 @@ class RTG_Admin {
         }
 
         wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=bulk_deleted' ) );
+        exit;
+    }
+
+    /**
+     * Bulk edit step 1: validate the selection from the list table and
+     * redirect to the bulk-edit form with the ids in the URL.
+     */
+    private function handle_bulk_edit_select() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Unauthorized' );
+        }
+
+        check_admin_referer( 'rtg_bulk_action', 'rtg_bulk_nonce' );
+
+        $tire_ids = array_filter( array_map( 'sanitize_text_field', $_POST['tire_ids'] ?? array() ), array( 'RTG_Database', 'validate_tire_id' ) );
+        if ( empty( $tire_ids ) ) {
+            wp_redirect( admin_url( 'admin.php?page=rtg-tires' ) );
+            exit;
+        }
+
+        $url = add_query_arg(
+            array(
+                'page'   => 'rtg-tires',
+                'action' => 'bulk_edit',
+                'ids'    => rawurlencode( implode( ',', $tire_ids ) ),
+            ),
+            admin_url( 'admin.php' )
+        );
+        wp_redirect( $url );
+        exit;
+    }
+
+    /**
+     * Bulk edit step 2: apply posted field changes to every selected tire.
+     * Blank fields are left untouched ("leave blank to keep").
+     */
+    private function handle_bulk_edit_save() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Unauthorized' );
+        }
+
+        check_admin_referer( 'rtg_bulk_edit', 'rtg_bulk_edit_nonce' );
+
+        $post     = wp_unslash( $_POST );
+        $tire_ids = array_filter( array_map( 'sanitize_text_field', $post['tire_ids'] ?? array() ), array( 'RTG_Database', 'validate_tire_id' ) );
+        if ( empty( $tire_ids ) ) {
+            wp_redirect( admin_url( 'admin.php?page=rtg-tires' ) );
+            exit;
+        }
+
+        // Only fields the admin filled in are applied.
+        $changes = array();
+
+        $category = sanitize_text_field( $post['bulk_category'] ?? '' );
+        if ( '' !== $category ) {
+            $changes['category'] = $category;
+        }
+
+        if ( isset( $post['bulk_price'] ) && '' !== trim( (string) $post['bulk_price'] ) ) {
+            $changes['price'] = floatval( $post['bulk_price'] );
+        }
+
+        if ( isset( $post['bulk_warranty'] ) && '' !== trim( (string) $post['bulk_warranty'] ) ) {
+            $changes['mileage_warranty'] = intval( $post['bulk_warranty'] );
+        }
+
+        $tags_value = sanitize_text_field( $post['bulk_tags'] ?? '' );
+        $tags_mode  = ( 'replace' === ( $post['bulk_tags_mode'] ?? '' ) ) ? 'replace' : 'append';
+
+        if ( empty( $changes ) && '' === $tags_value ) {
+            wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=bulk_edit_empty' ) );
+            exit;
+        }
+
+        foreach ( $tire_ids as $tire_id ) {
+            $data = $changes;
+
+            if ( '' !== $tags_value ) {
+                if ( 'replace' === $tags_mode ) {
+                    $data['tags'] = $tags_value;
+                } else {
+                    // Append, deduplicated, comma-separated.
+                    $tire     = RTG_Database::get_tire( $tire_id );
+                    $existing = array_filter( array_map( 'trim', explode( ',', (string) ( $tire['tags'] ?? '' ) ) ) );
+                    $incoming = array_filter( array_map( 'trim', explode( ',', $tags_value ) ) );
+                    $merged   = $existing;
+                    foreach ( $incoming as $tag ) {
+                        if ( ! in_array( strtolower( $tag ), array_map( 'strtolower', $merged ), true ) ) {
+                            $merged[] = $tag;
+                        }
+                    }
+                    $data['tags'] = implode( ', ', $merged );
+                }
+            }
+
+            if ( ! empty( $data ) ) {
+                RTG_Database::update_tire( $tire_id, $data );
+            }
+        }
+
+        wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=bulk_edited' ) );
         exit;
     }
 

@@ -94,6 +94,20 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                         <?php endif; ?>
                         <input type="text" id="tire_id" name="tire_id" value="<?php echo esc_attr( $v['tire_id'] ); ?>" placeholder="Auto-generated if blank" <?php echo $is_edit ? 'readonly' : ''; ?>>
                     </div>
+                    <?php if ( $is_edit ) : ?>
+                    <div class="rtg-field-row">
+                        <div class="rtg-field-label-row">
+                            <label class="rtg-field-label" for="slug">URL Slug</label>
+                        </div>
+                        <p class="rtg-field-description">
+                            <?php if ( ! empty( $v['slug'] ) ) : ?>
+                                Public page: <a href="<?php echo esc_url( RTG_Tire_Page::tire_url( $v['slug'] ) ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( RTG_Tire_Page::tire_url( $v['slug'] ) ); ?></a>.
+                            <?php endif; ?>
+                            Editing creates a 301 redirect from the old slug. Regenerates automatically when brand, model, or size change.
+                        </p>
+                        <input type="text" id="slug" name="slug" value="<?php echo esc_attr( $v['slug'] ?? '' ); ?>" style="font-family:monospace;">
+                    </div>
+                    <?php endif; ?>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">
                             <label class="rtg-field-label" for="brand">Brand <span class="rtg-badge-required">Required</span></label>
@@ -343,23 +357,9 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                         </div>
                         <?php endif; ?>
                     </div>
-                    <div class="rtg-field-row">
-                        <div class="rtg-field-label-row">
-                            <label class="rtg-field-label">Efficiency Score &amp; Grade</label>
-                            <span class="rtg-badge rtg-badge-info">Auto-calculated</span>
-                        </div>
-                        <p class="rtg-field-description">Calculated from weight, tread, width, load range, speed rating, UTQG, category, and 3PMS.</p>
-                        <div id="rtg-efficiency-preview" style="display:flex;align-items:center;gap:12px;margin-top:8px;">
-                            <?php
-                            $current_score = intval( $v['efficiency_score'] );
-                            $current_grade = strtoupper( $v['efficiency_grade'] );
-                            $grade_class = $current_grade ? 'rtg-grade-' . strtolower( $current_grade ) : 'rtg-grade-none';
-                            ?>
-                            <span id="rtg-eff-grade" class="rtg-grade <?php echo esc_attr( $grade_class ); ?>"><?php echo esc_html( $current_grade ?: '-' ); ?></span>
-                            <span id="rtg-eff-score" style="font-size:20px;font-weight:600;color:#1d1d1f;"><?php echo esc_html( $current_score ); ?></span>
-                            <span style="font-size:14px;color:#86868b;">/ 100</span>
-                        </div>
-                    </div>
+                    <?php // Efficiency score/grade still auto-calculate on save (kept in the
+                          // DB for potential future use) but are no longer surfaced here —
+                          // the metric was removed from the frontend in 1.51.0. ?>
                     <input type="hidden" name="sort_order" value="<?php echo esc_attr( $v['sort_order'] ); ?>">
                 </div>
             </div>
