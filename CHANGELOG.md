@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.51.0] - 2026-07-02
+
+### Changed
+- **Discontinued the proprietary efficiency score in the frontend.** The calculated efficiency badge (A–F grade + 0–100 value) no longer appears on tire cards or the compare page, the "Efficiency Grade" sort option is removed, and its info tooltip is gone. The default sort across every mode (client, server-side pagination, and the public REST `/tires` endpoint) is now "Real-World Efficiency" (Roamer mi/kWh) so results are no longer ordered by the discontinued score; `efficiency_score` remains an accepted REST sort value for backward compatibility. This is a frontend-only change and fully reversible — the `efficiency_score` / `efficiency_grade` DB columns, the calculation engine, `recalculate_all_efficiency`, the admin tire-edit preview and "Recalculate Grades" action, CSV import/export, and the efficiency-calc endpoints are all untouched, and the stored values still flow through the tire payload. Roamer real-world efficiency (mi/kWh) is unaffected.
+
 ## [1.50.2] - 2026-06-17
 
 ### Removed
