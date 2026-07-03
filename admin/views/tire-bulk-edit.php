@@ -18,7 +18,7 @@ foreach ( $rtg_ids as $rtg_id ) {
 }
 $rtg_categories = RTG_Admin::get_dropdown_options( 'categories' );
 ?>
-<div class="wrap rtg-admin">
+<div class="rtg-wrap">
     <div class="rtg-page-header">
         <h1 class="rtg-page-title">Bulk Edit — <?php echo count( $rtg_sel ); ?> tire<?php echo count( $rtg_sel ) !== 1 ? 's' : ''; ?></h1>
         <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires' ) ); ?>" class="rtg-page-title-action" style="background:#f5f5f7;color:#1d1d1f;">Cancel</a>
