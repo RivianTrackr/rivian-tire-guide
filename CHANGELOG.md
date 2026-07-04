@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.58.4] - 2026-07-04
+
+### Added
+- **Info (i) tooltips on individual tire pages**, matching the main guide: the Real-World Efficiency hero stat (including the per-tire tracked-miles context) and the Load Index, 3PMS Rated, and UTQG spec rows now carry the same info icons and explainer modals (dark modal, gold title, Escape/backdrop/Got-it close, focus return). Implemented self-contained in `tire-page.js` since the page can't load the guide bundle; the copy is duplicated from `tooltips.js` with a keep-in-sync note.
+
 ## [1.58.3] - 2026-07-04
 
 ### Fixed
