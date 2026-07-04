@@ -123,10 +123,12 @@ if ( $roamer_eff > 0 ) {
         $meta[] = $r_veh . ' vehicle' . ( 1 === $r_veh ? '' : 's' );
     }
     $hero_stats[] = array(
-        'label' => 'Real-World Efficiency',
-        'value' => number_format( $roamer_eff, 2 ) . ' mi/kWh',
-        'meta'  => implode( ' · ', $meta ),
-        'class' => 'rtg-tp-stat-roamer',
+        'label'         => 'Real-World Efficiency',
+        'value'         => number_format( $roamer_eff, 2 ) . ' mi/kWh',
+        'meta'          => implode( ' · ', $meta ),
+        'class'         => 'rtg-tp-stat-roamer',
+        'tooltip'       => 'Real-World Efficiency',
+        'tooltip_extra' => implode( ' · ', $meta ),
     );
 }
 if ( $tire['price'] > 0 ) {
@@ -253,7 +255,17 @@ $spec_groups = array(
   /* --- Hero key stats --- */
   .rtg-tp .rtg-tp-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 0 0 22px; }
   .rtg-tp .rtg-tp-stat { background: var(--rtg-tp-deep); border: 1px solid var(--rtg-tp-divider); border-radius: 10px; padding: 12px 14px; }
-  .rtg-tp .rtg-tp-stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--rtg-tp-muted); margin: 0 0 4px; }
+  .rtg-tp .rtg-tp-stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--rtg-tp-muted); margin: 0 0 4px; display: flex; align-items: center; gap: 5px; }
+  .rtg-tp .info-tooltip-trigger {
+    background: none; border: none; padding: 2px; margin: 0;
+    color: var(--rtg-tp-muted); font-size: 13px; line-height: 1;
+    cursor: pointer; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: color 0.15s ease;
+  }
+  .rtg-tp .info-tooltip-trigger:hover { color: var(--rtg-tp-accent); }
+  .rtg-tp .info-tooltip-trigger:focus-visible { outline: 2px solid var(--rtg-tp-accent); outline-offset: 2px; }
+  .rtg-tp .rtg-tp-spec-label { display: inline-flex; align-items: center; gap: 5px; }
   .rtg-tp .rtg-tp-stat-value { font-size: 20px; font-weight: 600; line-height: 1.2; color: var(--rtg-tp-heading); font-variant-numeric: tabular-nums; }
   .rtg-tp .rtg-tp-stat-meta { font-size: 12px; color: var(--rtg-tp-muted); margin-top: 2px; }
   .rtg-tp .rtg-tp-stat-roamer .rtg-tp-stat-value { color: #60a5fa; }
@@ -369,7 +381,14 @@ $spec_groups = array(
       <div class="rtg-tp-stats">
         <?php foreach ( $hero_stats as $stat ) : ?>
         <div class="rtg-tp-stat <?php echo esc_attr( $stat['class'] ); ?>">
-          <div class="rtg-tp-stat-label"><?php echo esc_html( $stat['label'] ); ?></div>
+          <div class="rtg-tp-stat-label">
+            <?php echo esc_html( $stat['label'] ); ?>
+            <?php if ( ! empty( $stat['tooltip'] ) ) : ?>
+            <button type="button" class="info-tooltip-trigger" data-tooltip-key="<?php echo esc_attr( $stat['tooltip'] ); ?>"<?php echo ! empty( $stat['tooltip_extra'] ) ? ' data-tooltip-extra="' . esc_attr( $stat['tooltip_extra'] ) . '"' : ''; ?> aria-label="More info about <?php echo esc_attr( $stat['label'] ); ?>">
+              <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+            </button>
+            <?php endif; ?>
+          </div>
           <div class="rtg-tp-stat-value"><?php echo esc_html( $stat['value'] ); ?></div>
           <?php if ( $stat['meta'] ) : ?><div class="rtg-tp-stat-meta"><?php echo esc_html( $stat['meta'] ); ?></div><?php endif; ?>
         </div>
@@ -409,7 +428,14 @@ $spec_groups = array(
       </div>
       <?php foreach ( $group_rows as $label => $value ) : ?>
       <div class="rtg-tp-spec-row">
-        <span class="rtg-tp-spec-label"><?php echo esc_html( $label ); ?></span>
+        <span class="rtg-tp-spec-label">
+          <?php echo esc_html( $label ); ?>
+          <?php if ( in_array( $label, array( 'Load Index', '3PMS Rated', 'UTQG' ), true ) ) : ?>
+          <button type="button" class="info-tooltip-trigger" data-tooltip-key="<?php echo esc_attr( $label ); ?>" aria-label="More info about <?php echo esc_attr( $label ); ?>">
+            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+          </button>
+          <?php endif; ?>
+        </span>
         <span class="rtg-tp-spec-value"><?php echo esc_html( $value ); ?></span>
       </div>
       <?php endforeach; ?>
