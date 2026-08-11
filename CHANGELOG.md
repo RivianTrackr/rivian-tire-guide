@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.58.5] - 2026-08-11
+
+### Changed
+- **Roamer efficiency sync now runs every 5 minutes** instead of twice daily. A `rtg_five_minutes` recurrence is registered alongside the existing `weekly` one, and `RTG_Roamer_Sync::schedule()` now repairs an already-scheduled event that is on a different recurrence, so existing installs move off `twicedaily` on upgrade rather than keeping the old event forever. Failure emails are unaffected — the mailer still throttles to one per reason per 12 hours. Note that on sites without a real system cron, WP-Cron only fires on page loads, so the effective interval is bounded by site traffic.
+
 ## [1.58.4] - 2026-07-04
 
 ### Added

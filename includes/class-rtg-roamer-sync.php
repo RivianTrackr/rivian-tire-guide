@@ -18,6 +18,9 @@ class RTG_Roamer_Sync {
     /** WP-Cron hook name. */
     const CRON_HOOK = 'rtg_roamer_sync';
 
+    /** Cron recurrence key, registered in the plugin bootstrap. */
+    const CRON_RECURRENCE = 'rtg_five_minutes';
+
     /** Default Rivian Roamer feed URL. */
     const DEFAULT_URL = 'https://rivianroamer.com/guides/tire-efficiency.json';
 
@@ -31,12 +34,25 @@ class RTG_Roamer_Sync {
     const REQUEST_TIMEOUT = 15;
 
     /**
-     * Schedule the twicedaily cron event if not already scheduled.
+     * Schedule the sync on the five-minute recurrence.
+     *
+     * Runs on every load, so it also repairs the schedule of installs that
+     * were set up on an older recurrence (the sync ran twicedaily before
+     * 1.58.5) — an existing event on any other recurrence is cleared and
+     * re-registered rather than left alone.
      */
     public static function schedule() {
-        if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
-            wp_schedule_event( time(), 'twicedaily', self::CRON_HOOK );
+        $event = wp_get_scheduled_event( self::CRON_HOOK );
+
+        if ( $event && self::CRON_RECURRENCE === $event->schedule ) {
+            return;
         }
+
+        if ( $event ) {
+            wp_clear_scheduled_hook( self::CRON_HOOK );
+        }
+
+        wp_schedule_event( time(), self::CRON_RECURRENCE, self::CRON_HOOK );
     }
 
     /**

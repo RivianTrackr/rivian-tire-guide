@@ -26,7 +26,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Single Source of Truth** — Calculation lives in `RTG_Database::calculate_efficiency()`. Admin form uses AJAX to call the PHP formula directly.
 
 ### Real-World Efficiency (Rivian Roamer)
-- **Live Data Sync** — Integrates real-world mi/kWh efficiency data from [Rivian Roamer](https://rivianroamer.com), collected from actual Rivian owner driving sessions. Syncs automatically twice daily via WP-Cron.
+- **Live Data Sync** — Integrates real-world mi/kWh efficiency data from [Rivian Roamer](https://rivianroamer.com), collected from actual Rivian owner driving sessions. Syncs automatically every 5 minutes via WP-Cron.
 - **Admin Mapping** — Auto-matches tires by brand + model + size. Ambiguous matches (same tire, different load ratings) are flagged for manual review on the Roamer Sync admin page. Multiple Roamer entries can be assigned to one tire with weighted-average efficiency.
 - **Tire Cards** — Blue mi/kWh pill badge displayed alongside the calculated efficiency badge, with its own info tooltip linking to Rivian Roamer.
 - **Sort & Compare** — "Real-World Efficiency" sort option and comparison row in Performance section.

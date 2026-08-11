@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Rivian Tire Guide
  * Description: Interactive tire guide for Rivian vehicles with filtering, comparison, and ratings.
- * Version: 1.58.4
+ * Version: 1.58.5
  * Author: RivianTrackr
  * Text Domain: rivian-tire-guide
  * Requires at least: 5.8
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'RTG_VERSION', '1.58.4' );
+define( 'RTG_VERSION', '1.58.5' );
 define( 'RTG_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'RTG_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'RTG_PLUGIN_FILE', __FILE__ );
@@ -41,12 +41,18 @@ spl_autoload_register( function ( $class ) {
 register_activation_hook( __FILE__, array( 'RTG_Activator', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'RTG_Deactivator', 'deactivate' ) );
 
-// Add a "weekly" cron schedule (WordPress only provides hourly, twicedaily, daily).
+// Add custom cron schedules (WordPress only provides hourly, twicedaily, daily).
 add_filter( 'cron_schedules', function ( $schedules ) {
     if ( ! isset( $schedules['weekly'] ) ) {
         $schedules['weekly'] = array(
             'interval' => WEEK_IN_SECONDS,
             'display'  => 'Once Weekly',
+        );
+    }
+    if ( ! isset( $schedules[ RTG_Roamer_Sync::CRON_RECURRENCE ] ) ) {
+        $schedules[ RTG_Roamer_Sync::CRON_RECURRENCE ] = array(
+            'interval' => 5 * MINUTE_IN_SECONDS,
+            'display'  => 'Every Five Minutes',
         );
     }
     return $schedules;
@@ -69,7 +75,7 @@ function rtg_init() {
     RTG_Link_Checker::schedule();
     add_action( RTG_Link_Checker::CRON_HOOK, array( 'RTG_Link_Checker', 'run' ) );
 
-    // Schedule twicedaily Rivian Roamer efficiency data sync.
+    // Schedule the five-minute Rivian Roamer efficiency data sync.
     RTG_Roamer_Sync::schedule();
     add_action( RTG_Roamer_Sync::CRON_HOOK, array( 'RTG_Roamer_Sync', 'run' ) );
 

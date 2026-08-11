@@ -43,7 +43,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                         <td>
                             <label>
                                 <input type="checkbox" name="roamer_sync_enabled" id="roamer_sync_enabled" value="1" <?php checked( $sync_enabled ); ?>>
-                                Automatically sync efficiency data twice daily
+                                Automatically sync efficiency data every 5 minutes
                             </label>
                         </td>
                     </tr>
