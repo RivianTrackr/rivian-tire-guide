@@ -29,6 +29,33 @@
         <!-- Allow inline SQL — the plugin uses $wpdb->prepare() correctly. -->
         <exclude name="WordPress.DB.DirectDatabaseQuery.DirectQuery"/>
         <exclude name="WordPress.DB.DirectDatabaseQuery.NoCaching"/>
+
+        <!--
+            House formatting style. This codebase indents with four spaces
+            rather than tabs, does not align assignments or array arrows into
+            columns, and keeps short function calls on one line. Those are
+            deliberate and consistent throughout; left enabled they produce
+            over 11,000 findings that bury everything worth reading.
+        -->
+        <exclude name="Generic.WhiteSpace.DisallowSpaceIndent"/>
+        <exclude name="Generic.WhiteSpace.ScopeIndent"/>
+        <exclude name="Universal.WhiteSpace.PrecisionAlignment"/>
+        <exclude name="Generic.Formatting.MultipleStatementAlignment"/>
+        <exclude name="WordPress.Arrays.MultipleStatementAlignment"/>
+        <exclude name="WordPress.Arrays.ArrayDeclarationSpacing"/>
+        <exclude name="WordPress.WhiteSpace.OperatorSpacing"/>
+        <exclude name="PEAR.Functions.FunctionCallSignature"/>
+        <exclude name="Squiz.Functions.MultiLineFunctionDeclaration"/>
+        <exclude name="Squiz.PHP.EmbeddedPhp"/>
+
+        <!--
+            Syntax preferences the plugin consistently does the other way:
+            conditions are written subject-first, short ternaries and
+            standalone post-increment are used freely.
+        -->
+        <exclude name="WordPress.PHP.YodaConditions"/>
+        <exclude name="Universal.Operators.DisallowShortTernary"/>
+        <exclude name="Universal.Operators.DisallowStandalonePostIncrementDecrement"/>
     </rule>
 
     <!-- Verify text domain consistency. -->
