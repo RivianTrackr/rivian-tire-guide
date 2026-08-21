@@ -5,6 +5,10 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main]
+  # Allows a run to be started from the Actions tab without pushing a commit
+  # — useful for re-running after a transient failure, and for checking the
+  # workflow itself after editing it.
+  workflow_dispatch:
 
 permissions:
   contents: read
