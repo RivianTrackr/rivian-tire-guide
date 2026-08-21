@@ -5,6 +5,10 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main]
+  # Allows a run to be started from the Actions tab without pushing a commit
+  # — useful for re-running after a transient failure, and for checking the
+  # workflow itself after editing it.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -55,13 +59,6 @@ jobs:
   phpcs:
     name: PHP Coding Standards
     runs-on: ubuntu-latest
-    # Advisory, not blocking. The ruleset is tuned to the plugin's house
-    # formatting, but ~380 substantive findings remain (unprepared SQL
-    # interpolation, missing nonce checks, unescaped output, absent
-    # docblocks). Those are worth working down, and the annotations below
-    # show where; failing the build on them today would only get this
-    # workflow switched off again.
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -75,5 +72,16 @@ jobs:
           composer global config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
           composer global require --dev wp-coding-standards/wpcs:"^3.0" phpcompatibility/phpcompatibility-wp:"*" dealerdirect/phpcodesniffer-composer-installer:"^1.0"
 
+      # Advisory, not blocking. The ruleset is tuned to the plugin's house
+      # formatting, but ~380 substantive findings remain (unprepared SQL
+      # interpolation, missing nonce checks, unescaped output, absent
+      # docblocks). Those are worth working down, and the annotations show
+      # where; failing on them today would leave a permanently red check,
+      # which is what got this workflow switched off before.
+      #
+      # continue-on-error belongs on the step, not the job: at job level the
+      # run still goes green but the job's own check stays red, which is the
+      # red X this is meant to avoid.
       - name: Run PHPCS
+        continue-on-error: true
         run: $(composer global config bin-dir --absolute)/phpcs --standard=.phpcs.xml --report=checkstyle | cs2pr
