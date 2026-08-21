@@ -151,16 +151,18 @@ class RTG_Roamer_Sync {
         $linked_map = array(); // roamer_tire_id => tire_id
         // 2. Map normalized key → array of local tire_ids (for auto-matching).
         $norm_map = array(); // normalized_key => [ tire_id, tire_id, ... ]
+        // 3. Map tire_id → the Roamer IDs it already carries, so newly
+        //    auto-matched IDs are appended rather than replacing the list.
+        $existing_ids = array(); // tire_id => [ roamer_tire_id, ... ]
 
         foreach ( $local_tires as $tire ) {
             if ( ! empty( $tire['roamer_tire_id'] ) ) {
                 // Support comma-separated roamer_tire_ids (from multi-assign).
-                $ids = array_map( 'trim', explode( ',', $tire['roamer_tire_id'] ) );
+                $ids = array_values( array_filter( array_map( 'trim', explode( ',', $tire['roamer_tire_id'] ) ) ) );
                 foreach ( $ids as $rid ) {
-                    if ( ! empty( $rid ) ) {
-                        $linked_map[ $rid ] = $tire['tire_id'];
-                    }
+                    $linked_map[ $rid ] = $tire['tire_id'];
                 }
+                $existing_ids[ $tire['tire_id'] ] = $ids;
             }
 
             $key = self::normalize_key( $tire['brand'], $tire['model'], $tire['size'] );
@@ -176,6 +178,12 @@ class RTG_Roamer_Sync {
         $ambiguous_list = array();
         $unmatched_list = array();
         $now = current_time( 'mysql' );
+
+        // Feed entries destined for the same guide tire are collected here and
+        // written once, merged, after the loop. Writing per entry would let a
+        // tire linked to several Roamer IDs be overwritten by whichever ID the
+        // feed happens to list last.
+        $pending = array(); // tire_id => [ 'entries' => [], 'new_ids' => [] ]
 
         // Load permanently hidden Roamer IDs so they are excluded from unmatched.
         $hidden_ids = get_option( self::HIDDEN_OPTION, array() );
@@ -193,18 +201,19 @@ class RTG_Roamer_Sync {
             }
 
             // Source value is km/kWh — convert to mi/kWh for storage and display.
+            // Keys match the shape merge_entries() and the ambiguous/unmatched
+            // lists expect.
             $breakdown_raw = $roamer_tire['vehicle_breakdown'] ?? array();
-            $eff_data = array(
-                'roamer_efficiency'         => round( floatval( $roamer_tire['efficiency_km_per_kwh'] ?? 0 ) * 0.621371, 2 ),
-                'roamer_total_km'           => floatval( $roamer_tire['total_distance_km'] ?? 0 ),
-                'roamer_vehicle_count'      => intval( $roamer_tire['vehicle_count'] ?? 0 ),
-                'roamer_vehicle_breakdown'  => is_array( $breakdown_raw ) ? wp_json_encode( $breakdown_raw ) : '',
-                'roamer_synced_at'          => $now,
+            $entry = array(
+                'efficiency'        => round( floatval( $roamer_tire['efficiency_km_per_kwh'] ?? 0 ) * 0.621371, 2 ),
+                'total_km'          => floatval( $roamer_tire['total_distance_km'] ?? 0 ),
+                'vehicle_count'     => intval( $roamer_tire['vehicle_count'] ?? 0 ),
+                'vehicle_breakdown' => is_array( $breakdown_raw ) ? wp_json_encode( $breakdown_raw ) : '',
             );
 
             // Fast path: already linked by roamer_tire_id.
             if ( isset( $linked_map[ $roamer_id ] ) ) {
-                RTG_Database::update_tire( $linked_map[ $roamer_id ], $eff_data );
+                $pending[ $linked_map[ $roamer_id ] ]['entries'][] = $entry;
                 $matched++;
                 continue;
             }
@@ -219,39 +228,50 @@ class RTG_Roamer_Sync {
                 $candidates = $norm_map[ $key ];
 
                 if ( count( $candidates ) === 1 ) {
-                    // Exact single match — link and update.
-                    $eff_data['roamer_tire_id'] = $roamer_id;
-                    RTG_Database::update_tire( $candidates[0], $eff_data );
+                    // Exact single match — queue the link and the data.
+                    $pending[ $candidates[0] ]['entries'][] = $entry;
+                    $pending[ $candidates[0] ]['new_ids'][] = $roamer_id;
                     // Add to linked map so subsequent Roamer entries with same ID use fast path.
                     $linked_map[ $roamer_id ] = $candidates[0];
                     $matched++;
                 } else {
                     // Multiple matches (different load ratings) — skip for manual review.
-                    $ambiguous_list[] = array(
-                        'roamer_tire_id'      => $roamer_id,
-                        'name'                => $brand . ' ' . $model,
-                        'size'                => $size,
-                        'efficiency'          => $eff_data['roamer_efficiency'],
-                        'total_km'            => $eff_data['roamer_total_km'],
-                        'vehicle_count'       => $eff_data['roamer_vehicle_count'],
-                        'vehicle_breakdown'   => $eff_data['roamer_vehicle_breakdown'],
-                        'candidates'          => $candidates,
-                    );
+                    $ambiguous_list[] = array_merge( $entry, array(
+                        'roamer_tire_id' => $roamer_id,
+                        'name'           => $brand . ' ' . $model,
+                        'size'           => $size,
+                        'candidates'     => $candidates,
+                    ) );
                     $skipped++;
                 }
             } else {
                 // No match in guide.
-                $unmatched_list[] = array(
-                    'roamer_tire_id'      => $roamer_id,
-                    'name'                => ( $roamer_tire['brand'] ?? '' ) . ' ' . ( $roamer_tire['model'] ?? '' ),
-                    'size'                => $size,
-                    'efficiency'          => $eff_data['roamer_efficiency'],
-                    'total_km'            => $eff_data['roamer_total_km'],
-                    'vehicle_count'       => $eff_data['roamer_vehicle_count'],
-                    'vehicle_breakdown'   => $eff_data['roamer_vehicle_breakdown'],
-                );
+                $unmatched_list[] = array_merge( $entry, array(
+                    'roamer_tire_id' => $roamer_id,
+                    'name'           => ( $roamer_tire['brand'] ?? '' ) . ' ' . ( $roamer_tire['model'] ?? '' ),
+                    'size'           => $size,
+                ) );
                 $unmatched++;
             }
+        }
+
+        // Flush one merged write per guide tire.
+        foreach ( $pending as $tire_id => $bucket ) {
+            $update = self::merge_entries( $bucket['entries'] );
+            $update['roamer_synced_at'] = $now;
+
+            // Only touch the ID column when the sync discovered a new link;
+            // append to whatever the tire already carried so an existing
+            // manual multi-assign isn't dropped.
+            if ( ! empty( $bucket['new_ids'] ) ) {
+                $ids = array_values( array_unique( array_merge(
+                    $existing_ids[ $tire_id ] ?? array(),
+                    $bucket['new_ids']
+                ) ) );
+                $update['roamer_tire_id'] = implode( ',', $ids );
+            }
+
+            RTG_Database::update_tire( $tire_id, $update );
         }
 
         RTG_Database::flush_cache();
@@ -277,6 +297,88 @@ class RTG_Roamer_Sync {
         update_option( self::STATS_OPTION, $result, false );
 
         return $result;
+    }
+
+    /**
+     * Merge one or more Roamer feed entries into a single set of efficiency
+     * columns for a guide tire.
+     *
+     * Roamer sometimes publishes the same physical tire under more than one
+     * tire_id (different brand/model/size spelling), so a guide tire can be
+     * linked to several IDs at once. Efficiency is averaged weighted by total
+     * distance, distances and vehicle counts are summed, and vehicle
+     * breakdowns are merged per vehicle name. A single entry passes through
+     * with its own values.
+     *
+     * Shared by the sync and by manual assignment so the two can't drift.
+     *
+     * @param array $entries List of entries, each with efficiency, total_km,
+     *                       vehicle_count and vehicle_breakdown keys. The
+     *                       breakdown may be a JSON string or a decoded array
+     *                       of [ name, count ] pairs.
+     * @return array Column => value map ready for RTG_Database::update_tire(),
+     *               excluding roamer_tire_id.
+     */
+    public static function merge_entries( array $entries ) {
+        $total_km     = 0.0;
+        $weighted     = 0.0;
+        $vehicles     = 0;
+        $breakdown    = array();
+        $efficiencies = array();
+
+        foreach ( $entries as $entry ) {
+            $eff = floatval( $entry['efficiency'] ?? 0 );
+            $km  = floatval( $entry['total_km'] ?? 0 );
+
+            $weighted += $eff * $km;
+            $total_km += $km;
+            $vehicles += intval( $entry['vehicle_count'] ?? 0 );
+
+            if ( $eff > 0 ) {
+                $efficiencies[] = $eff;
+            }
+
+            // Feed format is an array of [ name, count ] pairs; stats rows
+            // carry it as the JSON encoding of that array.
+            $bd = $entry['vehicle_breakdown'] ?? '';
+            if ( is_string( $bd ) ) {
+                $bd = json_decode( $bd, true );
+            }
+            if ( is_array( $bd ) ) {
+                foreach ( $bd as $pair ) {
+                    if ( is_array( $pair ) && count( $pair ) >= 2 ) {
+                        $name = (string) $pair[0];
+                        $breakdown[ $name ] = ( $breakdown[ $name ] ?? 0 ) + intval( $pair[1] );
+                    }
+                }
+            }
+        }
+
+        if ( $total_km > 0 ) {
+            $efficiency = $weighted / $total_km;
+        } elseif ( ! empty( $efficiencies ) ) {
+            // No logged distance to weight by — fall back to a plain mean so
+            // an entry reporting efficiency with zero distance isn't zeroed.
+            $efficiency = array_sum( $efficiencies ) / count( $efficiencies );
+        } else {
+            $efficiency = 0;
+        }
+
+        $encoded_breakdown = '';
+        if ( ! empty( $breakdown ) ) {
+            $pairs = array();
+            foreach ( $breakdown as $name => $count ) {
+                $pairs[] = array( $name, $count );
+            }
+            $encoded_breakdown = wp_json_encode( $pairs );
+        }
+
+        return array(
+            'roamer_efficiency'        => round( $efficiency, 2 ),
+            'roamer_total_km'          => $total_km,
+            'roamer_vehicle_count'     => $vehicles,
+            'roamer_vehicle_breakdown' => $encoded_breakdown,
+        );
     }
 
     /**

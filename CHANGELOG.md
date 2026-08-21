@@ -4,6 +4,18 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.58.6] - 2026-08-21
+
+### Fixed
+- **Roamer data for a tire linked to several IDs is no longer clobbered on every sync.** Roamer sometimes publishes the same physical tire under more than one `tire_id`, and a guide tire can carry a comma-separated list of them (from multi-assign). The sync wrote once per *feed entry*, so each linked ID overwrote the previous one and the tire ended up with whichever ID the feed happened to list last instead of the merged figures — a multi-assign's weighted average survived only until the next sync (every 5 minutes since 1.58.5). Feed entries are now grouped by target tire and written once, merged. A tire linked to two IDs reporting 2.0 mi/kWh over 1,000 km and 3.0 over 3,000 km now correctly reads 2.75 mi/kWh over 4,000 km, with vehicle counts summed and vehicle breakdowns combined per vehicle.
+- **Auto-matching a second Roamer ID no longer drops the first.** When a feed entry auto-matched a tire that was already linked, the sync replaced `roamer_tire_id` outright; newly matched IDs are now appended to the existing list.
+
+### Changed
+- **A duplicate Roamer entry can be merged into an already-matched tire.** The strict 1:1 rule from 1.58.3 stopped the silent overwrite it was aimed at, but left no way to handle Roamer listing one tire twice — the duplicate could only be hidden, discarding its mileage. Assignment is now additive: a Roamer ID still belongs to exactly one guide tire, but a guide tire may carry several, and assigning to a linked tire merges the selection into its existing IDs. Both the "Assign selected to..." dropdown and the ambiguous-match candidate lists show already-linked tires again, labelled `— already linked (N)`; only an ID held by a *different* tire is rejected, naming that tire. To move an ID between tires, unlink it at its current owner first.
+
+### Internal
+- Merge math (distance-weighted efficiency, summed counts, combined vehicle breakdown) lives in one place, `RTG_Roamer_Sync::merge_entries()`, shared by the sync and manual assignment so the two can't drift. It also falls back to a plain mean when no entry reports distance, where weighting alone would have zeroed the efficiency. Covered by `tests/test-roamer-sync.php`.
+
 ## [1.58.5] - 2026-08-11
 
 ### Changed
