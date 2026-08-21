@@ -985,8 +985,11 @@ class RTG_Ajax {
      * Manually assign one or more Roamer tire IDs to a local tire.
      *
      * Accepts a single roamer_tire_id or a JSON array of roamer_tire_ids.
-     * When multiple IDs are provided, efficiency is averaged weighted by
-     * session count, and counts are summed.
+     * Assigning to a tire that is already linked merges the new IDs into its
+     * existing ones — Roamer sometimes publishes the same physical tire under
+     * several IDs. Efficiency across the set is averaged weighted by total
+     * distance and counts are summed; an ID held by a different guide tire is
+     * rejected.
      */
     public function roamer_assign() {
         check_ajax_referer( 'rtg_admin_nonce', 'nonce' );
@@ -1028,17 +1031,36 @@ class RTG_Ajax {
             wp_send_json_error( 'Missing or invalid roamer_tire_id(s).' );
         }
 
-        // Enforce a 1:1 mapping — a guide tire that already carries Roamer
-        // data can't be assigned again (that would silently overwrite the
-        // existing link). Re-assigning the same Roamer ID is allowed
-        // (idempotent); anything else requires unlinking first.
         $target = RTG_Database::get_tire( $tire_id );
         if ( ! $target ) {
             wp_send_json_error( 'Guide tire not found.' );
         }
-        $existing_link = (string) ( $target['roamer_tire_id'] ?? '' );
-        if ( '' !== $existing_link && ! in_array( $existing_link, $roamer_ids, true ) ) {
-            wp_send_json_error( 'This guide tire is already linked to Roamer data. Unlink it first to reassign.' );
+
+        // A Roamer ID belongs to exactly one guide tire, but a guide tire may
+        // carry several — Roamer sometimes publishes the same physical tire
+        // under more than one ID. Assigning to an already-linked tire merges
+        // the new IDs in; only an ID held by a *different* tire is rejected.
+        foreach ( RTG_Database::get_all_tires() as $other ) {
+            if ( $other['tire_id'] === $tire_id || empty( $other['roamer_tire_id'] ) ) {
+                continue;
+            }
+            $other_ids = array_map( 'trim', explode( ',', $other['roamer_tire_id'] ) );
+            $clash     = array_intersect( $roamer_ids, $other_ids );
+            if ( ! empty( $clash ) ) {
+                wp_send_json_error( sprintf(
+                    'Roamer ID "%s" is already linked to %s %s. Unlink it there first.',
+                    reset( $clash ),
+                    $other['brand'],
+                    $other['model']
+                ) );
+            }
+        }
+
+        // IDs the target already carries, so a re-assign is idempotent and a
+        // merge appends rather than replaces.
+        $existing_ids = array();
+        if ( ! empty( $target['roamer_tire_id'] ) ) {
+            $existing_ids = array_values( array_filter( array_map( 'trim', explode( ',', $target['roamer_tire_id'] ) ) ) );
         }
 
         // Look up Roamer data from stored sync stats.
@@ -1054,61 +1076,42 @@ class RTG_Ajax {
             $roamer_map[ $entry['roamer_tire_id'] ] = $entry;
         }
 
-        if ( count( $roamer_ids ) === 1 ) {
-            // Single assignment.
-            $rid = $roamer_ids[0];
-            $update = array( 'roamer_tire_id' => $rid );
+        // Build the entry list to merge: the tire's current aggregate stands in
+        // for the IDs it already carries (those are linked, so they aren't in
+        // the stats lists), plus one entry per newly assigned ID.
+        $entries = array();
 
-            // Pull efficiency data from stats if available.
-            if ( isset( $roamer_map[ $rid ] ) ) {
-                $update['roamer_efficiency']        = floatval( $roamer_map[ $rid ]['efficiency'] ?? 0 );
-                $update['roamer_total_km']          = floatval( $roamer_map[ $rid ]['total_km'] ?? 0 );
-                $update['roamer_vehicle_count']     = intval( $roamer_map[ $rid ]['vehicle_count'] ?? 0 );
-                $update['roamer_vehicle_breakdown'] = $roamer_map[ $rid ]['vehicle_breakdown'] ?? '';
-                $update['roamer_synced_at']         = current_time( 'mysql' );
-            }
-
-            $result = RTG_Database::update_tire( $tire_id, $update );
-        } else {
-            // Multiple assignment — weighted average by total distance.
-            $total_km_all    = 0;
-            $weighted_eff    = 0;
-            $total_vehicles  = 0;
-            $merged_breakdown = array();
-            $id_parts        = array();
-
-            foreach ( $roamer_ids as $rid ) {
-                if ( isset( $roamer_map[ $rid ] ) ) {
-                    $eff  = floatval( $roamer_map[ $rid ]['efficiency'] ?? 0 );
-                    $km   = floatval( $roamer_map[ $rid ]['total_km'] ?? 0 );
-                    $weighted_eff   += $eff * $km;
-                    $total_km_all   += $km;
-                    $total_vehicles += intval( $roamer_map[ $rid ]['vehicle_count'] ?? 0 );
-
-                    // Merge vehicle breakdowns (feed format: array of [name, count] pairs).
-                    $bd = json_decode( $roamer_map[ $rid ]['vehicle_breakdown'] ?? '', true );
-                    if ( is_array( $bd ) ) {
-                        foreach ( $bd as $entry ) {
-                            if ( is_array( $entry ) && count( $entry ) >= 2 ) {
-                                $merged_breakdown[ $entry[0] ] = ( $merged_breakdown[ $entry[0] ] ?? 0 ) + intval( $entry[1] );
-                            }
-                        }
-                    }
-                }
-                $id_parts[] = $rid;
-            }
-
-            $avg_eff = $total_km_all > 0 ? $weighted_eff / $total_km_all : 0;
-
-            $result = RTG_Database::update_tire( $tire_id, array(
-                'roamer_tire_id'            => implode( ',', $id_parts ),
-                'roamer_efficiency'         => round( $avg_eff, 2 ),
-                'roamer_total_km'           => $total_km_all,
-                'roamer_vehicle_count'      => $total_vehicles,
-                'roamer_vehicle_breakdown'  => ! empty( $merged_breakdown ) ? wp_json_encode( array_map( function ( $name, $count ) { return array( $name, $count ); }, array_keys( $merged_breakdown ), $merged_breakdown ) ) : '',
-                'roamer_synced_at'          => current_time( 'mysql' ),
-            ) );
+        if ( ! empty( $existing_ids ) ) {
+            $entries[] = array(
+                'efficiency'        => floatval( $target['roamer_efficiency'] ?? 0 ),
+                'total_km'          => floatval( $target['roamer_total_km'] ?? 0 ),
+                'vehicle_count'     => intval( $target['roamer_vehicle_count'] ?? 0 ),
+                'vehicle_breakdown' => $target['roamer_vehicle_breakdown'] ?? '',
+            );
         }
+
+        foreach ( $roamer_ids as $rid ) {
+            // Skip IDs already folded into the aggregate above.
+            if ( in_array( $rid, $existing_ids, true ) ) {
+                continue;
+            }
+            if ( isset( $roamer_map[ $rid ] ) ) {
+                $entries[] = array(
+                    'efficiency'        => floatval( $roamer_map[ $rid ]['efficiency'] ?? 0 ),
+                    'total_km'          => floatval( $roamer_map[ $rid ]['total_km'] ?? 0 ),
+                    'vehicle_count'     => intval( $roamer_map[ $rid ]['vehicle_count'] ?? 0 ),
+                    'vehicle_breakdown' => $roamer_map[ $rid ]['vehicle_breakdown'] ?? '',
+                );
+            }
+        }
+
+        $all_ids = array_values( array_unique( array_merge( $existing_ids, $roamer_ids ) ) );
+
+        $update = RTG_Roamer_Sync::merge_entries( $entries );
+        $update['roamer_tire_id']   = implode( ',', $all_ids );
+        $update['roamer_synced_at'] = current_time( 'mysql' );
+
+        $result = RTG_Database::update_tire( $tire_id, $update );
 
         if ( false === $result ) {
             wp_send_json_error( 'Failed to update tire.' );

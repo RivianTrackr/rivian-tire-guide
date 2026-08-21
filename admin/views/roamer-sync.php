@@ -199,7 +199,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
             <div class="rtg-card-body" style="padding:0;">
                 <p style="padding:16px 16px 0;color:#86868b;">
                     These Roamer tires matched multiple entries in your guide (different load ratings for the same tire/size).
-                    Choose which tire to assign the data to.
+                    Choose which tire to assign the data to. Picking one marked <em>already linked</em> merges this ID into its existing Roamer IDs.
                 </p>
                 <table class="wp-list-table widefat striped" style="border:none;">
                     <thead>
@@ -214,13 +214,14 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                     </thead>
                     <tbody>
                         <?php foreach ( $stats['ambiguous_list'] as $amb ) :
-                            // Look up candidate tires for display — skipping
-                            // candidates already linked to other Roamer data
-                            // (1:1 mapping).
+                            // Look up candidate tires for display. Candidates
+                            // already carrying Roamer data stay selectable —
+                            // assigning merges this ID into their existing
+                            // links — and are labelled so the choice is clear.
                             $candidates_info = array();
                             foreach ( $amb['candidates'] as $cid ) {
                                 $ct = RTG_Database::get_tire( $cid );
-                                if ( $ct && empty( $ct['roamer_tire_id'] ) ) {
+                                if ( $ct ) {
                                     $candidates_info[] = $ct;
                                 }
                             }
@@ -232,15 +233,23 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                                 <td><?php echo esc_html( number_format( floatval( $amb['total_km'] ?? 0 ) * 0.621371, 0 ) ); ?> mi</td>
                                 <?php if ( empty( $candidates_info ) ) : ?>
                                 <td colspan="2">
-                                    <span style="color:#86868b;font-size:13px;">All candidate tires are already linked to Roamer data — unlink one to reassign.</span>
+                                    <span style="color:#86868b;font-size:13px;">No candidate tires found in the guide.</span>
                                 </td>
                                 <?php else : ?>
                                 <td>
                                     <select class="rtg-roamer-assign-select" data-roamer-id="<?php echo esc_attr( $amb['roamer_tire_id'] ); ?>">
                                         <option value="">Select tire...</option>
-                                        <?php foreach ( $candidates_info as $ct ) : ?>
+                                        <?php
+                                        foreach ( $candidates_info as $ct ) :
+                                            $c_label = $ct['brand'] . ' ' . $ct['model'] . ' — ' . $ct['size'] . ' (Load: ' . ( $ct['load_range'] ?: 'N/A' ) . ')';
+
+                                            if ( ! empty( $ct['roamer_tire_id'] ) ) {
+                                                $c_linked = count( array_filter( array_map( 'trim', explode( ',', $ct['roamer_tire_id'] ) ) ) );
+                                                $c_label .= ' — already linked (' . $c_linked . ')';
+                                            }
+                                            ?>
                                             <option value="<?php echo esc_attr( $ct['tire_id'] ); ?>">
-                                                <?php echo esc_html( $ct['brand'] . ' ' . $ct['model'] . ' — ' . $ct['size'] . ' (Load: ' . ( $ct['load_range'] ?: 'N/A' ) . ')' ); ?>
+                                                <?php echo esc_html( $c_label ); ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
@@ -265,12 +274,11 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
             return ( floatval( $b['total_km'] ?? 0 ) <=> floatval( $a['total_km'] ?? 0 ) );
         } );
 
-        // Only unlinked guide tires are assignable — a guide tire already
-        // carrying Roamer data must be unlinked before it can be reassigned
-        // (1:1 mapping, enforced server-side too).
-        $all_tires = array_values( array_filter( RTG_Database::get_all_tires(), function ( $t ) {
-            return empty( $t['roamer_tire_id'] );
-        } ) );
+        // Every guide tire is assignable. Tires already carrying Roamer data
+        // are labelled rather than hidden — assigning to one merges the
+        // selected IDs into its existing links, which is how a duplicate
+        // Roamer entry for an already-matched tire gets folded in.
+        $all_tires = RTG_Database::get_all_tires();
         usort( $all_tires, function ( $a, $b ) {
             $cmp = strcasecmp( $a['brand'], $b['brand'] );
             return $cmp !== 0 ? $cmp : strcasecmp( $a['model'], $b['model'] );
@@ -283,9 +291,17 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                     <span id="rtg-unmatched-selected-count" style="font-size:13px;color:#86868b;">0 selected</span>
                     <select id="rtg-unmatched-assign-tire" class="regular-text" style="max-width:350px;">
                         <option value="">Assign selected to...</option>
-                        <?php foreach ( $all_tires as $t ) : ?>
+                        <?php
+                        foreach ( $all_tires as $t ) :
+                            $label = $t['brand'] . ' ' . $t['model'] . ' — ' . $t['size'] . ( $t['load_range'] ? ' (' . $t['load_range'] . ')' : '' );
+
+                            if ( ! empty( $t['roamer_tire_id'] ) ) {
+                                $linked_n = count( array_filter( array_map( 'trim', explode( ',', $t['roamer_tire_id'] ) ) ) );
+                                $label   .= ' — already linked (' . $linked_n . ')';
+                            }
+                            ?>
                             <option value="<?php echo esc_attr( $t['tire_id'] ); ?>">
-                                <?php echo esc_html( $t['brand'] . ' ' . $t['model'] . ' — ' . $t['size'] . ( $t['load_range'] ? ' (' . $t['load_range'] . ')' : '' ) ); ?>
+                                <?php echo esc_html( $label ); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -295,7 +311,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
             </div>
             <div class="rtg-card-body" style="padding:0;">
                 <p style="padding:16px 16px 0;color:#86868b;">
-                    These tires exist on Rivian Roamer but aren't in your guide. Select one or more to manually assign to a guide tire. When multiple are selected, efficiency is averaged weighted by total distance.
+                    These tires exist on Rivian Roamer but aren't in your guide. Select one or more to manually assign to a guide tire. When multiple are selected, efficiency is averaged weighted by total distance. Assigning to a tire marked <em>already linked</em> merges the selection into its existing Roamer IDs — use that when Roamer lists the same tire under more than one ID.
                 </p>
                 <table class="wp-list-table widefat striped" style="border:none;">
                     <thead>
