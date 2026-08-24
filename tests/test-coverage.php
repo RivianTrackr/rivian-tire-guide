@@ -85,6 +85,24 @@ class Test_RTG_Coverage extends WP_UnitTestCase {
     }
 
     /**
+     * The retailers named in that label are the ones selling this brand in
+     * this fitment. Naming whoever sells the *size* instead pairs a
+     * brand-specific count with a size-wide attribution, which reads as one
+     * fact and is two.
+     */
+    public function test_absent_model_attributes_only_this_brands_listings() {
+        $index = RTG_Coverage::index_rows( array(
+            array( 'brand' => 'Michelin', 'model' => 'Pilot Sport S 5', 'size' => '305/45R22', 'advertiser_name' => 'The Tire Rack' ),
+            array( 'brand' => 'Goodyear', 'model' => 'Wrangler Territory', 'size' => '305/45R22', 'advertiser_name' => 'SimpleTire' ),
+        ) );
+
+        $result = RTG_Coverage::classify( $this->tire( 'Michelin', 'Defender LTX M/S2', '305/45R22' ), $index );
+
+        $this->assertStringContainsString( 'The Tire Rack', $result['label'] );
+        $this->assertStringNotContainsString( 'SimpleTire', $result['label'] );
+    }
+
+    /**
      * Model codes one character apart are different tires, so no edit-distance
      * rule may promote them. NT420V and NT421Q are the real pair that ruled
      * edit distance out.

@@ -72,7 +72,8 @@
 
     $.post(rtgAdmin.ajaxurl, {
       action: 'rtg_cj_test_connection',
-      nonce: rtgAdmin.nonce
+      nonce: rtgAdmin.nonce,
+      keyword: $('#rtg-cj-test-keyword').val() || ''
     }, function (response) {
       $btn.prop('disabled', false).text('Test Connection');
 
@@ -87,8 +88,18 @@
       if (d.ok) {
         html = '<div class="notice notice-success inline"><p>' + escapeHTML(d.message) + '</p></div>';
 
+        // What came back, as titles. The question this button answers is
+        // whether a keyword matches or merely ranks, and that is legible in
+        // the titles long before it is legible in raw JSON.
+        if (d.titles && d.titles.length) {
+          html += '<p style="margin:8px 0 4px;font-weight:600;">What that keyword returned:</p>';
+          html += '<pre style="max-height:320px;overflow:auto;padding:10px;background:#f5f5f7;' +
+                  'border:1px solid #d2d2d7;border-radius:6px;font-size:12px;line-height:1.5;">' +
+                  escapeHTML(d.titles.join('\n')) + '</pre>';
+        }
+
         if (d.sample && d.sample.length) {
-          html += '<p style="margin:8px 0 4px;font-weight:600;">Sample of what came back:</p>';
+          html += '<p style="margin:8px 0 4px;font-weight:600;">One mapped product in full:</p>';
           html += '<pre style="max-height:260px;overflow:auto;padding:10px;background:#f5f5f7;' +
                   'border:1px solid #d2d2d7;border-radius:6px;font-size:12px;">' +
                   escapeHTML(JSON.stringify(d.sample, null, 2)) + '</pre>';

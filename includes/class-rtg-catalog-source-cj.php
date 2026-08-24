@@ -932,11 +932,29 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
 
         $count = count( $result['products'] );
 
+        // Titles, not just a JSON dump. What a keyword actually returns is the
+        // question this button answers, and reading that off three raw nodes
+        // hides the shape of the answer.
+        $titles = array();
+        foreach ( array_slice( $result['products'], 0, 25 ) as $product ) {
+            $titles[] = trim( sprintf(
+                '%s%s',
+                $product['title'],
+                '' !== $product['advertiser_name'] ? '   [' . $product['advertiser_name'] . ']' : ''
+            ) );
+        }
+
         return array(
             'ok'            => true,
-            'message'       => sprintf( 'Connected. %d product(s) returned for keyword "%s".', $count, $keyword ),
+            'message'       => sprintf(
+                'Connected. Showing %s of %s match(es) for keyword "%s".',
+                number_format( $count ),
+                null === $result['total_count'] ? 'an unreported number' : number_format( $result['total_count'] ),
+                $keyword
+            ),
             'product_count' => $count,
-            'sample'        => array_slice( $result['products'], 0, 3 ),
+            'titles'        => $titles,
+            'sample'        => array_slice( $result['products'], 0, 2 ),
             'body'          => 0 === $count ? ( $this->last_response['body'] ?? '' ) : '',
         );
     }

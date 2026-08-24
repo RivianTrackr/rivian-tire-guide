@@ -4,6 +4,20 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.67.0] - 2026-08-24
+
+### Fixed
+- **The direct-lookup success metric could not tell success from noise.** It counted a term as found when the request returned *any* product. The first live run scored **111 of 111** on that measure while covered tires stayed at 119 and not one guide tire matched — CJ ranks a multi-word keyword exactly as it ranks a bare size, so every term drew a few dozen loosely related products and the counter called each one a success. The status now reports how many lookups **came back with the tire that was asked for**, which is the only outcome that means the pass worked, and says so in red when that number is zero against answered lookups.
+- **Direct lookups no longer fill the queue with other fitments.** Storing everything a ranked answer returned added **3,996 rows** in one run — near misses climbed from 15,349 to 18,057 — without covering a single additional tire. A targeted lookup asks about one fitment; products in other fitments are left out and counted, since canvassing fitments is the sweep's job. Nothing is silently dropped: the status reports how many were set aside.
+- **A coverage label mixed two scopes.** "1 Michelin 305/45R22 listing(s) arrived from SimpleTire and The Tire Rack" paired a count of that *brand's* listings with the retailers selling that *size*. Both halves now describe the same set.
+
+### Added
+- **The Test Connection button takes a keyword.** Whether CJ matches a term or merely ranks against it was being inferred from a sync's aggregate counts; now a tire's full name can be typed in and the reply lists the titles that came back, so the question is answered directly. The reply also reports the match total alongside what it shows, so a ranked answer is recognizable on sight.
+
+### Notes
+- This release deliberately adds no new matching strategy. The last one shipped a mechanism and a metric that agreed with each other and not with reality; the instrument comes first this time, and what it reports decides what to build next.
+- Rows already stored from the previous run are left alone. They are near misses rather than bad data, and pruning them is a destructive operation worth asking about rather than assuming.
+
 ## [1.66.0] - 2026-08-24
 
 ### Fixed
