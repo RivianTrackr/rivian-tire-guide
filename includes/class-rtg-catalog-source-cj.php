@@ -550,6 +550,13 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
             ) ),
             'advertiser_id'   => $advertiser_id,
             'advertiser_name' => $advertiser_name,
+
+            // The untouched node, kept alongside the normalized fields.
+            // Without it the candidate row records only what the mapper chose
+            // to keep, so a field the mapper ignores — `description` was the
+            // one that bit — is unrecoverable afterwards and diagnosing a
+            // parsing gap costs a live re-run instead of a database query.
+            '_source_node'    => $node,
         );
     }
 
