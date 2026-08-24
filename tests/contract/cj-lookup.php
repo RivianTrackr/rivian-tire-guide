@@ -23,6 +23,16 @@ define( 'ABSPATH', __DIR__ );
 $GLOBALS['opts'] = array(
     'rtg_settings' => array( 'cj_company_id' => '1', 'cj_pat' => 'x', 'cj_targeted_budget' => 600 ),
 );
+
+/** Settings with direct lookups explicitly enabled, for the mechanism checks. */
+function enable_targeted() {
+    $GLOBALS['opts']['rtg_settings']['cj_targeted_enabled'] = 1;
+}
+
+/** Settings as they ship: direct lookups off. */
+function default_settings() {
+    unset( $GLOBALS['opts']['rtg_settings']['cj_targeted_enabled'] );
+}
 function get_option( $k, $d = false ) { return $GLOBALS['opts'][$k] ?? $d; }
 function update_option( $k, $v, $a = null ) { $GLOBALS['opts'][$k] = $v; return true; }
 function wp_json_encode( $v ) { return json_encode( $v ); }
@@ -68,12 +78,22 @@ require __DIR__ . '/../../includes/class-rtg-catalog-source.php';
 require __DIR__ . '/../../includes/class-rtg-catalog-source-cj.php';
 
 $source = new RTG_Catalog_Source_CJ();
-// The term carries no size: CJ scores that token rather than applying it.
-$terms  = array( 'Michelin Defender LTX M/S2' );
-$lookup = $source->fetch_terms( $terms );
+
+// Direct lookups ship off. A single brand-and-model keyword was measured
+// matching 81,653 products, of which a thousand records reads 1.2%; the pass
+// spent a whole run budget and found nothing. The sweep's fitment keyword
+// reports around 5,000 for a size, so the budget belongs there.
+$off = $source->fetch_terms( array( 'Michelin Defender LTX M/S2' ) );
 
 $fail = 0;
 function check( $label, $cond ) { global $fail; printf( "%-58s %s\n", $label, $cond ? 'ok' : 'FAIL' ); if ( ! $cond ) { $GLOBALS['fail']++; } }
+
+check( 'direct lookups are off unless enabled',  0 === $off['checked'] && array() === $off['by_term'] );
+
+enable_targeted();
+// The term carries no size: CJ scores that token rather than applying it.
+$terms  = array( 'Michelin Defender LTX M/S2' );
+$lookup = $source->fetch_terms( $terms );
 
 // The contract run_targeted_lookup depends on.
 check( 'fetch_terms returns by_term',            isset( $lookup['by_term'] ) && is_array( $lookup['by_term'] ) );

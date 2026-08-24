@@ -4,6 +4,21 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.70.0] - 2026-08-24
+
+### Changed
+- **Direct lookups are off by default.** The run that settled it reported a single brand-and-model keyword matching **81,653** products. A thousand records is 1.2% of that ranking; covering one search would take 82 requests and the guide's models thousands. The pass spent the entire run budget, read 50 of 99 searches, and found nothing. The sweep's fitment keyword is better by an order of magnitude — a size reports around 5,000 matches, readable in a handful of requests — so the budget goes there. The pass stays available for a catalog that behaves differently.
+
+### Added
+- **Per-fitment sweep coverage**, as a table rather than a sentence inside an error. How much of a size's match set has been read is what decides whether "no retailer is carrying it" can be believed at all: a fitment read completely means the guide's tires in that size either arrived or genuinely are not in the feed, and a fitment read partially means neither conclusion is available. Each run resumes where the last stopped, so a size completes over successive runs.
+
+### Fixed
+- **"0 were in fitments the guide has no use for and were left out" was false.** 1.69.1 moved that filtering earlier, into the fetch, and the status kept reading the later counter — which the earlier filter had emptied. It reported nothing discarded while tens of thousands were. Both counters are now reported together.
+- The truncation message advised setting a Google product category to narrow a sweep. That filter is a documented hazard here — Tire Rack sends no category, so applying one would drop the retailer entirely — and the advice now points at what actually helps: the rotation, and the whole-run budget.
+
+### Notes
+- The contract check pins the new default and fails if direct lookups run without being switched on. It caught the change the moment it was made, which is what it is for.
+
 ## [1.69.1] - 2026-08-24
 
 ### Fixed

@@ -164,6 +164,12 @@ class RTG_Catalog_Sync {
                 'qualified'      => 0,
                 'newly_surfaced' => 0,
                 'error'          => $error,
+                // Whether each fitment was read completely is the question
+                // that decides whether coverage can ever be trusted, so it is
+                // carried as data rather than left inside an error sentence.
+                'coverage'       => method_exists( $source, 'get_last_coverage' )
+                    ? $source->get_last_coverage()
+                    : array(),
             );
 
             foreach ( $products as $product ) {
