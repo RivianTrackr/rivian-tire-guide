@@ -20,6 +20,8 @@ if ( isset( $_POST['rtg_catalog_settings_save'] ) ) {
     $settings['cj_limit']        = max( 1, min( 1000, intval( $_POST['cj_limit'] ?? RTG_Catalog_Source_CJ::DEFAULT_LIMIT ) ) );
     $settings['cj_sweep_budget'] = max( 15, min( 600, intval( $_POST['cj_sweep_budget'] ?? RTG_Catalog_Source_CJ::SWEEP_BUDGET ) ) );
     $settings['cj_max_pages']    = max( 1, min( 50, intval( $_POST['cj_max_pages'] ?? RTG_Catalog_Source_CJ::DEFAULT_MAX_PAGES ) ) );
+    $settings['cj_targeted_enabled'] = ! empty( $_POST['cj_targeted_enabled'] );
+    $settings['cj_targeted_budget']  = max( 15, min( 600, intval( $_POST['cj_targeted_budget'] ?? RTG_Catalog_Source_CJ::TARGETED_BUDGET ) ) );
     $settings['cj_category_names'] = sanitize_textarea_field( wp_unslash( $_POST['cj_category_names'] ?? '' ) );
 
     // The query document is GraphQL, so it must not be run through a sanitizer
@@ -118,6 +120,8 @@ $cj_advertisers  = $settings['cj_advertisers'] ?? '';
 $cj_limit        = intval( $settings['cj_limit'] ?? RTG_Catalog_Source_CJ::DEFAULT_LIMIT );
 $cj_sweep_budget = intval( $settings['cj_sweep_budget'] ?? RTG_Catalog_Source_CJ::SWEEP_BUDGET );
 $cj_max_pages    = intval( $settings['cj_max_pages'] ?? RTG_Catalog_Source_CJ::DEFAULT_MAX_PAGES );
+$cj_targeted_enabled = $settings['cj_targeted_enabled'] ?? true;
+$cj_targeted_budget  = intval( $settings['cj_targeted_budget'] ?? RTG_Catalog_Source_CJ::TARGETED_BUDGET );
 $cj_categories   = $settings['cj_category_names'] ?? '';
 $cj_query        = $settings['cj_query'] ?? '';
 $cj_has_pat      = '' !== RTG_Catalog_Source_CJ::get_pat();
@@ -233,6 +237,28 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                         </span>
                     </div>
                 </div>
+
+                <?php if ( ! empty( $stats['targeted']['terms'] ) ) : ?>
+                    <?php $targeted = $stats['targeted']; ?>
+                    <p class="description" style="margin:12px 0 0;max-width:820px;">
+                        <strong>Direct lookups:</strong> asked for
+                        <?php echo esc_html( number_format( intval( $targeted['checked'] ) ) ); ?>
+                        of <?php echo esc_html( number_format( intval( $targeted['terms'] ) ) ); ?>
+                        uncovered tire(s) by name;
+                        <strong><?php echo esc_html( number_format( intval( $targeted['found'] ) ) ); ?></strong>
+                        returned a listing and
+                        <?php echo esc_html( number_format( intval( $targeted['ingested'] ) ) ); ?>
+                        product(s) reached the queue.
+                        <?php if ( ! empty( $targeted['pending'] ) ) : ?>
+                            <?php echo esc_html( number_format( intval( $targeted['pending'] ) ) ); ?>
+                            left for the next run, which starts there.
+                        <?php endif; ?>
+                        <br>
+                        A fitment sweep asks CJ for a bare size and gets a relevance ranking thousands deep, so a
+                        guide tire can rank below where paging stops. These ask for it by brand, model and size
+                        instead.
+                    </p>
+                <?php endif; ?>
 
                 <?php if ( ! empty( $stats['errors'] ) ) : ?>
                     <div class="rtg-notice rtg-notice-warning" style="margin-top:16px;">
@@ -350,18 +376,20 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                     </summary>
                     <p class="description" style="max-width:820px;margin:8px 0;">
                         Nothing in the queue keys to these tires, so their prices can't refresh on their own.
-                        The reason differs per tire, and only one of them is worth acting on: a
-                        <strong>model name</strong> gap means the retailer is carrying the exact tire under a
-                        different name, so aligning the guide's model to theirs will match it on the next run.
-                        A <strong>fitment</strong> or <strong>brand</strong> gap means the sweep genuinely
-                        hasn't seen it.
+                        Only <strong>likely listed under another name</strong> is worth acting on — there a
+                        listing's name really does resemble the guide's, and aligning the two matches the tire
+                        on the next run. Every other row means the sweep has not seen the tire: the listings
+                        shown beneath each one are what <em>did</em> arrive in that brand and fitment, offered
+                        as evidence of how thin the coverage is rather than as the same tire under a
+                        different name.
                     </p>
 
                     <?php if ( ! empty( $coverage_summary ) ) : ?>
                         <p style="margin:8px 0;font-size:13px;">
                             <?php
                             $gap_labels = array(
-                                RTG_Coverage::GAP_MODEL_MISMATCH  => 'listed under another model name',
+                                RTG_Coverage::GAP_MODEL_VARIANT   => 'likely listed under another name',
+                                RTG_Coverage::GAP_MODEL_ABSENT    => 'brand and fitment carried, this model not',
                                 RTG_Coverage::GAP_BRAND_ABSENT    => 'fitment carried, brand not',
                                 RTG_Coverage::GAP_SIZE_ABSENT     => 'fitment never reached the queue',
                                 RTG_Coverage::GAP_BRAND_MISSING   => 'guide row has no brand',
@@ -818,6 +846,33 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 How far to page through one size's matches before moving on — pages of "Records per
                                 size" each. Paging to the end of an unfiltered search would spend the whole budget on a
                                 single size, so a size stops here and the status says how much it left behind.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Direct lookups</th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="cj_targeted_enabled" value="1" <?php checked( $cj_targeted_enabled ); ?>>
+                                Ask for uncovered guide tires by name
+                            </label>
+                            <p class="description" style="max-width:680px;">
+                                After the sweep, any guide tire nothing in the queue matches is searched for directly
+                                by brand, model and size &mdash; one request each. A sweep asks CJ for a bare fitment
+                                and gets a relevance ranking thousands deep rather than a filter, so a tire the
+                                retailer genuinely sells can rank below where paging stops and never arrive. This is
+                                how those are found. Uncovered tires are worked through in rotation, so a long list
+                                completes over successive runs.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="cj_targeted_budget">Direct lookup budget</label></th>
+                        <td>
+                            <input type="number" name="cj_targeted_budget" id="cj_targeted_budget" value="<?php echo esc_attr( $cj_targeted_budget ); ?>" min="15" max="600" class="small-text"> seconds
+                            <p class="description" style="max-width:680px;">
+                                Spent after the sweep's own budget, so a slow sweep shortens this pass rather than
+                                cancelling it. Raise it if the status above reports lookups left for the next run.
                             </p>
                         </td>
                     </tr>

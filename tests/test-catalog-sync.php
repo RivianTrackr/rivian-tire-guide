@@ -326,4 +326,44 @@ class Test_RTG_Catalog_Sync extends WP_UnitTestCase {
         $this->assertContains( 'BOTH', $r2_ids );
         $this->assertNotContains( 'R1-ONLY', $r2_ids );
     }
+
+    // --- Targeted lookup terms ---
+
+    /**
+     * A guide tire nothing in the queue keys to becomes a search term naming
+     * the brand, model and size, because that is the question the sweep's
+     * bare-fitment keyword cannot ask.
+     */
+    public function test_uncovered_tires_become_search_terms() {
+        RTG_Database::insert_tire( array(
+            'tire_id' => 'uncovered-001',
+            'brand'   => 'Michelin',
+            'model'   => 'Defender LTX M/S2',
+            'size'    => '305/45R22',
+            'price'   => 358.00,
+        ) );
+
+        $terms = RTG_Catalog_Sync::uncovered_terms( array() );
+
+        $this->assertContains( 'Michelin Defender LTX M/S2 305/45R22', array_values( $terms ) );
+    }
+
+    /**
+     * A tire the queue already covers is not looked up again — the pass exists
+     * to close gaps, not to re-ask questions already answered.
+     */
+    public function test_covered_tires_are_not_looked_up() {
+        RTG_Database::insert_tire( array(
+            'tire_id' => 'covered-001',
+            'brand'   => 'Michelin',
+            'model'   => 'Defender LTX M/S2',
+            'size'    => '305/45R22',
+            'price'   => 358.00,
+        ) );
+
+        $key   = RTG_Catalog_Sync::match_key( 'Michelin', 'Defender LTX M/S2', '305/45R22' );
+        $terms = RTG_Catalog_Sync::uncovered_terms( array( $key => array( 'anything' ) ) );
+
+        $this->assertNotContains( 'Michelin Defender LTX M/S2 305/45R22', array_values( $terms ) );
+    }
 }

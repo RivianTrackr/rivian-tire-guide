@@ -4,6 +4,22 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.66.0] - 2026-08-24
+
+### Fixed
+- **The coverage diagnostic claimed things it had not checked.** It reported a Michelin Defender LTX M/S2 as "listed, but as *Pilot Sport S 5*" — an all-season truck tire against a summer performance tire — because both are Michelins in 305/45R22. Sharing a brand and a fitment says nothing about being the same model, and 62 of the 115 uncovered tires were labelled that way on that basis alone. A listing is now only called this tire under another name when the names actually resemble each other; everything else says plainly that the brand and fitment arrived but this model did not, and shows what *did* come in as evidence.
+- Model names are compared by squashed containment ("Ridge Grappler" inside "Ridge Grappler LT"), not edit distance. Edit distance was tried and rejected on real data: `NT420V` and `NT421Q` are two substitutions apart and are unrelated tires, so any threshold loose enough to catch real variants also merges model codes differing by a digit. Shared words order what is shown but never promote a listing — "Open Country R/T Trail" and "Open Country A/T III EV" share two words and are two different tires.
+- Near matches now lead with the closest name rather than whichever row the database returned first.
+
+### Added
+- **Direct lookups for tires the sweep never finds.** Correcting the diagnostic exposed the real problem underneath it: across 16,044 stored products there was exactly **one** Michelin listing in 305/45R22, a fitment Tire Rack demonstrably sells several of. A sweep asks CJ for a bare size, and CJ answers with a relevance ranking thousands deep rather than a filter, so a guide tire can rank below where paging stops and simply never arrive. Each uncovered tire is now asked for by brand, model and size — one request, a precise question — after the sweep. Budgeted and rotated like the sweep, so a long uncovered list completes over successive runs, and the status reports how many were asked, how many returned a listing, and how many are left for next time.
+- Settings for the direct-lookup pass: an on/off toggle and its own time budget, spent after the sweep's so a slow sweep shortens this pass rather than cancelling it.
+
+### Notes
+- The fitment sweep and the direct pass share one ingest path, so a product reaching the queue by either route is judged and stored identically.
+- A run is only reported as failed when it read nothing at all, direct lookups included — a sweep that timed out while the lookups still brought tires in did work, and calling it an error would hide that.
+- The classifier was run against the exact listings behind the reported screenshot before shipping: all five mislabelled cases now classify as "brand and fitment carried, this model not", and a genuine variant still surfaces as actionable.
+
 ## [1.65.0] - 2026-08-24
 
 ### Fixed

@@ -144,31 +144,9 @@ class RTG_Catalog_Sync {
             );
 
             foreach ( $products as $product ) {
-                $evaluated = RTG_Tire_Qualifier::evaluate( $product, $context );
-                $match_key = self::match_key( $evaluated['brand'], $evaluated['model'], $evaluated['size'] );
-
-                $result = RTG_Candidates::upsert( array(
-                    'source'          => $slug,
-                    'advertiser_id'   => $product['advertiser_id'] ?? '',
-                    'advertiser_name' => $product['advertiser_name'] ?? $source->get_label(),
-                    'external_id'     => $product['external_id'] ?? '',
-                    'brand'           => $evaluated['brand'],
-                    'model'           => $evaluated['model'],
-                    'size'            => $evaluated['size'],
-                    'load_index'      => $evaluated['load_index'],
-                    'load_range'      => $evaluated['load_range'],
-                    'speed_rating'    => $evaluated['speed_rating'],
-                    'price'           => $product['price'] ?? 0,
-                    'link'            => $product['link'] ?? '',
-                    'image'           => $product['image'] ?? '',
-                    'match_key'       => $match_key,
-                    'qualifies'       => $evaluated['qualifies'],
-                    'fail_reasons'    => $evaluated['reasons'],
-                    'warnings'        => $evaluated['warnings'] ?? array(),
-                    'fits_vehicles'   => $evaluated['fits_vehicles'] ?? array(),
-                    'matched_tire_id' => $guide_index[ $match_key ] ?? '',
-                    'raw'             => $product,
-                ) );
+                $ingested  = self::ingest( $product, $slug, $source->get_label(), $context, $guide_index );
+                $evaluated = $ingested['evaluated'];
+                $result    = $ingested['result'];
 
                 $stats['fetched']++;
 
@@ -205,11 +183,23 @@ class RTG_Catalog_Sync {
             $stats['sources'][] = $source_stats;
         }
 
+        // Then ask directly for whatever the sweep still hasn't found, so a
+        // tire ranked below where paging stops isn't simply never seen.
+        $stats['targeted'] = self::run_targeted_lookup( $context, $guide_index );
+
+        foreach ( $stats['targeted']['errors'] as $targeted_error ) {
+            $stats['errors'][] = $targeted_error;
+        }
+
         // Rows the sweep didn't revisit still hold the match they were given
         // when they were last seen, which the guide may have moved on from.
         $stats['rematched'] = RTG_Candidates::refresh_matches( $guide_index );
 
-        if ( ! empty( $stats['errors'] ) && 0 === $stats['fetched'] ) {
+        // Only a run that read nothing at all is a failure. The targeted pass
+        // counts toward that: a sweep that timed out while the direct lookups
+        // still brought tires in did work, and calling it an error would hide
+        // that.
+        if ( ! empty( $stats['errors'] ) && 0 === $stats['fetched'] && 0 === $stats['targeted']['ingested'] ) {
             $stats['status']  = 'error';
             $stats['message'] = $stats['errors'][0]['message'];
         }
@@ -227,6 +217,144 @@ class RTG_Catalog_Sync {
 
         if ( $is_cron && $notify_enabled && ! empty( $surfaced ) ) {
             RTG_Mailer::send_catalog_digest_notification( $surfaced );
+        }
+
+        return $stats;
+    }
+
+    /**
+     * Evaluate one product and write it to the candidates table.
+     *
+     * Shared by the fitment sweep and the targeted pass so a product reaching
+     * the queue by either route is judged and stored identically.
+     *
+     * @param array  $product     Normalized product from a source.
+     * @param string $slug        Source slug.
+     * @param string $label       Source label, used when the feed names no advertiser.
+     * @param array  $context     Qualification context.
+     * @param array  $guide_index Match key => tire_id.
+     * @return array { evaluated: array, result: array }
+     */
+    private static function ingest( $product, $slug, $label, $context, $guide_index ) {
+        $evaluated = RTG_Tire_Qualifier::evaluate( $product, $context );
+        $match_key = self::match_key( $evaluated['brand'], $evaluated['model'], $evaluated['size'] );
+
+        $result = RTG_Candidates::upsert( array(
+            'source'          => $slug,
+            'advertiser_id'   => $product['advertiser_id'] ?? '',
+            'advertiser_name' => $product['advertiser_name'] ?? $label,
+            'external_id'     => $product['external_id'] ?? '',
+            'brand'           => $evaluated['brand'],
+            'model'           => $evaluated['model'],
+            'size'            => $evaluated['size'],
+            'load_index'      => $evaluated['load_index'],
+            'load_range'      => $evaluated['load_range'],
+            'speed_rating'    => $evaluated['speed_rating'],
+            'price'           => $product['price'] ?? 0,
+            'link'            => $product['link'] ?? '',
+            'image'           => $product['image'] ?? '',
+            'match_key'       => $match_key,
+            'qualifies'       => $evaluated['qualifies'],
+            'fail_reasons'    => $evaluated['reasons'],
+            'warnings'        => $evaluated['warnings'] ?? array(),
+            'fits_vehicles'   => $evaluated['fits_vehicles'] ?? array(),
+            'matched_tire_id' => $guide_index[ $match_key ] ?? '',
+            'raw'             => $product,
+        ) );
+
+        return array(
+            'evaluated' => $evaluated,
+            'result'    => $result,
+        );
+    }
+
+    /**
+     * Search terms for the guide tires nothing in the queue keys to.
+     *
+     * @param array $covered_keys Match keys the queue already holds.
+     * @return array Match key => "Brand Model Size".
+     */
+    public static function uncovered_terms( $covered_keys ) {
+        $terms = array();
+
+        foreach ( RTG_Database::get_all_tires() as $tire ) {
+            $key = self::match_key( $tire['brand'] ?? '', $tire['model'] ?? '', $tire['size'] ?? '' );
+
+            if ( '' === $key || isset( $covered_keys[ $key ] ) ) {
+                continue;
+            }
+
+            $term = trim( preg_replace( '/\s+/', ' ', sprintf(
+                '%s %s %s',
+                $tire['brand'] ?? '',
+                $tire['model'] ?? '',
+                $tire['size'] ?? ''
+            ) ) );
+
+            if ( '' !== $term ) {
+                $terms[ $key ] = $term;
+            }
+        }
+
+        return $terms;
+    }
+
+    /**
+     * Ask each source directly for the tires the sweep didn't find.
+     *
+     * The sweep searches a bare fitment, which CJ answers with a relevance
+     * ranking thousands deep rather than a filter, so a guide tire can sit
+     * below where paging stops and never arrive. Asking for it by brand, model
+     * and size is a different question and takes one request.
+     *
+     * @param array $context     Qualification context.
+     * @param array $guide_index Match key => tire_id.
+     * @return array Statistics for the pass.
+     */
+    private static function run_targeted_lookup( $context, $guide_index ) {
+        $stats = array(
+            'terms'     => 0,
+            'checked'   => 0,
+            'found'     => 0,
+            'pending'   => 0,
+            'ingested'  => 0,
+            'qualified' => 0,
+            'errors'    => array(),
+        );
+
+        $terms = self::uncovered_terms( RTG_Candidates::get_by_match_key() );
+        $stats['terms'] = count( $terms );
+
+        if ( empty( $terms ) ) {
+            return $stats;
+        }
+
+        foreach ( self::get_sources() as $source ) {
+            if ( ! method_exists( $source, 'fetch_terms' ) ) {
+                continue;
+            }
+
+            $lookup = $source->fetch_terms( array_values( $terms ) );
+
+            $stats['checked'] += $lookup['checked'];
+            $stats['found']   += $lookup['found'];
+            $stats['pending']  = max( $stats['pending'], $lookup['pending'] );
+
+            if ( '' !== $lookup['error'] ) {
+                $stats['errors'][] = array(
+                    'source'  => $source->get_slug(),
+                    'message' => $lookup['error'],
+                );
+            }
+
+            foreach ( $lookup['products'] as $product ) {
+                $ingested = self::ingest( $product, $source->get_slug(), $source->get_label(), $context, $guide_index );
+                $stats['ingested']++;
+
+                if ( RTG_Candidates::STATUS_NEW === $ingested['result']['status'] ) {
+                    $stats['qualified']++;
+                }
+            }
         }
 
         return $stats;

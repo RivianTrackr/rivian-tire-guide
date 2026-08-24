@@ -70,17 +70,77 @@ class Test_RTG_Coverage extends WP_UnitTestCase {
     }
 
     /**
-     * The actionable case: the retailer has the tire under another name, and
-     * the names it uses are shown so the guide can be aligned to them.
+     * Sharing a brand and a fitment is not being the same tire.
+     *
+     * This is the flaw the first version shipped with: it reported a Michelin
+     * Defender LTX M/S2 as "listed, but as Pilot Sport S 5" — a summer
+     * performance tire — because both are Michelins in 305/45R22. Nothing had
+     * checked the model at all.
      */
-    public function test_model_mismatch_shows_what_the_retailer_calls_it() {
-        $result = RTG_Coverage::classify( $this->tire( 'Nitto', 'Trail Grappler M/T', '275/65R20' ), $this->index() );
+    public function test_a_different_model_from_the_same_brand_is_not_a_name_variant() {
+        $result = RTG_Coverage::classify( $this->tire( 'Michelin', 'Defender LTX M/S2', '305/45R22' ), $this->index() );
 
-        $this->assertSame( RTG_Coverage::GAP_MODEL_MISMATCH, $result['code'] );
+        $this->assertSame( RTG_Coverage::GAP_MODEL_ABSENT, $result['code'] );
+        $this->assertStringContainsString( 'none of them', $result['label'] );
+    }
 
-        $models = wp_list_pluck( $result['near'], 'model' );
-        $this->assertContains( 'Recon Grappler A/T', $models );
-        $this->assertContains( 'Terra Grappler G3', $models );
+    /**
+     * Model codes one character apart are different tires, so no edit-distance
+     * rule may promote them. NT420V and NT421Q are the real pair that ruled
+     * edit distance out.
+     */
+    public function test_model_codes_that_differ_by_a_digit_are_not_variants() {
+        $index = RTG_Coverage::index_rows( array(
+            array( 'brand' => 'Nitto', 'model' => 'NT421Q', 'size' => '275/60R20', 'advertiser_name' => 'SimpleTire' ),
+        ) );
+
+        $result = RTG_Coverage::classify( $this->tire( 'Nitto', 'NT420V', '275/60R20' ), $index );
+
+        $this->assertSame( RTG_Coverage::GAP_MODEL_ABSENT, $result['code'] );
+    }
+
+    /**
+     * Sharing leading words isn't enough either — "Open Country R/T Trail" and
+     * "Open Country A/T III EV" are two words alike and two different tires.
+     */
+    public function test_shared_words_alone_do_not_make_a_variant() {
+        $index = RTG_Coverage::index_rows( array(
+            array( 'brand' => 'Toyo', 'model' => 'Open Country A/T III EV', 'size' => '275/65R20', 'advertiser_name' => 'The Tire Rack' ),
+        ) );
+
+        $result = RTG_Coverage::classify( $this->tire( 'Toyo', 'Open Country R/T Trail', '275/65R20' ), $index );
+
+        $this->assertSame( RTG_Coverage::GAP_MODEL_ABSENT, $result['code'] );
+        $this->assertLessThan( RTG_Coverage::VARIANT_THRESHOLD, $result['near'][0]['similarity'] );
+    }
+
+    /**
+     * The actionable case: a name that really is this model spelled longer.
+     */
+    public function test_a_name_containing_the_model_is_reported_as_a_variant() {
+        $index = RTG_Coverage::index_rows( array(
+            array( 'brand' => 'Nitto', 'model' => 'Ridge Grappler LT', 'size' => '275/65R20', 'advertiser_name' => 'The Tire Rack' ),
+        ) );
+
+        $result = RTG_Coverage::classify( $this->tire( 'Nitto', 'Ridge Grappler', '275/65R20' ), $index );
+
+        $this->assertSame( RTG_Coverage::GAP_MODEL_VARIANT, $result['code'] );
+        $this->assertStringContainsString( 'Ridge Grappler LT', $result['label'] );
+    }
+
+    /**
+     * What is shown leads with the closest name, not whichever row the
+     * database returned first.
+     */
+    public function test_near_matches_are_ordered_by_similarity() {
+        $index = RTG_Coverage::index_rows( array(
+            array( 'brand' => 'Toyo', 'model' => 'Proxes ST III', 'size' => '275/65R20', 'advertiser_name' => 'SimpleTire' ),
+            array( 'brand' => 'Toyo', 'model' => 'Open Country A/T III', 'size' => '275/65R20', 'advertiser_name' => 'The Tire Rack' ),
+        ) );
+
+        $result = RTG_Coverage::classify( $this->tire( 'Toyo', 'Open Country R/T Trail', '275/65R20' ), $index );
+
+        $this->assertSame( 'Open Country A/T III', $result['near'][0]['model'] );
     }
 
     /**
@@ -97,8 +157,12 @@ class Test_RTG_Coverage extends WP_UnitTestCase {
         );
 
         $models = wp_list_pluck( $result['near'], 'model' );
-        $this->assertSame( array( 'Recon Grappler A/T', 'Terra Grappler G3' ), $models );
-        $this->assertSame( array( 'The Tire Rack', 'SimpleTire' ), $result['near'][0]['advertisers'] );
+        $this->assertCount( 2, $models );
+        $this->assertContains( 'Recon Grappler A/T', $models );
+        $this->assertContains( 'Terra Grappler G3', $models );
+
+        $recon = $result['near'][ array_search( 'Recon Grappler A/T', $models, true ) ];
+        $this->assertSame( array( 'The Tire Rack', 'SimpleTire' ), $recon['advertisers'] );
     }
 
     /**
@@ -154,13 +218,13 @@ class Test_RTG_Coverage extends WP_UnitTestCase {
      */
     public function test_summary_counts_each_gap() {
         $counts = RTG_Coverage::summarize( array(
-            array( 'code' => RTG_Coverage::GAP_MODEL_MISMATCH ),
-            array( 'code' => RTG_Coverage::GAP_MODEL_MISMATCH ),
+            array( 'code' => RTG_Coverage::GAP_MODEL_ABSENT ),
+            array( 'code' => RTG_Coverage::GAP_MODEL_ABSENT ),
             array( 'code' => RTG_Coverage::GAP_SIZE_ABSENT ),
         ) );
 
-        $this->assertSame( RTG_Coverage::GAP_MODEL_MISMATCH, array_key_first( $counts ) );
-        $this->assertSame( 2, $counts[ RTG_Coverage::GAP_MODEL_MISMATCH ] );
+        $this->assertSame( RTG_Coverage::GAP_MODEL_ABSENT, array_key_first( $counts ) );
+        $this->assertSame( 2, $counts[ RTG_Coverage::GAP_MODEL_ABSENT ] );
         $this->assertSame( 1, $counts[ RTG_Coverage::GAP_SIZE_ABSENT ] );
     }
 }
