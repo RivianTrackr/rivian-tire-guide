@@ -56,6 +56,17 @@ jobs:
             -not -path './vendor/*' \
             -print0 | xargs -0 -n1 -P4 php -l
 
+      # Lint only proves a file parses. A contract that two classes agree on
+      # the shape they pass between them is also valid PHP when it is wrong,
+      # and one such mismatch shipped with the targeted lookup silently
+      # ingesting nothing. These execute, with no WordPress and no database.
+      - name: Run contract checks
+        run: |
+          for check in tests/contract/*.php; do
+            echo "== $check"
+            php "$check"
+          done
+
   phpcs:
     name: PHP Coding Standards
     runs-on: ubuntu-latest

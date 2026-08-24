@@ -464,22 +464,27 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
      * worked through over successive runs instead of the same leading entries
      * being retried forever.
      *
+     * Results are returned per term rather than pooled, because "the request
+     * came back with products" is not evidence the tire was found. A live run
+     * had all 111 terms answer and not one guide tire match: CJ ranks a
+     * multi-word keyword the same way it ranks a bare size, so every term drew
+     * a few dozen loosely related products. Keeping the term attached lets the
+     * caller check each answer against what it asked for.
+     *
      * @param string[] $terms Search terms, e.g. "Michelin Defender LTX M/S2 305/45R22".
      * @return array {
-     *     @type array[] $products Normalized products, keyed by external ID.
-     *     @type int     $checked  Terms actually queried.
-     *     @type int     $found    Terms that returned at least one product.
-     *     @type int     $pending  Terms left for the next run.
-     *     @type string  $error    Failure text, or ''.
+     *     @type array  $by_term Term => normalized products it returned.
+     *     @type int    $checked Terms actually queried.
+     *     @type int    $pending Terms left for the next run.
+     *     @type string $error   Failure text, or ''.
      * }
      */
     public function fetch_terms( $terms ) {
         $result = array(
-            'products' => array(),
-            'checked'  => 0,
-            'found'    => 0,
-            'pending'  => 0,
-            'error'    => '',
+            'by_term' => array(),
+            'checked' => 0,
+            'pending' => 0,
+            'error'   => '',
         );
 
         $terms = array_values( array_filter( array_map( 'trim', (array) $terms ), 'strlen' ) );
@@ -525,13 +530,7 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
                 continue;
             }
 
-            if ( ! empty( $response['products'] ) ) {
-                $result['found']++;
-            }
-
-            foreach ( $response['products'] as $product ) {
-                $result['products'][ $product['external_id'] ] = $product;
-            }
+            $result['by_term'][ $term ] = $response['products'];
         }
 
         $next_cursor = null === $stopped
@@ -547,8 +546,6 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
         if ( ! empty( $failures ) ) {
             $result['error'] = implode( ' | ', $failures );
         }
-
-        $result['products'] = array_values( $result['products'] );
 
         return $result;
     }
@@ -895,7 +892,7 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
      *
      * @return array { ok: bool, message: string, product_count: int, sample: array, body: string }
      */
-    public function test_connection() {
+    public function test_connection( $keyword = '' ) {
         if ( '' === self::get_pat() ) {
             return array(
                 'ok'            => false,
@@ -916,9 +913,14 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
             );
         }
 
-        $sizes   = RTG_Admin::get_dropdown_options( 'sizes' );
-        $keyword = $sizes[0] ?? '275/65R18';
-        $result  = $this->query_keyword( $keyword );
+        $keyword = trim( (string) $keyword );
+
+        if ( '' === $keyword ) {
+            $sizes   = RTG_Admin::get_dropdown_options( 'sizes' );
+            $keyword = $sizes[0] ?? '275/65R18';
+        }
+
+        $result = $this->query_keyword( $keyword, 0, self::TARGETED_LIMIT );
 
         if ( '' !== $result['error'] ) {
             return array(
