@@ -433,4 +433,33 @@ class Test_RTG_Catalog_Source_CJ extends WP_UnitTestCase {
     public function test_the_page_allowance_can_reach_past_one_page() {
         $this->assertGreaterThanOrEqual( 5, RTG_Catalog_Source_CJ::DEFAULT_MAX_PAGES );
     }
+
+    /**
+     * The page allowance reaches the match volume actually observed.
+     *
+     * The live sweep reported around 5,600 matches for the busiest size, so a
+     * full pass needs roughly six pages. If the allowance ever drops below what
+     * one size really contains, coverage silently becomes partial again.
+     */
+    public function test_the_page_allowance_covers_the_observed_match_volume() {
+        $reachable = RTG_Catalog_Source_CJ::DEFAULT_MAX_PAGES * RTG_Catalog_Source_CJ::DEFAULT_LIMIT;
+
+        $this->assertGreaterThanOrEqual( 6000, $reachable );
+    }
+
+    /**
+     * No category filter is applied unless one is explicitly configured.
+     *
+     * This is a correctness property, not a preference. The filter is applied
+     * by CJ server-side, so it excludes every product declaring no category —
+     * and the retailers disagree about populating the field: SimpleTire tags
+     * its tires, Tire Rack sends nothing. A default category would therefore
+     * drop one retailer wholesale while the falling match counts made it look
+     * like the filter was working.
+     */
+    public function test_no_category_is_applied_by_default() {
+        delete_option( 'rtg_settings' );
+
+        $this->assertNull( RTG_Catalog_Source_CJ::get_category_names() );
+    }
 }

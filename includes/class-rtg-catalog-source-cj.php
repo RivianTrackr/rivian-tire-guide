@@ -228,10 +228,24 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
     /**
      * Google product categories to restrict the search to.
      *
-     * A keyword search ranks by relevance and does not filter, so asking for a
-     * tire size returns thousands of products that are not tires. Narrowing by
-     * category is the difference between paging through a retailer's whole
-     * catalog and asking only for the part that could possibly match.
+     * Left blank by default, and that is deliberate — this filter is a trap.
+     *
+     * It looked like the answer to a keyword search returning thousands of
+     * products that are not tires. But the retailers do not populate the field
+     * consistently: SimpleTire tags its tires
+     * "Vehicles & Parts > … > Motor Vehicle Tires > Automotive Tires" (id 6093),
+     * while Tire Rack sends no category at all. A category filter is a
+     * server-side WHERE, so applying one excludes every product that declares
+     * no category — which would silently drop Tire Rack in its entirety, the
+     * very retailer whose missing listings prompted the investigation.
+     *
+     * It would also look like a success: the match counts would collapse,
+     * exactly as a working filter would make them.
+     *
+     * Pagination already reaches a size's whole match set, so this is an
+     * optimization the feature does not need. It stays configurable for a
+     * catalog where every advertiser does tag its products, and warns in the
+     * admin about what it costs.
      *
      * @return string[]|null Category names, or null to apply no filter.
      */
