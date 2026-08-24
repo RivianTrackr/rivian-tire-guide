@@ -22,6 +22,7 @@ if ( isset( $_POST['rtg_catalog_settings_save'] ) ) {
     $settings['cj_max_pages']    = max( 1, min( 50, intval( $_POST['cj_max_pages'] ?? RTG_Catalog_Source_CJ::DEFAULT_MAX_PAGES ) ) );
     $settings['cj_targeted_enabled'] = ! empty( $_POST['cj_targeted_enabled'] );
     $settings['cj_targeted_budget']  = max( 15, min( 600, intval( $_POST['cj_targeted_budget'] ?? RTG_Catalog_Source_CJ::TARGETED_BUDGET ) ) );
+    $settings['cj_targeted_limit']   = max( 1, min( 1000, intval( $_POST['cj_targeted_limit'] ?? RTG_Catalog_Source_CJ::TARGETED_LIMIT ) ) );
     $settings['cj_category_names'] = sanitize_textarea_field( wp_unslash( $_POST['cj_category_names'] ?? '' ) );
 
     // The query document is GraphQL, so it must not be run through a sanitizer
@@ -122,6 +123,7 @@ $cj_sweep_budget = intval( $settings['cj_sweep_budget'] ?? RTG_Catalog_Source_CJ
 $cj_max_pages    = intval( $settings['cj_max_pages'] ?? RTG_Catalog_Source_CJ::DEFAULT_MAX_PAGES );
 $cj_targeted_enabled = $settings['cj_targeted_enabled'] ?? true;
 $cj_targeted_budget  = intval( $settings['cj_targeted_budget'] ?? RTG_Catalog_Source_CJ::TARGETED_BUDGET );
+$cj_targeted_limit   = intval( $settings['cj_targeted_limit'] ?? RTG_Catalog_Source_CJ::TARGETED_LIMIT );
 $cj_categories   = $settings['cj_category_names'] ?? '';
 $cj_query        = $settings['cj_query'] ?? '';
 $cj_has_pat      = '' !== RTG_Catalog_Source_CJ::get_pat();
@@ -262,7 +264,24 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                             left for the next run, which starts there.
                         <?php endif; ?>
                     </p>
-                    <?php if ( empty( $targeted['matched'] ) && ! empty( $targeted['answered'] ) ) : ?>
+                    <?php if ( ! empty( $targeted['capped'] ) ) : ?>
+                        <div class="rtg-notice rtg-notice-warning" style="margin-top:10px;">
+                            <span>
+                                <strong><?php echo esc_html( number_format( intval( $targeted['capped'] ) ) ); ?></strong>
+                                search(es) returned more matches than were read
+                                <?php if ( ! empty( $targeted['deepest'] ) ) : ?>
+                                    &mdash; the deepest reported
+                                    <strong><?php echo esc_html( number_format( intval( $targeted['deepest'] ) ) ); ?></strong>
+                                    matches
+                                <?php endif; ?>.
+                                A keyword is scored rather than filtered, so the tire being looked for can rank below
+                                where reading stops. Raise <strong>Records per search</strong> before concluding the
+                                retailer does not carry it.
+                            </span>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if ( empty( $targeted['matched'] ) && ! empty( $targeted['answered'] ) && empty( $targeted['capped'] ) ) : ?>
                         <div class="rtg-notice rtg-notice-warning" style="margin-top:10px;">
                             <span>
                                 Every search was answered and none returned a tire that was being looked for. Use
@@ -878,6 +897,19 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 retailer genuinely sells can rank below where paging stops and never arrive. This is
                                 how those are found. Uncovered tires are worked through in rotation, so a long list
                                 completes over successive runs.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="cj_targeted_limit">Records per search</label></th>
+                        <td>
+                            <input type="number" name="cj_targeted_limit" id="cj_targeted_limit" value="<?php echo esc_attr( $cj_targeted_limit ); ?>" min="1" max="1000" class="small-text">
+                            <p class="description" style="max-width:680px;">
+                                How much of a model search's answer to read. This was 50 on the assumption that naming
+                                a tire is a precise query &mdash; it is not. CJ scores a keyword and returns a ranking,
+                                so the tire being looked for can sit well below the first few dozen results. A run at 50
+                                returned 4,924 products across 99 searches, an average of 49.7 each: every answer
+                                truncated. The status above now says when that happens.
                             </p>
                         </td>
                     </tr>

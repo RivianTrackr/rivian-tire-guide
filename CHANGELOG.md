@@ -4,6 +4,19 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.69.0] - 2026-08-24
+
+### Fixed
+- **Direct lookups were reading 50 records of a ranking thousands deep, and saying nothing about it.** The run that prompted this reported 99 searches, 0 tires found, and 4,924 products &mdash; an average of **49.7 per search**, which is every single answer truncated at the cap. The limit was set to 50 on the reasoning that a keyword naming a tire is a precise query whose answer is a handful of listings or none; the keyword probe disproved that reasoning and the constant was never rechecked against it. CJ scores a keyword and returns a ranking, so the tire being searched for can rank below where reading stops. The limit now matches the sweep's, and it is configurable.
+- **A truncated answer is now reported.** Each search compares what came back against the match count CJ states, and the status names how many answers were cut off and how deep the deepest ranking ran. Without that comparison a truncated answer is indistinguishable from a complete one &mdash; which is exactly how this went a release unnoticed, and is the same silent ceiling the sweep carried at 100 records until 1.63.1.
+- The "no tire was found, so the feed must not carry it" notice no longer appears when answers were truncated. That conclusion is only available once the whole answer has been read, and showing it earlier would argue for giving up on evidence that does not support it.
+
+### Changed
+- Search answers are consumed as they arrive rather than collected first. At a thousand records a search and a hundred searches, holding every response would mean a hundred thousand products in memory to keep the few dozen in a fitment the guide uses.
+
+### Notes
+- The contract check now runs against a stub that reports a match count far larger than the page it returns, so a reintroduced cap fails the build rather than reaching a release.
+
 ## [1.68.0] - 2026-08-24
 
 ### Changed

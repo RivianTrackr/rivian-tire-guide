@@ -52,8 +52,12 @@ function wp_remote_post( $url, $args ) {
                'advertiserId' => '5660604', 'advertiserName' => 'SimpleTire',
                'link' => 'https://simpletire.com/y', 'price' => array( 'amount' => '304.15' ) ),
     );
+    // CJ reports a match count far larger than any page it returns, because a
+    // keyword is scored rather than filtered. That gap is what makes a
+    // truncated answer detectable.
+    $limit = intval( $body['variables']['limit'] );
     return array( 'body' => json_encode( array( 'data' => array( 'shoppingProducts' => array(
-        'totalCount' => 2, 'count' => 2, 'resultList' => $nodes ) ) ) ) );
+        'totalCount' => 4213, 'count' => count( $nodes ), 'resultList' => array_slice( $nodes, 0, $limit ) ) ) ) ) );
 }
 
 require __DIR__ . '/../../includes/class-rtg-catalog-source.php';
@@ -89,6 +93,21 @@ foreach ( $lookup['by_term'][ $terms[0] ] as $p ) {
 check( 'a guide fitment is kept',                in_array( '305/45R22', $kept_sizes, true ) );
 check( 'another guide fitment is also kept',     in_array( '255/65R19', $kept_sizes, true ) );
 check( 'a fitment the guide never uses is left', 1 === $dropped && 2 === $kept );
+
+// A truncated answer must be reported. A 50-record cap on a ranking thousands
+// deep went a whole release unnoticed because nothing compared what came back
+// against what CJ said matched.
+check( 'a truncated answer is counted',          1 === $lookup['capped'] );
+check( 'the depth of the ranking is reported',   4213 === $lookup['deepest'] );
+check( 'the limit asked for is the constant',    1000 === RTG_Catalog_Source_CJ::TARGETED_LIMIT );
+
+// Streaming: with a callback, responses are consumed rather than accumulated.
+$streamed = array();
+$stream = $source->fetch_terms( $terms, function ( $term, $products ) use ( &$streamed ) {
+    $streamed[ $term ] = count( $products );
+} );
+check( 'a callback receives each answer',        ! empty( $streamed[ $terms[0] ] ) );
+check( 'nothing is retained when streaming',     array() === $stream['by_term'] );
 
 // test_connection must honour a keyword and report titles.
 $probe = $source->test_connection( 'Michelin Defender LTX M/S2' );
