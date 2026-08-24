@@ -39,7 +39,9 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **One-Click Add** — Opens the Add New Tire form prefilled with brand, model, size, price, load index, load range, speed rating and purchase link, plus derived diameter and max load.
 - **Sticky Dismissals** — A dismissed candidate never returns to the queue, so it stays short enough to stay useful. Decisions made by a person always outrank what a later run concludes.
 - **Email Digest** — Sent only when a run finds a qualifying tire not seen before.
-- **Pluggable Sources** — Retailers sit behind the `RTG_Catalog_Source` interface and register via the `rtg_catalog_sources` filter. A JSON-backed source ships with the plugin and doubles as a fallback for retailers with no machine-readable feed.
+- **CJ Affiliate Integration** — Both Tire Rack and SimpleTire run on CJ, so one connection covers both. Sends one `shoppingProducts` request per tire size, scoped to the configured advertisers. Includes a Test Connection button that runs a real query and reports CJ's own errors.
+- **Credential Handling** — The CJ token is read from an `RTG_CJ_PAT` constant in `wp-config.php` when defined (keeping it out of the database), otherwise from a write-only settings field that never renders the saved value back. No credentials are stored in the repository.
+- **Pluggable Sources** — Retailers sit behind the `RTG_Catalog_Source` interface and register via the `rtg_catalog_sources` filter. A JSON-backed source also ships with the plugin as a fallback for retailers with no machine-readable feed.
 
 ### Analytics
 - **Click Tracking** — Tracks affiliate link clicks (purchase, review) via `navigator.sendBeacon()` with 5-second server-side deduplication.

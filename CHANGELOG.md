@@ -4,6 +4,19 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.60.0] - 2026-08-24
+
+### Added
+- **Tire Discovery now pulls from CJ Affiliate.** Both Tire Rack and SimpleTire run their affiliate programs on CJ, so one connection covers both retailers. Discovery sends one `shoppingProducts` request per tire size — five requests for a full sweep — scoped to the configured advertisers, and feeds the results through the same qualification, matching and review queue added in 1.59.0. With CJ configured, the JSON feed source stays out of the way unless a feed URL is set, so the bundled sample can't seed demo rows into a queue holding real finds.
+- **Credentials are configured, never committed.** The personal access token is read from an `RTG_CJ_PAT` constant in `wp-config.php` when one is defined, which keeps it out of the database entirely; otherwise it falls back to a settings field that is write-only — the saved value is never rendered back into the form, an empty submission leaves it untouched (so an unrelated settings save can't wipe it), and clearing it is an explicit checkbox. The company ID is entered by the admin. Advertiser IDs default to Tire Rack and SimpleTire, both public directory identifiers, and are editable as `advertiserId|Name` lines.
+- **A Test Connection button** that runs one real query against a real guide size, so a pass proves the whole path — authentication, query document, advertiser scope and field mapping — rather than mere reachability. On failure it surfaces CJ's own error text; on an empty-but-successful response it shows the raw body.
+
+### Internal
+- `RTG_Catalog_Source_CJ` implements the existing `RTG_Catalog_Source` interface, so nothing downstream of the source changed. Two things about it are deliberately soft, because CJ's schema reference sits behind a JavaScript-rendered portal and could not be verified against the live API from the development environment: the GraphQL document is overridable from settings, and the response mapping accepts several plausible field names per value (`clickUrl`/`buyUrl`/`link`, `price.amount`/`currentPrice`, `id`/`productId`/`sku`, and so on), unwrapping Relay-style `node` wrappers and locating the result list wherever it sits in the payload. **The shipped query document is a best effort and needs one live verification run**; a mismatch is a settings edit rather than a plugin release, and the Test Connection output names the field to change.
+- GraphQL errors arrive inside HTTP 200 responses, so they are detected explicitly and passed through verbatim — CJ names the offending field, which is exactly what correcting the query needs. Authentication failures (401/403) are reported distinctly from other HTTP errors.
+- A sweep carries a 45-second wall-clock budget. Five sequential requests can outlast PHP's execution limit on a web-triggered cron, so the sweep stops when the budget is spent and names the sizes it didn't reach, rather than being killed mid-run and silently reporting a partial catalog as complete. A size whose individual request fails is likewise recorded and skipped instead of aborting the sweep.
+- Response mapping is covered by `tests/test-catalog-source-cj.php` — the riskiest part of the adapter given the unverified schema, so the shapes a product search plausibly returns are pinned to stop a correction to one spelling from breaking another.
+
 ## [1.59.0] - 2026-08-24
 
 ### Added

@@ -13,6 +13,26 @@ if ( isset( $_POST['rtg_catalog_settings_save'] ) ) {
     $settings['catalog_notify_enabled'] = ! empty( $_POST['catalog_notify_enabled'] );
     $settings['catalog_fixture_url']    = esc_url_raw( wp_unslash( $_POST['catalog_fixture_url'] ?? '' ) );
 
+    // --- CJ credentials and query ---
+    $settings['cj_enabled']     = ! empty( $_POST['cj_enabled'] );
+    $settings['cj_company_id']  = preg_replace( '/[^0-9]/', '', wp_unslash( $_POST['cj_company_id'] ?? '' ) );
+    $settings['cj_advertisers'] = sanitize_textarea_field( wp_unslash( $_POST['cj_advertisers'] ?? '' ) );
+    $settings['cj_limit']       = max( 1, min( 1000, intval( $_POST['cj_limit'] ?? RTG_Catalog_Source_CJ::DEFAULT_LIMIT ) ) );
+
+    // The query document is GraphQL, so it must not be run through a sanitizer
+    // that mangles braces or quotes; it is never output unescaped.
+    $settings['cj_query'] = trim( (string) wp_unslash( $_POST['cj_query'] ?? '' ) );
+
+    // The token field renders empty, so an empty submission means "leave it
+    // alone" rather than "clear it" — otherwise every unrelated settings save
+    // would wipe the credential. Clearing is explicit, via the checkbox.
+    $posted_pat = trim( (string) wp_unslash( $_POST['cj_pat'] ?? '' ) );
+    if ( ! empty( $_POST['cj_pat_clear'] ) ) {
+        $settings['cj_pat'] = '';
+    } elseif ( '' !== $posted_pat ) {
+        $settings['cj_pat'] = $posted_pat;
+    }
+
     // Clamp to the range the load index table actually covers, so a typo can't
     // silently disqualify every tire or admit every tire.
     $posted_index = intval( $_POST['catalog_min_load_index'] ?? RTG_Tire_Qualifier::DEFAULT_MIN_LOAD_INDEX );
@@ -28,6 +48,22 @@ $fixture_url    = $settings['catalog_fixture_url'] ?? '';
 $min_load_index = isset( $settings['catalog_min_load_index'] )
     ? intval( $settings['catalog_min_load_index'] )
     : RTG_Tire_Qualifier::DEFAULT_MIN_LOAD_INDEX;
+
+$cj_enabled      = $settings['cj_enabled'] ?? true;
+$cj_company_id   = RTG_Catalog_Source_CJ::get_company_id();
+$cj_advertisers  = $settings['cj_advertisers'] ?? '';
+$cj_limit        = intval( $settings['cj_limit'] ?? RTG_Catalog_Source_CJ::DEFAULT_LIMIT );
+$cj_query        = $settings['cj_query'] ?? '';
+$cj_has_pat      = '' !== RTG_Catalog_Source_CJ::get_pat();
+$cj_pat_constant = RTG_Catalog_Source_CJ::pat_is_constant();
+$cj_configured   = RTG_Catalog_Source_CJ::is_configured();
+
+// Default advertiser list, shown as the placeholder so the expected shape is
+// obvious without pre-filling the field.
+$cj_advertiser_placeholder = '';
+foreach ( RTG_Catalog_Source_CJ::DEFAULT_ADVERTISERS as $adv_id => $adv_name ) {
+    $cj_advertiser_placeholder .= $adv_id . '|' . $adv_name . "\n";
+}
 
 $stats  = RTG_Catalog_Sync::get_stats();
 $counts = RTG_Candidates::get_counts();
@@ -308,12 +344,98 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                             <p class="description">A tire below this is filed under Near Misses rather than the review queue. R1 needs 116, R2 needs 112.</p>
                         </td>
                     </tr>
+                </table>
+
+                <h3 style="margin:24px 0 8px;">CJ Affiliate</h3>
+                <p class="description" style="max-width:820px;margin-bottom:8px;">
+                    Both Tire Rack and SimpleTire run their affiliate programs on CJ, so one connection
+                    covers both. Discovery sends one request per tire size, scoped to the advertisers below.
+                    <?php if ( $cj_configured ) : ?>
+                        <strong style="color:var(--rtg-success);">Configured.</strong>
+                    <?php else : ?>
+                        <strong style="color:var(--rtg-warning-text);">Not configured — discovery falls back to the JSON feed.</strong>
+                    <?php endif; ?>
+                </p>
+
+                <table class="form-table">
+                    <tr>
+                        <th scope="row"><label for="cj_enabled">Use CJ</label></th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="cj_enabled" id="cj_enabled" value="1" <?php checked( $cj_enabled ); ?>>
+                                Pull candidates from the CJ Product Search API
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="cj_company_id">Company ID (CID)</label></th>
+                        <td>
+                            <input type="text" name="cj_company_id" id="cj_company_id" value="<?php echo esc_attr( $cj_company_id ); ?>" class="regular-text" inputmode="numeric">
+                            <p class="description">From CJ &rarr; Account &rarr; Account Information.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="cj_pat">Personal Access Token</label></th>
+                        <td>
+                            <?php if ( $cj_pat_constant ) : ?>
+                                <p style="margin:0;color:var(--rtg-success);"><strong>Set in wp-config.php</strong> via <code>RTG_CJ_PAT</code>. This field is ignored while that constant is defined.</p>
+                            <?php else : ?>
+                                <input type="password" name="cj_pat" id="cj_pat" value="" class="regular-text" autocomplete="off"
+                                    placeholder="<?php echo $cj_has_pat ? esc_attr( 'Saved — leave blank to keep' ) : esc_attr( 'Paste your CJ token' ); ?>">
+                                <?php if ( $cj_has_pat ) : ?>
+                                    <label style="margin-left:12px;">
+                                        <input type="checkbox" name="cj_pat_clear" value="1"> Clear saved token
+                                    </label>
+                                <?php endif; ?>
+                                <p class="description">
+                                    Never displayed once saved. Better still, keep it out of the database entirely by adding
+                                    <code>define( 'RTG_CJ_PAT', '...' );</code> to <code>wp-config.php</code> — that takes precedence over this field.
+                                </p>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="cj_advertisers">Advertisers</label></th>
+                        <td>
+                            <textarea name="cj_advertisers" id="cj_advertisers" rows="3" class="large-text code" placeholder="<?php echo esc_attr( $cj_advertiser_placeholder ); ?>"><?php echo esc_textarea( $cj_advertisers ); ?></textarea>
+                            <p class="description">One per line, as <code>advertiserId|Name</code>. Leave blank for the defaults shown. Only advertisers you have joined return products.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="cj_limit">Records per size</label></th>
+                        <td>
+                            <input type="number" name="cj_limit" id="cj_limit" value="<?php echo esc_attr( $cj_limit ); ?>" min="1" max="1000" class="small-text">
+                            <p class="description">How many products to request per tire size. Five sizes means five requests per run.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="cj_query">GraphQL query</label></th>
+                        <td>
+                            <textarea name="cj_query" id="cj_query" rows="10" class="large-text code" spellcheck="false" placeholder="<?php echo esc_attr( RTG_Catalog_Source_CJ::DEFAULT_QUERY ); ?>"><?php echo esc_textarea( $cj_query ); ?></textarea>
+                            <p class="description">
+                                Leave blank to use the shipped query. If Test Connection reports a GraphQL error naming a field,
+                                correct it here rather than waiting on a plugin update — the response mapping accepts several
+                                field spellings, so only the query itself usually needs changing.
+                            </p>
+                            <p style="margin-top:10px;">
+                                <button type="button" id="rtg-cj-test-btn" class="rtg-btn rtg-btn-secondary">Test Connection</button>
+                            </p>
+                            <div id="rtg-cj-test-result" style="display:none;margin-top:10px;"></div>
+                        </td>
+                    </tr>
+                </table>
+
+                <h3 style="margin:24px 0 8px;">JSON Feed</h3>
+
+                <table class="form-table">
                     <tr>
                         <th scope="row"><label for="catalog_fixture_url">JSON Feed URL</label></th>
                         <td>
                             <input type="url" name="catalog_fixture_url" id="catalog_fixture_url" value="<?php echo esc_attr( $fixture_url ); ?>" class="regular-text" style="width:100%;max-width:600px;" placeholder="<?php echo esc_attr( 'Leave blank to use the bundled sample' ); ?>">
                             <p class="description">
-                                A JSON document of products to check. Leave blank to run against the bundled sample and see how the queue behaves.
+                                An optional extra source — a JSON document of products to check, useful for a retailer with no
+                                machine-readable feed. With CJ configured and this blank, the bundled sample stays out of the way
+                                so demo rows can't mix into a queue holding real finds.
                             </p>
                         </td>
                     </tr>

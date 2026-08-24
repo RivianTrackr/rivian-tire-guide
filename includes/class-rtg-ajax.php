@@ -150,6 +150,7 @@ class RTG_Ajax {
         // Tire Discovery (affiliate catalog candidates).
         add_action( 'wp_ajax_rtg_catalog_sync_now', array( $this, 'catalog_sync_now' ) );
         add_action( 'wp_ajax_rtg_candidate_set_status', array( $this, 'candidate_set_status' ) );
+        add_action( 'wp_ajax_rtg_cj_test_connection', array( $this, 'cj_test_connection' ) );
     }
 
     /**
@@ -996,6 +997,30 @@ class RTG_Ajax {
         }
 
         $result = RTG_Catalog_Sync::run();
+        wp_send_json_success( $result );
+    }
+
+    /**
+     * Probe the CJ Product Search API and report what came back.
+     *
+     * CJ's schema reference is behind a JavaScript-rendered portal, so the
+     * shipped query document is a best effort. This returns CJ's own error
+     * text — which names the offending field — and, on an empty-but-successful
+     * response, the raw body, so the query can be corrected from the settings
+     * form in one round trip instead of by guesswork.
+     */
+    public function cj_test_connection() {
+        check_ajax_referer( 'rtg_admin_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized.' );
+        }
+
+        $source = new RTG_Catalog_Source_CJ();
+        $result = $source->test_connection();
+
+        // The token is never part of the diagnostics: only CJ's response is
+        // recorded, and the request body is not echoed back.
         wp_send_json_success( $result );
     }
 

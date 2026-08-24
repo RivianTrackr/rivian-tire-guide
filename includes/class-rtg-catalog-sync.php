@@ -57,9 +57,22 @@ class RTG_Catalog_Sync {
     public static function get_sources() {
         $settings = get_option( 'rtg_settings', array() );
 
-        $sources = array(
-            new RTG_Catalog_Source_Fixture( (string) ( $settings['catalog_fixture_url'] ?? '' ) ),
-        );
+        $sources = array();
+
+        // CJ covers both retailers the guide links to, so it leads when it has
+        // the credentials it needs; an unconfigured CJ is simply absent rather
+        // than failing every run with the same message.
+        if ( RTG_Catalog_Source_CJ::is_configured() ) {
+            $sources[] = new RTG_Catalog_Source_CJ();
+        }
+
+        // The JSON source runs whenever a feed URL is set. With CJ configured
+        // and no URL set it stays out of the way, so the bundled sample can't
+        // seed demo rows into a queue holding real finds.
+        $fixture_url = trim( (string) ( $settings['catalog_fixture_url'] ?? '' ) );
+        if ( '' !== $fixture_url || empty( $sources ) ) {
+            $sources[] = new RTG_Catalog_Source_Fixture( $fixture_url );
+        }
 
         /**
          * Filter the catalog sources the sync pulls from.
