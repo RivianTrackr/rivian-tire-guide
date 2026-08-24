@@ -241,20 +241,22 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                 <?php if ( ! empty( $stats['targeted']['terms'] ) ) : ?>
                     <?php $targeted = $stats['targeted']; ?>
                     <p class="description" style="margin:12px 0 0;max-width:860px;">
-                        <strong>Direct lookups:</strong> asked for
+                        <strong>Direct lookups:</strong> ran
                         <?php echo esc_html( number_format( intval( $targeted['checked'] ) ) ); ?>
                         of <?php echo esc_html( number_format( intval( $targeted['terms'] ) ) ); ?>
-                        uncovered tire(s) by name.
+                        model search(es), covering
+                        <?php echo esc_html( number_format( intval( $targeted['tires'] ?? 0 ) ) ); ?>
+                        uncovered tire(s).
                         <strong<?php echo empty( $targeted['matched'] ) ? ' style="color:var(--rtg-error);"' : ''; ?>>
                             <?php echo esc_html( number_format( intval( $targeted['matched'] ?? 0 ) ) ); ?>
-                            came back with the tire that was asked for.
+                            uncovered tire(s) were actually found.
                         </strong>
                         <?php echo esc_html( number_format( intval( $targeted['answered'] ?? 0 ) ) ); ?>
                         returned something,
                         <?php echo esc_html( number_format( intval( $targeted['ingested'] ) ) ); ?>
-                        product(s) in the right fitment reached the queue, and
+                        product(s) in a fitment the guide uses reached the queue, and
                         <?php echo esc_html( number_format( intval( $targeted['off_size'] ?? 0 ) ) ); ?>
-                        were another fitment and were left out.
+                        were in fitments the guide has no use for and were left out.
                         <?php if ( ! empty( $targeted['pending'] ) ) : ?>
                             <?php echo esc_html( number_format( intval( $targeted['pending'] ) ) ); ?>
                             left for the next run, which starts there.
@@ -263,10 +265,11 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                     <?php if ( empty( $targeted['matched'] ) && ! empty( $targeted['answered'] ) ) : ?>
                         <div class="rtg-notice rtg-notice-warning" style="margin-top:10px;">
                             <span>
-                                Every lookup was answered and none returned the tire it asked for, so CJ is ranking
-                                these keywords rather than matching them &mdash; the same behaviour a bare-size
-                                search shows. Use <strong>Test Connection</strong> with a tire's full name to see
-                                what a term actually returns before changing anything else.
+                                Every search was answered and none returned a tire that was being looked for. Use
+                                <strong>Test Connection</strong> with one of those brand-and-model terms to see what
+                                the search actually returns &mdash; if the model comes back in other fitments only,
+                                the retailer's feed does not carry the size the guide wants, and no change to the
+                                query will conjure it.
                             </span>
                         </div>
                     <?php endif; ?>
