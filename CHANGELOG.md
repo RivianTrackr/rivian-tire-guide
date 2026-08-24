@@ -4,6 +4,15 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.64.2] - 2026-08-24
+
+### Fixed
+- **No price was ever refreshed from Tire Rack.** CJ names the advertiser "The Tire Rack"; a purchase link resolves to "Tire Rack"; the two were compared exactly, so every Tire Rack tire was judged as "that retailer isn't listing this" and skipped. The first run after prices went live reported **103 covered tires and 0 updated**, which is what tipped it off — a real catalog does not leave every price unchanged. Retailer names are now compared with spacing, punctuation, case and a leading "the" removed, so the two spellings meet in the middle. Distinct retailers still differ, since collapsing them would attach one's price to the other's link — the failure the whole rule exists to prevent.
+
+### Notes
+- The same comparison decides which retailer may set a price, so this was silent rather than noisy: every affected tire was reported as "not carrying", a legitimate-looking outcome that happened to be false for a whole retailer.
+- Covered by `tests/test-price-sync.php` using the real affiliate link and CJ's own advertiser spelling, alongside a check that two different retailers are still told apart.
+
 ## [1.64.1] - 2026-08-24
 
 ### Changed

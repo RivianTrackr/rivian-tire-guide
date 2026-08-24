@@ -122,6 +122,31 @@ class RTG_Price_Sync {
     }
 
     /**
+     * Reduce a retailer name to a form two spellings of it can be compared in.
+     *
+     * A link resolves to the name this class knows a retailer by; a candidate
+     * carries whatever CJ calls its advertiser. Those disagree — CJ says "The
+     * Tire Rack" where the resolver says "Tire Rack" — and comparing them
+     * exactly meant every Tire Rack tire was judged as "that retailer isn't
+     * listing this", so not one price was ever refreshed from them.
+     *
+     * A leading "the" is dropped along with spacing and punctuation, so the
+     * two forms meet in the middle.
+     *
+     * @param string $name Retailer or advertiser name.
+     * @return string Comparison key.
+     */
+    public static function normalize_retailer( $name ) {
+        $key = preg_replace( '/[^a-z0-9]/', '', strtolower( trim( (string) $name ) ) );
+
+        if ( 0 === strpos( $key, 'the' ) && strlen( $key ) > 3 ) {
+            $key = substr( $key, 3 );
+        }
+
+        return $key;
+    }
+
+    /**
      * @param string $host Hostname, lowercased.
      * @return string Advertiser name, or '' when unmatched.
      */
@@ -182,7 +207,9 @@ class RTG_Price_Sync {
         // Only the retailer the link leads to may set the price.
         $quote = null;
         foreach ( (array) $candidates as $candidate ) {
-            if ( (string) ( $candidate['advertiser_name'] ?? '' ) !== $retailer ) {
+            $advertiser = (string) ( $candidate['advertiser_name'] ?? '' );
+
+            if ( self::normalize_retailer( $advertiser ) !== self::normalize_retailer( $retailer ) ) {
                 continue;
             }
 
