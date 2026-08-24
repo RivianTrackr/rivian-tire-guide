@@ -233,11 +233,21 @@ class RTG_Catalog_Sync {
      * @param string $label       Source label, used when the feed names no advertiser.
      * @param array  $context     Qualification context.
      * @param array  $guide_index Match key => tire_id.
-     * @return array { evaluated: array, result: array }
+     * @param string $only_size   Store only this fitment; '' accepts any.
+     * @return array { evaluated: array, result: array, match_key: string, skipped: bool }
      */
-    private static function ingest( $product, $slug, $label, $context, $guide_index ) {
+    private static function ingest( $product, $slug, $label, $context, $guide_index, $only_size = '' ) {
         $evaluated = RTG_Tire_Qualifier::evaluate( $product, $context );
         $match_key = self::match_key( $evaluated['brand'], $evaluated['model'], $evaluated['size'] );
+
+        if ( '' !== $only_size && $evaluated['size'] !== $only_size ) {
+            return array(
+                'evaluated' => $evaluated,
+                'result'    => array( 'status' => '', 'newly_surfaced' => false, 'id' => 0 ),
+                'match_key' => $match_key,
+                'skipped'   => true,
+            );
+        }
 
         $result = RTG_Candidates::upsert( array(
             'source'          => $slug,
@@ -265,6 +275,8 @@ class RTG_Catalog_Sync {
         return array(
             'evaluated' => $evaluated,
             'result'    => $result,
+            'match_key' => $match_key,
+            'skipped'   => false,
         );
     }
 
@@ -315,9 +327,11 @@ class RTG_Catalog_Sync {
         $stats = array(
             'terms'     => 0,
             'checked'   => 0,
-            'found'     => 0,
+            'answered'  => 0,
+            'matched'   => 0,
             'pending'   => 0,
             'ingested'  => 0,
+            'off_size'  => 0,
             'qualified' => 0,
             'errors'    => array(),
         );
@@ -337,7 +351,6 @@ class RTG_Catalog_Sync {
             $lookup = $source->fetch_terms( array_values( $terms ) );
 
             $stats['checked'] += $lookup['checked'];
-            $stats['found']   += $lookup['found'];
             $stats['pending']  = max( $stats['pending'], $lookup['pending'] );
 
             if ( '' !== $lookup['error'] ) {
@@ -347,12 +360,64 @@ class RTG_Catalog_Sync {
                 );
             }
 
-            foreach ( $lookup['products'] as $product ) {
-                $ingested = self::ingest( $product, $source->get_slug(), $source->get_label(), $context, $guide_index );
-                $stats['ingested']++;
+            $seen = array();
 
-                if ( RTG_Candidates::STATUS_NEW === $ingested['result']['status'] ) {
-                    $stats['qualified']++;
+            foreach ( $terms as $key => $term ) {
+                $products = $lookup['by_term'][ $term ] ?? array();
+
+                if ( empty( $products ) ) {
+                    continue;
+                }
+
+                $stats['answered']++;
+
+                // The fitment this term was asking about. A match key is
+                // brand|model|size, so the size is the third field.
+                $parts = explode( '|', $key );
+                $want  = $parts[2] ?? '';
+
+                foreach ( $products as $product ) {
+                    $id = (string) ( $product['external_id'] ?? '' );
+
+                    if ( '' === $id || isset( $seen[ $id ] ) ) {
+                        continue;
+                    }
+
+                    $ingested = self::ingest(
+                        $product,
+                        $source->get_slug(),
+                        $source->get_label(),
+                        $context,
+                        $guide_index,
+                        $want
+                    );
+
+                    if ( $ingested['skipped'] ) {
+                        // Kept out of the queue rather than stored: a targeted
+                        // lookup asks about one fitment, and CJ ranks rather
+                        // than filters, so most of what comes back is another
+                        // fitment entirely. Storing it added four thousand
+                        // rows to the near-miss queue in a single run without
+                        // covering one more tire. The sweep is what canvasses
+                        // fitments; this pass answers one question.
+                        $stats['off_size']++;
+                        continue;
+                    }
+
+                    $seen[ $id ] = true;
+                    $stats['ingested']++;
+
+                    if ( RTG_Candidates::STATUS_NEW === $ingested['result']['status'] ) {
+                        $stats['qualified']++;
+                    }
+
+                    // The only outcome that means the lookup worked: a product
+                    // came back that keys to the tire we asked about. Counting
+                    // "the request returned something" instead reported 111 of
+                    // 111 successful while coverage did not move at all.
+                    if ( $key === $ingested['match_key'] ) {
+                        $stats['matched']++;
+                    }
                 }
             }
         }

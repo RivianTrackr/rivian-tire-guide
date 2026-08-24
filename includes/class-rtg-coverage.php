@@ -250,17 +250,27 @@ class RTG_Coverage {
             );
         }
 
+        // Counted and attributed within this brand and fitment only. An
+        // earlier version paired a count of this brand's models with the list
+        // of retailers selling the *size*, which reads as one fact and is two.
+        $brand_advertisers = array();
+        foreach ( $near as $listing ) {
+            if ( '' !== $listing['advertiser_name'] ) {
+                $brand_advertisers[ $listing['advertiser_name'] ] = true;
+            }
+        }
+
         return array(
             'code'  => self::GAP_MODEL_ABSENT,
             'label' => sprintf(
-                '%s %s %s listing(s) arrived%s, none of them a %s. These are what came in:',
-                number_format( count( $models ) ),
+                '%s %s %s listing(s) arrived%s, none of them a "%s". These are what came in:',
+                number_format( count( $near ) ),
                 $brand,
                 $size,
-                empty( $in_size['advertisers'] )
+                empty( $brand_advertisers )
                     ? ''
-                    : ' from ' . implode( ' and ', array_keys( $in_size['advertisers'] ) ),
-                '"' . $model . '"'
+                    : ' from ' . implode( ' and ', array_keys( $brand_advertisers ) ),
+                $model
             ),
             'near'  => $listed,
         );

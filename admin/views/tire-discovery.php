@@ -240,24 +240,36 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
 
                 <?php if ( ! empty( $stats['targeted']['terms'] ) ) : ?>
                     <?php $targeted = $stats['targeted']; ?>
-                    <p class="description" style="margin:12px 0 0;max-width:820px;">
+                    <p class="description" style="margin:12px 0 0;max-width:860px;">
                         <strong>Direct lookups:</strong> asked for
                         <?php echo esc_html( number_format( intval( $targeted['checked'] ) ) ); ?>
                         of <?php echo esc_html( number_format( intval( $targeted['terms'] ) ) ); ?>
-                        uncovered tire(s) by name;
-                        <strong><?php echo esc_html( number_format( intval( $targeted['found'] ) ) ); ?></strong>
-                        returned a listing and
+                        uncovered tire(s) by name.
+                        <strong<?php echo empty( $targeted['matched'] ) ? ' style="color:var(--rtg-error);"' : ''; ?>>
+                            <?php echo esc_html( number_format( intval( $targeted['matched'] ?? 0 ) ) ); ?>
+                            came back with the tire that was asked for.
+                        </strong>
+                        <?php echo esc_html( number_format( intval( $targeted['answered'] ?? 0 ) ) ); ?>
+                        returned something,
                         <?php echo esc_html( number_format( intval( $targeted['ingested'] ) ) ); ?>
-                        product(s) reached the queue.
+                        product(s) in the right fitment reached the queue, and
+                        <?php echo esc_html( number_format( intval( $targeted['off_size'] ?? 0 ) ) ); ?>
+                        were another fitment and were left out.
                         <?php if ( ! empty( $targeted['pending'] ) ) : ?>
                             <?php echo esc_html( number_format( intval( $targeted['pending'] ) ) ); ?>
                             left for the next run, which starts there.
                         <?php endif; ?>
-                        <br>
-                        A fitment sweep asks CJ for a bare size and gets a relevance ranking thousands deep, so a
-                        guide tire can rank below where paging stops. These ask for it by brand, model and size
-                        instead.
                     </p>
+                    <?php if ( empty( $targeted['matched'] ) && ! empty( $targeted['answered'] ) ) : ?>
+                        <div class="rtg-notice rtg-notice-warning" style="margin-top:10px;">
+                            <span>
+                                Every lookup was answered and none returned the tire it asked for, so CJ is ranking
+                                these keywords rather than matching them &mdash; the same behaviour a bare-size
+                                search shows. Use <strong>Test Connection</strong> with a tire's full name to see
+                                what a term actually returns before changing anything else.
+                            </span>
+                        </div>
+                    <?php endif; ?>
                 <?php endif; ?>
 
                 <?php if ( ! empty( $stats['errors'] ) ) : ?>
@@ -896,8 +908,17 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 correct it here rather than waiting on a plugin update — the response mapping accepts several
                                 field spellings, so only the query itself usually needs changing.
                             </p>
-                            <p style="margin-top:10px;">
+                            <p style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                                <input type="text" id="rtg-cj-test-keyword" class="regular-text"
+                                    placeholder="Michelin Defender LTX M/S2 305/45R22"
+                                    style="flex:1 1 340px;min-width:240px;">
                                 <button type="button" id="rtg-cj-test-btn" class="rtg-btn rtg-btn-secondary">Test Connection</button>
+                            </p>
+                            <p class="description" style="max-width:680px;">
+                                Any keyword may be probed here, and the reply lists the titles it returned. That is how to
+                                tell whether CJ is <em>matching</em> a term or merely ranking against it: type a tire's
+                                full name and see whether that tire is anywhere in the answer. Blank uses the first
+                                guide size, which tests the connection itself.
                             </p>
                             <div id="rtg-cj-test-result" style="display:none;margin-top:10px;"></div>
                         </td>

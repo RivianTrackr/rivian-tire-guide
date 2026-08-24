@@ -1016,8 +1016,13 @@ class RTG_Ajax {
             wp_send_json_error( 'Unauthorized.' );
         }
 
+        // An arbitrary keyword may be probed, so "what does CJ do with a
+        // tire's full name?" is answerable from the settings screen rather
+        // than inferred from a sync's aggregate counts.
+        $keyword = sanitize_text_field( wp_unslash( $_POST['keyword'] ?? '' ) );
+
         $source = new RTG_Catalog_Source_CJ();
-        $result = $source->test_connection();
+        $result = $source->test_connection( $keyword );
 
         // The token is never part of the diagnostics: only CJ's response is
         // recorded, and the request body is not echoed back.
