@@ -41,6 +41,31 @@ class RTG_Tire_Qualifier {
      * flag every rating as unrecognized, which is exactly what happened on the
      * first live run against CJ.
      */
+    /** Brand policy: brands outside the curated list are not judged at all. */
+    const BRAND_POLICY_OFF = 'off';
+
+    /** Brand policy: an uncovered brand still reaches the queue, flagged. */
+    const BRAND_POLICY_WARN = 'warn';
+
+    /** Brand policy: an uncovered brand is filed as a near miss. */
+    const BRAND_POLICY_REJECT = 'reject';
+
+    /** Policy applied when the setting is unset. */
+    const DEFAULT_BRAND_POLICY = self::BRAND_POLICY_WARN;
+
+    /**
+     * Load index each Rivian platform requires.
+     *
+     * A single global floor can't express this: an R1 fitment at 114 clears a
+     * 112 floor while being illegal on the vehicle it fits. Size and load index
+     * are therefore judged together, per vehicle, rather than as two
+     * independent gates.
+     */
+    const VEHICLE_MIN_LOAD_INDEX = array(
+        'R1' => 116,
+        'R2' => 112,
+    );
+
     const CANONICAL_SPEED_RATINGS = array(
         'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'H', 'V', 'W', 'Y', 'Z', 'ZR',
     );
@@ -57,11 +82,19 @@ class RTG_Tire_Qualifier {
             ? intval( $settings['catalog_min_load_index'] )
             : self::DEFAULT_MIN_LOAD_INDEX;
 
+        $brand_policy = isset( $settings['catalog_brand_policy'] )
+            ? (string) $settings['catalog_brand_policy']
+            : self::DEFAULT_BRAND_POLICY;
+
         return array(
             'sizes'          => RTG_Admin::get_dropdown_options( 'sizes' ),
             'min_load_index' => $min_load_index,
             'load_ranges'    => RTG_Admin::get_dropdown_options( 'load_ranges' ),
             'speed_ratings'  => RTG_Admin::get_dropdown_options( 'speed_ratings' ),
+            'brands'         => RTG_Admin::get_dropdown_options( 'brands' ),
+            'brand_policy'   => $brand_policy,
+            'vehicle_sizes'  => RTG_Database::get_vehicle_size_map(),
+            'vehicle_min_load_index' => self::get_vehicle_minimums(),
         );
     }
 
@@ -91,6 +124,53 @@ class RTG_Tire_Qualifier {
         }
 
         return $m[1] . '/' . $m[2] . 'R' . $m[3];
+    }
+
+    /**
+     * Resolve the load index floor for each vehicle the guide knows about.
+     *
+     * Vehicles come from the stock wheels table, so a platform added there
+     * appears here automatically. One without a configured or built-in floor
+     * falls back to the global minimum rather than being left ungated.
+     *
+     * @return array Vehicle => minimum load index.
+     */
+    public static function get_vehicle_minimums() {
+        $settings = get_option( 'rtg_settings', array() );
+        $saved    = isset( $settings['catalog_vehicle_min_load_index'] ) && is_array( $settings['catalog_vehicle_min_load_index'] )
+            ? $settings['catalog_vehicle_min_load_index']
+            : array();
+
+        $global = isset( $settings['catalog_min_load_index'] )
+            ? intval( $settings['catalog_min_load_index'] )
+            : self::DEFAULT_MIN_LOAD_INDEX;
+
+        $minimums = array();
+        foreach ( array_keys( RTG_Database::get_vehicle_size_map() ) as $vehicle ) {
+            if ( isset( $saved[ $vehicle ] ) && intval( $saved[ $vehicle ] ) > 0 ) {
+                $minimums[ $vehicle ] = intval( $saved[ $vehicle ] );
+            } elseif ( isset( self::VEHICLE_MIN_LOAD_INDEX[ $vehicle ] ) ) {
+                $minimums[ $vehicle ] = self::VEHICLE_MIN_LOAD_INDEX[ $vehicle ];
+            } else {
+                $minimums[ $vehicle ] = $global;
+            }
+        }
+
+        return $minimums;
+    }
+
+    /**
+     * Reduce a brand name to a form two spellings of it can be compared in.
+     *
+     * Retailers punctuate and space brands inconsistently — "BFGoodrich",
+     * "BF Goodrich" and "BF-Goodrich" are one manufacturer — so everything but
+     * letters and digits is dropped before comparing.
+     *
+     * @param string $brand Raw brand name.
+     * @return string Comparison key, or '' when there is nothing to compare.
+     */
+    public static function normalize_brand( $brand ) {
+        return preg_replace( '/[^a-z0-9]/', '', strtolower( trim( (string) $brand ) ) );
     }
 
     /**
@@ -203,6 +283,7 @@ class RTG_Tire_Qualifier {
      *     @type bool  $qualifies Whether the candidate belongs in the guide.
      *     @type array $reasons   List of { code, label } disqualifying failures.
      *     @type array $warnings  List of { code, label } things to confirm.
+     *     @type array $fits_vehicles Vehicles the tire is legal on, e.g. ["R1"].
      * }
      */
     public static function qualify( $specs, $context = null ) {
@@ -213,31 +294,103 @@ class RTG_Tire_Qualifier {
         $reasons  = array();
         $warnings = array();
 
-        // --- Size: the hard gate. ---
-        $allowed = array();
-        foreach ( (array) ( $context['sizes'] ?? array() ) as $allowed_size ) {
-            $normalized = self::normalize_size( $allowed_size );
-            if ( '' !== $normalized ) {
-                $allowed[ $normalized ] = true;
-            }
-        }
+        // --- Fitment: size and load index, judged together per vehicle. ---
+        //
+        // These cannot be two independent gates. A 275/65R18 at load index 114
+        // clears a global floor of 112 while being illegal on the R1 that is
+        // the only vehicle taking that size. So each vehicle is asked the same
+        // pair of questions — is this one of your sizes, and does it carry
+        // enough load for you — and a tire qualifies if any vehicle says yes.
+        $size       = self::normalize_size( $specs['size'] ?? '' );
+        $load_index = trim( (string) ( $specs['load_index'] ?? '' ) );
 
-        $size = self::normalize_size( $specs['size'] ?? '' );
+        $fits          = array();
+        $size_fits_any = false;
+        $short_on_load = array();
+
+        $vehicle_sizes = (array) ( $context['vehicle_sizes'] ?? array() );
+        $vehicle_mins  = (array) ( $context['vehicle_min_load_index'] ?? array() );
+        $global_min    = intval( $context['min_load_index'] ?? self::DEFAULT_MIN_LOAD_INDEX );
+
         if ( '' === $size ) {
             $reasons[] = array(
                 'code'  => 'size_unparsed',
                 'label' => 'No tire size could be read from the listing',
             );
-        } elseif ( ! isset( $allowed[ $size ] ) ) {
-            $reasons[] = array(
-                'code'  => 'size_not_stocked',
-                'label' => sprintf( 'Size %s is not a Rivian fitment', $size ),
-            );
-        }
+        } elseif ( ! empty( $vehicle_sizes ) ) {
+            foreach ( $vehicle_sizes as $vehicle => $sizes ) {
+                $normalized = array();
+                foreach ( (array) $sizes as $vehicle_size ) {
+                    $key = self::normalize_size( $vehicle_size );
+                    if ( '' !== $key ) {
+                        $normalized[ $key ] = true;
+                    }
+                }
 
-        // --- Load index: the safety gate. ---
-        $min_index  = intval( $context['min_load_index'] ?? self::DEFAULT_MIN_LOAD_INDEX );
-        $load_index = trim( (string) ( $specs['load_index'] ?? '' ) );
+                if ( ! isset( $normalized[ $size ] ) ) {
+                    continue;
+                }
+
+                $size_fits_any = true;
+                $min           = isset( $vehicle_mins[ $vehicle ] ) ? intval( $vehicle_mins[ $vehicle ] ) : $global_min;
+
+                // An unlisted load index is confirmed by hand, not guessed at,
+                // so it doesn't rule the vehicle out here — it warns below.
+                if ( '' === $load_index || intval( $load_index ) >= $min ) {
+                    $fits[] = $vehicle;
+                } else {
+                    $short_on_load[ $vehicle ] = $min;
+                }
+            }
+
+            if ( ! $size_fits_any ) {
+                $reasons[] = array(
+                    'code'  => 'size_not_stocked',
+                    'label' => sprintf( 'Size %s is not a Rivian fitment', $size ),
+                );
+            } elseif ( empty( $fits ) ) {
+                // The size fits, but no vehicle taking it accepts this load.
+                $parts = array();
+                foreach ( $short_on_load as $vehicle => $min ) {
+                    $parts[] = sprintf( '%s needs %d', $vehicle, $min );
+                }
+
+                $reasons[] = array(
+                    'code'  => 'load_index_low',
+                    'label' => sprintf(
+                        'Load index %d is too low — %s',
+                        intval( $load_index ),
+                        implode( ', ', $parts )
+                    ),
+                );
+            }
+        } else {
+            // No stock wheels configured, so there is no vehicle map to judge
+            // against. Fall back to the flat size list and global floor.
+            $allowed = array();
+            foreach ( (array) ( $context['sizes'] ?? array() ) as $allowed_size ) {
+                $normalized = self::normalize_size( $allowed_size );
+                if ( '' !== $normalized ) {
+                    $allowed[ $normalized ] = true;
+                }
+            }
+
+            if ( ! isset( $allowed[ $size ] ) ) {
+                $reasons[] = array(
+                    'code'  => 'size_not_stocked',
+                    'label' => sprintf( 'Size %s is not a Rivian fitment', $size ),
+                );
+            } elseif ( '' !== $load_index && intval( $load_index ) < $global_min ) {
+                $reasons[] = array(
+                    'code'  => 'load_index_low',
+                    'label' => sprintf(
+                        'Load index %d is below the %d minimum',
+                        intval( $load_index ),
+                        $global_min
+                    ),
+                );
+            }
+        }
 
         if ( '' === $load_index ) {
             // Not disqualifying. Plenty of listings simply omit it, and a tire
@@ -245,16 +398,18 @@ class RTG_Tire_Qualifier {
             // a flag rather than be hidden among the near misses.
             $warnings[] = array(
                 'code'  => 'load_index_unknown',
-                'label' => 'Load index not listed — confirm before adding',
-            );
-        } elseif ( intval( $load_index ) < $min_index ) {
-            $reasons[] = array(
-                'code'  => 'load_index_low',
-                'label' => sprintf(
-                    'Load index %d is below the %d minimum',
-                    intval( $load_index ),
-                    $min_index
-                ),
+                'label' => empty( $fits )
+                    ? 'Load index not listed — confirm before adding'
+                    : sprintf(
+                        'Load index not listed — confirm it meets %s before adding',
+                        implode( ' / ', array_map(
+                            function ( $vehicle ) use ( $vehicle_mins, $global_min ) {
+                                $min = isset( $vehicle_mins[ $vehicle ] ) ? intval( $vehicle_mins[ $vehicle ] ) : $global_min;
+                                return $vehicle . "'s " . $min;
+                            },
+                            $fits
+                        ) )
+                    ),
             );
         }
 
@@ -296,10 +451,47 @@ class RTG_Tire_Qualifier {
             );
         }
 
+        // --- Brand coverage: judged only when a policy asks for it. ---
+        //
+        // A retailer's catalog carries far more brands than the guide covers,
+        // and on the first live run most of the queue was budget marques that
+        // would never be listed. Whether that is noise or discovery is a
+        // judgement call, so it is a setting rather than a rule: off ignores
+        // brand entirely, warn flags an uncovered brand while still surfacing
+        // it, and reject files it as a near miss.
+        $policy = (string) ( $context['brand_policy'] ?? self::DEFAULT_BRAND_POLICY );
+        $brand  = trim( (string) ( $specs['brand'] ?? '' ) );
+
+        if ( self::BRAND_POLICY_OFF !== $policy && '' !== $brand ) {
+            $known = array();
+            foreach ( (array) ( $context['brands'] ?? array() ) as $covered ) {
+                $key = self::normalize_brand( $covered );
+                if ( '' !== $key ) {
+                    $known[ $key ] = true;
+                }
+            }
+
+            // With no curated list configured there is nothing to measure
+            // against, so the rule stays silent rather than flagging everything.
+            if ( ! empty( $known ) && ! isset( $known[ self::normalize_brand( $brand ) ] ) ) {
+                $entry = array(
+                    'code'  => 'brand_not_covered',
+                    'label' => sprintf( '%s is not a brand the guide covers', $brand ),
+                );
+
+                if ( self::BRAND_POLICY_REJECT === $policy ) {
+                    $reasons[] = $entry;
+                } else {
+                    $warnings[] = $entry;
+                }
+            }
+        }
+
         return array(
-            'qualifies' => empty( $reasons ),
-            'reasons'   => $reasons,
-            'warnings'  => $warnings,
+            'qualifies'     => empty( $reasons ),
+            'reasons'       => $reasons,
+            'warnings'      => $warnings,
+            'fits_vehicles' => empty( $reasons ) ? $fits : array(),
         );
     }
 

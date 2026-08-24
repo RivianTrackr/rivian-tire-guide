@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 18;
+    const DB_VERSION = 19;
 
     public static function activate() {
         self::create_tables();
@@ -185,6 +185,7 @@ class RTG_Activator {
             fail_reasons TEXT,
             matched_tire_id VARCHAR(50) NOT NULL DEFAULT '',
             status VARCHAR(20) NOT NULL DEFAULT 'new',
+            fits_vehicles VARCHAR(100) NOT NULL DEFAULT '',
             raw_json LONGTEXT,
             first_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             last_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -194,7 +195,8 @@ class RTG_Activator {
             KEY idx_status (status),
             KEY idx_qualifies (qualifies),
             KEY idx_match_key (match_key),
-            KEY idx_first_seen (first_seen_at)
+            KEY idx_first_seen (first_seen_at),
+            KEY idx_fits_vehicles (fits_vehicles)
         ) $charset_collate;";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -228,6 +230,7 @@ class RTG_Activator {
             16 => 'migrate_16_drop_roamer_crr',
             17 => 'migrate_17_add_slug_column',
             18 => 'migrate_18_create_candidates_table',
+            19 => 'migrate_19_add_candidate_fits_vehicles',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -480,6 +483,7 @@ class RTG_Activator {
                 fail_reasons TEXT,
                 matched_tire_id VARCHAR(50) NOT NULL DEFAULT '',
                 status VARCHAR(20) NOT NULL DEFAULT 'new',
+                fits_vehicles VARCHAR(100) NOT NULL DEFAULT '',
                 raw_json LONGTEXT,
                 first_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 last_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -489,8 +493,42 @@ class RTG_Activator {
                 KEY idx_status (status),
                 KEY idx_qualifies (qualifies),
                 KEY idx_match_key (match_key),
-                KEY idx_first_seen (first_seen_at)
+                KEY idx_first_seen (first_seen_at),
+                KEY idx_fits_vehicles (fits_vehicles)
             ) {$charset_collate}"
         );
+    }
+
+    /**
+     * Migration 19: Record which Rivian platforms each candidate is legal on.
+     *
+     * Size and load index used to be judged as two independent gates, which
+     * could not express that an R1 fitment at load index 114 clears a global
+     * floor of 112 while being illegal on the only vehicle taking that size.
+     * Candidates now carry the vehicles they actually fit, so the review queue
+     * can be filtered by platform.
+     *
+     * Existing rows are left blank and repopulate on the next discovery run;
+     * backfilling here would mean re-qualifying every row against rules the
+     * next run applies anyway.
+     */
+    private static function migrate_19_add_candidate_fits_vehicles() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'rtg_tire_candidates';
+
+        $exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+        if ( $exists !== $table ) {
+            return;
+        }
+
+        $cols = $wpdb->get_col( "SHOW COLUMNS FROM {$table}" );
+        if ( ! in_array( 'fits_vehicles', $cols, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table} ADD COLUMN fits_vehicles VARCHAR(100) NOT NULL DEFAULT '' AFTER status" );
+        }
+
+        $indexes = $wpdb->get_results( "SHOW INDEX FROM {$table} WHERE Key_name = 'idx_fits_vehicles'" );
+        if ( empty( $indexes ) ) {
+            $wpdb->query( "ALTER TABLE {$table} ADD KEY idx_fits_vehicles (fits_vehicles)" );
+        }
     }
 }

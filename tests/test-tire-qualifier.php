@@ -309,4 +309,271 @@ class Test_RTG_Tire_Qualifier extends WP_UnitTestCase {
         $this->assertContains( 'size_not_stocked', $codes );
         $this->assertContains( 'load_index_low', $codes );
     }
+
+    // --- Brand coverage policy ---
+
+    /**
+     * Context with the guide's curated brand list attached.
+     *
+     * @param string $policy Brand policy to apply.
+     * @return array Rule context.
+     */
+    private function brand_context( $policy ) {
+        $context                 = $this->context();
+        $context['brands']       = array( 'BFGoodrich', 'Continental', 'Goodyear', 'Michelin', 'Toyo' );
+        $context['brand_policy'] = $policy;
+
+        return $context;
+    }
+
+    /**
+     * Under "warn", an uncovered brand still reaches the queue carrying a flag.
+     *
+     * The point of the setting is that a brand worth covering can still be
+     * discovered; hiding it by default would make the guide unable to grow.
+     */
+    public function test_warn_policy_flags_an_uncovered_brand_without_hiding_it() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Dcenti DC88 A/T 275/60R20 115T', 'brand' => 'Dcenti' ),
+            $this->brand_context( RTG_Tire_Qualifier::BRAND_POLICY_WARN )
+        );
+
+        $this->assertTrue( $result['qualifies'] );
+        $this->assertContains( 'brand_not_covered', array_column( $result['warnings'], 'code' ) );
+    }
+
+    /**
+     * Under "reject", the same tire is filed as a near miss with a reason.
+     */
+    public function test_reject_policy_files_an_uncovered_brand_as_a_near_miss() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Dcenti DC88 A/T 275/60R20 115T', 'brand' => 'Dcenti' ),
+            $this->brand_context( RTG_Tire_Qualifier::BRAND_POLICY_REJECT )
+        );
+
+        $this->assertFalse( $result['qualifies'] );
+        $this->assertContains( 'brand_not_covered', $this->codes( $result ) );
+    }
+
+    /**
+     * Under "off", brand isn't judged at all.
+     */
+    public function test_off_policy_ignores_brand_entirely() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Dcenti DC88 A/T 275/60R20 115T', 'brand' => 'Dcenti' ),
+            $this->brand_context( RTG_Tire_Qualifier::BRAND_POLICY_OFF )
+        );
+
+        $this->assertTrue( $result['qualifies'] );
+        $this->assertSame( array(), $result['warnings'] );
+    }
+
+    /**
+     * A covered brand passes cleanly under every policy.
+     */
+    public function test_a_covered_brand_is_never_flagged() {
+        foreach ( array(
+            RTG_Tire_Qualifier::BRAND_POLICY_WARN,
+            RTG_Tire_Qualifier::BRAND_POLICY_REJECT,
+            RTG_Tire_Qualifier::BRAND_POLICY_OFF,
+        ) as $policy ) {
+            $result = RTG_Tire_Qualifier::evaluate(
+                array( 'title' => 'Continental TerrainContact A/T 275/60R20 115S', 'brand' => 'Continental' ),
+                $this->brand_context( $policy )
+            );
+
+            $this->assertTrue( $result['qualifies'], "Covered brand should qualify under {$policy}" );
+            $this->assertNotContains( 'brand_not_covered', array_column( $result['warnings'], 'code' ) );
+        }
+    }
+
+    /**
+     * Spelling variants of a covered brand are recognized.
+     *
+     * Retailers punctuate brands inconsistently, and the strictest policy is
+     * the one where getting this wrong is most costly — a rejected tire is
+     * never seen — so the comparison ignores everything but letters and digits.
+     */
+    public function test_brand_variants_are_recognized_under_the_strictest_policy() {
+        foreach ( array( 'BFGoodrich', 'BF Goodrich', 'BF-Goodrich', 'bfgoodrich' ) as $variant ) {
+            $result = RTG_Tire_Qualifier::evaluate(
+                array( 'title' => "{$variant} All-Terrain T/A KO3 275/65R18 116T", 'brand' => $variant ),
+                $this->brand_context( RTG_Tire_Qualifier::BRAND_POLICY_REJECT )
+            );
+
+            $this->assertTrue( $result['qualifies'], "Variant {$variant} should be recognized" );
+        }
+    }
+
+    /**
+     * With no curated list configured the rule stays silent, whatever the
+     * policy — otherwise a site that never set brands up would reject its
+     * entire catalog.
+     */
+    public function test_an_empty_brand_list_keeps_the_rule_silent() {
+        $context                 = $this->context();
+        $context['brands']       = array();
+        $context['brand_policy'] = RTG_Tire_Qualifier::BRAND_POLICY_REJECT;
+
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Dcenti DC88 A/T 275/60R20 115T', 'brand' => 'Dcenti' ),
+            $context
+        );
+
+        $this->assertTrue( $result['qualifies'] );
+    }
+
+    /**
+     * An unset policy must not reject: a rule nobody configured should never
+     * silently hide tires.
+     */
+    public function test_an_unset_policy_never_rejects() {
+        $context = $this->context();
+        $context['brands'] = array( 'Michelin' );
+        unset( $context['brand_policy'] );
+
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Dcenti DC88 A/T 275/60R20 115T', 'brand' => 'Dcenti' ),
+            $context
+        );
+
+        $this->assertTrue( $result['qualifies'] );
+    }
+
+    // --- Per-vehicle fitment ---
+
+    /**
+     * Context with a two-platform vehicle map, sharing one size deliberately.
+     *
+     * @return array Rule context.
+     */
+    private function vehicle_context() {
+        return array(
+            'sizes'                  => array(),
+            'min_load_index'         => 112,
+            'load_ranges'            => array(),
+            'speed_ratings'          => array( 'T', 'S', 'V', 'H' ),
+            'brands'                 => array(),
+            'brand_policy'           => RTG_Tire_Qualifier::BRAND_POLICY_OFF,
+            'vehicle_sizes'          => array(
+                'R1' => array( '275/65R18', '275/60R20', '275/55R22' ),
+                'R2' => array( '255/60R20', '255/55R21', '275/55R22' ),
+            ),
+            'vehicle_min_load_index' => array( 'R1' => 116, 'R2' => 112 ),
+        );
+    }
+
+    /**
+     * A tire is reported against the platforms it is actually legal on.
+     */
+    public function test_a_qualifying_tire_names_the_platform_it_fits() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Michelin Defender LTX M/S2 275/65R18 116T', 'brand' => 'Michelin' ),
+            $this->vehicle_context()
+        );
+
+        $this->assertTrue( $result['qualifies'] );
+        $this->assertSame( array( 'R1' ), $result['fits_vehicles'] );
+    }
+
+    /**
+     * Size and load index are judged together, not as independent gates.
+     *
+     * A 275/65R18 at load index 114 clears a global floor of 112 while being
+     * illegal on the R1 that is the only platform taking that size. Judged
+     * separately it would have qualified; judged per vehicle it does not.
+     */
+    public function test_a_tire_below_its_platforms_floor_is_rejected_despite_clearing_the_global_one() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Toyo Open Country A/T III 275/65R18 114T', 'brand' => 'Toyo' ),
+            $this->vehicle_context()
+        );
+
+        $this->assertFalse( $result['qualifies'] );
+        $this->assertContains( 'load_index_low', $this->codes( $result ) );
+        $this->assertStringContainsString( 'R1 needs 116', $result['reasons'][0]['label'] );
+        $this->assertSame( array(), $result['fits_vehicles'] );
+    }
+
+    /**
+     * A size both platforms take, with load enough for both, fits both.
+     */
+    public function test_a_shared_size_can_fit_every_platform() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Continental CrossContact 275/55R22 118V', 'brand' => 'Continental' ),
+            $this->vehicle_context()
+        );
+
+        $this->assertSame( array( 'R1', 'R2' ), $result['fits_vehicles'] );
+    }
+
+    /**
+     * The same shared size with less load qualifies on the platform that
+     * accepts it and is reported as fitting only that one.
+     *
+     * This is the case a single global floor obscured entirely: it passed, with
+     * nothing to say it was legal on one platform and not the other.
+     */
+    public function test_a_shared_size_can_fit_only_the_lower_floor_platform() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Continental CrossContact 275/55R22 114V', 'brand' => 'Continental' ),
+            $this->vehicle_context()
+        );
+
+        $this->assertTrue( $result['qualifies'] );
+        $this->assertSame( array( 'R2' ), $result['fits_vehicles'] );
+    }
+
+    /**
+     * An unlisted load index doesn't rule a platform out — it is confirmed by
+     * hand — and the warning names the floor to confirm against.
+     */
+    public function test_an_unlisted_load_index_still_fits_but_names_the_floor() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'BFGoodrich All-Terrain T/A KO3 275/65R18', 'brand' => 'BFGoodrich' ),
+            $this->vehicle_context()
+        );
+
+        $this->assertTrue( $result['qualifies'] );
+        $this->assertSame( array( 'R1' ), $result['fits_vehicles'] );
+        $this->assertStringContainsString( '116', $result['warnings'][0]['label'] );
+    }
+
+    /**
+     * A size no platform takes fits nothing and is rejected on fitment.
+     */
+    public function test_a_size_no_platform_takes_fits_nothing() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Atlas Force 285/45R22 114V', 'brand' => 'Atlas' ),
+            $this->vehicle_context()
+        );
+
+        $this->assertFalse( $result['qualifies'] );
+        $this->assertContains( 'size_not_stocked', $this->codes( $result ) );
+        $this->assertSame( array(), $result['fits_vehicles'] );
+    }
+
+    /**
+     * With no stock wheels configured there is no vehicle map to judge
+     * against, so the flat size list and single global floor still apply.
+     * A site that never set wheels up must not have its catalog rejected.
+     */
+    public function test_without_a_vehicle_map_the_global_floor_still_applies() {
+        $context                  = $this->vehicle_context();
+        $context['vehicle_sizes'] = array();
+        $context['sizes']         = array( '275/65R18' );
+
+        $passes = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Toyo Open Country A/T III 275/65R18 114T', 'brand' => 'Toyo' ),
+            $context
+        );
+        $this->assertTrue( $passes['qualifies'] );
+
+        $fails = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Toyo Open Country A/T III 275/65R18 109T', 'brand' => 'Toyo' ),
+            $context
+        );
+        $this->assertFalse( $fails['qualifies'] );
+        $this->assertContains( 'load_index_low', $this->codes( $fails ) );
+    }
 }
