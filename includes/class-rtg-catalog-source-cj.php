@@ -408,6 +408,21 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
             $total     = null;
             $pages     = 0;
 
+            // Distinct products this size actually contributed.
+            //
+            // Counting what came back is not the same as counting what is new,
+            // and the difference is the whole question. If paging does not
+            // advance — the offset ignored, or pages overlapping — every page
+            // returns the same products, the received count still climbs to
+            // the reported total, and the sweep declares the fitment complete
+            // having seen one page of it. The dedup key below hides that
+            // perfectly, because a repeat simply overwrites itself.
+            //
+            // A live run put 247 products in one guide fitment and 2 in
+            // another, both reported complete off 5,000+ matches. Real
+            // catalogs do not look like that; a paging fault does.
+            $unique_ids = array();
+
             do {
                 $result = $this->query_keyword( $size, $offset );
 
@@ -423,6 +438,7 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
                     // A product can match several sizes' keywords; key by
                     // external ID so it reaches the queue once.
                     $products[ $product['external_id'] ] = $product;
+                    $unique_ids[ $product['external_id'] ] = true;
                 }
 
                 $collected += $returned;
@@ -442,6 +458,8 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
 
             $this->last_coverage[ $size ] = array(
                 'received' => $collected,
+                'unique'   => count( $unique_ids ),
+                'pages'    => $pages,
                 'total'    => null === $total ? null : intval( $total ),
             );
 
@@ -998,7 +1016,7 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
      *
      * @return array { ok: bool, message: string, product_count: int, sample: array, body: string }
      */
-    public function test_connection( $keyword = '' ) {
+    public function test_connection( $keyword = '', $offset = 0 ) {
         if ( '' === self::get_pat() ) {
             return array(
                 'ok'            => false,
@@ -1026,7 +1044,8 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
             $keyword = $sizes[0] ?? '275/65R18';
         }
 
-        $result = $this->query_keyword( $keyword, 0, self::TARGETED_LIMIT );
+        $offset = max( 0, intval( $offset ) );
+        $result = $this->query_keyword( $keyword, $offset, self::TARGETED_LIMIT );
 
         if ( '' !== $result['error'] ) {
             return array(
@@ -1055,10 +1074,11 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
         return array(
             'ok'            => true,
             'message'       => sprintf(
-                'Connected. Showing %s of %s match(es) for keyword "%s".',
+                'Connected. Showing %s of %s match(es) for keyword "%s"%s.',
                 number_format( $count ),
                 null === $result['total_count'] ? 'an unreported number' : number_format( $result['total_count'] ),
-                $keyword
+                $keyword,
+                $offset > 0 ? sprintf( ', starting at record %s', number_format( $offset ) ) : ''
             ),
             'product_count' => $count,
             'titles'        => $titles,
