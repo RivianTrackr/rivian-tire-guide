@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.63.1] - 2026-08-24
+
+### Fixed
+- **Discovery was silently discarding most of each retailer's catalog.** Products were requested 100 at a time per tire size with no pagination, and although the query asks CJ how many matched, the adapter never read the answer. A fitment carrying several hundred tires therefore came back capped, and everything past the first hundred vanished without a word — which is how a Michelin Defender LTX M/S2 that Tire Rack plainly lists in 275/60R20 showed up under "no retailer match". The reported match count is now compared against what arrived, and a shortfall is named per size in the discovery status ("Results capped — 275/60R20 (100 of 412)") instead of passing unnoticed. The per-size limit defaults to 1000, enough to cover a fitment in one request.
+- **The sweep time budget was sized for five tire sizes**, not a real fitment list, so a guide covering a dozen was having most of them skipped each run. Raised from 45 to 240 seconds and made configurable, for hosts whose PHP execution limit needs it lower — or raised further when the status reports sizes went unchecked.
+
+### Notes
+- "Didn't report a count" and "reported none" are kept distinct, so a response that simply omits the figure isn't mistaken for a truncated one.
+- Existing installs carry whatever "Records per size" was saved. **Raise it under Tire Discovery → Discovery Settings and re-run** — the default only applies where the setting was never stored.
+
 ## [1.63.0] - 2026-08-24
 
 ### Added

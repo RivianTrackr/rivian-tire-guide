@@ -316,4 +316,71 @@ class Test_RTG_Catalog_Source_CJ extends WP_UnitTestCase {
         $this->assertSame( array(), $products );
         $this->assertStringContainsString( 'not configured', $source->get_last_error() );
     }
+
+    // --- Truncation detection ---
+
+    /**
+     * The match count CJ reports is read from the response.
+     *
+     * Without it a capped response is indistinguishable from a complete one,
+     * which is how a Michelin Defender plainly listed on Tire Rack came to show
+     * as "no retailer match": the size had more products than the per-request
+     * limit and the remainder was discarded in silence.
+     */
+    public function test_reads_the_reported_match_count() {
+        $this->assertSame(
+            412,
+            RTG_Catalog_Source_CJ::extract_total_count(
+                array( 'shoppingProducts' => array( 'totalCount' => 412, 'resultList' => array( array( 'id' => 'a' ) ) ) )
+            )
+        );
+    }
+
+    /**
+     * Alternate spellings are accepted, as elsewhere in the mapping.
+     */
+    public function test_reads_an_alternately_named_match_count() {
+        $this->assertSame(
+            7,
+            RTG_Catalog_Source_CJ::extract_total_count(
+                array( 'shoppingProducts' => array( 'total' => 7, 'resultList' => array() ) )
+            )
+        );
+    }
+
+    /**
+     * A response that doesn't report a count yields null, not zero — "didn't
+     * say" and "said none" must not be confused, or every complete response
+     * would look truncated.
+     */
+    public function test_an_absent_match_count_is_null_not_zero() {
+        $this->assertNull(
+            RTG_Catalog_Source_CJ::extract_total_count(
+                array( 'shoppingProducts' => array( 'resultList' => array( array( 'id' => 'a' ) ) ) )
+            )
+        );
+        $this->assertNull( RTG_Catalog_Source_CJ::extract_total_count( null ) );
+    }
+
+    /**
+     * A genuine zero is a count, and survives as one.
+     */
+    public function test_a_zero_match_count_is_preserved() {
+        $this->assertSame(
+            0,
+            RTG_Catalog_Source_CJ::extract_total_count(
+                array( 'shoppingProducts' => array( 'totalCount' => 0, 'resultList' => array() ) )
+            )
+        );
+    }
+
+    /**
+     * The per-size limit defaults high enough to cover a real fitment.
+     *
+     * The original 100 was sized for an assumption about catalog depth that
+     * turned out to be wrong by an order of magnitude.
+     */
+    public function test_the_per_size_limit_covers_a_real_fitment() {
+        $this->assertGreaterThanOrEqual( 500, RTG_Catalog_Source_CJ::DEFAULT_LIMIT );
+    }
 }

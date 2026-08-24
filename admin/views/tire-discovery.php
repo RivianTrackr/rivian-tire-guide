@@ -17,7 +17,8 @@ if ( isset( $_POST['rtg_catalog_settings_save'] ) ) {
     $settings['cj_enabled']     = ! empty( $_POST['cj_enabled'] );
     $settings['cj_company_id']  = preg_replace( '/[^0-9]/', '', wp_unslash( $_POST['cj_company_id'] ?? '' ) );
     $settings['cj_advertisers'] = sanitize_textarea_field( wp_unslash( $_POST['cj_advertisers'] ?? '' ) );
-    $settings['cj_limit']       = max( 1, min( 1000, intval( $_POST['cj_limit'] ?? RTG_Catalog_Source_CJ::DEFAULT_LIMIT ) ) );
+    $settings['cj_limit']        = max( 1, min( 1000, intval( $_POST['cj_limit'] ?? RTG_Catalog_Source_CJ::DEFAULT_LIMIT ) ) );
+    $settings['cj_sweep_budget'] = max( 15, min( 600, intval( $_POST['cj_sweep_budget'] ?? RTG_Catalog_Source_CJ::SWEEP_BUDGET ) ) );
 
     // The query document is GraphQL, so it must not be run through a sanitizer
     // that mangles braces or quotes; it is never output unescaped.
@@ -108,6 +109,7 @@ $cj_enabled      = $settings['cj_enabled'] ?? true;
 $cj_company_id   = RTG_Catalog_Source_CJ::get_company_id();
 $cj_advertisers  = $settings['cj_advertisers'] ?? '';
 $cj_limit        = intval( $settings['cj_limit'] ?? RTG_Catalog_Source_CJ::DEFAULT_LIMIT );
+$cj_sweep_budget = intval( $settings['cj_sweep_budget'] ?? RTG_Catalog_Source_CJ::SWEEP_BUDGET );
 $cj_query        = $settings['cj_query'] ?? '';
 $cj_has_pat      = '' !== RTG_Catalog_Source_CJ::get_pat();
 $cj_pat_constant = RTG_Catalog_Source_CJ::pat_is_constant();
@@ -725,7 +727,23 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                         <th scope="row"><label for="cj_limit">Records per size</label></th>
                         <td>
                             <input type="number" name="cj_limit" id="cj_limit" value="<?php echo esc_attr( $cj_limit ); ?>" min="1" max="1000" class="small-text">
-                            <p class="description">How many products to request per tire size. Five sizes means five requests per run.</p>
+                            <p class="description" style="max-width:680px;">
+                                How many products to request per tire size — one request each. A popular fitment can
+                                carry several hundred, and anything beyond this is discarded by the retailer before it
+                                reaches the queue, so a tire that plainly exists can look like nobody stocks it. When a
+                                run comes back capped, the status above says so and names the sizes.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="cj_sweep_budget">Time budget</label></th>
+                        <td>
+                            <input type="number" name="cj_sweep_budget" id="cj_sweep_budget" value="<?php echo esc_attr( $cj_sweep_budget ); ?>" min="15" max="600" class="small-text"> seconds
+                            <p class="description" style="max-width:680px;">
+                                How long a sweep may spend fetching before it stops and reports the sizes it didn't
+                                reach. Lower it if your host has a tight PHP execution limit; raise it if the status
+                                above says sizes went unchecked.
+                            </p>
                         </td>
                     </tr>
                     <tr>
