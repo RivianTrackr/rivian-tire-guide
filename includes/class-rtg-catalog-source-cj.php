@@ -71,11 +71,20 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
     /**
      * Records requested for one targeted lookup.
      *
-     * A brand-model-size keyword is a precise query, not a fitment sweep, so
-     * the answer is a handful of listings or none. Asking for a thousand would
-     * spend the response budget proving that.
+     * This was 50, on the reasoning that a keyword naming a tire is a precise
+     * query whose answer is a handful of listings or none. The probe disproved
+     * that: CJ scores a keyword and returns a ranking, so a model search comes
+     * back with thousands of loosely related products in no particular
+     * fitment. A live run made the cost plain — 99 searches returned 4,924
+     * products, an average of 49.7 each, which is every single one truncated
+     * at the cap with nothing said about it.
+     *
+     * That is the same silent ceiling the sweep carried at 100 records until
+     * 1.63.1, reintroduced here by a comment that was never rechecked against
+     * how the API actually behaves. It matches the sweep's limit now, and a
+     * shortfall is reported rather than passed over.
      */
-    const TARGETED_LIMIT = 50;
+    const TARGETED_LIMIT = 1000;
 
     /**
      * Wall-clock budget for the targeted pass, in seconds.
@@ -471,19 +480,30 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
      * a few dozen loosely related products. Keeping the term attached lets the
      * caller check each answer against what it asked for.
      *
-     * @param string[] $terms Search terms, e.g. "Michelin Defender LTX M/S2 305/45R22".
+     * A callback may be given to consume each term's products as they arrive.
+     * At a thousand records a term and a hundred terms, holding every response
+     * until the end would mean a hundred thousand products in memory to keep
+     * the few dozen that matter.
+     *
+     * @param string[]      $terms   Search terms, e.g. "Michelin Defender LTX M/S2".
+     * @param callable|null $on_term Receives ( $term, $products ) per answer.
+     *                               Responses are not retained when given.
      * @return array {
-     *     @type array  $by_term Term => normalized products it returned.
-     *     @type int    $checked Terms actually queried.
-     *     @type int    $pending Terms left for the next run.
-     *     @type string $error   Failure text, or ''.
+     *     @type array  $by_term   Term => products, when no callback was given.
+     *     @type int    $checked   Terms actually queried.
+     *     @type int    $pending   Terms left for the next run.
+     *     @type int    $capped    Terms whose answer was cut off by the limit.
+     *     @type int    $deepest   Largest match count any term reported.
+     *     @type string $error     Failure text, or ''.
      * }
      */
-    public function fetch_terms( $terms ) {
+    public function fetch_terms( $terms, $on_term = null ) {
         $result = array(
             'by_term' => array(),
             'checked' => 0,
             'pending' => 0,
+            'capped'  => 0,
+            'deepest' => 0,
             'error'   => '',
         );
 
@@ -503,6 +523,10 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
             ? max( 15, min( 600, intval( $settings['cj_targeted_budget'] ) ) )
             : self::TARGETED_BUDGET;
 
+        $limit = isset( $settings['cj_targeted_limit'] )
+            ? max( 1, min( 1000, intval( $settings['cj_targeted_limit'] ) ) )
+            : self::TARGETED_LIMIT;
+
         $cursor = intval( get_option( self::TARGETED_CURSOR_OPTION, 0 ) );
         if ( $cursor < 0 || $cursor >= count( $terms ) ) {
             $cursor = 0;
@@ -519,7 +543,7 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
                 break;
             }
 
-            $response = $this->query_keyword( $term, 0, self::TARGETED_LIMIT );
+            $response = $this->query_keyword( $term, 0, $limit );
             $result['checked']++;
 
             if ( '' !== $response['error'] ) {
@@ -530,7 +554,24 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
                 continue;
             }
 
-            $result['by_term'][ $term ] = $response['products'];
+            // How deep the ranking runs, and whether this answer was cut off.
+            // Without it a truncated answer is indistinguishable from a
+            // complete one, which is exactly how a 50-record cap went a whole
+            // release without being noticed.
+            $total = $response['total_count'];
+            if ( null !== $total ) {
+                $result['deepest'] = max( $result['deepest'], intval( $total ) );
+
+                if ( count( $response['products'] ) < intval( $total ) ) {
+                    $result['capped']++;
+                }
+            }
+
+            if ( is_callable( $on_term ) ) {
+                call_user_func( $on_term, $term, $response['products'] );
+            } else {
+                $result['by_term'][ $term ] = $response['products'];
+            }
         }
 
         $next_cursor = null === $stopped

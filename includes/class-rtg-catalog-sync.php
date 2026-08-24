@@ -144,7 +144,7 @@ class RTG_Catalog_Sync {
             );
 
             foreach ( $products as $product ) {
-                $ingested  = self::ingest( $product, $slug, $source->get_label(), $context, $guide_index );
+                $ingested  = self::ingest_product( $product, $slug, $source->get_label(), $context, $guide_index );
                 $evaluated = $ingested['evaluated'];
                 $result    = $ingested['result'];
 
@@ -237,7 +237,7 @@ class RTG_Catalog_Sync {
      *                            set; empty accepts any.
      * @return array { evaluated: array, result: array, match_key: string, skipped: bool }
      */
-    private static function ingest( $product, $slug, $label, $context, $guide_index, $only_sizes = array() ) {
+    public static function ingest_product( $product, $slug, $label, $context, $guide_index, $only_sizes = array() ) {
         $evaluated = RTG_Tire_Qualifier::evaluate( $product, $context );
         $match_key = self::match_key( $evaluated['brand'], $evaluated['model'], $evaluated['size'] );
 
@@ -354,6 +354,8 @@ class RTG_Catalog_Sync {
             'ingested'  => 0,
             'off_size'  => 0,
             'qualified' => 0,
+            'capped'    => 0,
+            'deepest'   => 0,
             'errors'    => array(),
         );
 
@@ -385,70 +387,84 @@ class RTG_Catalog_Sync {
                 continue;
             }
 
-            $lookup = $source->fetch_terms( $uncovered['terms'] );
+            $seen       = array();
+            $slug       = $source->get_slug();
+            $label      = $source->get_label();
+            $stats_ref  = &$stats;
+            $covered_ref = &$covered;
+
+            // Consumed as each answer arrives rather than collected first. At
+            // a thousand records a term and a hundred terms, holding every
+            // response would mean a hundred thousand products in memory to
+            // keep the few dozen in a fitment the guide uses.
+            $lookup = $source->fetch_terms(
+                $uncovered['terms'],
+                function ( $term, $products ) use (
+                    &$stats_ref, &$covered_ref, &$seen,
+                    $slug, $label, $context, $guide_index, $guide_sizes, $uncovered
+                ) {
+                    if ( empty( $products ) ) {
+                        return;
+                    }
+
+                    $stats_ref['answered']++;
+
+                    foreach ( $products as $product ) {
+                        $id = (string) ( $product['external_id'] ?? '' );
+
+                        if ( '' === $id || isset( $seen[ $id ] ) ) {
+                            continue;
+                        }
+
+                        $ingested = RTG_Catalog_Sync::ingest_product(
+                            $product,
+                            $slug,
+                            $label,
+                            $context,
+                            $guide_index,
+                            $guide_sizes
+                        );
+
+                        if ( $ingested['skipped'] ) {
+                            // Left out rather than stored. CJ scores a keyword
+                            // instead of filtering on it, so most of what a
+                            // search returns is a fitment the guide has no use
+                            // for; storing it added four thousand near misses
+                            // in one run without covering a tire. Canvassing
+                            // fitments is the sweep's job.
+                            $stats_ref['off_size']++;
+                            continue;
+                        }
+
+                        $seen[ $id ] = true;
+                        $stats_ref['ingested']++;
+
+                        if ( RTG_Candidates::STATUS_NEW === $ingested['result']['status'] ) {
+                            $stats_ref['qualified']++;
+                        }
+
+                        // The only outcome that means the pass worked: a
+                        // product came back that keys to a tire being looked
+                        // for. Counting "the request returned something"
+                        // instead reported 111 of 111 successful while
+                        // coverage did not move at all.
+                        if ( isset( $uncovered['wanted'][ $ingested['match_key'] ] ) ) {
+                            $covered_ref[ $ingested['match_key'] ] = true;
+                        }
+                    }
+                }
+            );
 
             $stats['checked'] += $lookup['checked'];
             $stats['pending']  = max( $stats['pending'], $lookup['pending'] );
+            $stats['capped']  += $lookup['capped'];
+            $stats['deepest']  = max( $stats['deepest'], $lookup['deepest'] );
 
             if ( '' !== $lookup['error'] ) {
                 $stats['errors'][] = array(
-                    'source'  => $source->get_slug(),
+                    'source'  => $slug,
                     'message' => $lookup['error'],
                 );
-            }
-
-            $seen = array();
-
-            foreach ( $lookup['by_term'] as $term => $products ) {
-                if ( empty( $products ) ) {
-                    continue;
-                }
-
-                $stats['answered']++;
-
-                foreach ( $products as $product ) {
-                    $id = (string) ( $product['external_id'] ?? '' );
-
-                    if ( '' === $id || isset( $seen[ $id ] ) ) {
-                        continue;
-                    }
-
-                    $ingested = self::ingest(
-                        $product,
-                        $source->get_slug(),
-                        $source->get_label(),
-                        $context,
-                        $guide_index,
-                        $guide_sizes
-                    );
-
-                    if ( $ingested['skipped'] ) {
-                        // Left out rather than stored. CJ scores a keyword
-                        // instead of filtering on it, so most of what a search
-                        // returns is a fitment the guide has no use for;
-                        // storing it added four thousand near misses in one
-                        // run without covering a tire. Canvassing fitments is
-                        // the sweep's job — this pass answers one question.
-                        $stats['off_size']++;
-                        continue;
-                    }
-
-                    $seen[ $id ] = true;
-                    $stats['ingested']++;
-
-                    if ( RTG_Candidates::STATUS_NEW === $ingested['result']['status'] ) {
-                        $stats['qualified']++;
-                    }
-
-                    // The only outcome that means the pass worked: a product
-                    // came back that keys to a tire we were looking for.
-                    // Counting "the request returned something" instead
-                    // reported 111 of 111 successful while coverage did not
-                    // move at all.
-                    if ( isset( $uncovered['wanted'][ $ingested['match_key'] ] ) ) {
-                        $covered[ $ingested['match_key'] ] = true;
-                    }
-                }
             }
         }
 
