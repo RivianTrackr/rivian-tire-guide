@@ -94,6 +94,11 @@ foreach ( $guide_tires as $guide_tire ) {
     }
 }
 
+// "No retailer match" covers several different situations and only one of
+// them is fixable, so each uncovered tire is asked why rather than listed flat.
+$coverage_reasons = RTG_Coverage::diagnose( $uncovered_tires );
+$coverage_summary = RTG_Coverage::summarize( $coverage_reasons );
+
 $price_sync_enabled    = $settings['price_sync_enabled'] ?? true;
 $price_sync_max_change = intval( $settings['price_sync_max_change'] ?? 50 );
 $price_results         = RTG_Price_Sync::get_results();
@@ -344,16 +349,41 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                         <?php echo count( $uncovered_tires ); ?> tire(s) no retailer is carrying
                     </summary>
                     <p class="description" style="max-width:820px;margin:8px 0;">
-                        Neither retailer lists these, so their prices can't refresh on their own. Expected while
-                        affiliate links are still going in, and expected permanently for anything discontinued or
-                        sold elsewhere.
+                        Nothing in the queue keys to these tires, so their prices can't refresh on their own.
+                        The reason differs per tire, and only one of them is worth acting on: a
+                        <strong>model name</strong> gap means the retailer is carrying the exact tire under a
+                        different name, so aligning the guide's model to theirs will match it on the next run.
+                        A <strong>fitment</strong> or <strong>brand</strong> gap means the sweep genuinely
+                        hasn't seen it.
                     </p>
+
+                    <?php if ( ! empty( $coverage_summary ) ) : ?>
+                        <p style="margin:8px 0;font-size:13px;">
+                            <?php
+                            $gap_labels = array(
+                                RTG_Coverage::GAP_MODEL_MISMATCH  => 'listed under another model name',
+                                RTG_Coverage::GAP_BRAND_ABSENT    => 'fitment carried, brand not',
+                                RTG_Coverage::GAP_SIZE_ABSENT     => 'fitment never reached the queue',
+                                RTG_Coverage::GAP_BRAND_MISSING   => 'guide row has no brand',
+                                RTG_Coverage::GAP_SIZE_UNREADABLE => 'guide size unreadable',
+                            );
+                            $summary_parts = array();
+                            foreach ( $coverage_summary as $gap_code => $gap_count ) {
+                                $summary_parts[] = '<strong>' . intval( $gap_count ) . '</strong> '
+                                    . esc_html( $gap_labels[ $gap_code ] ?? $gap_code );
+                            }
+                            echo wp_kses_post( implode( ' &middot; ', $summary_parts ) );
+                            ?>
+                        </p>
+                    <?php endif; ?>
+
                     <table class="rtg-table" style="margin-top:8px;">
                         <thead>
-                            <tr><th>Tire</th><th>Size</th><th>Price</th><th>Link</th></tr>
+                            <tr><th>Tire</th><th>Size</th><th>Price</th><th>Link</th><th>Why it isn't matched</th></tr>
                         </thead>
                         <tbody>
                         <?php foreach ( $uncovered_tires as $uncovered ) : ?>
+                            <?php $reason = $coverage_reasons[ (string) $uncovered['tire_id'] ] ?? array(); ?>
                             <tr>
                                 <td>
                                     <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit&id=' . intval( $uncovered['id'] ) ) ); ?>">
@@ -373,6 +403,21 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                         echo 'Elsewhere';
                                     }
                                     ?>
+                                </td>
+                                <td style="font-size:12px;">
+                                    <?php echo esc_html( $reason['label'] ?? '' ); ?>
+                                    <?php if ( ! empty( $reason['near'] ) ) : ?>
+                                        <ul style="margin:6px 0 0;padding-left:16px;color:var(--rtg-text-muted);">
+                                        <?php foreach ( $reason['near'] as $near ) : ?>
+                                            <li>
+                                                <code><?php echo esc_html( $near['model'] ?: '(no model parsed)' ); ?></code>
+                                                <?php if ( ! empty( $near['advertisers'] ) ) : ?>
+                                                    &mdash; <?php echo esc_html( implode( ', ', $near['advertisers'] ) ); ?>
+                                                <?php endif; ?>
+                                            </li>
+                                        <?php endforeach; ?>
+                                        </ul>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

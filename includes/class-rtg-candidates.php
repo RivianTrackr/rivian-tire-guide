@@ -307,7 +307,53 @@ class RTG_Candidates {
     }
 
     /**
-     * Group every candidate that matched a guide tire, keyed by that tire.
+     * Group every candidate carrying a match key, keyed by that key.
+     *
+     * Only the columns coverage and pricing read are selected. Each row also
+     * holds an untouched copy of the source product node, and pulling those
+     * for sixteen thousand rows to compare prices would cost tens of megabytes
+     * to answer a question that needs none of it.
+     *
+     * @return array match key => candidate rows.
+     */
+    public static function get_by_match_key() {
+        global $wpdb;
+        $table = self::table();
+
+        $rows = $wpdb->get_results(
+            "SELECT id, match_key, brand, model, size, load_index, price, link, image, advertiser_id, advertiser_name, status
+             FROM {$table} WHERE match_key <> ''",
+            ARRAY_A
+        );
+
+        $by_key = array();
+        foreach ( $rows ?: array() as $row ) {
+            $row['price']             = floatval( $row['price'] );
+            $by_key[ $row['match_key'] ][] = $row;
+        }
+
+        return $by_key;
+    }
+
+    /**
+     * Group every candidate that matches a guide tire, keyed by that tire.
+     *
+     * Matched by comparing match keys at read time rather than by reading the
+     * matched_tire_id written during a sweep, because that column is only
+     * accurate for rows the most recent sweep happened to revisit. It goes
+     * stale two ways, and both were losing real coverage:
+     *
+     *   - A tire added or renamed in the guide today doesn't retro-match the
+     *     candidate rows already stored for it. They keep matched_tire_id = ''
+     *     until a sweep sees those products again, and a sweep is budget-
+     *     limited and rotates through sizes, so that can be several days.
+     *   - build_guide_index() maps one key to one tire, so when two guide
+     *     tires share a brand, model and size — the same tire in two load
+     *     ratings — only the last one indexed was ever written to a candidate.
+     *     The other could never be covered at all.
+     *
+     * Comparing keys here costs one extra pass over the guide and fixes both:
+     * coverage reflects the guide as it stands right now.
      *
      * Dismissed rows are included deliberately: dismissing a candidate means
      * "don't offer this as a new tire", not "stop pricing the tire I already
@@ -316,20 +362,79 @@ class RTG_Candidates {
      * @return array tire_id => candidate rows.
      */
     public static function get_matched_by_tire() {
+        $by_key  = self::get_by_match_key();
+        $by_tire = array();
+
+        foreach ( RTG_Database::get_all_tires() as $tire ) {
+            $key = RTG_Catalog_Sync::match_key(
+                $tire['brand'] ?? '',
+                $tire['model'] ?? '',
+                $tire['size'] ?? ''
+            );
+
+            if ( '' !== $key && ! empty( $by_key[ $key ] ) ) {
+                $by_tire[ (string) $tire['tire_id'] ] = $by_key[ $key ];
+            }
+        }
+
+        return $by_tire;
+    }
+
+    /**
+     * Re-point stored matches at the guide as it stands now.
+     *
+     * A row's matched_tire_id is set when a sweep sees the product, so a tire
+     * added or renamed in the guide since then leaves rows pointing at nothing
+     * — and they stay in the review queue as "awaiting review" for a tire that
+     * is already stocked. Re-keying every row against the current guide is one
+     * query and a comparison, so it runs each sync rather than waiting for the
+     * rotation to come back around to that size.
+     *
+     * A status a person set is left alone. Only the machine ones follow the
+     * new match.
+     *
+     * @param array $guide_index Match key => tire_id, from RTG_Catalog_Sync.
+     * @return int Rows whose match changed.
+     */
+    public static function refresh_matches( $guide_index ) {
         global $wpdb;
         $table = self::table();
 
         $rows = $wpdb->get_results(
-            "SELECT * FROM {$table} WHERE matched_tire_id <> ''",
+            "SELECT id, match_key, matched_tire_id, status, qualifies FROM {$table} WHERE match_key <> ''",
             ARRAY_A
         );
 
-        $by_tire = array();
+        $changed = 0;
+
         foreach ( $rows ?: array() as $row ) {
-            $by_tire[ $row['matched_tire_id'] ][] = self::hydrate( $row );
+            $should = (string) ( $guide_index[ $row['match_key'] ] ?? '' );
+
+            if ( $should === (string) $row['matched_tire_id'] ) {
+                continue;
+            }
+
+            $data    = array( 'matched_tire_id' => $should );
+            $formats = array( '%s' );
+
+            if ( in_array( (string) $row['status'], self::MACHINE_STATUSES, true ) ) {
+                // Same precedence as a sweep: matching the guide settles the
+                // status ahead of whatever the rules made of the listing.
+                if ( '' !== $should ) {
+                    $data['status'] = self::STATUS_EXISTING;
+                } elseif ( ! empty( $row['qualifies'] ) ) {
+                    $data['status'] = self::STATUS_NEW;
+                } else {
+                    $data['status'] = self::STATUS_REJECTED;
+                }
+                $formats[] = '%s';
+            }
+
+            $wpdb->update( $table, $data, array( 'id' => intval( $row['id'] ) ), $formats, array( '%d' ) );
+            $changed++;
         }
 
-        return $by_tire;
+        return $changed;
     }
 
     /**
