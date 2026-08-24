@@ -266,6 +266,17 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 <?php if ( ! empty( $candidate['matched_tire_id'] ) ) : ?>
                                     <br><span class="rtg-badge rtg-badge-muted">in guide as <?php echo esc_html( $candidate['matched_tire_id'] ); ?></span>
                                 <?php endif; ?>
+
+                                <?php
+                                // Warnings ride along with a qualifying row: things
+                                // to confirm before adding, not reasons to hide it.
+                                foreach ( (array) ( $candidate['warnings'] ?? array() ) as $warning ) :
+                                    if ( empty( $warning['label'] ) ) {
+                                        continue;
+                                    }
+                                    ?>
+                                    <br><span style="font-size:11px;color:var(--rtg-warning-text);">⚠ <?php echo esc_html( $warning['label'] ); ?></span>
+                                <?php endforeach; ?>
                             </td>
                             <td style="font-family:var(--rtg-font-mono, monospace);"><?php echo esc_html( $candidate['size'] ); ?></td>
                             <td><?php echo esc_html( $candidate['load_index'] ?: '—' ); ?></td>

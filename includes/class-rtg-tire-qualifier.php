@@ -33,6 +33,19 @@ class RTG_Tire_Qualifier {
     const DEFAULT_MIN_LOAD_INDEX = 112;
 
     /**
+     * Every speed rating in industry use.
+     *
+     * The configured dropdown is unioned with this rather than trusted alone.
+     * A site whose saved list carries stray whitespace or line endings — easy
+     * to end up with, since the list is edited as free text — would otherwise
+     * flag every rating as unrecognized, which is exactly what happened on the
+     * first live run against CJ.
+     */
+    const CANONICAL_SPEED_RATINGS = array(
+        'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'H', 'V', 'W', 'Y', 'Z', 'ZR',
+    );
+
+    /**
      * Build the rule context from saved plugin settings.
      *
      * @return array Context consumable by qualify().
@@ -172,16 +185,24 @@ class RTG_Tire_Qualifier {
     /**
      * Judge a parsed candidate against the guide's requirements.
      *
-     * Failures are returned as structured reasons rather than a bare false so
-     * the admin queue can show near misses — "correct size, load index 109" is
-     * worth seeing, and a silent filter would hide exactly the rows most worth
-     * a second opinion.
+     * Rules come in two strengths. A *failure* disqualifies: the tire is the
+     * wrong fitment, is unsafe on load, or can't be identified well enough to
+     * review. A *warning* is something a human should confirm but which must
+     * not bury the row — a listing that omits its load index is still a real
+     * candidate, and burying it defeats the point of watching the catalog at
+     * all. Warnings therefore travel with a qualifying candidate rather than
+     * blocking it.
+     *
+     * Failures are returned structured rather than as a bare false so the
+     * queue can show near misses — "correct size, load index 109" is worth
+     * seeing, and a silent filter would hide the rows most worth a look.
      *
      * @param array      $specs   Output of parse_specs(), plus optional price.
      * @param array|null $context Rule context; defaults to default_context().
      * @return array {
      *     @type bool  $qualifies Whether the candidate belongs in the guide.
-     *     @type array $reasons   List of { code, label } failure reasons.
+     *     @type array $reasons   List of { code, label } disqualifying failures.
+     *     @type array $warnings  List of { code, label } things to confirm.
      * }
      */
     public static function qualify( $specs, $context = null ) {
@@ -189,7 +210,8 @@ class RTG_Tire_Qualifier {
             $context = self::default_context();
         }
 
-        $reasons = array();
+        $reasons  = array();
+        $warnings = array();
 
         // --- Size: the hard gate. ---
         $allowed = array();
@@ -218,9 +240,12 @@ class RTG_Tire_Qualifier {
         $load_index = trim( (string) ( $specs['load_index'] ?? '' ) );
 
         if ( '' === $load_index ) {
-            $reasons[] = array(
+            // Not disqualifying. Plenty of listings simply omit it, and a tire
+            // that is right in every other respect should reach the queue with
+            // a flag rather than be hidden among the near misses.
+            $warnings[] = array(
                 'code'  => 'load_index_unknown',
-                'label' => 'Load index not listed — needs manual confirmation',
+                'label' => 'Load index not listed — confirm before adding',
             );
         } elseif ( intval( $load_index ) < $min_index ) {
             $reasons[] = array(
@@ -236,11 +261,23 @@ class RTG_Tire_Qualifier {
         // --- Speed rating: only judged when the feed stated one. ---
         $speed = strtoupper( trim( (string) ( $specs['speed_rating'] ?? '' ) ) );
         if ( '' !== $speed ) {
-            $valid_speeds = array_map( 'strtoupper', (array) ( $context['speed_ratings'] ?? array() ) );
-            if ( ! empty( $valid_speeds ) && ! in_array( $speed, $valid_speeds, true ) ) {
-                $reasons[] = array(
+            // Union the configured list with the canonical one, trimming both,
+            // so a stray line ending in the saved dropdown can't make a
+            // perfectly ordinary "V" look unrecognized.
+            $valid_speeds = self::CANONICAL_SPEED_RATINGS;
+            foreach ( (array) ( $context['speed_ratings'] ?? array() ) as $configured ) {
+                $configured = strtoupper( trim( (string) $configured ) );
+                if ( '' !== $configured ) {
+                    $valid_speeds[] = $configured;
+                }
+            }
+
+            if ( ! in_array( $speed, $valid_speeds, true ) ) {
+                // An unfamiliar rating is worth a second look, not a rejection:
+                // it says the listing is unusual, not that the tire is wrong.
+                $warnings[] = array(
                     'code'  => 'speed_rating_unknown',
-                    'label' => sprintf( 'Unrecognized speed rating "%s"', $speed ),
+                    'label' => sprintf( 'Unfamiliar speed rating "%s" — confirm before adding', $speed ),
                 );
             }
         }
@@ -262,6 +299,7 @@ class RTG_Tire_Qualifier {
         return array(
             'qualifies' => empty( $reasons ),
             'reasons'   => $reasons,
+            'warnings'  => $warnings,
         );
     }
 

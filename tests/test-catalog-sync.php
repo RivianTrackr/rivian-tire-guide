@@ -246,4 +246,42 @@ class Test_RTG_Catalog_Sync extends WP_UnitTestCase {
         $this->assertSame( array(), $products );
         $this->assertNotSame( '', $source->get_last_error() );
     }
+
+    /**
+     * A product already in the guide is filed as such even when its listing
+     * fails qualification.
+     *
+     * The first live CJ run surfaced this: Tire Rack listings that omit a load
+     * index matched guide tires perfectly well, but were filed under near
+     * misses because qualification was judged first — reporting "0 already in
+     * the guide" while plainly having matched. Matching now settles the status
+     * ahead of qualification, since what you already stock is not a near miss.
+     */
+    public function test_a_matched_tire_is_existing_even_when_it_fails_qualification() {
+        $result = RTG_Candidates::upsert( $this->candidate( array(
+            'matched_tire_id' => 'tire045',
+            'qualifies'       => false,
+            'fail_reasons'    => array( array( 'code' => 'load_index_unknown', 'label' => 'not listed' ) ),
+        ) ) );
+
+        $this->assertSame( RTG_Candidates::STATUS_EXISTING, $result['status'] );
+
+        // And it must not be announced as a new find.
+        $this->assertFalse( $result['newly_surfaced'] );
+    }
+
+    /**
+     * Warnings survive the round trip to the database and back.
+     */
+    public function test_warnings_are_stored_and_read_back() {
+        $result = RTG_Candidates::upsert( $this->candidate( array(
+            'qualifies' => true,
+            'warnings'  => array( array( 'code' => 'load_index_unknown', 'label' => 'Load index not listed' ) ),
+        ) ) );
+
+        $stored = RTG_Candidates::get( $result['id'] );
+
+        $this->assertSame( 'load_index_unknown', $stored['warnings'][0]['code'] );
+        $this->assertSame( array(), $stored['fail_reasons'] );
+    }
 }

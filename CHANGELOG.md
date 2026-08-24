@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.60.1] - 2026-08-24
+
+### Fixed
+- **Tires already in the guide are no longer filed as near misses.** The first live CJ run reported "0 already in the guide" while plainly having matched — Tire Rack listings that matched a guide tire were landing under near misses because qualification was judged before matching, so a listing that merely omitted its load index buried a tire already stocked. Matching now settles the status first: what you already own is "already in the guide" whatever the rules make of the listing's wording.
+- **A missing load index no longer disqualifies a candidate.** Tire Rack routinely omits it, and treating that as a failure hid genuinely new tires among the near misses where they were never seen — defeating the point of watching the catalog. Rules now come in two strengths: a *failure* disqualifies (wrong fitment, load index below the floor, unidentifiable), while a *warning* travels with a qualifying candidate as something to confirm before adding. Warnings render on the row in every tab.
+- **Ordinary speed ratings are no longer reported as unrecognized.** Every row from the first live run was flagged for a perfectly normal "V", "W", "H" or "T". The check compared against the site's saved dropdown with a strict match, and that list — edited as free text — carries stray line endings, so nothing ever matched. The configured list is now unioned with a canonical set of every speed rating in industry use, trimmed on both sides, and an unfamiliar rating warns rather than rejects.
+
+### Notes
+- Rejections for **"Size … is not a Rivian fitment" are correct and expected.** CJ's `shoppingProducts` keyword search matches loosely, so a query for one size returns neighbouring ones (285/45R22, 305/45R22) that the size rule then filters out. That filtering is the feature working, not a fault — though it does mean much of each request's record budget is spent on results that will be discarded.
+
 ## [1.60.0] - 2026-08-24
 
 ### Added
