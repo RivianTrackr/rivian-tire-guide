@@ -235,4 +235,79 @@ class Test_RTG_Price_Sync extends WP_UnitTestCase {
         $this->assertTrue( RTG_Price_Sync::decide( $tire, $candidate, 0.5 )['update'] );
         $this->assertFalse( RTG_Price_Sync::decide( $tire, $candidate, 0.05 )['update'] );
     }
+
+    // --- Retailer name matching ---
+
+    /**
+     * CJ's advertiser name and the resolver's name for the same retailer
+     * disagree, and the price sync has to see through it.
+     *
+     * The first live run refreshed nothing: CJ calls the advertiser "The Tire
+     * Rack" while a link resolves to "Tire Rack", and an exact comparison
+     * judged every Tire Rack tire as "that retailer isn't listing this". 103
+     * covered tires, none priced.
+     */
+    public function test_the_tire_rack_and_tire_rack_are_the_same_retailer() {
+        $this->assertSame(
+            RTG_Price_Sync::normalize_retailer( 'Tire Rack' ),
+            RTG_Price_Sync::normalize_retailer( 'The Tire Rack' )
+        );
+        $this->assertSame(
+            RTG_Price_Sync::normalize_retailer( 'SimpleTire' ),
+            RTG_Price_Sync::normalize_retailer( 'Simple Tire' )
+        );
+        $this->assertSame(
+            RTG_Price_Sync::normalize_retailer( 'Tire Rack' ),
+            RTG_Price_Sync::normalize_retailer( 'TIRE RACK' )
+        );
+    }
+
+    /**
+     * Loosening the comparison must not make two retailers interchangeable —
+     * that would attach one's price to the other's link, the failure the whole
+     * rule exists to prevent.
+     */
+    public function test_distinct_retailers_still_differ() {
+        $this->assertNotSame(
+            RTG_Price_Sync::normalize_retailer( 'Tire Rack' ),
+            RTG_Price_Sync::normalize_retailer( 'SimpleTire' )
+        );
+    }
+
+    /**
+     * "The" is dropped only as a leading word, never from inside a name.
+     */
+    public function test_the_is_stripped_only_as_a_prefix() {
+        $this->assertSame( 'otires', RTG_Price_Sync::normalize_retailer( 'Theo Tires' ) );
+    }
+
+    /**
+     * The live case, end to end: a real CJ deep link and CJ's own advertiser
+     * spelling now price the tire.
+     */
+    public function test_a_real_affiliate_link_prices_from_cjs_advertiser_name() {
+        $link = 'https://www.tkqlhce.com/click-101098512-13697786?url=https%3A%2F%2Fwww.tirerack.com%2Ftires%2Ftires.jsp%3FtireModel%3DDefender';
+
+        $this->assertSame( 'Tire Rack', RTG_Price_Sync::resolve_link_retailer( $link ) );
+
+        $decision = RTG_Price_Sync::decide(
+            array( 'link' => $link, 'price' => 299.00 ),
+            array( array( 'advertiser_name' => 'The Tire Rack', 'price' => 274.50 ) )
+        );
+
+        $this->assertTrue( $decision['update'] );
+        $this->assertEquals( 274.50, round( $decision['price'], 2 ) );
+    }
+
+    /**
+     * A tire linked to one retailer is still not priced from the other.
+     */
+    public function test_the_other_retailer_is_still_rejected() {
+        $decision = RTG_Price_Sync::decide(
+            array( 'link' => 'https://www.tirerack.com/tires/x', 'price' => 299.00 ),
+            array( array( 'advertiser_name' => 'SimpleTire', 'price' => 274.50 ) )
+        );
+
+        $this->assertSame( 'retailer_not_carrying', $decision['code'] );
+    }
 }
