@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.67.1] - 2026-08-24
+
+### Fixed
+- **1.67.0 shipped half-applied and broke the direct-lookup pass.** `RTG_Catalog_Sync` was rewritten to read `$lookup['by_term']` while `RTG_Catalog_Source_CJ` still returned `products` — so the targeted lookup ingested nothing at all. The keyword probe was affected the same way: `test_connection()` never took the keyword parameter, so the box on the settings screen was ignored and every probe silently searched the first guide size instead. Both halves are now applied, and the probe reports the keyword it actually used so a fallback can never again be mistaken for an answer.
+
+### Added
+- **Contract checks that actually execute** (`tests/contract/`, run in CI). The PHPUnit suite needs a WordPress test library and a database and so does not run on every change, and `php -l` only proves a file parses — a mismatch between what one class returns and what another reads is perfectly valid PHP. That is exactly what shipped. These run on plain PHP with a stubbed HTTP layer: they call the real `fetch_terms`, assert the shape the sync depends on, exercise the fitment guard against a response shaped like a live one, and confirm the probe honours its keyword. Verified against the broken 1.67.0 build, where they fail immediately.
+
 ## [1.67.0] - 2026-08-24
 
 ### Fixed
