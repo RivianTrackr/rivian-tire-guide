@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.61.0] - 2026-08-24
+
+### Added
+- **A brand-coverage policy for discovery**, settable under Tire Discovery &rarr; Discovery Settings. Retailer catalogs carry far more brands than the guide covers — the first live run put 216 tires in the review queue, a large share of them budget marques that would never be listed — but whether that is noise or discovery is a judgement call rather than a rule, so it is a setting with three positions. **Surface them, flagged** (the default) keeps every tire reviewable and marks one whose brand isn't in your list, so a newcomer worth covering still reaches you. **File them under Near Misses** keeps the queue tight, at the cost of never seeing a new brand until you add it to the dropdown. **Don't judge brand at all** restores the previous behaviour.
+- Brand comparison ignores everything but letters and digits, so "BFGoodrich", "BF Goodrich" and "BF-Goodrich" are recognized as one manufacturer. This matters most under the rejecting policy, where a missed variant means a tire is never seen.
+
+### Notes
+- With no brand list configured the rule stays silent whatever the policy is set to, and an unset policy never rejects — a rule nobody has configured should not be able to hide tires.
+- The default is deliberately the non-hiding option. Existing installs keep seeing everything they saw before, now annotated.
+
 ## [1.60.1] - 2026-08-24
 
 ### Fixed

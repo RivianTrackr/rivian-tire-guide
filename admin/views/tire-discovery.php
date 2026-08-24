@@ -38,6 +38,13 @@ if ( isset( $_POST['rtg_catalog_settings_save'] ) ) {
     $posted_index = intval( $_POST['catalog_min_load_index'] ?? RTG_Tire_Qualifier::DEFAULT_MIN_LOAD_INDEX );
     $settings['catalog_min_load_index'] = max( 100, min( 126, $posted_index ) );
 
+    $posted_policy = sanitize_text_field( wp_unslash( $_POST['catalog_brand_policy'] ?? '' ) );
+    $settings['catalog_brand_policy'] = in_array( $posted_policy, array(
+        RTG_Tire_Qualifier::BRAND_POLICY_OFF,
+        RTG_Tire_Qualifier::BRAND_POLICY_WARN,
+        RTG_Tire_Qualifier::BRAND_POLICY_REJECT,
+    ), true ) ? $posted_policy : RTG_Tire_Qualifier::DEFAULT_BRAND_POLICY;
+
     update_option( 'rtg_settings', $settings );
     echo '<div class="notice notice-success is-dismissible"><p>Tire Discovery settings saved.</p></div>';
 }
@@ -48,6 +55,11 @@ $fixture_url    = $settings['catalog_fixture_url'] ?? '';
 $min_load_index = isset( $settings['catalog_min_load_index'] )
     ? intval( $settings['catalog_min_load_index'] )
     : RTG_Tire_Qualifier::DEFAULT_MIN_LOAD_INDEX;
+
+$brand_policy = isset( $settings['catalog_brand_policy'] )
+    ? (string) $settings['catalog_brand_policy']
+    : RTG_Tire_Qualifier::DEFAULT_BRAND_POLICY;
+$covered_brands = RTG_Admin::get_dropdown_options( 'brands' );
 
 $cj_enabled      = $settings['cj_enabled'] ?? true;
 $cj_company_id   = RTG_Catalog_Source_CJ::get_company_id();
@@ -353,6 +365,38 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                         <td>
                             <input type="number" name="catalog_min_load_index" id="catalog_min_load_index" value="<?php echo esc_attr( $min_load_index ); ?>" min="100" max="126" class="small-text">
                             <p class="description">A tire below this is filed under Near Misses rather than the review queue. R1 needs 116, R2 needs 112.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="catalog_brand_policy">Brands Outside Your List</label></th>
+                        <td>
+                            <select name="catalog_brand_policy" id="catalog_brand_policy">
+                                <option value="<?php echo esc_attr( RTG_Tire_Qualifier::BRAND_POLICY_WARN ); ?>" <?php selected( $brand_policy, RTG_Tire_Qualifier::BRAND_POLICY_WARN ); ?>>
+                                    Surface them, flagged
+                                </option>
+                                <option value="<?php echo esc_attr( RTG_Tire_Qualifier::BRAND_POLICY_REJECT ); ?>" <?php selected( $brand_policy, RTG_Tire_Qualifier::BRAND_POLICY_REJECT ); ?>>
+                                    File them under Near Misses
+                                </option>
+                                <option value="<?php echo esc_attr( RTG_Tire_Qualifier::BRAND_POLICY_OFF ); ?>" <?php selected( $brand_policy, RTG_Tire_Qualifier::BRAND_POLICY_OFF ); ?>>
+                                    Don't judge brand at all
+                                </option>
+                            </select>
+                            <p class="description" style="max-width:640px;">
+                                Retailer catalogs carry far more brands than the guide covers, and most of a first
+                                run is usually marques you'd never list. <strong>Surface them, flagged</strong> keeps
+                                everything reviewable but marks an uncovered brand, so a newcomer worth covering
+                                still reaches you. <strong>File them under Near Misses</strong> keeps the queue
+                                tight, at the cost of never seeing a new brand until you add it to the list below.
+                            </p>
+                            <p class="description" style="margin-top:6px;">
+                                <?php if ( ! empty( $covered_brands ) ) : ?>
+                                    Currently covering <strong><?php echo count( $covered_brands ); ?></strong> brands:
+                                    <?php echo esc_html( implode( ', ', $covered_brands ) ); ?>.
+                                    Edit the list under <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-settings' ) ); ?>">Settings &rarr; Dropdown Options</a>.
+                                <?php else : ?>
+                                    No brand list is configured, so this rule stays silent whatever it is set to.
+                                <?php endif; ?>
+                            </p>
                         </td>
                     </tr>
                 </table>

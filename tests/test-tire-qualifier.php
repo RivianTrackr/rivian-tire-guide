@@ -309,4 +309,134 @@ class Test_RTG_Tire_Qualifier extends WP_UnitTestCase {
         $this->assertContains( 'size_not_stocked', $codes );
         $this->assertContains( 'load_index_low', $codes );
     }
+
+    // --- Brand coverage policy ---
+
+    /**
+     * Context with the guide's curated brand list attached.
+     *
+     * @param string $policy Brand policy to apply.
+     * @return array Rule context.
+     */
+    private function brand_context( $policy ) {
+        $context                 = $this->context();
+        $context['brands']       = array( 'BFGoodrich', 'Continental', 'Goodyear', 'Michelin', 'Toyo' );
+        $context['brand_policy'] = $policy;
+
+        return $context;
+    }
+
+    /**
+     * Under "warn", an uncovered brand still reaches the queue carrying a flag.
+     *
+     * The point of the setting is that a brand worth covering can still be
+     * discovered; hiding it by default would make the guide unable to grow.
+     */
+    public function test_warn_policy_flags_an_uncovered_brand_without_hiding_it() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Dcenti DC88 A/T 275/60R20 115T', 'brand' => 'Dcenti' ),
+            $this->brand_context( RTG_Tire_Qualifier::BRAND_POLICY_WARN )
+        );
+
+        $this->assertTrue( $result['qualifies'] );
+        $this->assertContains( 'brand_not_covered', array_column( $result['warnings'], 'code' ) );
+    }
+
+    /**
+     * Under "reject", the same tire is filed as a near miss with a reason.
+     */
+    public function test_reject_policy_files_an_uncovered_brand_as_a_near_miss() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Dcenti DC88 A/T 275/60R20 115T', 'brand' => 'Dcenti' ),
+            $this->brand_context( RTG_Tire_Qualifier::BRAND_POLICY_REJECT )
+        );
+
+        $this->assertFalse( $result['qualifies'] );
+        $this->assertContains( 'brand_not_covered', $this->codes( $result ) );
+    }
+
+    /**
+     * Under "off", brand isn't judged at all.
+     */
+    public function test_off_policy_ignores_brand_entirely() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Dcenti DC88 A/T 275/60R20 115T', 'brand' => 'Dcenti' ),
+            $this->brand_context( RTG_Tire_Qualifier::BRAND_POLICY_OFF )
+        );
+
+        $this->assertTrue( $result['qualifies'] );
+        $this->assertSame( array(), $result['warnings'] );
+    }
+
+    /**
+     * A covered brand passes cleanly under every policy.
+     */
+    public function test_a_covered_brand_is_never_flagged() {
+        foreach ( array(
+            RTG_Tire_Qualifier::BRAND_POLICY_WARN,
+            RTG_Tire_Qualifier::BRAND_POLICY_REJECT,
+            RTG_Tire_Qualifier::BRAND_POLICY_OFF,
+        ) as $policy ) {
+            $result = RTG_Tire_Qualifier::evaluate(
+                array( 'title' => 'Continental TerrainContact A/T 275/60R20 115S', 'brand' => 'Continental' ),
+                $this->brand_context( $policy )
+            );
+
+            $this->assertTrue( $result['qualifies'], "Covered brand should qualify under {$policy}" );
+            $this->assertNotContains( 'brand_not_covered', array_column( $result['warnings'], 'code' ) );
+        }
+    }
+
+    /**
+     * Spelling variants of a covered brand are recognized.
+     *
+     * Retailers punctuate brands inconsistently, and the strictest policy is
+     * the one where getting this wrong is most costly — a rejected tire is
+     * never seen — so the comparison ignores everything but letters and digits.
+     */
+    public function test_brand_variants_are_recognized_under_the_strictest_policy() {
+        foreach ( array( 'BFGoodrich', 'BF Goodrich', 'BF-Goodrich', 'bfgoodrich' ) as $variant ) {
+            $result = RTG_Tire_Qualifier::evaluate(
+                array( 'title' => "{$variant} All-Terrain T/A KO3 275/65R18 116T", 'brand' => $variant ),
+                $this->brand_context( RTG_Tire_Qualifier::BRAND_POLICY_REJECT )
+            );
+
+            $this->assertTrue( $result['qualifies'], "Variant {$variant} should be recognized" );
+        }
+    }
+
+    /**
+     * With no curated list configured the rule stays silent, whatever the
+     * policy — otherwise a site that never set brands up would reject its
+     * entire catalog.
+     */
+    public function test_an_empty_brand_list_keeps_the_rule_silent() {
+        $context                 = $this->context();
+        $context['brands']       = array();
+        $context['brand_policy'] = RTG_Tire_Qualifier::BRAND_POLICY_REJECT;
+
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Dcenti DC88 A/T 275/60R20 115T', 'brand' => 'Dcenti' ),
+            $context
+        );
+
+        $this->assertTrue( $result['qualifies'] );
+    }
+
+    /**
+     * An unset policy must not reject: a rule nobody configured should never
+     * silently hide tires.
+     */
+    public function test_an_unset_policy_never_rejects() {
+        $context = $this->context();
+        $context['brands'] = array( 'Michelin' );
+        unset( $context['brand_policy'] );
+
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Dcenti DC88 A/T 275/60R20 115T', 'brand' => 'Dcenti' ),
+            $context
+        );
+
+        $this->assertTrue( $result['qualifies'] );
+    }
 }

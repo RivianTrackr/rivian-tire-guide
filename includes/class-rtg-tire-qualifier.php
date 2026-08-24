@@ -41,6 +41,18 @@ class RTG_Tire_Qualifier {
      * flag every rating as unrecognized, which is exactly what happened on the
      * first live run against CJ.
      */
+    /** Brand policy: brands outside the curated list are not judged at all. */
+    const BRAND_POLICY_OFF = 'off';
+
+    /** Brand policy: an uncovered brand still reaches the queue, flagged. */
+    const BRAND_POLICY_WARN = 'warn';
+
+    /** Brand policy: an uncovered brand is filed as a near miss. */
+    const BRAND_POLICY_REJECT = 'reject';
+
+    /** Policy applied when the setting is unset. */
+    const DEFAULT_BRAND_POLICY = self::BRAND_POLICY_WARN;
+
     const CANONICAL_SPEED_RATINGS = array(
         'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'H', 'V', 'W', 'Y', 'Z', 'ZR',
     );
@@ -57,11 +69,17 @@ class RTG_Tire_Qualifier {
             ? intval( $settings['catalog_min_load_index'] )
             : self::DEFAULT_MIN_LOAD_INDEX;
 
+        $brand_policy = isset( $settings['catalog_brand_policy'] )
+            ? (string) $settings['catalog_brand_policy']
+            : self::DEFAULT_BRAND_POLICY;
+
         return array(
             'sizes'          => RTG_Admin::get_dropdown_options( 'sizes' ),
             'min_load_index' => $min_load_index,
             'load_ranges'    => RTG_Admin::get_dropdown_options( 'load_ranges' ),
             'speed_ratings'  => RTG_Admin::get_dropdown_options( 'speed_ratings' ),
+            'brands'         => RTG_Admin::get_dropdown_options( 'brands' ),
+            'brand_policy'   => $brand_policy,
         );
     }
 
@@ -91,6 +109,20 @@ class RTG_Tire_Qualifier {
         }
 
         return $m[1] . '/' . $m[2] . 'R' . $m[3];
+    }
+
+    /**
+     * Reduce a brand name to a form two spellings of it can be compared in.
+     *
+     * Retailers punctuate and space brands inconsistently — "BFGoodrich",
+     * "BF Goodrich" and "BF-Goodrich" are one manufacturer — so everything but
+     * letters and digits is dropped before comparing.
+     *
+     * @param string $brand Raw brand name.
+     * @return string Comparison key, or '' when there is nothing to compare.
+     */
+    public static function normalize_brand( $brand ) {
+        return preg_replace( '/[^a-z0-9]/', '', strtolower( trim( (string) $brand ) ) );
     }
 
     /**
@@ -294,6 +326,42 @@ class RTG_Tire_Qualifier {
                 'code'  => 'model_missing',
                 'label' => 'No model name could be read from the listing',
             );
+        }
+
+        // --- Brand coverage: judged only when a policy asks for it. ---
+        //
+        // A retailer's catalog carries far more brands than the guide covers,
+        // and on the first live run most of the queue was budget marques that
+        // would never be listed. Whether that is noise or discovery is a
+        // judgement call, so it is a setting rather than a rule: off ignores
+        // brand entirely, warn flags an uncovered brand while still surfacing
+        // it, and reject files it as a near miss.
+        $policy = (string) ( $context['brand_policy'] ?? self::DEFAULT_BRAND_POLICY );
+        $brand  = trim( (string) ( $specs['brand'] ?? '' ) );
+
+        if ( self::BRAND_POLICY_OFF !== $policy && '' !== $brand ) {
+            $known = array();
+            foreach ( (array) ( $context['brands'] ?? array() ) as $covered ) {
+                $key = self::normalize_brand( $covered );
+                if ( '' !== $key ) {
+                    $known[ $key ] = true;
+                }
+            }
+
+            // With no curated list configured there is nothing to measure
+            // against, so the rule stays silent rather than flagging everything.
+            if ( ! empty( $known ) && ! isset( $known[ self::normalize_brand( $brand ) ] ) ) {
+                $entry = array(
+                    'code'  => 'brand_not_covered',
+                    'label' => sprintf( '%s is not a brand the guide covers', $brand ),
+                );
+
+                if ( self::BRAND_POLICY_REJECT === $policy ) {
+                    $reasons[] = $entry;
+                } else {
+                    $warnings[] = $entry;
+                }
+            }
         }
 
         return array(
