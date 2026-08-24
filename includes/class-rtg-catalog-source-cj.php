@@ -33,18 +33,30 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
     /** HTTP timeout per request, in seconds. */
     const REQUEST_TIMEOUT = 30;
 
-    /** Default records requested per size. */
-    const DEFAULT_LIMIT = 100;
+    /**
+     * Default records requested per size.
+     *
+     * A real retailer catalog carries hundreds of tires in a popular fitment.
+     * The original 100 quietly discarded the rest — CJ reports how many matched
+     * and the adapter ignored it — so tires that plainly exist at a retailer
+     * never reached the queue. The limit is now high enough to cover a size in
+     * one request, and a shortfall is reported rather than passed over.
+     */
+    const DEFAULT_LIMIT = 1000;
 
     /**
      * Wall-clock budget for a whole sweep, in seconds.
      *
-     * Five sizes at up to REQUEST_TIMEOUT each can outlast PHP's execution
-     * limit on a web-triggered cron. Rather than being killed mid-run, the
-     * sweep stops when the budget is spent and names the sizes it didn't
-     * reach — a partial result that says so beats a silent truncation.
+     * One request per size at up to REQUEST_TIMEOUT each can outlast PHP's
+     * execution limit on a web-triggered cron. Rather than being killed
+     * mid-run, the sweep stops when the budget is spent and names the sizes it
+     * didn't reach — a partial result that says so beats a silent truncation.
+     *
+     * Sized for a real fitment list rather than the five sizes first assumed;
+     * a guide covering a dozen sizes was having most of them skipped.
+     * Overridable in settings for hosts with a tighter execution limit.
      */
-    const SWEEP_BUDGET = 45;
+    const SWEEP_BUDGET = 240;
 
     /**
      * Advertisers to search, as CJ advertiser ID => display name.
@@ -231,17 +243,23 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
             return array();
         }
 
-        $products = array();
-        $failures = array();
-        $skipped  = array();
-        $started  = microtime( true );
+        $products  = array();
+        $failures  = array();
+        $skipped   = array();
+        $truncated = array();
+        $started   = microtime( true );
+
+        $settings = get_option( 'rtg_settings', array() );
+        $budget   = isset( $settings['cj_sweep_budget'] )
+            ? max( 15, min( 600, intval( $settings['cj_sweep_budget'] ) ) )
+            : self::SWEEP_BUDGET;
 
         $queue = array_values( array_filter( array_map( 'trim', (array) $sizes ), 'strlen' ) );
 
         foreach ( $queue as $index => $size ) {
             // Stop before starting a request that would overrun the budget,
             // so the run ends by choice rather than by being killed.
-            if ( $index > 0 && ( microtime( true ) - $started ) > self::SWEEP_BUDGET ) {
+            if ( $index > 0 && ( microtime( true ) - $started ) > $budget ) {
                 $skipped = array_slice( $queue, $index );
                 break;
             }
@@ -258,12 +276,36 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
                 // key by external ID so it reaches the queue once.
                 $products[ $product['external_id'] ] = $product;
             }
+
+            // CJ says how many matched. Fewer in hand than it reports means the
+            // response was capped and tires that genuinely exist at a retailer
+            // never reached the queue — the failure that made a Michelin
+            // Defender plainly listed on Tire Rack show as "no retailer match".
+            $total = $result['total_count'];
+            if ( null !== $total && $total > count( $result['products'] ) ) {
+                $truncated[ $size ] = array(
+                    'received' => count( $result['products'] ),
+                    'total'    => $total,
+                );
+            }
         }
 
         if ( ! empty( $skipped ) ) {
             $failures[] = sprintf(
                 'Time budget reached — %s not checked this run.',
                 implode( ', ', $skipped )
+            );
+        }
+
+        if ( ! empty( $truncated ) ) {
+            $parts = array();
+            foreach ( $truncated as $size => $counts ) {
+                $parts[] = sprintf( '%s (%d of %d)', $size, $counts['received'], $counts['total'] );
+            }
+
+            $failures[] = sprintf(
+                'Results capped — raise "Records per size" to see the rest: %s.',
+                implode( ', ', $parts )
             );
         }
 
@@ -310,9 +352,10 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
 
         if ( is_wp_error( $response ) ) {
             return array(
-                'products' => array(),
-                'error'    => $response->get_error_message(),
-                'raw'      => array(),
+                'products'    => array(),
+                'total_count' => null,
+                'error'       => $response->get_error_message(),
+                'raw'         => array(),
             );
         }
 
@@ -329,38 +372,47 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
 
         if ( 401 === $code || 403 === $code ) {
             return array(
-                'products' => array(),
-                'error'    => 'HTTP ' . $code . ' — the token was rejected. Check the PAT and that it belongs to company ' . self::get_company_id() . '.',
-                'raw'      => $this->last_response,
+                'products'    => array(),
+                'total_count' => null,
+                'error'       => 'HTTP ' . $code . ' — the token was rejected. Check the PAT and that it belongs to company ' . self::get_company_id() . '.',
+                'raw'         => $this->last_response,
             );
         }
 
         if ( 200 !== $code ) {
             return array(
-                'products' => array(),
-                'error'    => 'HTTP ' . $code,
-                'raw'      => $this->last_response,
+                'products'    => array(),
+                'total_count' => null,
+                'error'       => 'HTTP ' . $code,
+                'raw'         => $this->last_response,
             );
         }
 
         if ( ! is_array( $decoded ) ) {
             return array(
-                'products' => array(),
-                'error'    => 'Response was not valid JSON.',
-                'raw'      => $this->last_response,
+                'products'    => array(),
+                'total_count' => null,
+                'error'       => 'Response was not valid JSON.',
+                'raw'         => $this->last_response,
             );
         }
 
         // GraphQL reports schema and permission problems in a 200 response.
         if ( ! empty( $decoded['errors'] ) ) {
             return array(
-                'products' => array(),
-                'error'    => self::describe_graphql_errors( $decoded['errors'] ),
-                'raw'      => $this->last_response,
+                'products'    => array(),
+                'total_count' => null,
+                'error'       => self::describe_graphql_errors( $decoded['errors'] ),
+                'raw'         => $this->last_response,
             );
         }
 
         $nodes = self::extract_result_list( $decoded['data'] ?? array() );
+
+        // CJ reports how many products matched. Comparing it against what came
+        // back is the only way to know the response was capped — without it a
+        // truncated page is indistinguishable from a complete one.
+        $total = self::extract_total_count( $decoded['data'] ?? array() );
 
         $products = array();
         foreach ( $nodes as $node ) {
@@ -371,10 +423,38 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
         }
 
         return array(
-            'products' => $products,
-            'error'    => '',
-            'raw'      => $this->last_response,
+            'products'    => $products,
+            'total_count' => $total,
+            'error'       => '',
+            'raw'         => $this->last_response,
         );
+    }
+
+    /**
+     * Find the match count CJ reports alongside a result list.
+     *
+     * @param mixed $data GraphQL `data` payload.
+     * @return int|null Total matches, or null when the response doesn't say.
+     */
+    public static function extract_total_count( $data ) {
+        if ( ! is_array( $data ) ) {
+            return null;
+        }
+
+        foreach ( $data as $key => $value ) {
+            if ( is_int( $value ) && in_array( (string) $key, array( 'totalCount', 'total', 'totalResults' ), true ) ) {
+                return $value;
+            }
+
+            if ( is_array( $value ) ) {
+                $found = self::extract_total_count( $value );
+                if ( null !== $found ) {
+                    return $found;
+                }
+            }
+        }
+
+        return null;
     }
 
     // --- Response handling ---
