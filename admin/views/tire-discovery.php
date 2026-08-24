@@ -54,6 +54,9 @@ if ( isset( $_POST['rtg_catalog_settings_save'] ) ) {
     }
     $settings['catalog_vehicle_min_load_index'] = $vehicle_minimums;
 
+    $settings['price_sync_enabled']    = ! empty( $_POST['price_sync_enabled'] );
+    $settings['price_sync_max_change'] = max( 1, min( 100, intval( $_POST['price_sync_max_change'] ?? 50 ) ) );
+
     $posted_policy = sanitize_text_field( wp_unslash( $_POST['catalog_brand_policy'] ?? '' ) );
     $settings['catalog_brand_policy'] = in_array( $posted_policy, array(
         RTG_Tire_Qualifier::BRAND_POLICY_OFF,
@@ -71,6 +74,26 @@ $fixture_url    = $settings['catalog_fixture_url'] ?? '';
 $min_load_index = isset( $settings['catalog_min_load_index'] )
     ? intval( $settings['catalog_min_load_index'] )
     : RTG_Tire_Qualifier::DEFAULT_MIN_LOAD_INDEX;
+
+// Retailer coverage: which guide tires a retailer actually carries. Tires with
+// no match are expected while affiliate links are still being filled in, so
+// they are listed plainly rather than treated as a fault.
+$retailer_coverage = RTG_Candidates::get_retailer_coverage();
+$guide_tires       = RTG_Database::get_all_tires();
+
+$covered_tires   = array();
+$uncovered_tires = array();
+foreach ( $guide_tires as $guide_tire ) {
+    if ( ! empty( $retailer_coverage[ $guide_tire['tire_id'] ] ) ) {
+        $covered_tires[] = $guide_tire;
+    } else {
+        $uncovered_tires[] = $guide_tire;
+    }
+}
+
+$price_sync_enabled    = $settings['price_sync_enabled'] ?? true;
+$price_sync_max_change = intval( $settings['price_sync_max_change'] ?? 50 );
+$price_results         = RTG_Price_Sync::get_results();
 
 $vehicle_size_map = RTG_Database::get_vehicle_size_map();
 $vehicle_minimums = RTG_Tire_Qualifier::get_vehicle_minimums();
@@ -282,6 +305,119 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
         </div>
     </form>
 
+    <!-- Retailer coverage and price refresh -->
+    <div class="rtg-card" style="margin-bottom:20px;">
+        <div class="rtg-card-header">
+            <h2>Retailer Coverage &amp; Prices</h2>
+        </div>
+        <div class="rtg-card-body">
+            <div class="rtg-stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:16px;">
+                <div class="rtg-stat-card">
+                    <div class="rtg-stat-value" style="color:var(--rtg-success);"><?php echo count( $covered_tires ); ?></div>
+                    <div class="rtg-stat-label">Tires Covered</div>
+                </div>
+                <div class="rtg-stat-card">
+                    <div class="rtg-stat-value" style="color:var(--rtg-text-muted);"><?php echo count( $uncovered_tires ); ?></div>
+                    <div class="rtg-stat-label">No Retailer Match</div>
+                </div>
+                <?php if ( $price_results && isset( $price_results['updated'] ) ) : ?>
+                    <div class="rtg-stat-card">
+                        <div class="rtg-stat-value"><?php echo intval( $price_results['updated'] ); ?></div>
+                        <div class="rtg-stat-label">Prices Updated</div>
+                    </div>
+                    <div class="rtg-stat-card">
+                        <div class="rtg-stat-value" style="color:var(--rtg-text-muted);"><?php echo intval( $price_results['skipped'] ); ?></div>
+                        <div class="rtg-stat-label">Left Unchanged</div>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <?php if ( ! empty( $uncovered_tires ) ) : ?>
+                <details>
+                    <summary style="cursor:pointer;font-weight:600;margin-bottom:8px;">
+                        <?php echo count( $uncovered_tires ); ?> tire(s) no retailer is carrying
+                    </summary>
+                    <p class="description" style="max-width:820px;margin:8px 0;">
+                        Neither retailer lists these, so their prices can't refresh on their own. Expected while
+                        affiliate links are still going in, and expected permanently for anything discontinued or
+                        sold elsewhere.
+                    </p>
+                    <table class="rtg-table" style="margin-top:8px;">
+                        <thead>
+                            <tr><th>Tire</th><th>Size</th><th>Price</th><th>Link</th></tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ( $uncovered_tires as $uncovered ) : ?>
+                            <tr>
+                                <td>
+                                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit&id=' . intval( $uncovered['id'] ) ) ); ?>">
+                                        <?php echo esc_html( trim( $uncovered['brand'] . ' ' . $uncovered['model'] ) ); ?>
+                                    </a>
+                                </td>
+                                <td style="font-family:var(--rtg-font-mono, monospace);"><?php echo esc_html( $uncovered['size'] ); ?></td>
+                                <td><?php echo $uncovered['price'] > 0 ? '$' . esc_html( number_format( (float) $uncovered['price'], 2 ) ) : '&mdash;'; ?></td>
+                                <td style="font-size:12px;color:var(--rtg-text-muted);">
+                                    <?php
+                                    $link_retailer = RTG_Price_Sync::resolve_link_retailer( $uncovered['link'] ?? '' );
+                                    if ( empty( $uncovered['link'] ) ) {
+                                        echo 'No link';
+                                    } elseif ( '' !== $link_retailer ) {
+                                        echo esc_html( $link_retailer );
+                                    } else {
+                                        echo 'Elsewhere';
+                                    }
+                                    ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </details>
+            <?php endif; ?>
+
+            <?php
+            // Why a covered tire's price didn't move. Everything the run
+            // decided is recorded, so this never needs a re-run to answer.
+            $unchanged = array();
+            if ( $price_results && ! empty( $price_results['outcomes'] ) ) {
+                foreach ( $price_results['outcomes'] as $outcome_tire_id => $outcome ) {
+                    if ( 'updated' !== $outcome['code'] && 'unchanged' !== $outcome['code'] ) {
+                        $unchanged[ $outcome_tire_id ] = $outcome;
+                    }
+                }
+            }
+            ?>
+            <?php if ( ! empty( $unchanged ) ) : ?>
+                <details style="margin-top:12px;">
+                    <summary style="cursor:pointer;font-weight:600;">
+                        <?php echo count( $unchanged ); ?> covered tire(s) whose price was not refreshed
+                    </summary>
+                    <table class="rtg-table" style="margin-top:8px;">
+                        <thead>
+                            <tr><th>Tire</th><th>Size</th><th>Retailer</th><th>Reason</th></tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ( $unchanged as $outcome ) : ?>
+                            <tr>
+                                <td><?php echo esc_html( trim( $outcome['brand'] . ' ' . $outcome['model'] ) ); ?></td>
+                                <td style="font-family:var(--rtg-font-mono, monospace);"><?php echo esc_html( $outcome['size'] ); ?></td>
+                                <td><?php echo esc_html( $outcome['retailer'] ?: '&mdash;' ); ?></td>
+                                <td style="font-size:12px;color:var(--rtg-text-muted);"><?php echo esc_html( $outcome['label'] ); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </details>
+            <?php endif; ?>
+
+            <?php if ( ! $price_results ) : ?>
+                <p class="description" style="margin-top:12px;">
+                    Prices refresh on the next discovery run.
+                </p>
+            <?php endif; ?>
+        </div>
+    </div>
+
     <!-- Candidates table -->
     <div class="rtg-card">
         <div class="rtg-table-wrapper">
@@ -471,6 +607,29 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                     to get per-platform rules.
                                 </p>
                             <?php endif; ?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="price_sync_enabled">Price Refresh</label></th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="price_sync_enabled" id="price_sync_enabled" value="1" <?php checked( $price_sync_enabled ); ?>>
+                                Refresh guide prices on each discovery run
+                            </label>
+                            <p class="description" style="max-width:680px;">
+                                A price is taken only from the retailer the tire's own purchase link points to, so the
+                                figure on the page always matches what a reader sees on click. A tire linked somewhere
+                                discovery doesn't price — Amazon, a manufacturer — is left alone and listed below.
+                            </p>
+                            <p style="margin-top:8px;">
+                                <label for="price_sync_max_change">Ignore changes larger than</label>
+                                <input type="number" name="price_sync_max_change" id="price_sync_max_change" value="<?php echo esc_attr( $price_sync_max_change ); ?>" min="1" max="100" class="small-text">%
+                            </p>
+                            <p class="description" style="max-width:680px;">
+                                Tires are matched on brand, model and size, which can collide across load ratings. A
+                                price that moves further than this is more likely to be that collision than a real sale,
+                                so it is reported rather than written.
+                            </p>
                         </td>
                     </tr>
                     <tr>

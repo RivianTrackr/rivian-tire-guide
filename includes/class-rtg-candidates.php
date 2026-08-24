@@ -307,6 +307,57 @@ class RTG_Candidates {
     }
 
     /**
+     * Group every candidate that matched a guide tire, keyed by that tire.
+     *
+     * Dismissed rows are included deliberately: dismissing a candidate means
+     * "don't offer this as a new tire", not "stop pricing the tire I already
+     * stock from it".
+     *
+     * @return array tire_id => candidate rows.
+     */
+    public static function get_matched_by_tire() {
+        global $wpdb;
+        $table = self::table();
+
+        $rows = $wpdb->get_results(
+            "SELECT * FROM {$table} WHERE matched_tire_id <> ''",
+            ARRAY_A
+        );
+
+        $by_tire = array();
+        foreach ( $rows ?: array() as $row ) {
+            $by_tire[ $row['matched_tire_id'] ][] = self::hydrate( $row );
+        }
+
+        return $by_tire;
+    }
+
+    /**
+     * Which retailers carry each guide tire.
+     *
+     * @return array tire_id => list of advertiser names, de-duplicated.
+     */
+    public static function get_retailer_coverage() {
+        $coverage = array();
+
+        foreach ( self::get_matched_by_tire() as $tire_id => $candidates ) {
+            $retailers = array();
+            foreach ( $candidates as $candidate ) {
+                $name = trim( (string) ( $candidate['advertiser_name'] ?? '' ) );
+                if ( '' !== $name ) {
+                    $retailers[ $name ] = true;
+                }
+            }
+
+            $names = array_keys( $retailers );
+            sort( $names );
+            $coverage[ $tire_id ] = $names;
+        }
+
+        return $coverage;
+    }
+
+    /**
      * Record a human decision on a candidate.
      *
      * @param int    $id     Row ID.
