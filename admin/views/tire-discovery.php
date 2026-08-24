@@ -744,17 +744,24 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                         <td>
                             <textarea name="cj_category_names" id="cj_category_names" rows="2" class="large-text code" placeholder="Tires"><?php echo esc_textarea( $cj_categories ); ?></textarea>
                             <p class="description" style="max-width:680px;">
-                                One Google product category per line. <strong>This is the single most useful setting
-                                here.</strong> A keyword search ranks by relevance rather than filtering — asking CJ for
-                                one tire size reports over five thousand matches, almost none of them that fitment — so
-                                without a category the sweep pages through most of a retailer's catalog to find a
-                                handful of tires. Leave blank to apply no filter.
+                                One Google product category per line. <strong>Leave this blank unless you are certain
+                                every advertiser tags its products.</strong>
                             </p>
-                            <p class="description" style="margin-top:6px;">
-                                Try <code>Tires</code> first, then <code>Vehicles &amp; Parts &gt; Vehicle Parts &amp;
-                                Accessories &gt; Motor Vehicle Parts &gt; Motor Vehicle Tires</code>. Use
-                                <strong>Test Connection</strong> after each: the right value makes the match count fall
-                                sharply while still returning tires. If a value returns nothing, it isn't the one.
+                            <div class="rtg-notice rtg-notice-warning" style="max-width:680px;margin:8px 0;">
+                                <span>
+                                    <strong>This filter can silently drop a whole retailer.</strong> It is applied by CJ
+                                    as a server-side filter, so any product that declares no category is excluded.
+                                    Checked against this account, SimpleTire tags its tires
+                                    (<code>… &gt; Motor Vehicle Tires &gt; Automotive Tires</code>, id 6093) and
+                                    <strong>Tire Rack sends no category at all</strong> — so setting a category here
+                                    would remove every Tire Rack listing. Worse, it would look like it worked: the match
+                                    counts would fall sharply, exactly as a correct filter would make them.
+                                </span>
+                            </div>
+                            <p class="description" style="max-width:680px;">
+                                Discovery does not need this. Paging already reaches a size's whole match set; the
+                                filter only saves requests. If you do set it, confirm afterwards that both retailers
+                                still appear in the coverage report above.
                             </p>
                         </td>
                     </tr>

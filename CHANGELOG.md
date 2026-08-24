@@ -4,6 +4,15 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.64.1] - 2026-08-24
+
+### Changed
+- **The Google product category filter is now documented as a hazard rather than recommended.** Checking it against real data settled the question the wrong way: SimpleTire tags its tires `Vehicles & Parts > … > Motor Vehicle Wheel Systems > Motor Vehicle Tires > Automotive Tires` (id 6093), while **Tire Rack sends no category at all**. CJ applies the filter server-side, so setting one excludes every product that declares no category — removing Tire Rack in its entirety, the very retailer whose missing listings prompted the investigation. It would also have looked like a success, because the match counts would have collapsed exactly as a working filter makes them. The setting remains for a catalog where every advertiser tags its products, but it defaults to blank, the admin carries an explicit warning, and the previous copy calling it "the single most useful setting here" is gone.
+
+### Notes
+- Discovery does not need the filter. At 1,000 records a page and an allowance of ten pages, a sweep reaches 10,000 per size against a worst observed volume of ~5,600 — so paging already covers a size completely. The filter only ever saved requests.
+- A test pins both properties: that no category is applied unless one is explicitly configured, and that the page allowance still exceeds the match volume actually seen.
+
 ## [1.64.0] - 2026-08-24
 
 ### Added
