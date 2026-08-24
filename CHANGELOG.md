@@ -4,6 +4,17 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.72.0] - 2026-08-24
+
+### Added
+- **Delisting detection on the Affiliate Links page.** A broken-link check asks whether a URL still resolves, and a tire dropped from the affiliate catalog passes it: the retailer's page is still there, the link still redirects, and the product has quietly been removed from the feed the commission and the price come from. That is invisible from the URL and plain in the sweep's own history, which records when each listing was last seen. Tires now carry a **Delisted** badge with the date and the retailer, a **Not in catalog** badge for one no sweep has ever seen, a stat card, a filter tab, and a notice when any exist.
+- A tire still listed by one retailer and dropped by another reads as listed, and says which one stopped.
+
+### Notes
+- The distinction that makes this trustworthy is the one it would have been easiest to skip: **a listing can go stale because the retailer dropped it, or because our own sweep never read that fitment.** Only a fitment the last sweep read completely can support a delisting claim; anything else is reported as not yet known. Announcing a delisting that is really our own coverage gap would send someone to renegotiate a link that was never dropped.
+- Three days is the threshold. The sweep runs daily, so one missed day is ordinary — a slow run, a failed request — and is not a delisting.
+- The first pass at the label named every retailer that had ever listed a tire, which credited one that dropped it a month ago as though it still carried it. Both that and the delisting date, which was being taken from the wrong retailer when two dropped weeks apart, are pinned by tests.
+
 ## [1.71.0] - 2026-08-24
 
 ### Added
