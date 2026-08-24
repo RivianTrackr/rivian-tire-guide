@@ -124,6 +124,9 @@ class RTG_Candidates {
                 'warnings' => $row['warnings'] ?? array(),
             ) ),
             'matched_tire_id' => (string) ( $row['matched_tire_id'] ?? '' ),
+            // Stored comma-separated with no spaces so FIND_IN_SET can filter
+            // the queue by platform without a LIKE scan.
+            'fits_vehicles'   => implode( ',', array_map( 'strval', (array) ( $row['fits_vehicles'] ?? array() ) ) ),
             'raw_json'        => wp_json_encode( $row['raw'] ?? array() ),
             'last_seen_at'    => $now,
         );
@@ -133,7 +136,7 @@ class RTG_Candidates {
             '%s', '%s', '%s', '%s', '%s', '%s',
             '%f', '%s', '%s',
             '%s', '%d', '%s', '%s', '%s',
-            '%s',
+            '%s', '%s',
         );
 
         if ( $existing ) {
@@ -197,6 +200,7 @@ class RTG_Candidates {
      *     @type string $status  Status to filter on, or 'all'. Default 'new'.
      *     @type string $size    Canonical size to filter on. Default '' (any).
      *     @type string $source  Source slug to filter on. Default '' (any).
+     *     @type string $vehicle Vehicle the tire must be legal on (e.g. 'R1'). Default '' (any).
      *     @type int    $limit   Maximum rows. Default 200.
      *     @type int    $offset  Rows to skip. Default 0.
      * }
@@ -207,11 +211,12 @@ class RTG_Candidates {
         $table = self::table();
 
         $args = wp_parse_args( $args, array(
-            'status' => self::STATUS_NEW,
-            'size'   => '',
-            'source' => '',
-            'limit'  => 200,
-            'offset' => 0,
+            'status'  => self::STATUS_NEW,
+            'size'    => '',
+            'source'  => '',
+            'vehicle' => '',
+            'limit'   => 200,
+            'offset'  => 0,
         ) );
 
         $where  = array( '1=1' );
@@ -228,6 +233,10 @@ class RTG_Candidates {
         if ( '' !== $args['source'] ) {
             $where[]  = 'source = %s';
             $params[] = $args['source'];
+        }
+        if ( '' !== $args['vehicle'] ) {
+            $where[]  = 'FIND_IN_SET( %s, fits_vehicles )';
+            $params[] = $args['vehicle'];
         }
 
         $params[] = max( 1, min( 500, intval( $args['limit'] ) ) );
@@ -264,6 +273,35 @@ class RTG_Candidates {
         foreach ( $rows ?: array() as $row ) {
             $counts[ $row['status'] ] = intval( $row['total'] );
         }
+
+        return $counts;
+    }
+
+    /**
+     * Count candidates awaiting review, grouped by the vehicle they fit.
+     *
+     * A tire legal on both platforms counts once for each, so the totals
+     * deliberately overlap rather than partitioning the queue.
+     *
+     * @param string $status Status to count within. Default STATUS_NEW.
+     * @return array Vehicle => count, for vehicles with at least one match.
+     */
+    public static function get_vehicle_counts( $status = self::STATUS_NEW ) {
+        global $wpdb;
+        $table = self::table();
+
+        $rows = $wpdb->get_col(
+            $wpdb->prepare( "SELECT fits_vehicles FROM {$table} WHERE status = %s", $status )
+        );
+
+        $counts = array();
+        foreach ( $rows ?: array() as $value ) {
+            foreach ( array_filter( array_map( 'trim', explode( ',', (string) $value ) ), 'strlen' ) as $vehicle ) {
+                $counts[ $vehicle ] = ( $counts[ $vehicle ] ?? 0 ) + 1;
+            }
+        }
+
+        ksort( $counts );
 
         return $counts;
     }
@@ -314,6 +352,11 @@ class RTG_Candidates {
     private static function hydrate( $row ) {
         $row['qualifies'] = ! empty( $row['qualifies'] );
         $row['price']     = floatval( $row['price'] );
+
+        $row['fits_vehicles'] = array_values( array_filter(
+            array_map( 'trim', explode( ',', (string) ( $row['fits_vehicles'] ?? '' ) ) ),
+            'strlen'
+        ) );
         $row['raw']       = json_decode( (string) ( $row['raw_json'] ?? '' ), true ) ?: array();
 
         // Rows written before warnings existed hold a bare array of failures;

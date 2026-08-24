@@ -439,4 +439,141 @@ class Test_RTG_Tire_Qualifier extends WP_UnitTestCase {
 
         $this->assertTrue( $result['qualifies'] );
     }
+
+    // --- Per-vehicle fitment ---
+
+    /**
+     * Context with a two-platform vehicle map, sharing one size deliberately.
+     *
+     * @return array Rule context.
+     */
+    private function vehicle_context() {
+        return array(
+            'sizes'                  => array(),
+            'min_load_index'         => 112,
+            'load_ranges'            => array(),
+            'speed_ratings'          => array( 'T', 'S', 'V', 'H' ),
+            'brands'                 => array(),
+            'brand_policy'           => RTG_Tire_Qualifier::BRAND_POLICY_OFF,
+            'vehicle_sizes'          => array(
+                'R1' => array( '275/65R18', '275/60R20', '275/55R22' ),
+                'R2' => array( '255/60R20', '255/55R21', '275/55R22' ),
+            ),
+            'vehicle_min_load_index' => array( 'R1' => 116, 'R2' => 112 ),
+        );
+    }
+
+    /**
+     * A tire is reported against the platforms it is actually legal on.
+     */
+    public function test_a_qualifying_tire_names_the_platform_it_fits() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Michelin Defender LTX M/S2 275/65R18 116T', 'brand' => 'Michelin' ),
+            $this->vehicle_context()
+        );
+
+        $this->assertTrue( $result['qualifies'] );
+        $this->assertSame( array( 'R1' ), $result['fits_vehicles'] );
+    }
+
+    /**
+     * Size and load index are judged together, not as independent gates.
+     *
+     * A 275/65R18 at load index 114 clears a global floor of 112 while being
+     * illegal on the R1 that is the only platform taking that size. Judged
+     * separately it would have qualified; judged per vehicle it does not.
+     */
+    public function test_a_tire_below_its_platforms_floor_is_rejected_despite_clearing_the_global_one() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Toyo Open Country A/T III 275/65R18 114T', 'brand' => 'Toyo' ),
+            $this->vehicle_context()
+        );
+
+        $this->assertFalse( $result['qualifies'] );
+        $this->assertContains( 'load_index_low', $this->codes( $result ) );
+        $this->assertStringContainsString( 'R1 needs 116', $result['reasons'][0]['label'] );
+        $this->assertSame( array(), $result['fits_vehicles'] );
+    }
+
+    /**
+     * A size both platforms take, with load enough for both, fits both.
+     */
+    public function test_a_shared_size_can_fit_every_platform() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Continental CrossContact 275/55R22 118V', 'brand' => 'Continental' ),
+            $this->vehicle_context()
+        );
+
+        $this->assertSame( array( 'R1', 'R2' ), $result['fits_vehicles'] );
+    }
+
+    /**
+     * The same shared size with less load qualifies on the platform that
+     * accepts it and is reported as fitting only that one.
+     *
+     * This is the case a single global floor obscured entirely: it passed, with
+     * nothing to say it was legal on one platform and not the other.
+     */
+    public function test_a_shared_size_can_fit_only_the_lower_floor_platform() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Continental CrossContact 275/55R22 114V', 'brand' => 'Continental' ),
+            $this->vehicle_context()
+        );
+
+        $this->assertTrue( $result['qualifies'] );
+        $this->assertSame( array( 'R2' ), $result['fits_vehicles'] );
+    }
+
+    /**
+     * An unlisted load index doesn't rule a platform out — it is confirmed by
+     * hand — and the warning names the floor to confirm against.
+     */
+    public function test_an_unlisted_load_index_still_fits_but_names_the_floor() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'BFGoodrich All-Terrain T/A KO3 275/65R18', 'brand' => 'BFGoodrich' ),
+            $this->vehicle_context()
+        );
+
+        $this->assertTrue( $result['qualifies'] );
+        $this->assertSame( array( 'R1' ), $result['fits_vehicles'] );
+        $this->assertStringContainsString( '116', $result['warnings'][0]['label'] );
+    }
+
+    /**
+     * A size no platform takes fits nothing and is rejected on fitment.
+     */
+    public function test_a_size_no_platform_takes_fits_nothing() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Atlas Force 285/45R22 114V', 'brand' => 'Atlas' ),
+            $this->vehicle_context()
+        );
+
+        $this->assertFalse( $result['qualifies'] );
+        $this->assertContains( 'size_not_stocked', $this->codes( $result ) );
+        $this->assertSame( array(), $result['fits_vehicles'] );
+    }
+
+    /**
+     * With no stock wheels configured there is no vehicle map to judge
+     * against, so the flat size list and single global floor still apply.
+     * A site that never set wheels up must not have its catalog rejected.
+     */
+    public function test_without_a_vehicle_map_the_global_floor_still_applies() {
+        $context                  = $this->vehicle_context();
+        $context['vehicle_sizes'] = array();
+        $context['sizes']         = array( '275/65R18' );
+
+        $passes = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Toyo Open Country A/T III 275/65R18 114T', 'brand' => 'Toyo' ),
+            $context
+        );
+        $this->assertTrue( $passes['qualifies'] );
+
+        $fails = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Toyo Open Country A/T III 275/65R18 109T', 'brand' => 'Toyo' ),
+            $context
+        );
+        $this->assertFalse( $fails['qualifies'] );
+        $this->assertContains( 'load_index_low', $this->codes( $fails ) );
+    }
 }

@@ -38,6 +38,22 @@ if ( isset( $_POST['rtg_catalog_settings_save'] ) ) {
     $posted_index = intval( $_POST['catalog_min_load_index'] ?? RTG_Tire_Qualifier::DEFAULT_MIN_LOAD_INDEX );
     $settings['catalog_min_load_index'] = max( 100, min( 126, $posted_index ) );
 
+    // Per-vehicle load index floors. A blank field means "use the built-in
+    // figure for this platform" rather than "no minimum", so it is dropped
+    // instead of being stored as zero.
+    $posted_minimums = isset( $_POST['catalog_vehicle_min_load_index'] ) && is_array( $_POST['catalog_vehicle_min_load_index'] )
+        ? wp_unslash( $_POST['catalog_vehicle_min_load_index'] )
+        : array();
+
+    $vehicle_minimums = array();
+    foreach ( $posted_minimums as $vehicle => $value ) {
+        $value = intval( $value );
+        if ( $value > 0 ) {
+            $vehicle_minimums[ sanitize_text_field( $vehicle ) ] = max( 100, min( 126, $value ) );
+        }
+    }
+    $settings['catalog_vehicle_min_load_index'] = $vehicle_minimums;
+
     $posted_policy = sanitize_text_field( wp_unslash( $_POST['catalog_brand_policy'] ?? '' ) );
     $settings['catalog_brand_policy'] = in_array( $posted_policy, array(
         RTG_Tire_Qualifier::BRAND_POLICY_OFF,
@@ -55,6 +71,10 @@ $fixture_url    = $settings['catalog_fixture_url'] ?? '';
 $min_load_index = isset( $settings['catalog_min_load_index'] )
     ? intval( $settings['catalog_min_load_index'] )
     : RTG_Tire_Qualifier::DEFAULT_MIN_LOAD_INDEX;
+
+$vehicle_size_map = RTG_Database::get_vehicle_size_map();
+$vehicle_minimums = RTG_Tire_Qualifier::get_vehicle_minimums();
+$vehicle_counts   = RTG_Candidates::get_vehicle_counts( $status_filter );
 
 $brand_policy = isset( $settings['catalog_brand_policy'] )
     ? (string) $settings['catalog_brand_policy']
@@ -86,10 +106,14 @@ $status_filter = isset( $_GET['candidate_status'] )
 $size_filter = isset( $_GET['candidate_size'] )
     ? sanitize_text_field( wp_unslash( $_GET['candidate_size'] ) )
     : '';
+$vehicle_filter = isset( $_GET['candidate_vehicle'] )
+    ? sanitize_text_field( wp_unslash( $_GET['candidate_vehicle'] ) )
+    : '';
 
 $candidates = RTG_Candidates::query( array(
-    'status' => $status_filter,
-    'size'   => $size_filter,
+    'status'  => $status_filter,
+    'size'    => $size_filter,
+    'vehicle' => $vehicle_filter,
 ) );
 
 $dd_sizes = RTG_Admin::get_dropdown_options( 'sizes' );
@@ -205,8 +229,9 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
             $url = add_query_arg(
                 array(
                     'page'             => 'rtg-tire-discovery',
-                    'candidate_status' => $key,
-                    'candidate_size'   => $size_filter,
+                    'candidate_status'  => $key,
+                    'candidate_size'    => $size_filter,
+                    'candidate_vehicle' => $vehicle_filter,
                 ),
                 admin_url( 'admin.php' )
             );
@@ -220,6 +245,23 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
         <input type="hidden" name="page" value="rtg-tire-discovery">
         <input type="hidden" name="candidate_status" value="<?php echo esc_attr( $status_filter ); ?>">
         <div class="rtg-search-box" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+            <?php if ( ! empty( $vehicle_size_map ) ) : ?>
+                <label for="candidate_vehicle" style="font-size:13px;color:var(--rtg-text-muted);">Vehicle</label>
+                <select name="candidate_vehicle" id="candidate_vehicle" class="rtg-select">
+                    <option value="">All vehicles</option>
+                    <?php foreach ( array_keys( $vehicle_size_map ) as $vehicle_option ) : ?>
+                        <option value="<?php echo esc_attr( $vehicle_option ); ?>" <?php selected( $vehicle_filter, $vehicle_option ); ?>>
+                            <?php
+                            echo esc_html( $vehicle_option );
+                            if ( isset( $vehicle_counts[ $vehicle_option ] ) ) {
+                                echo ' (' . intval( $vehicle_counts[ $vehicle_option ] ) . ')';
+                            }
+                            ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            <?php endif; ?>
+
             <label for="candidate_size" style="font-size:13px;color:var(--rtg-text-muted);">Size</label>
             <select name="candidate_size" id="candidate_size" class="rtg-select">
                 <option value="">All sizes</option>
@@ -228,6 +270,15 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                 <?php endforeach; ?>
             </select>
             <button type="submit" class="rtg-btn rtg-btn-secondary">Filter</button>
+
+            <?php if ( '' !== $vehicle_filter ) : ?>
+                <span style="font-size:12px;color:var(--rtg-text-muted);">
+                    Showing tires legal on <strong><?php echo esc_html( $vehicle_filter ); ?></strong>
+                    (size <em>and</em> load index
+                    <?php echo isset( $vehicle_minimums[ $vehicle_filter ] ) ? '&ge; ' . intval( $vehicle_minimums[ $vehicle_filter ] ) : ''; ?>).
+                    A tire legal on more than one platform appears under each.
+                </span>
+            <?php endif; ?>
         </div>
     </form>
 
@@ -251,6 +302,7 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                         <tr>
                             <th>Tire</th>
                             <th>Size</th>
+                            <th>Fits</th>
                             <th>Load</th>
                             <th>Speed</th>
                             <th>Price</th>
@@ -291,6 +343,23 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 <?php endforeach; ?>
                             </td>
                             <td style="font-family:var(--rtg-font-mono, monospace);"><?php echo esc_html( $candidate['size'] ); ?></td>
+                            <td>
+                                <?php
+                                // Blank for a row that qualified before platform
+                                // fitment was recorded; it fills in on the next run.
+                                $fits = (array) ( $candidate['fits_vehicles'] ?? array() );
+                                if ( empty( $fits ) ) {
+                                    echo '<span style="color:var(--rtg-text-muted);">—</span>';
+                                } else {
+                                    foreach ( $fits as $fit_vehicle ) {
+                                        printf(
+                                            '<span class="rtg-badge" style="margin-right:4px;">%s</span>',
+                                            esc_html( $fit_vehicle )
+                                        );
+                                    }
+                                }
+                                ?>
+                            </td>
                             <td><?php echo esc_html( $candidate['load_index'] ?: '—' ); ?></td>
                             <td><?php echo esc_html( $candidate['speed_rating'] ?: '—' ); ?></td>
                             <td><?php echo $candidate['price'] > 0 ? '$' . esc_html( number_format( $candidate['price'], 2 ) ) : '—'; ?></td>
@@ -361,10 +430,47 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><label for="catalog_min_load_index">Minimum Load Index</label></th>
+                        <th scope="row">Minimum Load Index</th>
                         <td>
-                            <input type="number" name="catalog_min_load_index" id="catalog_min_load_index" value="<?php echo esc_attr( $min_load_index ); ?>" min="100" max="126" class="small-text">
-                            <p class="description">A tire below this is filed under Near Misses rather than the review queue. R1 needs 116, R2 needs 112.</p>
+                            <?php if ( ! empty( $vehicle_size_map ) ) : ?>
+                                <p class="description" style="max-width:680px;margin:0 0 10px;">
+                                    Size and load index are judged together, per vehicle: a tire has to be one of a
+                                    platform's sizes <em>and</em> carry enough load for it. A tire that clears no
+                                    platform is filed under Near Misses naming the one it came closest on.
+                                </p>
+                                <table style="border-collapse:collapse;">
+                                    <?php foreach ( $vehicle_size_map as $vehicle => $vehicle_sizes ) : ?>
+                                        <tr>
+                                            <td style="padding:4px 12px 4px 0;">
+                                                <label for="min_li_<?php echo esc_attr( $vehicle ); ?>"><strong><?php echo esc_html( $vehicle ); ?></strong></label>
+                                            </td>
+                                            <td style="padding:4px 12px 4px 0;">
+                                                <input type="number"
+                                                    name="catalog_vehicle_min_load_index[<?php echo esc_attr( $vehicle ); ?>]"
+                                                    id="min_li_<?php echo esc_attr( $vehicle ); ?>"
+                                                    value="<?php echo esc_attr( $vehicle_minimums[ $vehicle ] ?? '' ); ?>"
+                                                    min="100" max="126" class="small-text">
+                                            </td>
+                                            <td style="padding:4px 0;font-size:12px;color:var(--rtg-text-muted);">
+                                                <?php echo esc_html( implode( ', ', $vehicle_sizes ) ); ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </table>
+                                <p class="description" style="margin-top:8px;">
+                                    Sizes come from <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-wheels' ) ); ?>">Stock Wheels</a>,
+                                    so a platform added there appears here on its own. Blank restores the built-in figure
+                                    (R1 116, R2 112).
+                                </p>
+                            <?php else : ?>
+                                <input type="number" name="catalog_min_load_index" id="catalog_min_load_index" value="<?php echo esc_attr( $min_load_index ); ?>" min="100" max="126" class="small-text">
+                                <p class="description" style="max-width:680px;">
+                                    No stock wheels are configured, so there is no vehicle map to judge against and this
+                                    single floor applies to every size. Add wheels under
+                                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-wheels' ) ); ?>">Stock Wheels</a>
+                                    to get per-platform rules.
+                                </p>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <tr>

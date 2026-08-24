@@ -4,6 +4,20 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.62.0] - 2026-08-24
+
+### Added
+- **Discovery judges fitment per vehicle.** Size and load index used to be two independent gates, which could not express the thing that actually matters: a 275/65R18 at load index 114 clears a global floor of 112 while being illegal on the R1 that is the only platform taking that size. Each vehicle is now asked the same pair of questions — is this one of your sizes, and does it carry enough load for you — and a tire qualifies if any vehicle says yes. Candidates record the platforms they are legal on, shown as a **Fits** column in the review queue and carried in the digest email.
+- **A vehicle filter on the review queue**, so the queue can be narrowed to just R1-legal or just R2-legal tires. A tire legal on both appears under each rather than being partitioned into one, since it genuinely is a candidate for both.
+- **Per-platform load index floors**, replacing the single global one, defaulting to the real requirements (R1 116, R2 112). Vehicles and their sizes come from the Stock Wheels table — the same source the consumer-facing vehicle toggle already uses — so a platform added there appears in discovery on its own with no extra configuration. A blank field restores the built-in figure.
+
+### Changed
+- A near miss that fails on load now names the platform and the figure it fell short of ("Load index 114 is too low — R1 needs 116") instead of citing an anonymous global minimum, and the warning on an unlisted load index names the floor to confirm against.
+
+### Notes
+- With no stock wheels configured there is no vehicle map to judge against, so the flat size list and single global floor still apply and the settings screen says so. A site that never set wheels up cannot have its catalog rejected by this change.
+- Existing candidate rows keep a blank **Fits** until the next discovery run repopulates them; backfilling in the migration would mean re-qualifying every row against rules the next run applies anyway.
+
 ## [1.61.0] - 2026-08-24
 
 ### Added

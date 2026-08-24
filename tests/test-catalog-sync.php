@@ -284,4 +284,46 @@ class Test_RTG_Catalog_Sync extends WP_UnitTestCase {
         $this->assertSame( 'load_index_unknown', $stored['warnings'][0]['code'] );
         $this->assertSame( array(), $stored['fail_reasons'] );
     }
+
+    /**
+     * The platforms a candidate fits survive to the database and back.
+     */
+    public function test_fits_vehicles_round_trips() {
+        $result = RTG_Candidates::upsert( $this->candidate( array(
+            'qualifies'     => true,
+            'fits_vehicles' => array( 'R1', 'R2' ),
+        ) ) );
+
+        $stored = RTG_Candidates::get( $result['id'] );
+
+        $this->assertSame( array( 'R1', 'R2' ), $stored['fits_vehicles'] );
+    }
+
+    /**
+     * The queue can be filtered to one platform, and a tire legal on both
+     * appears under each rather than being partitioned into one.
+     */
+    public function test_the_queue_filters_by_vehicle() {
+        RTG_Candidates::upsert( $this->candidate( array(
+            'external_id'   => 'R1-ONLY',
+            'qualifies'     => true,
+            'fits_vehicles' => array( 'R1' ),
+        ) ) );
+        RTG_Candidates::upsert( $this->candidate( array(
+            'external_id'   => 'BOTH',
+            'qualifies'     => true,
+            'fits_vehicles' => array( 'R1', 'R2' ),
+        ) ) );
+
+        $r1 = RTG_Candidates::query( array( 'status' => RTG_Candidates::STATUS_NEW, 'vehicle' => 'R1' ) );
+        $r2 = RTG_Candidates::query( array( 'status' => RTG_Candidates::STATUS_NEW, 'vehicle' => 'R2' ) );
+
+        $r1_ids = wp_list_pluck( $r1, 'external_id' );
+        $r2_ids = wp_list_pluck( $r2, 'external_id' );
+
+        $this->assertContains( 'R1-ONLY', $r1_ids );
+        $this->assertContains( 'BOTH', $r1_ids );
+        $this->assertContains( 'BOTH', $r2_ids );
+        $this->assertNotContains( 'R1-ONLY', $r2_ids );
+    }
 }

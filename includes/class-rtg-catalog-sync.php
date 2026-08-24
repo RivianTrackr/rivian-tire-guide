@@ -165,6 +165,7 @@ class RTG_Catalog_Sync {
                     'qualifies'       => $evaluated['qualifies'],
                     'fail_reasons'    => $evaluated['reasons'],
                     'warnings'        => $evaluated['warnings'] ?? array(),
+                    'fits_vehicles'   => $evaluated['fits_vehicles'] ?? array(),
                     'matched_tire_id' => $guide_index[ $match_key ] ?? '',
                     'raw'             => $product,
                 ) );
@@ -193,6 +194,7 @@ class RTG_Catalog_Sync {
                         'brand'           => $evaluated['brand'],
                         'model'           => $evaluated['model'],
                         'size'            => $evaluated['size'],
+                        'fits_vehicles'   => $evaluated['fits_vehicles'] ?? array(),
                         'load_index'      => $evaluated['load_index'],
                         'price'           => floatval( $product['price'] ?? 0 ),
                         'advertiser_name' => $product['advertiser_name'] ?? $source->get_label(),
