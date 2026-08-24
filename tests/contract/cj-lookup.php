@@ -60,6 +60,10 @@ function wp_remote_post( $url, $args ) {
         'totalCount' => 4213, 'count' => count( $nodes ), 'resultList' => array_slice( $nodes, 0, $limit ) ) ) ) ) );
 }
 
+// The real qualifier, not a stub: the pre-filter reads a size out of a title,
+// and stubbing that would test the stub rather than the parser that decides
+// what actually reaches the queue.
+require __DIR__ . '/../../includes/class-rtg-tire-qualifier.php';
 require __DIR__ . '/../../includes/class-rtg-catalog-source.php';
 require __DIR__ . '/../../includes/class-rtg-catalog-source-cj.php';
 
@@ -108,6 +112,18 @@ $stream = $source->fetch_terms( $terms, function ( $term, $products ) use ( &$st
 } );
 check( 'a callback receives each answer',        ! empty( $streamed[ $terms[0] ] ) );
 check( 'nothing is retained when streaming',     array() === $stream['by_term'] );
+
+// A caller with less time than the pass's own budget must be obeyed. Two
+// passes each honouring only their own budget is not the same as the run
+// having one, and that gap is what killed Run Discovery Now outright.
+$exhausted = $source->fetch_terms( array( 'a', 'b', 'c' ), null, 0 );
+check( 'a spent ceiling stops after one term',   1 === $exhausted['checked'] );
+check( 'the rest are reported as pending',       2 === $exhausted['pending'] );
+
+// The pre-filter drops what the caller cannot use before it is carried further.
+$filtered = $source->fetch_terms( $terms, null, null, array( '305/45R22' => true ) );
+check( 'only the wanted fitment survives',       1 === count( $filtered['by_term'][ $terms[0] ] ) );
+check( 'what was dropped is counted',            2 === $filtered['discarded'] );
 
 // test_connection must honour a keyword and report titles.
 $probe = $source->test_connection( 'Michelin Defender LTX M/S2' );

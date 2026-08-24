@@ -27,6 +27,24 @@ class RTG_Catalog_Sync {
     const STATS_OPTION = 'rtg_catalog_sync_stats';
 
     /**
+     * Seconds a whole run may take, across every pass.
+     *
+     * Each pass used to honour only its own budget, which is not the same as
+     * the run having one: a 240-second sweep and a 120-second lookup pass,
+     * each able to start a final 30-second request, add up to well past what a
+     * web request survives — and then price sync and the re-key still have to
+     * happen. That stayed invisible while a lookup returned fifty records and
+     * both passes finished early. Reading a thousand made both run to the
+     * limit, and the admin's Run Discovery Now started dying with a network
+     * error rather than returning a partial result.
+     *
+     * A run now stops on this ceiling and says what it did not reach. The
+     * rotation cursors mean the next run resumes there, so a ceiling costs
+     * time-to-complete, never coverage.
+     */
+    const RUN_BUDGET = 120;
+
+    /**
      * Schedule the daily sync if it isn't already scheduled.
      *
      * Daily is deliberate: retailer catalogs turn over slowly, and a tire that
@@ -108,6 +126,11 @@ class RTG_Catalog_Sync {
         $context     = RTG_Tire_Qualifier::default_context();
         $guide_index = self::build_guide_index();
 
+        $run_started = microtime( true );
+        $run_budget  = isset( $settings['catalog_run_budget'] )
+            ? max( 30, min( 900, intval( $settings['catalog_run_budget'] ) ) )
+            : self::RUN_BUDGET;
+
         $stats = array(
             'status'         => 'success',
             'time'           => current_time( 'mysql' ),
@@ -124,7 +147,7 @@ class RTG_Catalog_Sync {
 
         foreach ( self::get_sources() as $source ) {
             $slug     = $source->get_slug();
-            $products = $source->fetch( $sizes );
+            $products = $source->fetch( $sizes, self::seconds_left( $run_started, $run_budget ) );
             $error    = $source->get_last_error();
 
             if ( '' !== $error ) {
@@ -185,7 +208,13 @@ class RTG_Catalog_Sync {
 
         // Then ask directly for whatever the sweep still hasn't found, so a
         // tire ranked below where paging stops isn't simply never seen.
-        $stats['targeted'] = self::run_targeted_lookup( $context, $guide_index );
+        $stats['targeted'] = self::run_targeted_lookup(
+            $context,
+            $guide_index,
+            self::seconds_left( $run_started, $run_budget )
+        );
+
+        $stats['elapsed'] = round( microtime( true ) - $run_started, 1 );
 
         foreach ( $stats['targeted']['errors'] as $targeted_error ) {
             $stats['errors'][] = $targeted_error;
@@ -343,7 +372,7 @@ class RTG_Catalog_Sync {
      * @param array $guide_index Match key => tire_id.
      * @return array Statistics for the pass.
      */
-    private static function run_targeted_lookup( $context, $guide_index ) {
+    private static function run_targeted_lookup( $context, $guide_index, $ceiling = null ) {
         $stats = array(
             'terms'     => 0,
             'tires'     => 0,
@@ -356,6 +385,8 @@ class RTG_Catalog_Sync {
             'qualified' => 0,
             'capped'    => 0,
             'deepest'   => 0,
+            'discarded' => 0,
+            'skipped'   => false,
             'errors'    => array(),
         );
 
@@ -365,6 +396,16 @@ class RTG_Catalog_Sync {
         $stats['tires'] = count( $uncovered['wanted'] );
 
         if ( empty( $uncovered['terms'] ) ) {
+            return $stats;
+        }
+
+        // The sweep may already have spent the run's whole allowance. Saying
+        // so beats starting a pass that will be killed mid-request, and the
+        // rotation means the next run picks these up.
+        if ( null !== $ceiling && $ceiling <= 0 ) {
+            $stats['skipped'] = true;
+            $stats['pending'] = count( $uncovered['terms'] );
+
             return $stats;
         }
 
@@ -452,9 +493,12 @@ class RTG_Catalog_Sync {
                             $covered_ref[ $ingested['match_key'] ] = true;
                         }
                     }
-                }
+                },
+                $ceiling,
+                $guide_sizes
             );
 
+            $stats['discarded'] = ( $stats['discarded'] ?? 0 ) + intval( $lookup['discarded'] ?? 0 );
             $stats['checked'] += $lookup['checked'];
             $stats['pending']  = max( $stats['pending'], $lookup['pending'] );
             $stats['capped']  += $lookup['capped'];
@@ -471,6 +515,17 @@ class RTG_Catalog_Sync {
         $stats['matched'] = count( $covered );
 
         return $stats;
+    }
+
+    /**
+     * Seconds remaining in the run's overall allowance.
+     *
+     * @param float $started Run start, from microtime( true ).
+     * @param int   $budget  Allowance in seconds.
+     * @return float Seconds left, never below zero.
+     */
+    private static function seconds_left( $started, $budget ) {
+        return max( 0.0, $budget - ( microtime( true ) - $started ) );
     }
 
     /**

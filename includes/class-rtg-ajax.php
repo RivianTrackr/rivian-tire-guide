@@ -988,12 +988,29 @@ class RTG_Ajax {
 
     /**
      * Trigger a catalog discovery sync immediately.
+     *
+     * A run fetches over the network for as long as its budget allows, which
+     * is longer than PHP's default execution limit. The link checker beside
+     * this already raised the limit for the same reason; discovery did not,
+     * and once a lookup started reading a thousand records a run outlived the
+     * request and surfaced as a bare "network error" with nothing recorded.
+     * The allowance is the run's own budget plus room for the final request
+     * and the writes that follow it.
      */
     public function catalog_sync_now() {
         check_ajax_referer( 'rtg_admin_nonce', 'nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( 'Unauthorized.' );
+        }
+
+        if ( function_exists( 'set_time_limit' ) ) {
+            $settings = get_option( 'rtg_settings', array() );
+            $budget   = isset( $settings['catalog_run_budget'] )
+                ? max( 30, min( 900, intval( $settings['catalog_run_budget'] ) ) )
+                : RTG_Catalog_Sync::RUN_BUDGET;
+
+            @set_time_limit( $budget + RTG_Catalog_Source_CJ::REQUEST_TIMEOUT + 60 );
         }
 
         $result = RTG_Catalog_Sync::run();

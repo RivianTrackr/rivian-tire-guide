@@ -4,6 +4,20 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.69.1] - 2026-08-24
+
+### Fixed
+- **Run Discovery Now died with "Network error during discovery."** Each pass honoured its own budget, which is not the same as the run having one: a 240-second sweep and a 120-second lookup pass, each able to start a final 30-second request, add up past what a web request survives — and price sync and the re-key still had to happen afterwards. That stayed invisible while a lookup read fifty records and both passes finished early; reading a thousand made both run to their limit. A run now shares one ceiling across every pass, stops on it, and reports what it did not reach. The rotation cursors mean a ceiling costs time-to-complete, never coverage.
+- **The discovery request never raised PHP's execution limit,** though the link checker beside it does for the same reason. It now allows the run's budget plus the final request and the writes that follow.
+- **A failed run now says what failed.** "Network error" covered a timed-out request, a PHP fatal and a permissions failure alike, so a run that outlived its request looked identical to one that crashed. The reply now distinguishes no-reply-at-all from a server error and names the status.
+
+### Changed
+- **Lookup answers are filtered to fitments the guide stocks before being carried any further.** A thousand records of which one or two are useful is a large array to build and hold for nothing, and this pass now reads twenty times what it used to. What was dropped is counted rather than passed over.
+- A new **whole-run budget** setting, documented as the first thing to lower if a manual run returns nothing.
+
+### Notes
+- The contract check covers both: that a caller's ceiling is obeyed and the remaining terms reported pending, and that the pre-filter keeps only wanted fitments and counts what it dropped. It uses the real qualifier rather than a stub, since stubbing the parser that decides what reaches the queue would test the stub.
+
 ## [1.69.0] - 2026-08-24
 
 ### Fixed

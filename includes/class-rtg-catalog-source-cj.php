@@ -323,10 +323,12 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
      * request fails is recorded and skipped rather than aborting the sweep —
      * four sizes' worth of results beats none.
      *
-     * @param string[] $sizes Canonical sizes the guide cares about.
+     * @param string[]   $sizes   Canonical sizes the guide cares about.
+     * @param float|null $ceiling Seconds this pass may take, when the caller
+     *                            has less to give than the sweep's own budget.
      * @return array[] Normalized products.
      */
-    public function fetch( $sizes ) {
+    public function fetch( $sizes, $ceiling = null ) {
         $this->last_error    = '';
         $this->last_response = array();
 
@@ -345,6 +347,13 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
         $budget    = isset( $settings['cj_sweep_budget'] )
             ? max( 15, min( 600, intval( $settings['cj_sweep_budget'] ) ) )
             : self::SWEEP_BUDGET;
+
+        // The run as a whole has a ceiling, and this pass cannot exceed what
+        // is left of it. Without that, two passes each honouring their own
+        // budget still add up past what a web request survives.
+        if ( null !== $ceiling ) {
+            $budget = min( $budget, max( 0, (float) $ceiling ) );
+        }
         $max_pages = isset( $settings['cj_max_pages'] )
             ? max( 1, min( 50, intval( $settings['cj_max_pages'] ) ) )
             : self::DEFAULT_MAX_PAGES;
@@ -497,14 +506,15 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
      *     @type string $error     Failure text, or ''.
      * }
      */
-    public function fetch_terms( $terms, $on_term = null ) {
+    public function fetch_terms( $terms, $on_term = null, $ceiling = null, $keep_sizes = array() ) {
         $result = array(
             'by_term' => array(),
             'checked' => 0,
             'pending' => 0,
-            'capped'  => 0,
-            'deepest' => 0,
-            'error'   => '',
+            'capped'    => 0,
+            'deepest'   => 0,
+            'discarded' => 0,
+            'error'     => '',
         );
 
         $terms = array_values( array_filter( array_map( 'trim', (array) $terms ), 'strlen' ) );
@@ -526,6 +536,10 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
         $limit = isset( $settings['cj_targeted_limit'] )
             ? max( 1, min( 1000, intval( $settings['cj_targeted_limit'] ) ) )
             : self::TARGETED_LIMIT;
+
+        if ( null !== $ceiling ) {
+            $budget = min( $budget, max( 0, (float) $ceiling ) );
+        }
 
         $cursor = intval( get_option( self::TARGETED_CURSOR_OPTION, 0 ) );
         if ( $cursor < 0 || $cursor >= count( $terms ) ) {
@@ -558,19 +572,39 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
             // Without it a truncated answer is indistinguishable from a
             // complete one, which is exactly how a 50-record cap went a whole
             // release without being noticed.
-            $total = $response['total_count'];
+            $total    = $response['total_count'];
+            $returned = count( $response['products'] );
+
             if ( null !== $total ) {
                 $result['deepest'] = max( $result['deepest'], intval( $total ) );
 
-                if ( count( $response['products'] ) < intval( $total ) ) {
+                if ( $returned < intval( $total ) ) {
                     $result['capped']++;
                 }
             }
 
+            $products = $response['products'];
+
+            // Discard what the caller cannot use before it is carried any
+            // further. A thousand records of which a couple are in a fitment
+            // the guide stocks is a lot of array to build and hold for
+            // nothing, and this pass now reads twenty times what it used to.
+            if ( ! empty( $keep_sizes ) ) {
+                $products = array_values( array_filter( $products, function ( $product ) use ( $keep_sizes ) {
+                    return isset( $keep_sizes[ RTG_Tire_Qualifier::normalize_size(
+                        RTG_Tire_Qualifier::parse_specs( $product )['size']
+                    ) ] );
+                } ) );
+
+                $result['discarded'] += count( $response['products'] ) - count( $products );
+            }
+
+            unset( $response );
+
             if ( is_callable( $on_term ) ) {
-                call_user_func( $on_term, $term, $response['products'] );
+                call_user_func( $on_term, $term, $products );
             } else {
-                $result['by_term'][ $term ] = $response['products'];
+                $result['by_term'][ $term ] = $products;
             }
         }
 
