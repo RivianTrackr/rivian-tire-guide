@@ -69,6 +69,26 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
     const DEFAULT_MAX_PAGES = 10;
 
     /**
+     * Records requested for one targeted lookup.
+     *
+     * A brand-model-size keyword is a precise query, not a fitment sweep, so
+     * the answer is a handful of listings or none. Asking for a thousand would
+     * spend the response budget proving that.
+     */
+    const TARGETED_LIMIT = 50;
+
+    /**
+     * Wall-clock budget for the targeted pass, in seconds.
+     *
+     * Separate from the sweep's, and spent after it, so a slow sweep degrades
+     * the targeted pass rather than cancelling it.
+     */
+    const TARGETED_BUDGET = 120;
+
+    /** Where the next targeted pass resumes in the uncovered list. */
+    const TARGETED_CURSOR_OPTION = 'rtg_cj_targeted_cursor';
+
+    /**
      * Option holding where the next sweep should start in the size list.
      *
      * A sweep that can't finish inside its budget would otherwise cover the
@@ -425,16 +445,129 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
     }
 
     /**
+     * Look a specific tire up by name, rather than sweeping its fitment.
+     *
+     * The sweep asks CJ for a bare size, and CJ answers with a relevance
+     * ranking rather than a filter — over five thousand products for a single
+     * fitment, most of which are not that size and many of which are not
+     * tires. Paging ten deep covers ten thousand of those, which sounds
+     * generous until a real guide tire turns out to rank below it: a live run
+     * held exactly one Michelin listing in 305/45R22 across sixteen thousand
+     * stored products, for a fitment Tire Rack demonstrably sells several of.
+     *
+     * A keyword naming the brand, model and size is a different question
+     * entirely, and one request answers it. So tires the sweep failed to find
+     * are asked for directly, by name.
+     *
+     * Rotated and budgeted like the sweep: a run takes as many as it can and
+     * the next starts where this one stopped, so a long uncovered list is
+     * worked through over successive runs instead of the same leading entries
+     * being retried forever.
+     *
+     * @param string[] $terms Search terms, e.g. "Michelin Defender LTX M/S2 305/45R22".
+     * @return array {
+     *     @type array[] $products Normalized products, keyed by external ID.
+     *     @type int     $checked  Terms actually queried.
+     *     @type int     $found    Terms that returned at least one product.
+     *     @type int     $pending  Terms left for the next run.
+     *     @type string  $error    Failure text, or ''.
+     * }
+     */
+    public function fetch_terms( $terms ) {
+        $result = array(
+            'products' => array(),
+            'checked'  => 0,
+            'found'    => 0,
+            'pending'  => 0,
+            'error'    => '',
+        );
+
+        $terms = array_values( array_filter( array_map( 'trim', (array) $terms ), 'strlen' ) );
+
+        if ( ! self::is_configured() || empty( $terms ) ) {
+            return $result;
+        }
+
+        $settings = get_option( 'rtg_settings', array() );
+
+        if ( isset( $settings['cj_targeted_enabled'] ) && ! $settings['cj_targeted_enabled'] ) {
+            return $result;
+        }
+
+        $budget = isset( $settings['cj_targeted_budget'] )
+            ? max( 15, min( 600, intval( $settings['cj_targeted_budget'] ) ) )
+            : self::TARGETED_BUDGET;
+
+        $cursor = intval( get_option( self::TARGETED_CURSOR_OPTION, 0 ) );
+        if ( $cursor < 0 || $cursor >= count( $terms ) ) {
+            $cursor = 0;
+        }
+
+        $ordered  = array_merge( array_slice( $terms, $cursor ), array_slice( $terms, 0, $cursor ) );
+        $started  = microtime( true );
+        $failures = array();
+        $stopped  = null;
+
+        foreach ( $ordered as $index => $term ) {
+            if ( $index > 0 && ( microtime( true ) - $started ) > $budget ) {
+                $stopped = $index;
+                break;
+            }
+
+            $response = $this->query_keyword( $term, 0, self::TARGETED_LIMIT );
+            $result['checked']++;
+
+            if ( '' !== $response['error'] ) {
+                // One bad term must not end the pass; the rest are independent.
+                if ( count( $failures ) < 3 ) {
+                    $failures[] = $term . ': ' . $response['error'];
+                }
+                continue;
+            }
+
+            if ( ! empty( $response['products'] ) ) {
+                $result['found']++;
+            }
+
+            foreach ( $response['products'] as $product ) {
+                $result['products'][ $product['external_id'] ] = $product;
+            }
+        }
+
+        $next_cursor = null === $stopped
+            ? 0
+            : ( $cursor + $stopped ) % count( $terms );
+
+        update_option( self::TARGETED_CURSOR_OPTION, $next_cursor, false );
+
+        if ( null !== $stopped ) {
+            $result['pending'] = count( $ordered ) - $stopped;
+        }
+
+        if ( ! empty( $failures ) ) {
+            $result['error'] = implode( ' | ', $failures );
+        }
+
+        $result['products'] = array_values( $result['products'] );
+
+        return $result;
+    }
+
+    /**
      * Run one keyword query and normalize the products it returns.
      *
-     * @param string $keyword Search keyword — a tire size.
-     * @param int    $offset  Records to skip, for paging through a large match set.
+     * @param string   $keyword Search keyword — a tire size, or a tire's full name.
+     * @param int      $offset  Records to skip, for paging through a large match set.
+     * @param int|null $limit   Records to request; the configured sweep limit when null.
      * @return array { products: array[], total_count: int|null, error: string, raw: array }
      */
-    public function query_keyword( $keyword, $offset = 0 ) {
-        $settings = get_option( 'rtg_settings', array() );
-        $limit    = intval( $settings['cj_limit'] ?? self::DEFAULT_LIMIT );
-        $limit    = max( 1, min( 1000, $limit ) );
+    public function query_keyword( $keyword, $offset = 0, $limit = null ) {
+        if ( null === $limit ) {
+            $settings = get_option( 'rtg_settings', array() );
+            $limit    = intval( $settings['cj_limit'] ?? self::DEFAULT_LIMIT );
+        }
+
+        $limit = max( 1, min( 1000, intval( $limit ) ) );
 
         $advertisers = self::get_advertisers();
 
