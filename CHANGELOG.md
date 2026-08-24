@@ -4,6 +4,19 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.63.0] - 2026-08-24
+
+### Added
+- **Guide prices refresh on each daily discovery run.** A price is taken only from the retailer the tire's own purchase link points to. Both retailers often carry the same tire at different prices, and a tire shows one price beside one buy button — taking the cheaper figure from the other retailer would put a number on the page that doesn't match what a reader sees on click, which is worse than a stale price. A tire linked somewhere discovery doesn't price (Amazon, a manufacturer) is left alone. Where the linked retailer has several listings, the cheapest wins, since the reader can reach it through the same link.
+- **Affiliate redirects are resolved**, so the rule works on real links. A CJ deep link goes to a tracking host with the destination buried in a query parameter, sometimes encoded twice; the retailer is read from the hostname, then that parameter, then the raw string, and resolves to nothing rather than guessing when the link leads anywhere else.
+- **A retailer coverage report** on the Tire Discovery page: how many guide tires a retailer carries, and the full list of those none does — expected while affiliate links are still going in, and expected permanently for anything discontinued or sold elsewhere. Each unmatched tire shows where its link currently points.
+- **Every price left unchanged is reported with a reason** — no link, link not priced, retailer not listing it, already current, or change too large — so "why didn't this tire's price move?" is answerable without a re-run.
+- **Tires record where their price came from and when** (`price_source`, `price_synced_at`, migration 20), so a synced figure is distinguishable from one typed in by hand and a tire that quietly stopped syncing is visible.
+
+### Notes
+- A price that moves by more than a configurable threshold (default 50%) is reported rather than written. Tires are matched on brand, model and size, which can collide across load ratings, and a swing that large is likelier to be that collision than a real sale.
+- The refresh runs off the same fetch as discovery rather than on its own schedule, so it costs no extra API calls.
+
 ## [1.62.1] - 2026-08-24
 
 ### Fixed

@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 19;
+    const DB_VERSION = 20;
 
     public static function activate() {
         self::create_tables();
@@ -91,6 +91,8 @@ class RTG_Activator {
             roamer_vehicle_count INT UNSIGNED NOT NULL DEFAULT 0,
             roamer_vehicle_breakdown TEXT,
             roamer_synced_at DATETIME NULL DEFAULT NULL,
+            price_source VARCHAR(100) NOT NULL DEFAULT '',
+            price_synced_at DATETIME NULL DEFAULT NULL,
             sort_order INT UNSIGNED NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -231,6 +233,7 @@ class RTG_Activator {
             17 => 'migrate_17_add_slug_column',
             18 => 'migrate_18_create_candidates_table',
             19 => 'migrate_19_add_candidate_fits_vehicles',
+            20 => 'migrate_20_add_tire_price_source',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -529,6 +532,29 @@ class RTG_Activator {
         $indexes = $wpdb->get_results( "SHOW INDEX FROM {$table} WHERE Key_name = 'idx_fits_vehicles'" );
         if ( empty( $indexes ) ) {
             $wpdb->query( "ALTER TABLE {$table} ADD KEY idx_fits_vehicles (fits_vehicles)" );
+        }
+    }
+
+    /**
+     * Migration 20: Record where each tire's price came from, and when.
+     *
+     * The daily catalog sync can refresh prices from the retailer a tire's
+     * affiliate link points to. Without recording the source, a price on the
+     * site is indistinguishable from one typed in by hand, so there is no way
+     * to tell a stale manual figure from a fresh synced one — or to notice
+     * that syncing quietly stopped working for a tire.
+     */
+    private static function migrate_20_add_tire_price_source() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'rtg_tires';
+
+        $cols = $wpdb->get_col( "SHOW COLUMNS FROM {$table}" );
+
+        if ( ! in_array( 'price_source', $cols, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table} ADD COLUMN price_source VARCHAR(100) NOT NULL DEFAULT '' AFTER roamer_synced_at" );
+        }
+        if ( ! in_array( 'price_synced_at', $cols, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table} ADD COLUMN price_synced_at DATETIME NULL DEFAULT NULL AFTER price_source" );
         }
     }
 }

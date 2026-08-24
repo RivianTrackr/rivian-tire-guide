@@ -210,6 +210,10 @@ class RTG_Catalog_Sync {
             $stats['message'] = $stats['errors'][0]['message'];
         }
 
+        // Prices refresh off the same fetch. A separate schedule would double
+        // the API calls to learn what this run already knows.
+        $stats['prices'] = RTG_Price_Sync::run();
+
         update_option( self::STATS_OPTION, $stats, false );
 
         // Only unattended runs email. A manual run shows its result in the UI,
