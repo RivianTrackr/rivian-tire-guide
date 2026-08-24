@@ -260,9 +260,14 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                             fitment read completely means the guide's tires in that size either arrived or genuinely
                             are not in the feed. A fitment read partially means neither conclusion is available yet.
                             Each run resumes where the last stopped.
+                            <br><br>
+                            <strong>Read the Distinct column first.</strong> Records read counts what came back;
+                            distinct counts what was new. If distinct is far lower, the pages overlapped &mdash; the
+                            sweep re-read the same products rather than going deeper &mdash; and "complete" describes
+                            a re-read, not coverage. Nothing else on this page can be trusted while that is true.
                         </p>
                         <table class="rtg-table" style="margin-top:8px;">
-                            <thead><tr><th>Size</th><th>Read</th><th>Matches</th><th>Coverage</th></tr></thead>
+                            <thead><tr><th>Size</th><th>Read</th><th>Distinct</th><th>Matches</th><th>Coverage</th></tr></thead>
                             <tbody>
                             <?php foreach ( $sweep_coverage as $cov_size => $cov ) : ?>
                                 <?php
@@ -275,6 +280,22 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 <tr>
                                     <td style="font-family:var(--rtg-font-mono, monospace);"><?php echo esc_html( $cov_size ); ?></td>
                                     <td><?php echo esc_html( number_format( $cov_read ) ); ?></td>
+                                    <td>
+                                        <?php if ( ! isset( $cov['unique'] ) ) : ?>
+                                            &mdash;
+                                        <?php else : ?>
+                                            <?php
+                                            // Far fewer distinct products than records read means the
+                                            // pages overlapped, so "complete" describes a re-read rather
+                                            // than a deeper one.
+                                            $cov_unique = intval( $cov['unique'] );
+                                            $cov_thin   = $cov_read > 0 && $cov_unique < ( $cov_read * 0.9 );
+                                            ?>
+                                            <span<?php echo $cov_thin ? ' style="color:var(--rtg-error);font-weight:600;"' : ''; ?>>
+                                                <?php echo esc_html( number_format( $cov_unique ) ); ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td><?php echo null === $cov_total ? '&mdash;' : esc_html( number_format( $cov_total ) ); ?></td>
                                     <td>
                                         <?php if ( null === $cov_pct ) : ?>
@@ -1036,6 +1057,8 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 <input type="text" id="rtg-cj-test-keyword" class="regular-text"
                                     placeholder="Michelin Defender LTX M/S2 305/45R22"
                                     style="flex:1 1 340px;min-width:240px;">
+                                <input type="number" id="rtg-cj-test-offset" min="0" step="1000" value="0"
+                                    class="small-text" placeholder="offset" title="Records to skip">
                                 <button type="button" id="rtg-cj-test-btn" class="rtg-btn rtg-btn-secondary">Test Connection</button>
                             </p>
                             <p class="description" style="max-width:680px;">
@@ -1043,6 +1066,11 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 tell whether CJ is <em>matching</em> a term or merely ranking against it: type a tire's
                                 full name and see whether that tire is anywhere in the answer. Blank uses the first
                                 guide size, which tests the connection itself.
+                                <br><br>
+                                <strong>The offset is how to check that paging works.</strong> Probe a size at 0, then
+                                the same size at 1000. Different titles mean the sweep really is reading deeper each
+                                page. <em>The same titles mean it is re-reading page one</em> &mdash; and a sweep that
+                                counts what came back rather than what was new would still call that fitment complete.
                             </p>
                             <div id="rtg-cj-test-result" style="display:none;margin-top:10px;"></div>
                         </td>

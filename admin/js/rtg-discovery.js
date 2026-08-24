@@ -91,7 +91,8 @@
     $.post(rtgAdmin.ajaxurl, {
       action: 'rtg_cj_test_connection',
       nonce: rtgAdmin.nonce,
-      keyword: $('#rtg-cj-test-keyword').val() || ''
+      keyword: $('#rtg-cj-test-keyword').val() || '',
+      offset: $('#rtg-cj-test-offset').val() || 0
     }, function (response) {
       $btn.prop('disabled', false).text('Test Connection');
 

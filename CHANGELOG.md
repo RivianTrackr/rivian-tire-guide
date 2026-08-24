@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.71.0] - 2026-08-24
+
+### Added
+- **The sweep now counts distinct products, not records returned.** Counting what came back is not the same as counting what is new, and the difference decides whether "complete" means anything. If paging does not advance — an offset ignored, pages overlapping — every page returns the same products, the received count still climbs to the reported total, and the fitment is declared complete having seen one page of it. The dedup key hides that perfectly, since a repeat simply overwrites itself. The coverage table now shows **Distinct** beside Read and flags it when the two diverge.
+- **The connection probe takes an offset,** so the same keyword can be read at two depths and the pages compared. Whether paging advances at all was not otherwise observable: a sweep re-reading page one looks identical to one reading the whole match set.
+
+### Notes
+- What prompted this: a per-fitment, per-retailer breakdown of stored candidates showed **247** products in 275/60R20 and **2** in 255/55R21 — every fitment reported complete off 5,000+ matches, and both retailers stock both sizes heavily. Real catalogs are not shaped like that; a paging fault is.
+- This supersedes the conclusion recorded in 1.70.1. "Every fitment read completely" was taken as evidence the missing tires are absent from the feed. That reading required paging to have worked, which is exactly what was never checked. The 532 products stored across the nine guide fitments may be one page of each ranking rather than the whole of it.
+
 ## [1.70.1] - 2026-08-24
 
 ### Fixed

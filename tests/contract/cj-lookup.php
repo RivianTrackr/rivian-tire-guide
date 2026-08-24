@@ -48,6 +48,7 @@ class RTG_Admin { public static function get_dropdown_options( $w ) { return arr
 function wp_remote_post( $url, $args ) {
     $body = json_decode( $args['body'], true );
     $kw   = $body['variables']['keywords'][0];
+    $GLOBALS['last_offset'] = intval( $body['variables']['offset'] ?? -1 );
     // Shaped on what CJ actually returned for this search: the right model
     // from the right retailer, in fitments other than the one asked about,
     // because the size in a keyword is scored rather than applied.
@@ -144,6 +145,16 @@ check( 'the rest are reported as pending',       2 === $exhausted['pending'] );
 $filtered = $source->fetch_terms( $terms, null, null, array( '305/45R22' => true ) );
 check( 'only the wanted fitment survives',       1 === count( $filtered['by_term'][ $terms[0] ] ) );
 check( 'what was dropped is counted',            2 === $filtered['discarded'] );
+
+// Paging. A sweep that counts records returned rather than products newly seen
+// cannot tell a deeper read from a re-read of page one, and a live run showed
+// exactly that shape: 247 products in one guide fitment and 2 in another, both
+// reported complete off 5,000+ matches.
+$GLOBALS['paging_honoured'] = true;
+$page_a = $source->test_connection( '305/45R22', 0 );
+$page_b = $source->test_connection( '305/45R22', 1000 );
+check( 'probe reports the offset it read from',  false !== strpos( $page_b['message'], 'starting at record 1,000' ) );
+check( 'the request carries the offset through', 1000 === $GLOBALS['last_offset'] );
 
 // test_connection must honour a keyword and report titles.
 $probe = $source->test_connection( 'Michelin Defender LTX M/S2' );

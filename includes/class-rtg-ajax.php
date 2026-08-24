@@ -1038,8 +1038,14 @@ class RTG_Ajax {
         // than inferred from a sync's aggregate counts.
         $keyword = sanitize_text_field( wp_unslash( $_POST['keyword'] ?? '' ) );
 
+        // An offset, so the same keyword can be read at two depths and the
+        // pages compared. Whether paging advances at all is not otherwise
+        // observable: a sweep that re-reads page one looks identical to one
+        // that reads the whole match set.
+        $offset = max( 0, intval( $_POST['offset'] ?? 0 ) );
+
         $source = new RTG_Catalog_Source_CJ();
-        $result = $source->test_connection( $keyword );
+        $result = $source->test_connection( $keyword, $offset );
 
         // The token is never part of the diagnostics: only CJ's response is
         // recorded, and the request body is not echoed back.
