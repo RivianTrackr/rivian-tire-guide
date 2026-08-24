@@ -119,7 +119,7 @@ class RTG_Tire_Qualifier {
         // the numbers, and carrying the prefix would split one size in two.
         $size = preg_replace( '/^(?:LT|P|ST)/', '', $size );
 
-        if ( ! preg_match( '#^(\d{3})/(\d{2})Z?R(\d{2})#', $size, $m ) ) {
+        if ( ! preg_match( '#^(\d{3})/(\d{2})[A-Z]?R(\d{2})#', $size, $m ) ) {
             return '';
         }
 
@@ -184,11 +184,21 @@ class RTG_Tire_Qualifier {
      *
      * @param array $product Raw product with at least a 'title'; may also carry
      *                       brand, size, load_index, load_range, speed_rating.
-     * @return array Specs: size, load_index, load_range, speed_rating, brand, model.
+     * @return array Specs: size, load_index, load_range, speed_rating, brand,
+     *               model, superseded.
      */
     public static function parse_specs( $product ) {
         $title = isset( $product['title'] ) ? (string) $product['title'] : '';
-        $text  = trim( preg_replace( '/\s+/', ' ', $title ) );
+
+        // Some feed titles arrive percent-encoded ("Trail-Terrain T/A%2B"),
+        // which would otherwise end up in the model name verbatim. Decoded
+        // only when an escape is actually present, so a title containing a
+        // literal % isn't mangled.
+        if ( preg_match( '/%[0-9A-Fa-f]{2}/', $title ) ) {
+            $title = rawurldecode( $title );
+        }
+
+        $text = trim( preg_replace( '/\s+/', ' ', $title ) );
 
         $specs = array(
             'size'         => self::normalize_size( $product['size'] ?? '' ),
@@ -204,7 +214,7 @@ class RTG_Tire_Qualifier {
         // rating that follow it are what we parse next.
         $size_offset = null;
         $size_length = 0;
-        if ( preg_match( '#\b(?:LT|P|ST)?(\d{3})\s*/\s*(\d{2})\s*Z?R\s*(\d{2})\b#i', $text, $m, PREG_OFFSET_CAPTURE ) ) {
+        if ( preg_match( '#\b(?:LT|P|ST)?(\d{3})\s*/\s*(\d{2})\s*[A-Z]?R\s*(\d{2})\b#i', $text, $m, PREG_OFFSET_CAPTURE ) ) {
             $size_offset = $m[0][1];
             $size_length = strlen( $m[0][0] );
 
@@ -213,28 +223,50 @@ class RTG_Tire_Qualifier {
             }
         }
 
-        // The spec cluster is the ~20 characters after the size: "116T",
-        // "116/113S", "121/118S E". Bounded so a model name further along the
-        // title can't be misread as a rating.
-        $tail = null === $size_offset ? '' : substr( $text, $size_offset + $size_length, 20 );
+        // The spec cluster is the ~24 characters after the size. Retailers
+        // write it in two shapes, and the load range in the middle is what
+        // matters:
+        //
+        //   275/60R20 115T            (SimpleTire — no load range)
+        //   255/65R19 XL 114V         (Tire Rack — load range first)
+        //   255/60R20 D 115/112S      (load range, then dual load index)
+        //
+        // Reading only for digits immediately after the size — as this did
+        // until 1.62.1 — found the first shape and gave up on the second, so
+        // every Tire Rack listing came through with no load index at all.
+        $tail = null === $size_offset ? '' : substr( $text, $size_offset + $size_length, 24 );
 
-        if ( '' === $specs['load_index'] && '' !== $tail
-            && preg_match( '/^\s*(\d{2,3})(?:\s*\/\s*(\d{2,3}))?\s*([A-Z])\b/i', $tail, $lm ) ) {
-            $specs['load_index'] = $lm[1];
+        if ( '' !== $tail && preg_match(
+            '/^\s*(?:(SL|XL|HL|RF|[B-F])\s+)?(\d{2,3})(?:\s*\/\s*(\d{2,3}))?\s*([A-Z])\b/i',
+            $tail,
+            $lm
+        ) ) {
+            if ( '' === $specs['load_index'] ) {
+                // A dual rating ("115/112S") is single- then dual-wheel load.
+                // The single-wheel figure is the one the guide compares.
+                $specs['load_index'] = $lm[2];
+            }
             if ( '' === $specs['speed_rating'] ) {
-                $specs['speed_rating'] = strtoupper( $lm[3] );
+                $specs['speed_rating'] = strtoupper( $lm[4] );
+            }
+            if ( '' === $specs['load_range'] && ! empty( $lm[1] ) ) {
+                $specs['load_range'] = strtoupper( $lm[1] );
             }
         }
 
         if ( '' === $specs['load_range'] ) {
-            if ( preg_match( '/\bLOAD\s+RANGE\s+([C-F])\b/i', $text, $rm ) ) {
+            // Fall back to a whole-title search only when the anchored read
+            // found nothing — a bare "E" or "D" elsewhere in a title is far
+            // more likely to be part of a model name than a load range.
+            if ( preg_match( '/\bLOAD\s+RANGE\s+([B-F])\b/i', $text, $rm ) ) {
                 $specs['load_range'] = strtoupper( $rm[1] );
             } elseif ( preg_match( '/\b(SL|XL|HL|RF)\b/i', $text, $rm ) ) {
                 $specs['load_range'] = strtoupper( $rm[1] );
             }
         }
 
-        $specs['model'] = self::derive_model( $text, $specs['brand'], $size_offset );
+        $specs['model']      = self::derive_model( $text, $specs['brand'], $size_offset );
+        $specs['superseded'] = (bool) preg_match( '/\sOLD$/', $text );
 
         return $specs;
     }
@@ -448,6 +480,20 @@ class RTG_Tire_Qualifier {
             $reasons[] = array(
                 'code'  => 'model_missing',
                 'label' => 'No model name could be read from the listing',
+            );
+        }
+
+        // --- Superseded listings. ---
+        //
+        // Tire Rack suffixes a replaced part number with " OLD" and keeps both
+        // rows in the feed, so the same tire arrives twice at different prices.
+        // Not disqualifying — the tire is real and may be the one you want —
+        // but worth saying, since adding the superseded row would bake a dead
+        // part number into the guide.
+        if ( ! empty( $specs['superseded'] ) ) {
+            $warnings[] = array(
+                'code'  => 'listing_superseded',
+                'label' => 'Retailer marks this listing superseded — check for a newer one',
             );
         }
 

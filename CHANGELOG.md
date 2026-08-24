@@ -4,6 +4,17 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.62.1] - 2026-08-24
+
+### Fixed
+- **Tire Rack listings no longer arrive with no load index.** Retailers write the spec cluster in two shapes, and the parser only understood one: SimpleTire's `275/60R20 115T` reads straight after the size, while Tire Rack's `255/65R19 XL 114V` puts the **load range in between**. Reading only for digits immediately after the size found the first and gave up on the second, so every Tire Rack row came through blank and had to be confirmed by hand. Measured against the 181 real titles from the first live sweep, **102 failed to parse before this change and 0 do now** — dual ratings behind a letter load range (`D 115/112S`, `E 126/123Q`) included, where the single-wheel figure is the one the guide compares. The load range is now read from that anchored position too, falling back to a whole-title search only when it finds nothing, since a bare "E" elsewhere in a title is far more likely to belong to a model name.
+- **Legacy sizes that carry the speed rating inside them** — `255/45VR15`, `255/50ZR16` — now parse; only `ZR` was recognized before.
+- **Percent-encoded titles are decoded**, so `Trail-Terrain T/A%2B` becomes `Trail-Terrain T/A+` in the model name instead of carrying the escape through. Decoded only when an escape is actually present, so a title containing a literal `%` isn't mangled.
+
+### Added
+- **Superseded listings are flagged.** Tire Rack suffixes a replaced part number with " OLD" and keeps both rows in the feed, so the same tire arrives twice at different prices. The row still qualifies — the tire is real and may be the one you want — but carries a warning, since adding the superseded listing would bake a dead part number into the guide.
+- **Candidates keep the upstream record exactly as it arrived**, under `_source_node`. The `raw_json` column previously held the *mapped* product, so a field the mapper didn't keep was unrecoverable afterwards: `description` was fetched from CJ on every request and discarded, which is what turned "why is the load index blank?" into a live re-run instead of a database query. Sources may now return the untouched node; it is stored and never interpreted.
+
 ## [1.62.0] - 2026-08-24
 
 ### Added

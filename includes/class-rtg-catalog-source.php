@@ -31,6 +31,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Only external_id and title are required; the qualifier reads whatever else
  * is present and parses the rest out of the title.
  *
+ * A source may also return `_source_node`: the upstream record exactly as it
+ * arrived. It is stored with the candidate and never interpreted, so that a
+ * later question about a field the mapper didn't keep can be answered from the
+ * database rather than by re-running the fetch.
+ *
  * @since 1.59.0
  */
 interface RTG_Catalog_Source {

@@ -576,4 +576,129 @@ class Test_RTG_Tire_Qualifier extends WP_UnitTestCase {
         $this->assertFalse( $fails['qualifies'] );
         $this->assertContains( 'load_index_low', $this->codes( $fails ) );
     }
+
+    // --- Retailer title shapes ---
+
+    /**
+     * Tire Rack writes the load range between the size and the load index.
+     *
+     * Until 1.62.1 the parser read only for digits immediately after the size,
+     * so it found SimpleTire's "275/60R20 115T" and gave up on Tire Rack's
+     * "255/65R19 XL 114V" — every Tire Rack listing came through with no load
+     * index at all, 102 of 181 real titles in the first live sweep.
+     */
+    public function test_parses_a_load_range_between_the_size_and_load_index() {
+        $specs = RTG_Tire_Qualifier::parse_specs( array(
+            'title' => 'Continental CrossContact RX 255/65R19 XL 114V Crossover/SUV Touring All-Season Tire 03590920000',
+            'brand' => 'Continental',
+        ) );
+
+        $this->assertSame( '255/65R19', $specs['size'] );
+        $this->assertSame( '114', $specs['load_index'] );
+        $this->assertSame( 'V', $specs['speed_rating'] );
+        $this->assertSame( 'XL', $specs['load_range'] );
+        $this->assertSame( 'CrossContact RX', $specs['model'] );
+    }
+
+    /**
+     * The shape without a load range still parses — the fix must not trade one
+     * retailer's titles for the other's.
+     */
+    public function test_parses_a_title_with_no_load_range() {
+        $specs = RTG_Tire_Qualifier::parse_specs( array(
+            'title' => 'Bridgestone Dueler LX 275/60R20 115T Highway All-Season Tire 009393',
+            'brand' => 'Bridgestone',
+        ) );
+
+        $this->assertSame( '115', $specs['load_index'] );
+        $this->assertSame( 'T', $specs['speed_rating'] );
+        $this->assertSame( '', $specs['load_range'] );
+    }
+
+    /**
+     * A dual rating is single- then dual-wheel load; the single-wheel figure is
+     * what the guide compares against a platform's floor.
+     */
+    public function test_parses_a_dual_load_index_behind_a_letter_load_range() {
+        $specs = RTG_Tire_Qualifier::parse_specs( array(
+            'title' => 'BFGoodrich All-Terrain T/A KO3 255/60R20 D 115/112S Off-Road All-Terrain Truck Tire 02300',
+            'brand' => 'BFGoodrich',
+        ) );
+
+        $this->assertSame( '115', $specs['load_index'] );
+        $this->assertSame( 'S', $specs['speed_rating'] );
+        $this->assertSame( 'D', $specs['load_range'] );
+    }
+
+    /**
+     * HL and RF load ranges parse the same way as XL.
+     */
+    public function test_parses_hl_and_rf_load_ranges() {
+        $hl = RTG_Tire_Qualifier::parse_specs( array(
+            'title' => 'Hankook iON HT 275/50R22 HL 116H Highway All-Season Tire 1036116',
+            'brand' => 'Hankook',
+        ) );
+        $this->assertSame( '116', $hl['load_index'] );
+        $this->assertSame( 'HL', $hl['load_range'] );
+
+        $rf = RTG_Tire_Qualifier::parse_specs( array(
+            'title' => 'Yokohama Parada Spec-X 305/45R22 RF 118V Street/Sport Truck All-Season Truck Tire 110100223',
+            'brand' => 'Yokohama',
+        ) );
+        $this->assertSame( '118', $rf['load_index'] );
+        $this->assertSame( 'RF', $rf['load_range'] );
+    }
+
+    /**
+     * Legacy notation carries the speed rating inside the size itself.
+     */
+    public function test_parses_a_speed_rating_embedded_in_the_size() {
+        $specs = RTG_Tire_Qualifier::parse_specs( array(
+            'title' => 'Michelin MXW 255/45VR15 93W Classic Tires Tire 58997',
+            'brand' => 'Michelin',
+        ) );
+
+        $this->assertSame( '255/45R15', $specs['size'] );
+        $this->assertSame( '93', $specs['load_index'] );
+    }
+
+    /**
+     * A percent-encoded title is decoded, so the escape doesn't end up in the
+     * model name verbatim.
+     */
+    public function test_decodes_a_percent_encoded_title() {
+        $specs = RTG_Tire_Qualifier::parse_specs( array(
+            'title' => 'BFGoodrich Trail-Terrain T/A%2B 255/60R20 XL 113V On-Road All-Terrain Tire 15021',
+            'brand' => 'BFGoodrich',
+        ) );
+
+        $this->assertSame( 'Trail-Terrain T/A+', $specs['model'] );
+    }
+
+    /**
+     * A superseded listing is flagged but not hidden.
+     *
+     * Tire Rack suffixes a replaced part number with " OLD" and keeps both rows
+     * in the feed, so the same tire arrives twice at different prices. The tire
+     * is real, but adding the superseded row would bake a dead part number into
+     * the guide.
+     */
+    public function test_flags_a_superseded_listing_without_hiding_it() {
+        $context = $this->context();
+
+        $superseded = RTG_Tire_Qualifier::evaluate( array(
+            'title' => 'Vredestein Pinza HT 275/65R18 115T Highway All-Season Tire 10880000 OLD',
+            'brand' => 'Vredestein',
+        ), $context );
+
+        $this->assertTrue( $superseded['qualifies'] );
+        $this->assertContains( 'listing_superseded', array_column( $superseded['warnings'], 'code' ) );
+
+        $current = RTG_Tire_Qualifier::evaluate( array(
+            'title' => 'Vredestein Pinza HT 275/65R18 115T Highway All-Season Tire 10880000',
+            'brand' => 'Vredestein',
+        ), $context );
+
+        $this->assertNotContains( 'listing_superseded', array_column( $current['warnings'], 'code' ) );
+    }
 }
