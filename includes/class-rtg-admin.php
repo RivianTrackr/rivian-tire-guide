@@ -292,6 +292,22 @@ class RTG_Admin {
             array( $this, 'render_roamer_sync_page' )
         );
 
+        // Newly discovered affiliate tires, badged with the awaiting-review count.
+        $candidate_counts = RTG_Candidates::get_counts();
+        $awaiting         = intval( $candidate_counts[ RTG_Candidates::STATUS_NEW ] ?? 0 );
+        $candidate_badge  = $awaiting > 0
+            ? ' <span class="awaiting-mod">' . $awaiting . '</span>'
+            : '';
+
+        add_submenu_page(
+            'rtg-dashboard',
+            'Tire Discovery',
+            'Tire Discovery' . $candidate_badge,
+            'manage_options',
+            'rtg-tire-discovery',
+            array( $this, 'render_tire_discovery_page' )
+        );
+
         add_submenu_page(
             'rtg-dashboard',
             'Settings',
@@ -348,6 +364,17 @@ class RTG_Admin {
             );
         }
 
+        // Enqueue Tire Discovery JS on the discovery page.
+        if ( strpos( $hook, 'rtg-tire-discovery' ) !== false ) {
+            wp_enqueue_script(
+                'rtg-tire-discovery',
+                RTG_PLUGIN_URL . 'admin/js/rtg-discovery.js',
+                array( 'jquery' ),
+                RTG_VERSION,
+                true
+            );
+        }
+
         // Enqueue Chart.js on the analytics page.
         if ( strpos( $hook, 'rtg-analytics' ) !== false ) {
             wp_enqueue_script(
@@ -363,6 +390,17 @@ class RTG_Admin {
                 'nonce'   => wp_create_nonce( 'rtg_analytics_nonce' ),
             ) );
         }
+    }
+
+    /**
+     * Render the Tire Discovery review queue.
+     */
+    public function render_tire_discovery_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        require_once RTG_PLUGIN_DIR . 'admin/views/tire-discovery.php';
     }
 
     /**
@@ -742,6 +780,14 @@ class RTG_Admin {
                 exit;
             }
             RTG_Database::insert_tire( $data );
+
+            // When the tire came from the discovery queue, close out the
+            // candidate so it stops appearing as awaiting review.
+            $from_candidate = intval( $post['from_candidate'] ?? 0 );
+            if ( $from_candidate > 0 ) {
+                RTG_Candidates::set_status( $from_candidate, RTG_Candidates::STATUS_IMPORTED );
+            }
+
             wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=added' ) );
         }
         exit;

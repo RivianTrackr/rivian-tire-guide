@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 17;
+    const DB_VERSION = 18;
 
     public static function activate() {
         self::create_tables();
@@ -42,6 +42,7 @@ class RTG_Activator {
         $favorites_table     = $wpdb->prefix . 'rtg_favorites';
         $click_events_table  = $wpdb->prefix . 'rtg_click_events';
         $search_events_table = $wpdb->prefix . 'rtg_search_events';
+        $candidates_table    = $wpdb->prefix . 'rtg_tire_candidates';
 
         $sql = "CREATE TABLE {$wheels_table} (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -162,6 +163,38 @@ class RTG_Activator {
             KEY idx_created_at (created_at),
             KEY idx_search_query (search_query(50)),
             KEY idx_search_type (search_type)
+        ) $charset_collate;
+
+        CREATE TABLE {$candidates_table} (
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            source VARCHAR(30) NOT NULL DEFAULT '',
+            advertiser_id VARCHAR(50) NOT NULL DEFAULT '',
+            advertiser_name VARCHAR(100) NOT NULL DEFAULT '',
+            external_id VARCHAR(191) NOT NULL DEFAULT '',
+            brand VARCHAR(100) NOT NULL DEFAULT '',
+            model VARCHAR(200) NOT NULL DEFAULT '',
+            size VARCHAR(30) NOT NULL DEFAULT '',
+            load_index VARCHAR(20) NOT NULL DEFAULT '',
+            load_range VARCHAR(10) NOT NULL DEFAULT '',
+            speed_rating VARCHAR(20) NOT NULL DEFAULT '',
+            price DECIMAL(8,2) NOT NULL DEFAULT 0,
+            link TEXT NOT NULL,
+            image TEXT NOT NULL,
+            match_key VARCHAR(191) NOT NULL DEFAULT '',
+            qualifies TINYINT(1) NOT NULL DEFAULT 0,
+            fail_reasons TEXT,
+            matched_tire_id VARCHAR(50) NOT NULL DEFAULT '',
+            status VARCHAR(20) NOT NULL DEFAULT 'new',
+            raw_json LONGTEXT,
+            first_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            last_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            reviewed_at DATETIME NULL DEFAULT NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY source_product (source, advertiser_id, external_id(100)),
+            KEY idx_status (status),
+            KEY idx_qualifies (qualifies),
+            KEY idx_match_key (match_key),
+            KEY idx_first_seen (first_seen_at)
         ) $charset_collate;";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -194,6 +227,7 @@ class RTG_Activator {
             // reverted. Migration 16 drops the column on sites that ran 15.
             16 => 'migrate_16_drop_roamer_crr',
             17 => 'migrate_17_add_slug_column',
+            18 => 'migrate_18_create_candidates_table',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -404,5 +438,59 @@ class RTG_Activator {
 
         // Register the new rewrite rule on this request.
         update_option( 'rtg_flush_rewrite', 1 );
+    }
+
+    /**
+     * Migration 18: Create the tire candidates table used by catalog sync.
+     *
+     * dbDelta above normally creates it. This is the same safety net as
+     * migrations 13, 14 and 17: dbDelta can silently skip a table, and the
+     * migration loop records version 18 either way, so a site it skipped would
+     * never retry and every sync would fail against a missing table.
+     */
+    private static function migrate_18_create_candidates_table() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'rtg_tire_candidates';
+
+        $exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+        if ( $exists === $table ) {
+            return;
+        }
+
+        $charset_collate = $wpdb->get_charset_collate();
+
+        $wpdb->query(
+            "CREATE TABLE IF NOT EXISTS {$table} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                source VARCHAR(30) NOT NULL DEFAULT '',
+                advertiser_id VARCHAR(50) NOT NULL DEFAULT '',
+                advertiser_name VARCHAR(100) NOT NULL DEFAULT '',
+                external_id VARCHAR(191) NOT NULL DEFAULT '',
+                brand VARCHAR(100) NOT NULL DEFAULT '',
+                model VARCHAR(200) NOT NULL DEFAULT '',
+                size VARCHAR(30) NOT NULL DEFAULT '',
+                load_index VARCHAR(20) NOT NULL DEFAULT '',
+                load_range VARCHAR(10) NOT NULL DEFAULT '',
+                speed_rating VARCHAR(20) NOT NULL DEFAULT '',
+                price DECIMAL(8,2) NOT NULL DEFAULT 0,
+                link TEXT NOT NULL,
+                image TEXT NOT NULL,
+                match_key VARCHAR(191) NOT NULL DEFAULT '',
+                qualifies TINYINT(1) NOT NULL DEFAULT 0,
+                fail_reasons TEXT,
+                matched_tire_id VARCHAR(50) NOT NULL DEFAULT '',
+                status VARCHAR(20) NOT NULL DEFAULT 'new',
+                raw_json LONGTEXT,
+                first_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                last_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                reviewed_at DATETIME NULL DEFAULT NULL,
+                PRIMARY KEY (id),
+                UNIQUE KEY source_product (source, advertiser_id, external_id(100)),
+                KEY idx_status (status),
+                KEY idx_qualifies (qualifies),
+                KEY idx_match_key (match_key),
+                KEY idx_first_seen (first_seen_at)
+            ) {$charset_collate}"
+        );
     }
 }

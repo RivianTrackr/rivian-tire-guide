@@ -146,6 +146,11 @@ class RTG_Ajax {
         add_action( 'wp_ajax_rtg_roamer_unlink', array( $this, 'roamer_unlink' ) );
         add_action( 'wp_ajax_rtg_roamer_hide', array( $this, 'roamer_hide' ) );
         add_action( 'wp_ajax_rtg_roamer_restore', array( $this, 'roamer_restore' ) );
+
+        // Tire Discovery (affiliate catalog candidates).
+        add_action( 'wp_ajax_rtg_catalog_sync_now', array( $this, 'catalog_sync_now' ) );
+        add_action( 'wp_ajax_rtg_candidate_set_status', array( $this, 'candidate_set_status' ) );
+        add_action( 'wp_ajax_rtg_cj_test_connection', array( $this, 'cj_test_connection' ) );
     }
 
     /**
@@ -979,6 +984,93 @@ class RTG_Ajax {
 
         $result = RTG_Roamer_Sync::run();
         wp_send_json_success( $result );
+    }
+
+    /**
+     * Trigger a catalog discovery sync immediately.
+     */
+    public function catalog_sync_now() {
+        check_ajax_referer( 'rtg_admin_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized.' );
+        }
+
+        $result = RTG_Catalog_Sync::run();
+        wp_send_json_success( $result );
+    }
+
+    /**
+     * Probe the CJ Product Search API and report what came back.
+     *
+     * CJ's schema reference is behind a JavaScript-rendered portal, so the
+     * shipped query document is a best effort. This returns CJ's own error
+     * text — which names the offending field — and, on an empty-but-successful
+     * response, the raw body, so the query can be corrected from the settings
+     * form in one round trip instead of by guesswork.
+     */
+    public function cj_test_connection() {
+        check_ajax_referer( 'rtg_admin_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized.' );
+        }
+
+        $source = new RTG_Catalog_Source_CJ();
+        $result = $source->test_connection();
+
+        // The token is never part of the diagnostics: only CJ's response is
+        // recorded, and the request body is not echoed back.
+        wp_send_json_success( $result );
+    }
+
+    /**
+     * Record a decision on a discovered tire candidate.
+     *
+     * Only the two decisions a human makes from the queue are accepted here:
+     * dismissing a candidate, and restoring one that was dismissed by mistake.
+     * Importing is not one of them — that happens by actually saving the tire,
+     * so the queue can never claim a tire was added when it wasn't.
+     */
+    public function candidate_set_status() {
+        check_ajax_referer( 'rtg_admin_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized.' );
+        }
+
+        $id     = intval( $_POST['candidate_id'] ?? 0 );
+        $status = sanitize_text_field( wp_unslash( $_POST['status'] ?? '' ) );
+
+        if ( $id < 1 ) {
+            wp_send_json_error( 'Missing candidate ID.' );
+        }
+
+        $allowed = array( RTG_Candidates::STATUS_DISMISSED, RTG_Candidates::STATUS_NEW );
+        if ( ! in_array( $status, $allowed, true ) ) {
+            wp_send_json_error( 'Unsupported status.' );
+        }
+
+        $candidate = RTG_Candidates::get( $id );
+        if ( ! $candidate ) {
+            wp_send_json_error( 'Candidate not found.' );
+        }
+
+        // Restoring puts a candidate back only if it would still qualify today;
+        // otherwise it belongs in the rejected view, not the review queue.
+        if ( RTG_Candidates::STATUS_NEW === $status && empty( $candidate['qualifies'] ) ) {
+            $status = RTG_Candidates::STATUS_REJECTED;
+        }
+
+        if ( ! RTG_Candidates::set_status( $id, $status ) ) {
+            wp_send_json_error( 'Could not update the candidate.' );
+        }
+
+        wp_send_json_success( array(
+            'id'     => $id,
+            'status' => $status,
+            'counts' => RTG_Candidates::get_counts(),
+        ) );
     }
 
     /**

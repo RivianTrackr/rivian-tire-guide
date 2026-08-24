@@ -37,6 +37,39 @@ $defaults = array(
 );
 $v = $tire ? wp_parse_args( $tire, $defaults ) : $defaults;
 
+// Prefill a new tire from a Tire Discovery candidate. Only the fields the
+// affiliate feed actually knows are filled — category, warranty, weight and
+// tread still need a human, so they are deliberately left blank rather than
+// guessed at.
+$from_candidate = ( ! $is_edit && isset( $_GET['from_candidate'] ) ) ? intval( $_GET['from_candidate'] ) : 0;
+if ( $from_candidate > 0 ) {
+    $candidate = RTG_Candidates::get( $from_candidate );
+    if ( $candidate ) {
+        $v['brand']        = $candidate['brand'];
+        $v['model']        = $candidate['model'];
+        $v['size']         = $candidate['size'];
+        $v['price']        = $candidate['price'] > 0 ? $candidate['price'] : '';
+        $v['load_index']   = $candidate['load_index'];
+        $v['load_range']   = $candidate['load_range'];
+        $v['speed_rating'] = $candidate['speed_rating'];
+        $v['link']         = $candidate['link'];
+
+        // Derive the fields the guide computes from a size / load index.
+        $diameter_map = RTG_Admin::get_size_diameter_map();
+        if ( isset( $diameter_map[ $candidate['size'] ] ) ) {
+            $v['diameter'] = $diameter_map[ $candidate['size'] ];
+        }
+        $load_map = RTG_Admin::get_load_index_map();
+        if ( '' !== $candidate['load_index'] && isset( $load_map[ intval( $candidate['load_index'] ) ] ) ) {
+            $v['max_load_lb'] = $load_map[ intval( $candidate['load_index'] ) ];
+        }
+
+        $page_title = 'Add New Tire — from discovery';
+    } else {
+        $from_candidate = 0;
+    }
+}
+
 // Notices.
 $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) : '';
 
@@ -74,6 +107,9 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
         <?php wp_nonce_field( 'rtg_tire_save', 'rtg_tire_nonce' ); ?>
         <input type="hidden" name="rtg_tire_save" value="1">
         <input type="hidden" name="editing_id" value="<?php echo esc_attr( $editing_id ); ?>">
+        <?php if ( $from_candidate > 0 ) : ?>
+            <input type="hidden" name="from_candidate" value="<?php echo esc_attr( $from_candidate ); ?>">
+        <?php endif; ?>
 
         <div class="rtg-edit-grid">
 
