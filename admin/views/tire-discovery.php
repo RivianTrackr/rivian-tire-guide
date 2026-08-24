@@ -122,7 +122,7 @@ $cj_advertisers  = $settings['cj_advertisers'] ?? '';
 $cj_limit        = intval( $settings['cj_limit'] ?? RTG_Catalog_Source_CJ::DEFAULT_LIMIT );
 $cj_sweep_budget = intval( $settings['cj_sweep_budget'] ?? RTG_Catalog_Source_CJ::SWEEP_BUDGET );
 $cj_max_pages    = intval( $settings['cj_max_pages'] ?? RTG_Catalog_Source_CJ::DEFAULT_MAX_PAGES );
-$cj_targeted_enabled = $settings['cj_targeted_enabled'] ?? true;
+$cj_targeted_enabled = ! empty( $settings['cj_targeted_enabled'] );
 $cj_targeted_budget  = intval( $settings['cj_targeted_budget'] ?? RTG_Catalog_Source_CJ::TARGETED_BUDGET );
 $cj_targeted_limit   = intval( $settings['cj_targeted_limit'] ?? RTG_Catalog_Source_CJ::TARGETED_LIMIT );
 $catalog_run_budget  = intval( $settings['catalog_run_budget'] ?? RTG_Catalog_Sync::RUN_BUDGET );
@@ -242,6 +242,56 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                     </div>
                 </div>
 
+                <?php
+                $sweep_coverage = array();
+                foreach ( $stats['sources'] ?? array() as $source_stat ) {
+                    foreach ( $source_stat['coverage'] ?? array() as $cov_size => $cov ) {
+                        $sweep_coverage[ $cov_size ] = $cov;
+                    }
+                }
+                ?>
+                <?php if ( ! empty( $sweep_coverage ) ) : ?>
+                    <details style="margin-top:14px;">
+                        <summary style="cursor:pointer;font-weight:600;">
+                            Fitment coverage &mdash; how much of each size's match set has been read
+                        </summary>
+                        <p class="description" style="max-width:860px;margin:8px 0;">
+                            This is the number that decides whether "no retailer is carrying it" can be believed. A
+                            fitment read completely means the guide's tires in that size either arrived or genuinely
+                            are not in the feed. A fitment read partially means neither conclusion is available yet.
+                            Each run resumes where the last stopped.
+                        </p>
+                        <table class="rtg-table" style="margin-top:8px;">
+                            <thead><tr><th>Size</th><th>Read</th><th>Matches</th><th>Coverage</th></tr></thead>
+                            <tbody>
+                            <?php foreach ( $sweep_coverage as $cov_size => $cov ) : ?>
+                                <?php
+                                $cov_total = $cov['total'];
+                                $cov_read  = intval( $cov['received'] );
+                                $cov_pct   = ( null !== $cov_total && $cov_total > 0 )
+                                    ? min( 100, round( ( $cov_read / $cov_total ) * 100 ) )
+                                    : null;
+                                ?>
+                                <tr>
+                                    <td style="font-family:var(--rtg-font-mono, monospace);"><?php echo esc_html( $cov_size ); ?></td>
+                                    <td><?php echo esc_html( number_format( $cov_read ) ); ?></td>
+                                    <td><?php echo null === $cov_total ? '&mdash;' : esc_html( number_format( $cov_total ) ); ?></td>
+                                    <td>
+                                        <?php if ( null === $cov_pct ) : ?>
+                                            &mdash;
+                                        <?php elseif ( $cov_pct >= 100 ) : ?>
+                                            <span style="color:var(--rtg-success);font-weight:600;">complete</span>
+                                        <?php else : ?>
+                                            <span style="color:var(--rtg-text-muted);"><?php echo esc_html( $cov_pct ); ?>%</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </details>
+                <?php endif; ?>
+
                 <?php if ( ! empty( $stats['targeted']['terms'] ) ) : ?>
                     <?php $targeted = $stats['targeted']; ?>
                     <p class="description" style="margin:12px 0 0;max-width:860px;">
@@ -259,7 +309,7 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                         returned something,
                         <?php echo esc_html( number_format( intval( $targeted['ingested'] ) ) ); ?>
                         product(s) in a fitment the guide uses reached the queue, and
-                        <?php echo esc_html( number_format( intval( $targeted['off_size'] ?? 0 ) ) ); ?>
+                        <?php echo esc_html( number_format( intval( $targeted['discarded'] ?? 0 ) + intval( $targeted['off_size'] ?? 0 ) ) ); ?>
                         were in fitments the guide has no use for and were left out.
                         <?php if ( ! empty( $targeted['pending'] ) ) : ?>
                             <?php echo esc_html( number_format( intval( $targeted['pending'] ) ) ); ?>
@@ -907,12 +957,13 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 Ask for uncovered guide tires by name
                             </label>
                             <p class="description" style="max-width:680px;">
-                                After the sweep, any guide tire nothing in the queue matches is searched for directly
-                                by brand, model and size &mdash; one request each. A sweep asks CJ for a bare fitment
-                                and gets a relevance ranking thousands deep rather than a filter, so a tire the
-                                retailer genuinely sells can rank below where paging stops and never arrive. This is
-                                how those are found. Uncovered tires are worked through in rotation, so a long list
-                                completes over successive runs.
+                                <strong>Off by default, and the evidence is blunt.</strong> A live run reported a
+                                single brand-and-model keyword matching <strong>81,653</strong> products. A thousand
+                                records is 1.2% of that ranking; covering one search would take 82 requests and the
+                                guide's models thousands. The pass spent an entire run budget and found nothing.
+                                The sweep's fitment keyword is better by an order of magnitude &mdash; a size reports
+                                around 5,000 matches, readable in a handful of requests &mdash; so the budget belongs
+                                there. Left available in case a future catalog behaves differently.
                             </p>
                         </td>
                     </tr>

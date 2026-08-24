@@ -157,6 +157,14 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
     private $last_response = array();
 
     /**
+     * @var array Per-size coverage from the last sweep: size => { received, total }.
+     *
+     * Whether a fitment was read completely is now the question that matters,
+     * so it is reported as data rather than buried in an error sentence.
+     */
+    private $last_coverage = array();
+
+    /**
      * @return string Source slug stored on candidate rows.
      */
     public function get_slug() {
@@ -182,6 +190,13 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
      */
     public function get_last_response() {
         return $this->last_response;
+    }
+
+    /**
+     * @return array Per-size coverage from the last sweep: size => { received, total }.
+     */
+    public function get_last_coverage() {
+        return $this->last_coverage;
     }
 
     // --- Configuration ---
@@ -331,6 +346,7 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
     public function fetch( $sizes, $ceiling = null ) {
         $this->last_error    = '';
         $this->last_response = array();
+        $this->last_coverage = array();
 
         if ( ! self::is_configured() ) {
             $this->last_error = 'CJ is not configured — set the company ID and personal access token.';
@@ -424,6 +440,11 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
                 }
             } while ( $pages < $max_pages && ( null === $total || $collected < $total ) );
 
+            $this->last_coverage[ $size ] = array(
+                'received' => $collected,
+                'total'    => null === $total ? null : intval( $total ),
+            );
+
             if ( null !== $total && $collected < $total ) {
                 $truncated[ $size ] = array(
                     'received' => $collected,
@@ -450,7 +471,7 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
             }
 
             $failures[] = sprintf(
-                'Not every match was read: %s. A keyword search ranks rather than filters, so most of that is not tires — set a Google product category to narrow it.',
+                'Not every match was read: %s. Each run resumes where the last stopped, so a fitment completes across successive runs; raise the whole-run budget to get there sooner.',
                 implode( ', ', $parts )
             );
         }
@@ -525,7 +546,17 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
 
         $settings = get_option( 'rtg_settings', array() );
 
-        if ( isset( $settings['cj_targeted_enabled'] ) && ! $settings['cj_targeted_enabled'] ) {
+        // Off unless explicitly turned on, and the evidence for that is
+        // blunt: a live run reported a single brand-and-model keyword
+        // matching 81,653 products. A thousand records is 1.2% of that
+        // ranking, covering one search would take 82 requests, and covering
+        // the guide's models would take thousands. The pass spent a whole run
+        // budget and found nothing.
+        //
+        // The sweep's size keyword is the better instrument by an order of
+        // magnitude — a fitment reports around 5,000 matches, which is
+        // readable in a handful of requests — so the budget belongs there.
+        if ( empty( $settings['cj_targeted_enabled'] ) ) {
             return $result;
         }
 
