@@ -4,6 +4,20 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.65.0] - 2026-08-24
+
+### Fixed
+- **Retailer coverage was read from a column that goes stale.** A candidate's `matched_tire_id` is written during a sweep, and only for the rows that sweep happened to revisit — but the sweep is time-budgeted and rotates through sizes, so most rows go days between visits. That lost coverage two ways. A tire added or renamed in the guide today did not retro-match the candidate rows already stored for it; they kept an empty `matched_tire_id` until a sweep saw those products again. And `build_guide_index()` maps one key to one tire, so where two guide rows share a brand, model and size — the same tire in two load ratings — only the last one indexed was ever written to a candidate, and the other could never be covered at all. Coverage and pricing now compare match keys at read time, so both reflect the guide as it stands rather than as the last sweep left it.
+
+### Added
+- **Every uncovered tire now says why it isn't matched**, because "no retailer match" was one line covering situations that need completely different responses. Each tire is now classified: the fitment never reached the queue, the fitment is carried but not from that brand, the brand and fitment are both listed under a different model name, or the guide row itself can't be keyed on. Only the third is fixable by hand, and it was invisible among the rest — so when it applies, the model names the retailers actually use are listed alongside, and aligning the guide's model to one of them matches the tire on the next run.
+- A one-line summary above the list breaking the gaps down by type, so the shape of the problem is legible before reading 131 rows.
+- **Stored matches are re-keyed against the guide on every sync**, so a tire added or renamed today stops showing its candidate rows as "awaiting review" for something already stocked. A status a person set is left alone; only the machine ones follow the new match.
+
+### Notes
+- The coverage lookups select only the columns they read. Each candidate row also stores an untouched copy of the source product node, and pulling those for sixteen thousand rows to compare prices would have cost tens of megabytes to answer a question that needs none of it.
+- The classifier is a pure function of a prepared index, so `tests/test-coverage.php` exercises it without storage — including a check that the count in "N listings reached the queue" counts listings rather than retailers, which it did not on the first pass.
+
 ## [1.64.2] - 2026-08-24
 
 ### Fixed

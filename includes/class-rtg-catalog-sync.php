@@ -205,6 +205,10 @@ class RTG_Catalog_Sync {
             $stats['sources'][] = $source_stats;
         }
 
+        // Rows the sweep didn't revisit still hold the match they were given
+        // when they were last seen, which the guide may have moved on from.
+        $stats['rematched'] = RTG_Candidates::refresh_matches( $guide_index );
+
         if ( ! empty( $stats['errors'] ) && 0 === $stats['fetched'] ) {
             $stats['status']  = 'error';
             $stats['message'] = $stats['errors'][0]['message'];
