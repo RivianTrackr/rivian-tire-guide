@@ -19,6 +19,8 @@ if ( isset( $_POST['rtg_catalog_settings_save'] ) ) {
     $settings['cj_advertisers'] = sanitize_textarea_field( wp_unslash( $_POST['cj_advertisers'] ?? '' ) );
     $settings['cj_limit']        = max( 1, min( 1000, intval( $_POST['cj_limit'] ?? RTG_Catalog_Source_CJ::DEFAULT_LIMIT ) ) );
     $settings['cj_sweep_budget'] = max( 15, min( 600, intval( $_POST['cj_sweep_budget'] ?? RTG_Catalog_Source_CJ::SWEEP_BUDGET ) ) );
+    $settings['cj_max_pages']    = max( 1, min( 50, intval( $_POST['cj_max_pages'] ?? RTG_Catalog_Source_CJ::DEFAULT_MAX_PAGES ) ) );
+    $settings['cj_category_names'] = sanitize_textarea_field( wp_unslash( $_POST['cj_category_names'] ?? '' ) );
 
     // The query document is GraphQL, so it must not be run through a sanitizer
     // that mangles braces or quotes; it is never output unescaped.
@@ -110,6 +112,8 @@ $cj_company_id   = RTG_Catalog_Source_CJ::get_company_id();
 $cj_advertisers  = $settings['cj_advertisers'] ?? '';
 $cj_limit        = intval( $settings['cj_limit'] ?? RTG_Catalog_Source_CJ::DEFAULT_LIMIT );
 $cj_sweep_budget = intval( $settings['cj_sweep_budget'] ?? RTG_Catalog_Source_CJ::SWEEP_BUDGET );
+$cj_max_pages    = intval( $settings['cj_max_pages'] ?? RTG_Catalog_Source_CJ::DEFAULT_MAX_PAGES );
+$cj_categories   = $settings['cj_category_names'] ?? '';
 $cj_query        = $settings['cj_query'] ?? '';
 $cj_has_pat      = '' !== RTG_Catalog_Source_CJ::get_pat();
 $cj_pat_constant = RTG_Catalog_Source_CJ::pat_is_constant();
@@ -732,6 +736,36 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 carry several hundred, and anything beyond this is discarded by the retailer before it
                                 reaches the queue, so a tire that plainly exists can look like nobody stocks it. When a
                                 run comes back capped, the status above says so and names the sizes.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="cj_category_names">Product category</label></th>
+                        <td>
+                            <textarea name="cj_category_names" id="cj_category_names" rows="2" class="large-text code" placeholder="Tires"><?php echo esc_textarea( $cj_categories ); ?></textarea>
+                            <p class="description" style="max-width:680px;">
+                                One Google product category per line. <strong>This is the single most useful setting
+                                here.</strong> A keyword search ranks by relevance rather than filtering — asking CJ for
+                                one tire size reports over five thousand matches, almost none of them that fitment — so
+                                without a category the sweep pages through most of a retailer's catalog to find a
+                                handful of tires. Leave blank to apply no filter.
+                            </p>
+                            <p class="description" style="margin-top:6px;">
+                                Try <code>Tires</code> first, then <code>Vehicles &amp; Parts &gt; Vehicle Parts &amp;
+                                Accessories &gt; Motor Vehicle Parts &gt; Motor Vehicle Tires</code>. Use
+                                <strong>Test Connection</strong> after each: the right value makes the match count fall
+                                sharply while still returning tires. If a value returns nothing, it isn't the one.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="cj_max_pages">Pages per size</label></th>
+                        <td>
+                            <input type="number" name="cj_max_pages" id="cj_max_pages" value="<?php echo esc_attr( $cj_max_pages ); ?>" min="1" max="50" class="small-text">
+                            <p class="description" style="max-width:680px;">
+                                How far to page through one size's matches before moving on — pages of "Records per
+                                size" each. Paging to the end of an unfiltered search would spend the whole budget on a
+                                single size, so a size stops here and the status says how much it left behind.
                             </p>
                         </td>
                     </tr>

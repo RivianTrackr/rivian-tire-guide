@@ -383,4 +383,54 @@ class Test_RTG_Catalog_Source_CJ extends WP_UnitTestCase {
     public function test_the_per_size_limit_covers_a_real_fitment() {
         $this->assertGreaterThanOrEqual( 500, RTG_Catalog_Source_CJ::DEFAULT_LIMIT );
     }
+
+    // --- Category filter ---
+
+    /**
+     * No configured category means no filter, expressed as null rather than an
+     * empty list — an empty list would ask CJ for products in no category.
+     */
+    public function test_no_configured_category_applies_no_filter() {
+        update_option( 'rtg_settings', array( 'cj_category_names' => '' ) );
+        $this->assertNull( RTG_Catalog_Source_CJ::get_category_names() );
+
+        update_option( 'rtg_settings', array( 'cj_category_names' => "   \n  \n" ) );
+        $this->assertNull( RTG_Catalog_Source_CJ::get_category_names() );
+    }
+
+    /**
+     * Categories are read one per line, blanks discarded.
+     */
+    public function test_categories_parse_one_per_line() {
+        update_option( 'rtg_settings', array(
+            'cj_category_names' => "Tires\n\nMotor Vehicle Tires\n",
+        ) );
+
+        $this->assertSame(
+            array( 'Tires', 'Motor Vehicle Tires' ),
+            RTG_Catalog_Source_CJ::get_category_names()
+        );
+    }
+
+    /**
+     * The shipped query declares the arguments introspection confirmed exist,
+     * so pagination and the category filter can actually be sent.
+     */
+    public function test_the_shipped_query_declares_pagination_and_category() {
+        $query = RTG_Catalog_Source_CJ::DEFAULT_QUERY;
+
+        $this->assertStringContainsString( '$offset: Int', $query );
+        $this->assertStringContainsString( 'offset: $offset', $query );
+        $this->assertStringContainsString( '$googleProductCategoryNames', $query );
+        $this->assertStringContainsString( 'googleProductCategoryNames: $googleProductCategoryNames', $query );
+    }
+
+    /**
+     * Paging far enough to matter is allowed by default: one size reported over
+     * five thousand matches on the first live sweep, and a single page of 1000
+     * reached a fraction of it.
+     */
+    public function test_the_page_allowance_can_reach_past_one_page() {
+        $this->assertGreaterThanOrEqual( 5, RTG_Catalog_Source_CJ::DEFAULT_MAX_PAGES );
+    }
 }
