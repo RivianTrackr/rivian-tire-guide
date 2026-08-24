@@ -59,6 +59,25 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
     const SWEEP_BUDGET = 240;
 
     /**
+     * Most pages to pull for a single size before moving on.
+     *
+     * A keyword search is a relevance ranking, not a filter: asking CJ for
+     * "255/65R19" reports over five thousand matches, almost none of them that
+     * fitment. Paging to the bitter end would spend the whole budget on one
+     * size, so a size stops here and says how much it left behind.
+     */
+    const DEFAULT_MAX_PAGES = 10;
+
+    /**
+     * Option holding where the next sweep should start in the size list.
+     *
+     * A sweep that can't finish inside its budget would otherwise cover the
+     * same leading sizes every run and never reach the rest. Starting where the
+     * last run stopped means coverage completes across successive runs.
+     */
+    const CURSOR_OPTION = 'rtg_cj_sweep_cursor';
+
+    /**
      * Advertisers to search, as CJ advertiser ID => display name.
      *
      * These are public directory identifiers, not credentials.
@@ -74,8 +93,15 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
      * Overridable from settings so a schema mismatch is a settings edit rather
      * than a plugin release.
      */
-    const DEFAULT_QUERY = 'query ShoppingProducts($companyId: ID!, $partnerIds: [ID!], $keywords: [String!]!, $limit: Int!) {
-  shoppingProducts(companyId: $companyId, partnerIds: $partnerIds, keywords: $keywords, limit: $limit) {
+    const DEFAULT_QUERY = 'query ShoppingProducts($companyId: ID!, $partnerIds: [ID!], $keywords: [String!]!, $limit: Int!, $offset: Int, $googleProductCategoryNames: [String!]) {
+  shoppingProducts(
+    companyId: $companyId
+    partnerIds: $partnerIds
+    keywords: $keywords
+    limit: $limit
+    offset: $offset
+    googleProductCategoryNames: $googleProductCategoryNames
+  ) {
     totalCount
     count
     resultList {
@@ -200,6 +226,29 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
     }
 
     /**
+     * Google product categories to restrict the search to.
+     *
+     * A keyword search ranks by relevance and does not filter, so asking for a
+     * tire size returns thousands of products that are not tires. Narrowing by
+     * category is the difference between paging through a retailer's whole
+     * catalog and asking only for the part that could possibly match.
+     *
+     * @return string[]|null Category names, or null to apply no filter.
+     */
+    public static function get_category_names() {
+        $settings = get_option( 'rtg_settings', array() );
+        $raw      = trim( (string) ( $settings['cj_category_names'] ?? '' ) );
+
+        if ( '' === $raw ) {
+            return null;
+        }
+
+        $names = array_values( array_filter( array_map( 'trim', preg_split( '/[\r\n]+/', $raw ) ), 'strlen' ) );
+
+        return $names ?: null;
+    }
+
+    /**
      * @return string GraphQL document to send.
      */
     public static function get_query_document() {
@@ -249,50 +298,95 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
         $truncated = array();
         $started   = microtime( true );
 
-        $settings = get_option( 'rtg_settings', array() );
-        $budget   = isset( $settings['cj_sweep_budget'] )
+        $settings  = get_option( 'rtg_settings', array() );
+        $budget    = isset( $settings['cj_sweep_budget'] )
             ? max( 15, min( 600, intval( $settings['cj_sweep_budget'] ) ) )
             : self::SWEEP_BUDGET;
+        $max_pages = isset( $settings['cj_max_pages'] )
+            ? max( 1, min( 50, intval( $settings['cj_max_pages'] ) ) )
+            : self::DEFAULT_MAX_PAGES;
+        $limit     = isset( $settings['cj_limit'] )
+            ? max( 1, min( 1000, intval( $settings['cj_limit'] ) ) )
+            : self::DEFAULT_LIMIT;
 
         $queue = array_values( array_filter( array_map( 'trim', (array) $sizes ), 'strlen' ) );
+        if ( empty( $queue ) ) {
+            return array();
+        }
 
-        foreach ( $queue as $index => $size ) {
-            // Stop before starting a request that would overrun the budget,
-            // so the run ends by choice rather than by being killed.
+        // Start where the last sweep stopped. A run that can't finish inside
+        // its budget would otherwise cover the same leading sizes every time
+        // and never reach the rest; rotating means coverage completes over
+        // successive runs instead of never.
+        $cursor = intval( get_option( self::CURSOR_OPTION, 0 ) );
+        if ( $cursor < 0 || $cursor >= count( $queue ) ) {
+            $cursor = 0;
+        }
+
+        $ordered     = array_merge( array_slice( $queue, $cursor ), array_slice( $queue, 0, $cursor ) );
+        $next_cursor = $cursor;
+
+        foreach ( $ordered as $index => $size ) {
+            // Stop before starting a size that would overrun the budget, so
+            // the run ends by choice rather than by being killed.
             if ( $index > 0 && ( microtime( true ) - $started ) > $budget ) {
-                $skipped = array_slice( $queue, $index );
+                $skipped     = array_slice( $ordered, $index );
+                $next_cursor = ( $cursor + $index ) % count( $queue );
                 break;
             }
 
-            $result = $this->query_keyword( $size );
+            $offset    = 0;
+            $collected = 0;
+            $total     = null;
+            $pages     = 0;
 
-            if ( '' !== $result['error'] ) {
-                $failures[] = $size . ': ' . $result['error'];
-                continue;
-            }
+            do {
+                $result = $this->query_keyword( $size, $offset );
 
-            foreach ( $result['products'] as $product ) {
-                // Later sizes can return a product an earlier one already did;
-                // key by external ID so it reaches the queue once.
-                $products[ $product['external_id'] ] = $product;
-            }
+                if ( '' !== $result['error'] ) {
+                    $failures[] = $size . ': ' . $result['error'];
+                    break;
+                }
 
-            // CJ says how many matched. Fewer in hand than it reports means the
-            // response was capped and tires that genuinely exist at a retailer
-            // never reached the queue — the failure that made a Michelin
-            // Defender plainly listed on Tire Rack show as "no retailer match".
-            $total = $result['total_count'];
-            if ( null !== $total && $total > count( $result['products'] ) ) {
+                $total    = $result['total_count'];
+                $returned = count( $result['products'] );
+
+                foreach ( $result['products'] as $product ) {
+                    // A product can match several sizes' keywords; key by
+                    // external ID so it reaches the queue once.
+                    $products[ $product['external_id'] ] = $product;
+                }
+
+                $collected += $returned;
+                $offset    += $limit;
+                $pages++;
+
+                // An empty page means the result set is exhausted whatever the
+                // reported total claims.
+                if ( 0 === $returned ) {
+                    break;
+                }
+
+                if ( ( microtime( true ) - $started ) > $budget ) {
+                    break;
+                }
+            } while ( $pages < $max_pages && ( null === $total || $collected < $total ) );
+
+            if ( null !== $total && $collected < $total ) {
                 $truncated[ $size ] = array(
-                    'received' => count( $result['products'] ),
+                    'received' => $collected,
                     'total'    => $total,
                 );
             }
+
+            $next_cursor = ( $cursor + $index + 1 ) % count( $queue );
         }
+
+        update_option( self::CURSOR_OPTION, $next_cursor, false );
 
         if ( ! empty( $skipped ) ) {
             $failures[] = sprintf(
-                'Time budget reached — %s not checked this run.',
+                'Time budget reached — %s not checked this run; the next run starts there.',
                 implode( ', ', $skipped )
             );
         }
@@ -300,11 +394,11 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
         if ( ! empty( $truncated ) ) {
             $parts = array();
             foreach ( $truncated as $size => $counts ) {
-                $parts[] = sprintf( '%s (%d of %d)', $size, $counts['received'], $counts['total'] );
+                $parts[] = sprintf( '%s (%s of %s)', $size, number_format( $counts['received'] ), number_format( $counts['total'] ) );
             }
 
             $failures[] = sprintf(
-                'Results capped — raise "Records per size" to see the rest: %s.',
+                'Not every match was read: %s. A keyword search ranks rather than filters, so most of that is not tires — set a Google product category to narrow it.',
                 implode( ', ', $parts )
             );
         }
@@ -320,9 +414,10 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
      * Run one keyword query and normalize the products it returns.
      *
      * @param string $keyword Search keyword — a tire size.
-     * @return array { products: array[], error: string, raw: array }
+     * @param int    $offset  Records to skip, for paging through a large match set.
+     * @return array { products: array[], total_count: int|null, error: string, raw: array }
      */
-    public function query_keyword( $keyword ) {
+    public function query_keyword( $keyword, $offset = 0 ) {
         $settings = get_option( 'rtg_settings', array() );
         $limit    = intval( $settings['cj_limit'] ?? self::DEFAULT_LIMIT );
         $limit    = max( 1, min( 1000, $limit ) );
@@ -332,10 +427,15 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
         $body = wp_json_encode( array(
             'query'     => self::get_query_document(),
             'variables' => array(
-                'companyId'  => self::get_company_id(),
-                'partnerIds' => array_keys( $advertisers ),
-                'keywords'   => array( $keyword ),
-                'limit'      => $limit,
+                'companyId'                  => self::get_company_id(),
+                'partnerIds'                 => array_keys( $advertisers ),
+                'keywords'                   => array( $keyword ),
+                'limit'                      => $limit,
+                'offset'                     => max( 0, intval( $offset ) ),
+                // Null means "don't filter". A keyword search ranks by
+                // relevance rather than filtering, so without a category the
+                // response is mostly products that aren't tires at all.
+                'googleProductCategoryNames' => self::get_category_names(),
             ),
         ) );
 

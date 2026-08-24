@@ -4,6 +4,18 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.64.0] - 2026-08-24
+
+### Added
+- **Discovery pages through a size's full match set** rather than reading the first page and stopping. Introspecting CJ's schema settled what its documentation wouldn't: `shoppingProducts` accepts `offset` and `limit`, so the sweep now pages until the reported total is reached, a page comes back empty, or the page allowance is spent — and says which, per size.
+- **A Google product category filter**, and it is the setting that matters most here. The first live sweep showed why: CJ reported **5,643 matches for `255/65R19`** and the same figure for `255/55R21`. A keyword search *ranks by relevance rather than filtering*, so a tire size returns thousands of products that are not that fitment and mostly are not tires. Left unfiltered, a full sweep means paging through most of a retailer's catalog to find a handful of matches. Configurable one category per line; blank applies no filter, and the settings screen explains how to find the working value with Test Connection.
+- **The sweep now starts where the last one stopped.** A run that can't finish inside its time budget previously covered the same leading sizes every time and never reached the rest — with nine sizes and a budget that fits perhaps five, the last four would never be checked at all. Coverage now completes across successive runs, and the status names the sizes left for next time.
+- **A page allowance per size** (default 10), so one size's unfiltered match set can't consume the entire budget. Whatever is left unread is reported with its counts.
+
+### Notes
+- The category value is left to configuration rather than hardcoded: CJ's taxonomy naming could not be verified from the development environment, and a wrong guess baked into the query would silently return nothing. Test Connection reports the match count, which is the fastest way to confirm a value works — the right one makes the count fall sharply while still returning tires.
+- "No category configured" is sent as null, not an empty list: an empty list would ask for products belonging to no category at all.
+
 ## [1.63.1] - 2026-08-24
 
 ### Fixed
