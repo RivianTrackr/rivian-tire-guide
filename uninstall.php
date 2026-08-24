@@ -10,12 +10,14 @@ $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}rtg_ratings" );
 $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}rtg_favorites" );
 $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}rtg_click_events" );
 $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}rtg_search_events" );
+$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}rtg_tire_candidates" );
 
 delete_option( 'rtg_version' );
 delete_option( 'rtg_db_version' );
 delete_option( 'rtg_settings' );
 delete_option( 'rtg_dropdown_options' );
 delete_option( 'rtg_flush_rewrite' );
+delete_option( 'rtg_catalog_sync_stats' );
 
 // Legacy AI feature cleanup (removed in 1.46.0). These are harmless if
 // absent — WP's delete_option() and the LIKE delete are both no-ops when

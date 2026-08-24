@@ -32,6 +32,15 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Sort & Compare** — "Real-World Efficiency" sort option and comparison row in Performance section.
 - **Dashboard** — Roamer overview card (coverage, avg/best/worst mi/kWh, sessions, vehicles, last sync) and top 5 most efficient tires by real-world data.
 
+### Tire Discovery (Affiliate Catalog Monitoring)
+- **Daily Catalog Check** — Watches affiliate catalogs for tires in Rivian fitments that aren't in the guide yet, so new arrivals surface on their own instead of waiting on a manual search of each size.
+- **Qualification Rules** — Every product is judged against the guide's requirements: size must be a Rivian fitment, load index must clear a configurable floor (default 112 — the R2 minimum; R1 needs 116), and the listing must be identifiable. Specs are parsed out of the product title when the feed doesn't supply them as fields.
+- **Review Queue** — Admin page badged with the number awaiting a decision, split across Awaiting Review / Near Misses / Already in Guide / Dismissed / Added and filterable by size. Near misses show the reason they were held back rather than being silently filtered out.
+- **One-Click Add** — Opens the Add New Tire form prefilled with brand, model, size, price, load index, load range, speed rating and purchase link, plus derived diameter and max load.
+- **Sticky Dismissals** — A dismissed candidate never returns to the queue, so it stays short enough to stay useful. Decisions made by a person always outrank what a later run concludes.
+- **Email Digest** — Sent only when a run finds a qualifying tire not seen before.
+- **Pluggable Sources** — Retailers sit behind the `RTG_Catalog_Source` interface and register via the `rtg_catalog_sources` filter. A JSON-backed source ships with the plugin and doubles as a fallback for retailers with no machine-readable feed.
+
 ### Analytics
 - **Click Tracking** — Tracks affiliate link clicks (purchase, review) via `navigator.sendBeacon()` with 5-second server-side deduplication.
 - **Search Analytics** — Tracks search queries, active filters, sort options, and result counts with client-side debounce and server-side deduplication.
@@ -47,6 +56,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **CSV Import/Export** — Bulk import with duplicate handling (skip/update), auto-generated IDs, auto-calculated efficiency, MIME validation, and full catalog export.
 - **Reviews Management** — Pending/approved/rejected tabs with approve, reject, and delete actions.
 - **Affiliate Links Dashboard** — Centralized view of all purchase and review links with link classification (affiliate vs. direct), filter tabs, and inline AJAX editing.
+- **Tire Discovery** — Review queue for tires found in affiliate catalogs (see Tire Discovery section above), with its own settings for the daily check, the digest email, and the minimum load index.
 - **Stock Wheels Guide** — Manage stock wheel data for Rivian models.
 - **Analytics** — Visual analytics with Chart.js (see Analytics section above).
 - **Settings** — Rows per page, compare slug, user reviews slug, server-side pagination toggle, theme colors (14 CSS custom properties), dropdown options (brands, sizes, categories, load ranges, speed ratings, size-to-diameter mapping, load index-to-lbs mapping), affiliate domains, and analytics retention.

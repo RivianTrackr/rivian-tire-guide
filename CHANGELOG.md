@@ -4,6 +4,21 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.59.0] - 2026-08-24
+
+### Added
+- **Tire Discovery — automatic monitoring of affiliate catalogs for new tires.** Finding out that Tire Rack or SimpleTire had started carrying a new tire in a Rivian fitment meant remembering to go and search for it, one size at a time; in practice that happened rarely and things were missed. A daily check now does it: every product it sees is judged against the guide's requirements, matched against the tires already listed, and anything both eligible and genuinely new is queued for review and emailed as a digest. A run that finds nothing new sends nothing.
+- **A review queue at Tire Guide → Tire Discovery**, badged in the menu with the number awaiting a decision. Candidates are split across five views — Awaiting Review, Near Misses, Already in Guide, Dismissed and Added — and filterable by size. **Add to Guide** opens the normal Add New Tire form with brand, model, size, price, load index, load range, speed rating and purchase link already filled in, plus the diameter and max load the guide derives from them; category, warranty, weight and tread are deliberately left blank rather than guessed at. Saving the tire closes out the candidate.
+- **Near misses are visible rather than silently filtered.** A tire that clears every rule but one — the right size at load index 109, say — is listed with the reason it was held back, because that is exactly the row worth a second opinion. Every failed rule is reported at once, so fixing one doesn't reveal another on the next run.
+- **Dismissals are permanent.** A candidate you say no to never returns to the queue however many times the sync sees it again, which is what keeps the queue short enough to stay read. Statuses a person set (dismissed, added) always outrank whatever a later run concludes; machine-assigned ones are recomputed, so a tire rejected under a stricter load index floor surfaces on its own once the floor is lowered.
+- **Settings for the discovery rules** on the same page: enable/disable the daily check, toggle the digest email, and set the minimum load index (defaulting to 112, the R2 floor, so an R2-legal tire still surfaces for review — R1 needs 116). The load index minimum is clamped to the range the load-index table actually covers, so a typo can't disqualify every tire at once.
+
+### Internal
+- Qualification lives in `RTG_Tire_Qualifier`, as pure functions of their inputs with the thresholds passed in rather than read from the database. Retailers describe a tire as marketing copy — "Michelin Defender LTX M/S2 275/65R18 116T" is a typical title and there may be no size field at all — so the class first pulls specs out of the text, then judges the result. The parser handles the notations both retailers actually publish: `LT`/`P` prefixes, `ZR` construction, a space before the `R`, and dual load indices with a spelled-out load range. Load index and speed rating are read only from the text *following* the size, because searching the whole title reads the "18" out of "275/65R18" as a load index.
+- Sources sit behind an `RTG_Catalog_Source` interface and are registered through the `rtg_catalog_sources` filter, so adding a retailer means writing a `fetch()` and nothing downstream changes. A JSON-backed source ships with it, which makes the pipeline testable without affiliate credentials and doubles as a usable fallback for any retailer with no machine-readable feed.
+- Tires are recognized across retailers by a match key that squashes the punctuation retailers are inconsistent about, so "Defender LTX M/S 2" and "Defender LTX M/S2" resolve to one tire. A key that misses costs one queue row a human dismisses; that's the right way round, since a false "already have it" would silently hide a genuine find, which is the failure this feature exists to fix.
+- New `rtg_tire_candidates` table (migration 18) keyed on source + advertiser + product ID, holding what was seen, what was decided, and when it was first and last seen. Covered by `tests/test-tire-qualifier.php` and `tests/test-catalog-sync.php`.
+
 ## [1.58.6] - 2026-08-21
 
 ### Fixed

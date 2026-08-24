@@ -11,5 +11,6 @@ class RTG_Deactivator {
         wp_clear_scheduled_hook( 'rtg_analytics_cleanup' );
         RTG_Link_Checker::unschedule();
         RTG_Roamer_Sync::unschedule();
+        RTG_Catalog_Sync::unschedule();
     }
 }
