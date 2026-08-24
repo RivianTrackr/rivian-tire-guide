@@ -181,15 +181,84 @@ class Test_RTG_Tire_Qualifier extends WP_UnitTestCase {
     /**
      * A listing with no load index is held back for confirmation rather than
      * admitted on the assumption it's fine.
+     *
+     * It warns rather than disqualifies. The first live run against CJ showed
+     * why: Tire Rack listings routinely omit the load index, and treating that
+     * as a failure filed genuinely new tires under near misses where they were
+     * never seen — defeating the point of watching the catalog.
      */
-    public function test_qualify_flags_a_missing_load_index() {
+    public function test_qualify_warns_about_a_missing_load_index_without_rejecting() {
         $result = RTG_Tire_Qualifier::evaluate(
             array( 'title' => 'Michelin Pilot Sport EV 275/65R18', 'brand' => 'Michelin' ),
             $this->context()
         );
 
-        $this->assertFalse( $result['qualifies'] );
-        $this->assertContains( 'load_index_unknown', $this->codes( $result ) );
+        $this->assertTrue( $result['qualifies'] );
+        $this->assertSame( array(), $result['reasons'] );
+        $this->assertContains( 'load_index_unknown', array_column( $result['warnings'], 'code' ) );
+    }
+
+    /**
+     * Every speed rating in industry use passes, even when the site's saved
+     * dropdown is dirty.
+     *
+     * The list is edited as free text, so it can easily end up carrying stray
+     * line endings — which is what happened on the first live CJ run, where a
+     * strict comparison flagged every ordinary "V", "W", "H" and "T" as
+     * unrecognized. The configured list is now unioned with the canonical one.
+     */
+    public function test_qualify_accepts_valid_speed_ratings_despite_a_dirty_dropdown() {
+        $context = $this->context();
+
+        // Saved values carrying carriage returns, as a textarea round-trip leaves them.
+        $context['speed_ratings'] = array( "T\r", "H\r", "V\r", "W\r" );
+
+        foreach ( array( 'T', 'H', 'V', 'W', 'Q', 'Y' ) as $rating ) {
+            $result = RTG_Tire_Qualifier::evaluate(
+                array( 'title' => "Pirelli Scorpion 275/65R18 116{$rating}", 'brand' => 'Pirelli' ),
+                $context
+            );
+
+            $codes = array_merge(
+                array_column( $result['reasons'], 'code' ),
+                array_column( $result['warnings'], 'code' )
+            );
+
+            $this->assertNotContains( 'speed_rating_unknown', $codes, "Speed rating {$rating} should be accepted" );
+        }
+    }
+
+    /**
+     * A warning never disqualifies, so a rule that only warns can't hide a row.
+     */
+    public function test_warnings_do_not_disqualify() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'BFGoodrich All-Terrain T/A KO3 275/65R18', 'brand' => 'BFGoodrich' ),
+            $this->context()
+        );
+
+        $this->assertTrue( $result['qualifies'] );
+        $this->assertNotEmpty( $result['warnings'] );
+    }
+
+    /**
+     * The rules that should still reject, do. Loosening the soft ones must not
+     * have loosened the fitment and safety gates with them.
+     */
+    public function test_hard_rules_still_reject() {
+        $wrong_size = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Atlas Force 285/45R22 114V', 'brand' => 'Atlas' ),
+            $this->context()
+        );
+        $this->assertFalse( $wrong_size['qualifies'] );
+        $this->assertContains( 'size_not_stocked', $this->codes( $wrong_size ) );
+
+        $low_index = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Fuzion Highway 275/65R18 110H', 'brand' => 'Fuzion' ),
+            $this->context()
+        );
+        $this->assertFalse( $low_index['qualifies'] );
+        $this->assertContains( 'load_index_low', $this->codes( $low_index ) );
     }
 
     /**

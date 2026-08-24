@@ -164,6 +164,7 @@ class RTG_Catalog_Sync {
                     'match_key'       => $match_key,
                     'qualifies'       => $evaluated['qualifies'],
                     'fail_reasons'    => $evaluated['reasons'],
+                    'warnings'        => $evaluated['warnings'] ?? array(),
                     'matched_tire_id' => $guide_index[ $match_key ] ?? '',
                     'raw'             => $product,
                 ) );

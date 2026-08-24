@@ -79,9 +79,18 @@ class RTG_Candidates {
         $now = current_time( 'mysql' );
 
         // The status this run concludes, before human decisions are applied.
-        $computed_status = self::STATUS_REJECTED;
-        if ( ! empty( $row['qualifies'] ) ) {
-            $computed_status = empty( $row['matched_tire_id'] ) ? self::STATUS_NEW : self::STATUS_EXISTING;
+        //
+        // Matching a guide tire settles it first, ahead of qualification. A
+        // product you already stock is "already in the guide" whatever the
+        // rules make of the listing's own wording; judging it first would file
+        // a tire you own under near misses because its listing happened to omit
+        // a load index, which is both untrue and unhelpful.
+        if ( ! empty( $row['matched_tire_id'] ) ) {
+            $computed_status = self::STATUS_EXISTING;
+        } elseif ( ! empty( $row['qualifies'] ) ) {
+            $computed_status = self::STATUS_NEW;
+        } else {
+            $computed_status = self::STATUS_REJECTED;
         }
 
         $existing = $wpdb->get_row(
@@ -110,7 +119,10 @@ class RTG_Candidates {
             'image'           => (string) ( $row['image'] ?? '' ),
             'match_key'       => (string) ( $row['match_key'] ?? '' ),
             'qualifies'       => ! empty( $row['qualifies'] ) ? 1 : 0,
-            'fail_reasons'    => wp_json_encode( $row['fail_reasons'] ?? array() ),
+            'fail_reasons'    => wp_json_encode( array(
+                'reasons'  => $row['fail_reasons'] ?? array(),
+                'warnings' => $row['warnings'] ?? array(),
+            ) ),
             'matched_tire_id' => (string) ( $row['matched_tire_id'] ?? '' ),
             'raw_json'        => wp_json_encode( $row['raw'] ?? array() ),
             'last_seen_at'    => $now,
@@ -300,10 +312,21 @@ class RTG_Candidates {
      * @return array Row with fail_reasons/raw decoded and types normalized.
      */
     private static function hydrate( $row ) {
-        $row['qualifies']    = ! empty( $row['qualifies'] );
-        $row['price']        = floatval( $row['price'] );
-        $row['fail_reasons'] = json_decode( (string) ( $row['fail_reasons'] ?? '' ), true ) ?: array();
-        $row['raw']          = json_decode( (string) ( $row['raw_json'] ?? '' ), true ) ?: array();
+        $row['qualifies'] = ! empty( $row['qualifies'] );
+        $row['price']     = floatval( $row['price'] );
+        $row['raw']       = json_decode( (string) ( $row['raw_json'] ?? '' ), true ) ?: array();
+
+        // Rows written before warnings existed hold a bare array of failures;
+        // newer ones hold { reasons, warnings }. Read both so an upgrade
+        // doesn't blank the reasons already on screen.
+        $decoded = json_decode( (string) ( $row['fail_reasons'] ?? '' ), true ) ?: array();
+        if ( isset( $decoded['reasons'] ) || isset( $decoded['warnings'] ) ) {
+            $row['fail_reasons'] = (array) ( $decoded['reasons'] ?? array() );
+            $row['warnings']     = (array) ( $decoded['warnings'] ?? array() );
+        } else {
+            $row['fail_reasons'] = $decoded;
+            $row['warnings']     = array();
+        }
 
         unset( $row['raw_json'] );
 
