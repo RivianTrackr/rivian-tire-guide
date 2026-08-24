@@ -329,23 +329,64 @@ class Test_RTG_Catalog_Sync extends WP_UnitTestCase {
 
     // --- Targeted lookup terms ---
 
+    private function uncovered_tire( $id, $brand, $model, $size ) {
+        RTG_Database::insert_tire( array(
+            'tire_id' => $id,
+            'brand'   => $brand,
+            'model'   => $model,
+            'size'    => $size,
+            'price'   => 300.00,
+        ) );
+    }
+
     /**
-     * A guide tire nothing in the queue keys to becomes a search term naming
-     * the brand, model and size, because that is the question the sweep's
-     * bare-fitment keyword cannot ask.
+     * A guide tire nothing in the queue keys to becomes a search naming the
+     * brand and model.
      */
     public function test_uncovered_tires_become_search_terms() {
-        RTG_Database::insert_tire( array(
-            'tire_id' => 'uncovered-001',
-            'brand'   => 'Michelin',
-            'model'   => 'Defender LTX M/S2',
-            'size'    => '305/45R22',
-            'price'   => 358.00,
-        ) );
+        $this->uncovered_tire( 'uncovered-001', 'Michelin', 'Defender LTX M/S2', '305/45R22' );
 
-        $terms = RTG_Catalog_Sync::uncovered_terms( array() );
+        $result = RTG_Catalog_Sync::uncovered_terms( array() );
 
-        $this->assertContains( 'Michelin Defender LTX M/S2 305/45R22', array_values( $terms ) );
+        $this->assertContains( 'Michelin Defender LTX M/S2', $result['terms'] );
+    }
+
+    /**
+     * The size is deliberately left out of the term.
+     *
+     * The probe settled why: asking CJ for "Michelin Defender LTX M/S2
+     * 305/45R22" returned that exact model from Tire Rack in 285/45R22 and
+     * 275/45R22. The words match, the size is scored rather than applied, so
+     * carrying it only dilutes the part that works.
+     */
+    public function test_search_terms_carry_no_size() {
+        $this->uncovered_tire( 'uncovered-002', 'Michelin', 'Defender LTX M/S2', '305/45R22' );
+
+        $result = RTG_Catalog_Sync::uncovered_terms( array() );
+
+        foreach ( $result['terms'] as $term ) {
+            $this->assertDoesNotMatchRegularExpression( '#\d{3}/\d{2}R\d{2}#', $term );
+        }
+    }
+
+    /**
+     * Several uncovered sizes of one model are one request, not one each.
+     */
+    public function test_sizes_of_one_model_collapse_to_a_single_term() {
+        $this->uncovered_tire( 'uncovered-003', 'Nitto', 'Ridge Grappler', '275/65R20' );
+        $this->uncovered_tire( 'uncovered-004', 'Nitto', 'Ridge Grappler', '275/60R20' );
+
+        $result = RTG_Catalog_Sync::uncovered_terms( array() );
+
+        $this->assertSame(
+            array( 'Nitto Ridge Grappler' ),
+            array_values( array_filter( $result['terms'], function ( $term ) {
+                return 'Nitto Ridge Grappler' === $term;
+            } ) )
+        );
+        $this->assertCount( 2, array_filter( $result['wanted'], function ( $term ) {
+            return 'Nitto Ridge Grappler' === $term;
+        } ) );
     }
 
     /**
@@ -353,17 +394,11 @@ class Test_RTG_Catalog_Sync extends WP_UnitTestCase {
      * to close gaps, not to re-ask questions already answered.
      */
     public function test_covered_tires_are_not_looked_up() {
-        RTG_Database::insert_tire( array(
-            'tire_id' => 'covered-001',
-            'brand'   => 'Michelin',
-            'model'   => 'Defender LTX M/S2',
-            'size'    => '305/45R22',
-            'price'   => 358.00,
-        ) );
+        $this->uncovered_tire( 'covered-001', 'Michelin', 'Defender LTX M/S2', '305/45R22' );
 
-        $key   = RTG_Catalog_Sync::match_key( 'Michelin', 'Defender LTX M/S2', '305/45R22' );
-        $terms = RTG_Catalog_Sync::uncovered_terms( array( $key => array( 'anything' ) ) );
+        $key    = RTG_Catalog_Sync::match_key( 'Michelin', 'Defender LTX M/S2', '305/45R22' );
+        $result = RTG_Catalog_Sync::uncovered_terms( array( $key => array( 'anything' ) ) );
 
-        $this->assertNotContains( 'Michelin Defender LTX M/S2 305/45R22', array_values( $terms ) );
+        $this->assertArrayNotHasKey( $key, $result['wanted'] );
     }
 }

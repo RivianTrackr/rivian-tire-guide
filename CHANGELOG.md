@@ -4,6 +4,17 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.68.0] - 2026-08-24
+
+### Changed
+- **Direct lookups now search by brand and model, and filter the fitment here.** The keyword probe settled how CJ treats a term: asking for `Michelin Defender LTX M/S2 305/45R22` returned that exact model from Tire Rack in **285/45R22** and **275/45R22**. The words match — the model is in the feed, from the right retailer — but the size is scored rather than applied. Carrying it in the term only diluted the part that works, and the previous release then discarded both results for being the wrong fitment. The size comes out of the term; anything returned in a fitment the guide uses is kept.
+- **A search covers every uncovered size of its model at once.** Terms are deduplicated by brand and model, so a model the guide stocks in four sizes is one request rather than four. The status reports both figures — searches run, and uncovered tires they cover.
+- **The fitment guard accepts any size the guide uses,** not only the one that prompted the search. A model search returns that model in every size CJ holds, and some of those are other guide tires — dropping them would discard a match the next search was about to go looking for.
+
+### Notes
+- What the probe returned is now the fixture the contract check runs against, including the off-guide fitments, so the behaviour that drove this change is pinned rather than described.
+- Still open, and visible in the same status line: whether the fitments the guide wants exist in the feed at all. A model that comes back only in sizes the guide does not stock is a retailer catalog gap, and no query change reaches a product the feed does not carry.
+
 ## [1.67.1] - 2026-08-24
 
 ### Fixed

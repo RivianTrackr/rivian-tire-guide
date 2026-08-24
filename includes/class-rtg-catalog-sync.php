@@ -233,14 +233,15 @@ class RTG_Catalog_Sync {
      * @param string $label       Source label, used when the feed names no advertiser.
      * @param array  $context     Qualification context.
      * @param array  $guide_index Match key => tire_id.
-     * @param string $only_size   Store only this fitment; '' accepts any.
+     * @param array  $only_sizes  Store only these fitments, as a size => true
+     *                            set; empty accepts any.
      * @return array { evaluated: array, result: array, match_key: string, skipped: bool }
      */
-    private static function ingest( $product, $slug, $label, $context, $guide_index, $only_size = '' ) {
+    private static function ingest( $product, $slug, $label, $context, $guide_index, $only_sizes = array() ) {
         $evaluated = RTG_Tire_Qualifier::evaluate( $product, $context );
         $match_key = self::match_key( $evaluated['brand'], $evaluated['model'], $evaluated['size'] );
 
-        if ( '' !== $only_size && $evaluated['size'] !== $only_size ) {
+        if ( ! empty( $only_sizes ) && ! isset( $only_sizes[ $evaluated['size'] ] ) ) {
             return array(
                 'evaluated' => $evaluated,
                 'result'    => array( 'status' => '', 'newly_surfaced' => false, 'id' => 0 ),
@@ -283,11 +284,25 @@ class RTG_Catalog_Sync {
     /**
      * Search terms for the guide tires nothing in the queue keys to.
      *
+     * A term names the brand and model and deliberately omits the size, which
+     * the probe settled: asking CJ for "Michelin Defender LTX M/S2 305/45R22"
+     * returned that exact model from Tire Rack in 285/45R22 and 275/45R22.
+     * The words match; the size is scored, not applied. Leaving it in the term
+     * only dilutes the part that works, and the fitment is something this side
+     * can filter on exactly.
+     *
+     * Omitting it also collapses the work: every uncovered size of one model
+     * becomes a single request rather than one per fitment.
+     *
      * @param array $covered_keys Match keys the queue already holds.
-     * @return array Match key => "Brand Model Size".
+     * @return array {
+     *     @type string[] $terms  Distinct "Brand Model" searches to run.
+     *     @type array    $wanted Match key => term, for the tires being sought.
+     * }
      */
     public static function uncovered_terms( $covered_keys ) {
-        $terms = array();
+        $terms  = array();
+        $wanted = array();
 
         foreach ( RTG_Database::get_all_tires() as $tire ) {
             $key = self::match_key( $tire['brand'] ?? '', $tire['model'] ?? '', $tire['size'] ?? '' );
@@ -297,18 +312,23 @@ class RTG_Catalog_Sync {
             }
 
             $term = trim( preg_replace( '/\s+/', ' ', sprintf(
-                '%s %s %s',
+                '%s %s',
                 $tire['brand'] ?? '',
-                $tire['model'] ?? '',
-                $tire['size'] ?? ''
+                $tire['model'] ?? ''
             ) ) );
 
-            if ( '' !== $term ) {
-                $terms[ $key ] = $term;
+            if ( '' === $term ) {
+                continue;
             }
+
+            $terms[ $term ] = true;
+            $wanted[ $key ] = $term;
         }
 
-        return $terms;
+        return array(
+            'terms'  => array_keys( $terms ),
+            'wanted' => $wanted,
+        );
     }
 
     /**
@@ -326,6 +346,7 @@ class RTG_Catalog_Sync {
     private static function run_targeted_lookup( $context, $guide_index ) {
         $stats = array(
             'terms'     => 0,
+            'tires'     => 0,
             'checked'   => 0,
             'answered'  => 0,
             'matched'   => 0,
@@ -336,19 +357,35 @@ class RTG_Catalog_Sync {
             'errors'    => array(),
         );
 
-        $terms = self::uncovered_terms( RTG_Candidates::get_by_match_key() );
-        $stats['terms'] = count( $terms );
+        $uncovered = self::uncovered_terms( RTG_Candidates::get_by_match_key() );
 
-        if ( empty( $terms ) ) {
+        $stats['terms'] = count( $uncovered['terms'] );
+        $stats['tires'] = count( $uncovered['wanted'] );
+
+        if ( empty( $uncovered['terms'] ) ) {
             return $stats;
         }
+
+        // Any fitment the guide covers is worth keeping, not only the one that
+        // prompted the search. A search for a model returns it in every size
+        // CJ holds, and some of those are other guide tires — dropping them
+        // would throw away a match we were about to go looking for anyway.
+        $guide_sizes = array();
+        foreach ( RTG_Admin::get_dropdown_options( 'sizes' ) as $size ) {
+            $normalized = RTG_Tire_Qualifier::normalize_size( $size );
+            if ( '' !== $normalized ) {
+                $guide_sizes[ $normalized ] = true;
+            }
+        }
+
+        $covered = array();
 
         foreach ( self::get_sources() as $source ) {
             if ( ! method_exists( $source, 'fetch_terms' ) ) {
                 continue;
             }
 
-            $lookup = $source->fetch_terms( array_values( $terms ) );
+            $lookup = $source->fetch_terms( $uncovered['terms'] );
 
             $stats['checked'] += $lookup['checked'];
             $stats['pending']  = max( $stats['pending'], $lookup['pending'] );
@@ -362,19 +399,12 @@ class RTG_Catalog_Sync {
 
             $seen = array();
 
-            foreach ( $terms as $key => $term ) {
-                $products = $lookup['by_term'][ $term ] ?? array();
-
+            foreach ( $lookup['by_term'] as $term => $products ) {
                 if ( empty( $products ) ) {
                     continue;
                 }
 
                 $stats['answered']++;
-
-                // The fitment this term was asking about. A match key is
-                // brand|model|size, so the size is the third field.
-                $parts = explode( '|', $key );
-                $want  = $parts[2] ?? '';
 
                 foreach ( $products as $product ) {
                     $id = (string) ( $product['external_id'] ?? '' );
@@ -389,17 +419,16 @@ class RTG_Catalog_Sync {
                         $source->get_label(),
                         $context,
                         $guide_index,
-                        $want
+                        $guide_sizes
                     );
 
                     if ( $ingested['skipped'] ) {
-                        // Kept out of the queue rather than stored: a targeted
-                        // lookup asks about one fitment, and CJ ranks rather
-                        // than filters, so most of what comes back is another
-                        // fitment entirely. Storing it added four thousand
-                        // rows to the near-miss queue in a single run without
-                        // covering one more tire. The sweep is what canvasses
-                        // fitments; this pass answers one question.
+                        // Left out rather than stored. CJ scores a keyword
+                        // instead of filtering on it, so most of what a search
+                        // returns is a fitment the guide has no use for;
+                        // storing it added four thousand near misses in one
+                        // run without covering a tire. Canvassing fitments is
+                        // the sweep's job — this pass answers one question.
                         $stats['off_size']++;
                         continue;
                     }
@@ -411,16 +440,19 @@ class RTG_Catalog_Sync {
                         $stats['qualified']++;
                     }
 
-                    // The only outcome that means the lookup worked: a product
-                    // came back that keys to the tire we asked about. Counting
-                    // "the request returned something" instead reported 111 of
-                    // 111 successful while coverage did not move at all.
-                    if ( $key === $ingested['match_key'] ) {
-                        $stats['matched']++;
+                    // The only outcome that means the pass worked: a product
+                    // came back that keys to a tire we were looking for.
+                    // Counting "the request returned something" instead
+                    // reported 111 of 111 successful while coverage did not
+                    // move at all.
+                    if ( isset( $uncovered['wanted'][ $ingested['match_key'] ] ) ) {
+                        $covered[ $ingested['match_key'] ] = true;
                     }
                 }
             }
         }
+
+        $stats['matched'] = count( $covered );
 
         return $stats;
     }

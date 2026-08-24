@@ -38,10 +38,16 @@ class RTG_Admin { public static function get_dropdown_options( $w ) { return arr
 function wp_remote_post( $url, $args ) {
     $body = json_decode( $args['body'], true );
     $kw   = $body['variables']['keywords'][0];
+    // Shaped on what CJ actually returned for this search: the right model
+    // from the right retailer, in fitments other than the one asked about,
+    // because the size in a keyword is scored rather than applied.
     $nodes = array(
-        array( 'id' => 'a1', 'title' => 'Michelin Defender LTX M/S2 305/45R22 118H', 'brand' => 'Michelin',
-               'advertiserId' => '1463221', 'advertiserName' => 'The Tire Rack',
-               'link' => 'https://tirerack.com/x', 'price' => array( 'amount' => '358.00' ) ),
+        array( 'id' => '845HR2DLTX2XL', 'title' => 'Michelin Defender LTX M/S2 285/45R22 XL 114H Highway All-Season Tire 44941',
+               'brand' => 'Michelin', 'advertiserId' => '1463221', 'advertiserName' => 'The Tire Rack',
+               'link' => 'https://www.tirerack.com/tires/tires.jsp?partnum=845HR2DLTX2XL', 'price' => array( 'amount' => '344.99' ) ),
+        array( 'id' => '745HR2DLTX2XL', 'title' => 'Michelin Defender LTX M/S2 305/45R22 XL 118H Highway All-Season Tire 12872',
+               'brand' => 'Michelin', 'advertiserId' => '1463221', 'advertiserName' => 'The Tire Rack',
+               'link' => 'https://www.tirerack.com/tires/tires.jsp?partnum=745HR2DLTX2XL', 'price' => array( 'amount' => '358.99' ) ),
         array( 'id' => 'b2', 'title' => 'Continental CrossContact RX 255/65R19 114V', 'brand' => 'Continental',
                'advertiserId' => '5660604', 'advertiserName' => 'SimpleTire',
                'link' => 'https://simpletire.com/y', 'price' => array( 'amount' => '304.15' ) ),
@@ -54,7 +60,8 @@ require __DIR__ . '/../../includes/class-rtg-catalog-source.php';
 require __DIR__ . '/../../includes/class-rtg-catalog-source-cj.php';
 
 $source = new RTG_Catalog_Source_CJ();
-$terms  = array( 'Michelin Defender LTX M/S2 305/45R22' );
+// The term carries no size: CJ scores that token rather than applying it.
+$terms  = array( 'Michelin Defender LTX M/S2' );
 $lookup = $source->fetch_terms( $terms );
 
 $fail = 0;
@@ -64,22 +71,28 @@ function check( $label, $cond ) { global $fail; printf( "%-58s %s\n", $label, $c
 check( 'fetch_terms returns by_term',            isset( $lookup['by_term'] ) && is_array( $lookup['by_term'] ) );
 check( 'by_term is keyed by the term asked',     isset( $lookup['by_term'][ $terms[0] ] ) );
 check( 'checked/pending/error present',          isset( $lookup['checked'], $lookup['pending'], $lookup['error'] ) );
-check( 'the term returned its products',         2 === count( $lookup['by_term'][ $terms[0] ] ) );
+check( 'the term returned its products',         3 === count( $lookup['by_term'][ $terms[0] ] ) );
+check( 'a term carries no size token',          ! preg_match( '#\d{3}/\d{2}R\d{2}#', $terms[0] ) );
 
-// The fitment guard the sync applies, exercised on the same data.
-$want = '305/45R22';
+// The fitment guard the sync applies, exercised on the same data. It keeps
+// any size the guide uses, not only the one that prompted the search: a model
+// search returns that model in every size CJ holds, and some of those are
+// other guide tires we were about to go looking for anyway.
+$guide_sizes = array( '305/45R22' => true, '255/65R19' => true );
 $kept = $dropped = 0;
+$kept_sizes = array();
 foreach ( $lookup['by_term'][ $terms[0] ] as $p ) {
     preg_match( '#(\d{3})/(\d{2})[A-Z]?R(\d{2})#', $p['title'], $m );
     $size = $m ? $m[1] . '/' . $m[2] . 'R' . $m[3] : '';
-    if ( $size === $want ) { $kept++; } else { $dropped++; }
+    if ( isset( $guide_sizes[ $size ] ) ) { $kept++; $kept_sizes[] = $size; } else { $dropped++; }
 }
-check( 'asked-for fitment is kept',              1 === $kept );
-check( 'other fitment is left out',              1 === $dropped );
+check( 'a guide fitment is kept',                in_array( '305/45R22', $kept_sizes, true ) );
+check( 'another guide fitment is also kept',     in_array( '255/65R19', $kept_sizes, true ) );
+check( 'a fitment the guide never uses is left', 1 === $dropped && 2 === $kept );
 
 // test_connection must honour a keyword and report titles.
-$probe = $source->test_connection( 'Michelin Defender LTX M/S2 305/45R22' );
-check( 'probe echoes the keyword it used',       false !== strpos( $probe['message'], 'Michelin Defender LTX M/S2 305/45R22' ) );
+$probe = $source->test_connection( 'Michelin Defender LTX M/S2' );
+check( 'probe echoes the keyword it used',       false !== strpos( $probe['message'], 'Michelin Defender LTX M/S2' ) );
 check( 'probe returns readable titles',          ! empty( $probe['titles'] ) && is_string( $probe['titles'][0] ) );
 check( 'probe titles name the advertiser',       false !== strpos( $probe['titles'][0], 'The Tire Rack' ) );
 
