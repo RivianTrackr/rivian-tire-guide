@@ -4,6 +4,28 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.70.1] - 2026-08-24
+
+### Fixed
+- **A disabled direct-lookup pass no longer reports itself as a failure.** With the pass off, the status still rendered "ran 0 of 99 model search(es) — 0 uncovered tire(s) were actually found" in red, which reads as a run that tried and failed rather than one that never started. It now says the pass is off and why turning it on is unlikely to help.
+
+### Notes
+- The first run with the whole budget on the sweep read **every fitment completely** — 45,707 products across nine sizes in 53.8s of a 120s budget:
+
+  | Size | Read | Matches |
+  | --- | --- | --- |
+  | 255/65R19 | 5,643 | 5,643 |
+  | 255/60R20 | 6,102 | 6,102 |
+  | 275/60R20 | 5,231 | 5,231 |
+  | 275/65R20 | 5,091 | 5,091 |
+  | 255/55R21 | 5,643 | 5,643 |
+  | 275/55R21 | 5,075 | 5,075 |
+  | 285/50R22 | 5,605 | 5,605 |
+  | 275/50R22 | 5,323 | 5,323 |
+  | 305/45R22 | 1,994 | 1,994 |
+
+  Coverage stayed at 119 tires with 115 unmatched. That combination is the answer the coverage table was built to make available: every product CJ returns for every fitment the guide stocks has now been read, and those 115 tires are not among them. A retailer selling a tire on its own site is not the same as that tire being in its CJ product feed, and no further querying reaches a product the feed does not carry.
+
 ## [1.70.0] - 2026-08-24
 
 ### Changed

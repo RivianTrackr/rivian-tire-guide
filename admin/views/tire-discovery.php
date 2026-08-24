@@ -292,8 +292,17 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                     </details>
                 <?php endif; ?>
 
-                <?php if ( ! empty( $stats['targeted']['terms'] ) ) : ?>
-                    <?php $targeted = $stats['targeted']; ?>
+                <?php $targeted = $stats['targeted'] ?? array(); ?>
+
+                <?php if ( ! empty( $targeted['terms'] ) && empty( $targeted['checked'] ) && ! $cj_targeted_enabled ) : ?>
+                    <p class="description" style="margin:12px 0 0;max-width:860px;">
+                        <strong>Direct lookups:</strong> off, so the whole budget went to the sweep. There are
+                        <?php echo esc_html( number_format( intval( $targeted['tires'] ?? 0 ) ) ); ?>
+                        uncovered tire(s) they would search for. Turning them on is unlikely to help &mdash; a
+                        brand-and-model keyword was measured matching 81,653 products, of which one request reads
+                        about 1%.
+                    </p>
+                <?php elseif ( ! empty( $targeted['terms'] ) ) : ?>
                     <p class="description" style="margin:12px 0 0;max-width:860px;">
                         <strong>Direct lookups:</strong> ran
                         <?php echo esc_html( number_format( intval( $targeted['checked'] ) ) ); ?>
