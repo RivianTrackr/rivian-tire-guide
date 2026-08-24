@@ -23,6 +23,7 @@ if ( isset( $_POST['rtg_catalog_settings_save'] ) ) {
     $settings['cj_targeted_enabled'] = ! empty( $_POST['cj_targeted_enabled'] );
     $settings['cj_targeted_budget']  = max( 15, min( 600, intval( $_POST['cj_targeted_budget'] ?? RTG_Catalog_Source_CJ::TARGETED_BUDGET ) ) );
     $settings['cj_targeted_limit']   = max( 1, min( 1000, intval( $_POST['cj_targeted_limit'] ?? RTG_Catalog_Source_CJ::TARGETED_LIMIT ) ) );
+    $settings['catalog_run_budget']  = max( 30, min( 900, intval( $_POST['catalog_run_budget'] ?? RTG_Catalog_Sync::RUN_BUDGET ) ) );
     $settings['cj_category_names'] = sanitize_textarea_field( wp_unslash( $_POST['cj_category_names'] ?? '' ) );
 
     // The query document is GraphQL, so it must not be run through a sanitizer
@@ -124,6 +125,7 @@ $cj_max_pages    = intval( $settings['cj_max_pages'] ?? RTG_Catalog_Source_CJ::D
 $cj_targeted_enabled = $settings['cj_targeted_enabled'] ?? true;
 $cj_targeted_budget  = intval( $settings['cj_targeted_budget'] ?? RTG_Catalog_Source_CJ::TARGETED_BUDGET );
 $cj_targeted_limit   = intval( $settings['cj_targeted_limit'] ?? RTG_Catalog_Source_CJ::TARGETED_LIMIT );
+$catalog_run_budget  = intval( $settings['catalog_run_budget'] ?? RTG_Catalog_Sync::RUN_BUDGET );
 $cj_categories   = $settings['cj_category_names'] ?? '';
 $cj_query        = $settings['cj_query'] ?? '';
 $cj_has_pat      = '' !== RTG_Catalog_Source_CJ::get_pat();
@@ -263,7 +265,21 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                             <?php echo esc_html( number_format( intval( $targeted['pending'] ) ) ); ?>
                             left for the next run, which starts there.
                         <?php endif; ?>
+                        <?php if ( ! empty( $stats['elapsed'] ) ) : ?>
+                            The whole run took
+                            <?php echo esc_html( number_format( (float) $stats['elapsed'], 1 ) ); ?>s
+                            of its <?php echo esc_html( intval( $catalog_run_budget ) ); ?>s budget.
+                        <?php endif; ?>
                     </p>
+                    <?php if ( ! empty( $targeted['skipped'] ) ) : ?>
+                        <div class="rtg-notice rtg-notice-warning" style="margin-top:10px;">
+                            <span>
+                                The sweep used the run's whole budget, so no direct lookups ran. They start first on
+                                the next run. Raise the whole-run budget if the host allows it, or lower the sweep's.
+                            </span>
+                        </div>
+                    <?php endif; ?>
+
                     <?php if ( ! empty( $targeted['capped'] ) ) : ?>
                         <div class="rtg-notice rtg-notice-warning" style="margin-top:10px;">
                             <span>
@@ -897,6 +913,19 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 retailer genuinely sells can rank below where paging stops and never arrive. This is
                                 how those are found. Uncovered tires are worked through in rotation, so a long list
                                 completes over successive runs.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="catalog_run_budget">Whole-run budget</label></th>
+                        <td>
+                            <input type="number" name="catalog_run_budget" id="catalog_run_budget" value="<?php echo esc_attr( $catalog_run_budget ); ?>" min="30" max="900" class="small-text"> seconds
+                            <p class="description" style="max-width:680px;">
+                                A ceiling on the run as a whole, which the sweep and the direct lookups share. Each
+                                pass honouring only its own budget is not the same as the run having one: together
+                                they could outlive the request and return nothing at all. <strong>Lower this first
+                                if Run Discovery Now fails with no reply.</strong> A shorter run costs
+                                time-to-complete, never coverage &mdash; both passes resume where they stopped.
                             </p>
                         </td>
                     </tr>

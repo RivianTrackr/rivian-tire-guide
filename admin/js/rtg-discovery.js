@@ -54,10 +54,28 @@
           '<div class="notice notice-error inline"><p>Discovery request failed.</p></div>'
         ).show();
       }
-    }).fail(function () {
+    }).fail(function (xhr) {
       $btn.prop('disabled', false).text('Run Discovery Now');
+
+      // Name what actually happened. "Network error" covered a timed-out
+      // request, a PHP fatal and a permissions failure alike, which made a run
+      // that outlived its request indistinguishable from one that crashed.
+      var detail;
+      if (!xhr || xhr.status === 0) {
+        detail = 'The request ended without a reply — usually the run outlived the ' +
+                 'server\'s time limit. Lower the run budget in settings and try again; ' +
+                 'the rotation means a shorter run still makes progress.';
+      } else if (xhr.status >= 500) {
+        detail = 'The server returned ' + xhr.status + ' ' + escapeHTML(xhr.statusText || '') +
+                 '. That is an error inside the run rather than a timeout — the PHP error log ' +
+                 'will name it.';
+      } else {
+        detail = 'The server returned ' + xhr.status + ' ' + escapeHTML(xhr.statusText || '') + '.';
+      }
+
       $status.html(
-        '<div class="notice notice-error inline"><p>Network error during discovery.</p></div>'
+        '<div class="notice notice-error inline"><p><strong>Discovery did not finish.</strong> ' +
+        detail + '</p></div>'
       ).show();
     });
   });
