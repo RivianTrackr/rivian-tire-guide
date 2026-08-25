@@ -152,6 +152,74 @@
     });
   }
 
+  // Apply one decision to everything the current filter matches — the
+  // database query, not just the rows on screen, and the confirm says so.
+  $('#rtg-bulk-candidates').on('click', function () {
+    var $btn = $(this);
+    var to = $btn.data('to');
+    var scope = [];
+
+    if ($btn.data('brand')) { scope.push('brand ' + $btn.data('brand')); }
+    if ($btn.data('size')) { scope.push('size ' + $btn.data('size')); }
+    if ($btn.data('vehicle')) { scope.push($btn.data('vehicle')); }
+
+    var what = scope.length ? scope.join(', ') : 'EVERY candidate in this tab';
+    if (!confirm(
+      (to === 'dismissed' ? 'Dismiss' : 'Restore') + ' all candidates matching: ' + what +
+      '?\n\nThis applies to everything the filter matches in the database, not only the rows shown. ' +
+      'It is reversible from the ' + (to === 'dismissed' ? 'Dismissed' : 'Awaiting Review') + ' tab.'
+    )) {
+      return;
+    }
+
+    $btn.prop('disabled', true).text('Working...');
+
+    $.post(rtgAdmin.ajaxurl, {
+      action: 'rtg_candidate_bulk',
+      nonce: rtgAdmin.nonce,
+      status: $btn.data('status'),
+      brand: $btn.data('brand'),
+      size: $btn.data('size'),
+      vehicle: $btn.data('vehicle'),
+      to: to
+    }, function (response) {
+      if (response.success) {
+        location.reload();
+      } else {
+        $btn.prop('disabled', false).text('Try again');
+        alert((response.data && String(response.data)) || 'Bulk update failed.');
+      }
+    }).fail(function () {
+      $btn.prop('disabled', false).text('Try again');
+    });
+  });
+
+  // Adopt a retailer's model spelling as an alias, from the coverage report.
+  $(document).on('click', '.rtg-adopt-alias', function () {
+    var $btn = $(this);
+
+    $btn.prop('disabled', true).text('Adopting...');
+
+    $.post(rtgAdmin.ajaxurl, {
+      action: 'rtg_adopt_model_alias',
+      nonce: rtgAdmin.nonce,
+      tire_id: $btn.data('tire-id'),
+      alias: $btn.data('alias')
+    }, function (response) {
+      if (response.success) {
+        $btn.replaceWith(
+          '<span style="color:var(--rtg-success);font-size:11px;font-weight:600;">' +
+          escapeHTML((response.data && response.data.message) || 'Adopted.') + '</span>'
+        );
+      } else {
+        $btn.prop('disabled', false).text('Adopt as alias');
+        alert((response.data && String(response.data)) || 'Could not adopt the alias.');
+      }
+    }).fail(function () {
+      $btn.prop('disabled', false).text('Adopt as alias');
+    });
+  });
+
   // Dismiss / Restore a candidate.
   $(document).on('click', '.rtg-candidate-action', function () {
     var $btn = $(this);

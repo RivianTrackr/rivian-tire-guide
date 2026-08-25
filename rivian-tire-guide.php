@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Rivian Tire Guide
  * Description: Interactive tire guide for Rivian vehicles with filtering, comparison, and ratings.
- * Version: 1.73.0
+ * Version: 1.74.0
  * Author: RivianTrackr
  * Text Domain: rivian-tire-guide
  * Requires at least: 5.8
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'RTG_VERSION', '1.73.0' );
+define( 'RTG_VERSION', '1.74.0' );
 define( 'RTG_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'RTG_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'RTG_PLUGIN_FILE', __FILE__ );
@@ -47,6 +47,12 @@ add_filter( 'cron_schedules', function ( $schedules ) {
         $schedules['weekly'] = array(
             'interval' => WEEK_IN_SECONDS,
             'display'  => 'Once Weekly',
+        );
+    }
+    if ( ! isset( $schedules['monthly'] ) ) {
+        $schedules['monthly'] = array(
+            'interval' => 30 * DAY_IN_SECONDS,
+            'display'  => 'Once Monthly',
         );
     }
     if ( ! isset( $schedules[ RTG_Roamer_Sync::CRON_RECURRENCE ] ) ) {
@@ -82,6 +88,10 @@ function rtg_init() {
     // Schedule the daily affiliate catalog check for newly listed tires.
     RTG_Catalog_Sync::schedule();
     add_action( RTG_Catalog_Sync::CRON_HOOK, array( 'RTG_Catalog_Sync', 'run' ) );
+
+    // Monthly reminder of the prices only a person can refresh.
+    RTG_Stale_Prices::schedule();
+    add_action( RTG_Stale_Prices::CRON_HOOK, array( 'RTG_Stale_Prices', 'run' ) );
 
     // Health runs after the sync on the same hook (priority 20 vs the default
     // 10), so it judges the run that just finished — including a failed one,

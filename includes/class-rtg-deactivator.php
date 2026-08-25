@@ -12,5 +12,6 @@ class RTG_Deactivator {
         RTG_Link_Checker::unschedule();
         RTG_Roamer_Sync::unschedule();
         RTG_Catalog_Sync::unschedule();
+        RTG_Stale_Prices::unschedule();
     }
 }

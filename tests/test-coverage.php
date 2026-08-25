@@ -78,7 +78,15 @@ class Test_RTG_Coverage extends WP_UnitTestCase {
      * checked the model at all.
      */
     public function test_a_different_model_from_the_same_brand_is_not_a_name_variant() {
-        $result = RTG_Coverage::classify( $this->tire( 'Michelin', 'Defender LTX M/S2', '305/45R22' ), $this->index() );
+        // Only the Pilot Sport listing — the shared fixture also carries a
+        // "Defender LTX M/S 2", which is this model spelled with a space and
+        // correctly classifies as a variant. First execution of this suite
+        // caught the fixture contradicting the test's own name.
+        $index = RTG_Coverage::index_rows( array(
+            array( 'brand' => 'Michelin', 'model' => 'Pilot Sport S 5', 'size' => '305/45R22', 'advertiser_name' => 'The Tire Rack' ),
+        ) );
+
+        $result = RTG_Coverage::classify( $this->tire( 'Michelin', 'Defender LTX M/S2', '305/45R22' ), $index );
 
         $this->assertSame( RTG_Coverage::GAP_MODEL_ABSENT, $result['code'] );
         $this->assertStringContainsString( 'none of them', $result['label'] );

@@ -296,18 +296,39 @@ class Test_RTG_Tire_Qualifier extends WP_UnitTestCase {
     }
 
     /**
-     * Every failed rule is reported, not just the first, so one fix doesn't
-     * reveal a second problem on the next run.
+     * An off-fitment tire gets no load verdict, and that is deliberate.
+     *
+     * This test used to expect load_index_low alongside size_not_stocked.
+     * Since the vehicle-aware rework, load floors belong to vehicles — R1
+     * needs 116, R2 needs 112 — so a size no vehicle takes has no floor to
+     * be judged against, and inventing one would report a second failure
+     * that stops being true the moment the size question is answered.
      */
-    public function test_qualify_reports_every_failure_at_once() {
+    public function test_an_off_fitment_size_is_the_whole_verdict() {
         $result = RTG_Tire_Qualifier::evaluate(
             array( 'title' => 'Continental CrossContact LX25 235/65R17 104H', 'brand' => 'Continental' ),
             $this->context()
         );
 
         $codes = $this->codes( $result );
+        $this->assertFalse( $result['qualifies'] );
         $this->assertContains( 'size_not_stocked', $codes );
+        $this->assertNotContains( 'load_index_low', $codes );
+    }
+
+    /**
+     * A tire in a stocked size that falls short on load is told exactly that.
+     */
+    public function test_a_stocked_size_short_on_load_reports_the_load() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Continental CrossContact LX25 275/65R18 104H', 'brand' => 'Continental' ),
+            $this->context()
+        );
+
+        $codes = $this->codes( $result );
+        $this->assertFalse( $result['qualifies'] );
         $this->assertContains( 'load_index_low', $codes );
+        $this->assertNotContains( 'size_not_stocked', $codes );
     }
 
     // --- Brand coverage policy ---

@@ -214,6 +214,7 @@ class RTG_Candidates {
             'status'  => self::STATUS_NEW,
             'size'    => '',
             'source'  => '',
+            'brand'   => '',
             'vehicle' => '',
             'limit'   => 200,
             'offset'  => 0,
@@ -233,6 +234,10 @@ class RTG_Candidates {
         if ( '' !== $args['source'] ) {
             $where[]  = 'source = %s';
             $params[] = $args['source'];
+        }
+        if ( '' !== ( $args['brand'] ?? '' ) ) {
+            $where[]  = 'brand = %s';
+            $params[] = $args['brand'];
         }
         if ( '' !== $args['vehicle'] ) {
             $where[]  = 'FIND_IN_SET( %s, fits_vehicles )';
@@ -367,14 +372,18 @@ class RTG_Candidates {
         $by_tire = array();
 
         foreach ( RTG_Database::get_all_tires() as $tire ) {
-            $key = RTG_Catalog_Sync::match_key(
-                $tire['brand'] ?? '',
-                $tire['model'] ?? '',
-                $tire['size'] ?? ''
-            );
+            $rows = array();
 
-            if ( '' !== $key && ! empty( $by_key[ $key ] ) ) {
-                $by_tire[ (string) $tire['tire_id'] ] = $by_key[ $key ];
+            // A tire answers to its own model and to each alias, and a
+            // retailer may list it under either — collect every spelling.
+            foreach ( RTG_Catalog_Sync::match_keys_for_tire( $tire ) as $key ) {
+                if ( ! empty( $by_key[ $key ] ) ) {
+                    $rows = array_merge( $rows, $by_key[ $key ] );
+                }
+            }
+
+            if ( ! empty( $rows ) ) {
+                $by_tire[ (string) $tire['tire_id'] ] = $rows;
             }
         }
 
@@ -461,6 +470,156 @@ class RTG_Candidates {
         }
 
         return $coverage;
+    }
+
+    /**
+     * Delete near misses that can never become anything else.
+     *
+     * The near-miss pile exists so "why was this rejected?" stays answerable,
+     * but two kinds of row answer no question worth keeping. A rejected row
+     * in a fitment the guide doesn't stock can never qualify — wrong fitment
+     * is definitionally permanent — and one accumulated eighteen thousand of
+     * those. A rejected row unseen for two months describes a listing the
+     * catalog itself dropped. Deleting either costs nothing visible: if the
+     * product reappears, the next sweep re-files it identically.
+     *
+     * Only STATUS_REJECTED is ever touched. Dismissed and imported rows are
+     * human decisions and are the memory that stops things resurfacing; new
+     * rows are awaiting one.
+     *
+     * @param string[] $guide_sizes Canonical sizes the guide stocks.
+     * @param int      $stale_days  Days unseen before a rejected row goes.
+     * @return array { off_fitment: int, stale: int }
+     */
+    public static function prune( $guide_sizes, $stale_days = 60 ) {
+        global $wpdb;
+        $table = self::table();
+
+        $normalized = array();
+        foreach ( (array) $guide_sizes as $size ) {
+            $key = RTG_Tire_Qualifier::normalize_size( $size );
+            if ( '' !== $key ) {
+                $normalized[] = $key;
+            }
+        }
+
+        $out = array(
+            'off_fitment' => 0,
+            'stale'       => 0,
+        );
+
+        // With no sizes to compare against, "off-fitment" is undefined —
+        // deleting everything because a settings read came back empty would
+        // be the destructive version of every silent failure this feature
+        // has had.
+        if ( ! empty( $normalized ) ) {
+            $placeholders = implode( ',', array_fill( 0, count( $normalized ), '%s' ) );
+
+            $off = $wpdb->query( $wpdb->prepare(
+                "DELETE FROM {$table} WHERE status = %s AND size NOT IN ( {$placeholders} )",
+                array_merge( array( self::STATUS_REJECTED ), $normalized )
+            ) );
+
+            $out['off_fitment'] = false === $off ? 0 : intval( $off );
+        }
+
+        $cutoff = gmdate( 'Y-m-d H:i:s', time() - ( max( 1, intval( $stale_days ) ) * DAY_IN_SECONDS ) );
+
+        $stale = $wpdb->query( $wpdb->prepare(
+            "DELETE FROM {$table} WHERE status = %s AND last_seen_at < %s",
+            self::STATUS_REJECTED,
+            $cutoff
+        ) );
+
+        $out['stale'] = false === $stale ? 0 : intval( $stale );
+
+        return $out;
+    }
+
+    /**
+     * Count candidates in one status, grouped by brand.
+     *
+     * The review queue's practical problem is volume, and volume clusters by
+     * brand — a page of Winruns is one decision, not sixty. Counts make that
+     * decision visible before anyone scrolls.
+     *
+     * @param string $status Status to count within.
+     * @return array Brand => count, largest first.
+     */
+    public static function get_brand_counts( $status = self::STATUS_NEW ) {
+        global $wpdb;
+        $table = self::table();
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT brand, COUNT(*) AS total FROM {$table} WHERE status = %s GROUP BY brand ORDER BY total DESC",
+                $status
+            ),
+            ARRAY_A
+        );
+
+        $counts = array();
+        foreach ( $rows ?: array() as $row ) {
+            $counts[ (string) $row['brand'] ] = intval( $row['total'] );
+        }
+
+        return $counts;
+    }
+
+    /**
+     * Apply one decision to every row a filter matches.
+     *
+     * Acts on the database query, not the visible page — "dismiss all
+     * Winrun" means all of them, not the 200 the screen happened to show.
+     * Restricted to moving rows out of (or back into) the queue: bulk can
+     * only write dismissed or new, and only over machine-held or dismissed
+     * rows, so it can never overwrite an imported row or invent a status.
+     *
+     * @param array  $filter { status, brand, size, vehicle } — status required.
+     * @param string $to     STATUS_DISMISSED or STATUS_NEW.
+     * @return int Rows changed.
+     */
+    public static function bulk_set_status( $filter, $to ) {
+        global $wpdb;
+        $table = self::table();
+
+        if ( ! in_array( $to, array( self::STATUS_DISMISSED, self::STATUS_NEW ), true ) ) {
+            return 0;
+        }
+
+        $from = (string) ( $filter['status'] ?? '' );
+
+        // Only queue rows and dismissed rows may move in bulk; everything
+        // else either belongs to the machine's own classification or records
+        // an import, and neither is a bulk decision.
+        if ( ! in_array( $from, array( self::STATUS_NEW, self::STATUS_DISMISSED ), true ) || $from === $to ) {
+            return 0;
+        }
+
+        $where  = array( 'status = %s' );
+        $params = array( $from );
+
+        if ( '' !== ( $filter['brand'] ?? '' ) ) {
+            $where[]  = 'brand = %s';
+            $params[] = $filter['brand'];
+        }
+        if ( '' !== ( $filter['size'] ?? '' ) ) {
+            $where[]  = 'size = %s';
+            $params[] = $filter['size'];
+        }
+        if ( '' !== ( $filter['vehicle'] ?? '' ) ) {
+            $where[]  = 'FIND_IN_SET( %s, fits_vehicles )';
+            $params[] = $filter['vehicle'];
+        }
+
+        array_unshift( $params, $to, current_time( 'mysql' ) );
+
+        $changed = $wpdb->query( $wpdb->prepare(
+            "UPDATE {$table} SET status = %s, reviewed_at = %s WHERE " . implode( ' AND ', $where ),
+            $params
+        ) );
+
+        return false === $changed ? 0 : intval( $changed );
     }
 
     /**

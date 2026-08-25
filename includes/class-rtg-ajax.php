@@ -151,6 +151,8 @@ class RTG_Ajax {
         add_action( 'wp_ajax_rtg_catalog_sync_now', array( $this, 'catalog_sync_now' ) );
         add_action( 'wp_ajax_rtg_candidate_set_status', array( $this, 'candidate_set_status' ) );
         add_action( 'wp_ajax_rtg_cj_test_connection', array( $this, 'cj_test_connection' ) );
+        add_action( 'wp_ajax_rtg_adopt_model_alias', array( $this, 'adopt_model_alias' ) );
+        add_action( 'wp_ajax_rtg_candidate_bulk', array( $this, 'candidate_bulk' ) );
     }
 
     /**
@@ -1050,6 +1052,93 @@ class RTG_Ajax {
         // The token is never part of the diagnostics: only CJ's response is
         // recorded, and the request body is not echoed back.
         wp_send_json_success( $result );
+    }
+
+    /**
+     * Apply one decision to every candidate the current filter matches.
+     *
+     * The confirmation of scope happens client-side; the server enforces the
+     * real limits — bulk writes only dismissed or new, over queue or
+     * dismissed rows, so a mistaken click is recoverable by the same route.
+     */
+    public function candidate_bulk() {
+        check_ajax_referer( 'rtg_admin_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized.' );
+        }
+
+        $to = sanitize_text_field( wp_unslash( $_POST['to'] ?? '' ) );
+
+        $changed = RTG_Candidates::bulk_set_status(
+            array(
+                'status'  => sanitize_text_field( wp_unslash( $_POST['status'] ?? '' ) ),
+                'brand'   => sanitize_text_field( wp_unslash( $_POST['brand'] ?? '' ) ),
+                'size'    => sanitize_text_field( wp_unslash( $_POST['size'] ?? '' ) ),
+                'vehicle' => sanitize_text_field( wp_unslash( $_POST['vehicle'] ?? '' ) ),
+            ),
+            $to
+        );
+
+        wp_send_json_success( array(
+            'changed' => $changed,
+            'message' => sprintf(
+                '%s candidate(s) %s.',
+                number_format( $changed ),
+                RTG_Candidates::STATUS_DISMISSED === $to ? 'dismissed' : 'restored to the queue'
+            ),
+        ) );
+    }
+
+    /**
+     * Adopt a retailer's spelling of a model as an alias on a guide tire.
+     *
+     * The coverage report shows what the retailer calls a tire it likely
+     * carries under another name; this makes accepting that spelling one
+     * click instead of a copy-paste trip through the edit form. Appended,
+     * never replacing — existing aliases keep working.
+     */
+    public function adopt_model_alias() {
+        check_ajax_referer( 'rtg_admin_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized.' );
+        }
+
+        $tire_id = sanitize_text_field( wp_unslash( $_POST['tire_id'] ?? '' ) );
+        $alias   = sanitize_text_field( wp_unslash( $_POST['alias'] ?? '' ) );
+
+        if ( '' === $tire_id || '' === $alias ) {
+            wp_send_json_error( 'Missing tire or alias.' );
+        }
+
+        $tire = RTG_Database::get_tire( $tire_id );
+        if ( ! $tire ) {
+            wp_send_json_error( 'Unknown tire.' );
+        }
+
+        $aliases = array_filter( array_map( 'trim', preg_split(
+            '/[\r\n]+/',
+            (string) ( $tire['model_aliases'] ?? '' )
+        ) ) );
+
+        // Compared squashed, the same way the matcher will read them, so
+        // "M/S 2" and "M/S2" don't accumulate as two aliases that are one.
+        foreach ( $aliases as $existing ) {
+            if ( RTG_Tire_Qualifier::normalize_brand( $existing ) === RTG_Tire_Qualifier::normalize_brand( $alias ) ) {
+                wp_send_json_success( array( 'message' => 'Already an alias.' ) );
+            }
+        }
+
+        $aliases[] = $alias;
+
+        RTG_Database::update_tire( $tire_id, array(
+            'model_aliases' => implode( "\n", $aliases ),
+        ) );
+
+        wp_send_json_success( array(
+            'message' => sprintf( '"%s" will now match this tire on the next run.', $alias ),
+        ) );
     }
 
     /**

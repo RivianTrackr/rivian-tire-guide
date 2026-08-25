@@ -882,4 +882,56 @@ class RTG_Mailer {
             array( 'Content-Type: text/html; charset=UTF-8' )
         );
     }
+
+    /**
+     * The monthly list of prices only a person can refresh.
+     *
+     * @param array[] $stale Tires with a last_touch timestamp, oldest first.
+     * @return bool Whether the email was sent.
+     */
+    public static function send_stale_price_report( $stale ) {
+        $admin_email = get_option( 'admin_email' );
+        if ( ! $admin_email || empty( $stale ) ) {
+            return false;
+        }
+
+        $now   = current_time( 'timestamp' );
+        $items = '';
+        foreach ( $stale as $tire ) {
+            $name = trim( ( $tire['brand'] ?? '' ) . ' ' . ( $tire['model'] ?? '' ) );
+
+            $items .= '<tr>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #1d1d1f;">' . esc_html( $name ) . '</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px; font-family: \'SF Mono\', Monaco, monospace;">' . esc_html( $tire['size'] ?? '' ) . '</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">$' . esc_html( number_format( floatval( $tire['price'] ?? 0 ), 2 ) ) . '</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 13px; color: #6e6e73;">' . esc_html( human_time_diff( intval( $tire['last_touch'] ), $now ) ) . ' ago</td>
+      </tr>';
+        }
+
+        $count = count( $stale );
+        $inner = '<p style="margin: 0 0 20px 0; color: #6e6e73; font-size: 16px; line-height: 1.5;">
+        ' . intval( $count ) . ' tire ' . ( 1 === $count ? 'price' : 'prices' ) . ' can only be refreshed by hand —
+        the affiliate feed does not carry these tires — and ' . ( 1 === $count ? 'it has' : 'they have' ) . '
+        not been touched in months. Worth a pass against the retailer sites.
+      </p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e5e5e5; border-radius: 8px; margin: 0 0 24px 0;">
+        <tr style="background-color: #f5f5f7;">
+          <th align="left" style="padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #6e6e73;">Tire</th>
+          <th align="left" style="padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #6e6e73;">Size</th>
+          <th align="left" style="padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #6e6e73;">Price</th>
+          <th align="left" style="padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #6e6e73;">Last touched</th>
+        </tr>' . $items . '</table>';
+
+        return (bool) wp_mail(
+            $admin_email,
+            sprintf( 'Tire Guide: %d price%s worth a manual check', $count, 1 === $count ? '' : 's' ),
+            self::health_email_body(
+                'Prices Going Stale',
+                $inner,
+                admin_url( 'admin.php?page=rtg-tire-discovery' ),
+                'Open Tire Discovery'
+            ),
+            array( 'Content-Type: text/html; charset=UTF-8' )
+        );
+    }
 }

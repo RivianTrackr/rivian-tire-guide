@@ -28,6 +28,7 @@ require __DIR__ . '/../../includes/class-rtg-tire-qualifier.php';
 class RTG_Admin { public static function get_dropdown_options( $w ) { return array( '275/65R20' ); } }
 class RTG_Catalog_Sync {
     public static function match_key( $b, $m, $s ) { return ''; }
+    public static function match_keys_for_tire( $t ) { return array(); }
     public static function get_stats() { return $GLOBALS['stats']; }
 }
 class RTG_Database { public static function get_all_tires() { return array(); } }
