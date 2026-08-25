@@ -909,8 +909,13 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 consistent. A tire with a <strong>plain retailer link</strong> is upgraded to a
                                 tracked link for the <em>same</em> retailer only — where the reader lands was already
                                 chosen; monetizing it is mechanical, switching retailers is not. A link that is
-                                <strong>already affiliate is never touched</strong>. Only listings the sweep has seen
-                                in the last <?php echo esc_html( RTG_Link_Sync::FRESH_DAYS ); ?> days qualify, so a
+                                <strong>already affiliate is never touched</strong> &mdash; with one exception: when
+                                its retailer has <strong>delisted the tire</strong> (unseen for
+                                <?php echo esc_html( RTG_Link_Sync::FRESH_DAYS ); ?>+ days in a completely-read
+                                fitment) while another retailer still lists it with a tracked link, the link moves
+                                to the retailer that actually carries the product &mdash; in either direction. Only
+                                listings the sweep has seen in the last
+                                <?php echo esc_html( RTG_Link_Sync::FRESH_DAYS ); ?> days qualify as sources, so a
                                 delisted product's link can't be applied. Every decision is reported on the
                                 Affiliate Links page.
                             </p>

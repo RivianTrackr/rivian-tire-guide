@@ -19,7 +19,12 @@ class Test_RTG_Link_Sync extends WP_UnitTestCase {
     }
 
     private function tire( $link ) {
-        return array( 'tire_id' => 't1', 'link' => $link );
+        return array( 'tire_id' => 't1', 'link' => $link, 'size' => '275/65R20' );
+    }
+
+    /** The tire's fitment, marked as completely read by the last sweep. */
+    private function fitment_read() {
+        return array( RTG_Tire_Qualifier::normalize_size( '275/65R20' ) => true );
     }
 
     private function listing( $overrides = array() ) {
@@ -167,6 +172,118 @@ class Test_RTG_Link_Sync extends WP_UnitTestCase {
         );
 
         $this->assertTrue( $decision['update'] );
+    }
+
+    // --- Delisted retailers ---
+
+    /**
+     * The one exception to "affiliate links are never touched": the retailer
+     * this link points to has dropped the tire (its rows went stale in a
+     * completely-read fitment) while others still list it. The link moves to
+     * the cheapest tracked alternative — a link to a delisted listing still
+     * resolves, and earns nothing.
+     */
+    public function test_a_delisted_retailers_link_moves_to_one_still_listing() {
+        $decision = RTG_Link_Sync::decide(
+            $this->tire( 'https://www.anrdoezrs.net/links/101098512/type/dlg/https://simpletire.com/y' ),
+            array(
+                $this->listing( array( 'advertiser_name' => 'SimpleTire',
+                    'last_seen_at' => gmdate( 'Y-m-d H:i:s', $this->now - 10 * DAY_IN_SECONDS ) ) ),
+                $this->listing( array( 'price' => 400.00 ) ),
+                $this->listing( array( 'advertiser_name' => 'Priority Tire', 'price' => 300.00,
+                    'link' => 'https://www.tkqlhce.com/click-101098512-3?url=https%3A%2F%2Fprioritytire.com%2Fz' ) ),
+            ),
+            $this->domains,
+            $this->now,
+            $this->fitment_read()
+        );
+
+        $this->assertTrue( $decision['update'] );
+        $this->assertSame( 'link_replaced', $decision['code'] );
+        $this->assertSame( 'Priority Tire', $decision['retailer'] );
+    }
+
+    /**
+     * Without a completely-read fitment, "stale" cannot be told apart from our
+     * own sweep gap — so nothing moves, exactly as delisting detection itself
+     * refuses to claim a loss it can't prove.
+     */
+    public function test_a_delisting_claim_requires_the_fitment_to_have_been_read() {
+        $decision = RTG_Link_Sync::decide(
+            $this->tire( 'https://www.anrdoezrs.net/links/101098512/type/dlg/https://simpletire.com/y' ),
+            array(
+                $this->listing( array( 'advertiser_name' => 'SimpleTire',
+                    'last_seen_at' => gmdate( 'Y-m-d H:i:s', $this->now - 10 * DAY_IN_SECONDS ) ) ),
+                $this->listing(),
+            ),
+            $this->domains,
+            $this->now
+        );
+
+        $this->assertFalse( $decision['update'] );
+        $this->assertSame( 'already_affiliate', $decision['code'] );
+    }
+
+    /**
+     * A retailer the catalog has never listed this tire under is not
+     * "delisted" — it may simply not be in CJ's feed. A hand-placed link to
+     * one stays put no matter what other retailers offer.
+     */
+    public function test_a_retailer_the_catalog_never_knew_is_not_delisted() {
+        $decision = RTG_Link_Sync::decide(
+            $this->tire( 'https://www.anrdoezrs.net/links/101098512/type/dlg/https://simpletire.com/y' ),
+            array( $this->listing( array( 'price' => 1.00 ) ) ),
+            $this->domains,
+            $this->now,
+            $this->fitment_read()
+        );
+
+        $this->assertFalse( $decision['update'] );
+        $this->assertSame( 'already_affiliate', $decision['code'] );
+    }
+
+    /**
+     * Delisted with nowhere to move to is reported, not silently kept — the
+     * admin should hear "this link no longer earns and there is no tracked
+     * replacement" from the report, not from a revenue statement.
+     */
+    public function test_a_delisting_with_no_alternative_is_reported() {
+        $decision = RTG_Link_Sync::decide(
+            $this->tire( 'https://www.anrdoezrs.net/links/101098512/type/dlg/https://simpletire.com/y' ),
+            array(
+                $this->listing( array( 'advertiser_name' => 'SimpleTire',
+                    'last_seen_at' => gmdate( 'Y-m-d H:i:s', $this->now - 10 * DAY_IN_SECONDS ) ) ),
+            ),
+            $this->domains,
+            $this->now,
+            $this->fitment_read()
+        );
+
+        $this->assertFalse( $decision['update'] );
+        $this->assertSame( 'delisted_no_alternative', $decision['code'] );
+    }
+
+    /**
+     * The same rule works from a plain retailer link, and in the other
+     * direction between retailers: a regular Tire Rack link whose retailer
+     * dropped the tire moves to SimpleTire's tracked listing.
+     */
+    public function test_a_regular_link_at_a_delisted_retailer_moves_too() {
+        $decision = RTG_Link_Sync::decide(
+            $this->tire( 'https://www.tirerack.com/tires/x' ),
+            array(
+                $this->listing( array( 'last_seen_at' => gmdate( 'Y-m-d H:i:s', $this->now - 10 * DAY_IN_SECONDS ) ) ),
+                $this->listing( array( 'advertiser_name' => 'SimpleTire',
+                    'link' => 'https://www.tkqlhce.com/click-101098512-2?url=https%3A%2F%2Fsimpletire.com%2Fy' ) ),
+            ),
+            $this->domains,
+            $this->now,
+            $this->fitment_read()
+        );
+
+        $this->assertTrue( $decision['update'] );
+        $this->assertSame( 'link_replaced', $decision['code'] );
+        $this->assertSame( 'SimpleTire', $decision['retailer'] );
     }
 
     // --- End to end ---

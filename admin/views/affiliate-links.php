@@ -154,17 +154,19 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
                 <p class="description" style="max-width:860px;margin:0 0 12px;">
                     Runs with the daily sweep: tires with no purchase link get the cheapest fresh tracked
                     listing, plain retailer links are upgraded to tracked links for the same retailer, and
-                    links that are already affiliate are never touched. Last run
+                    a link whose retailer delisted the tire is moved to a retailer that still lists it.
+                    Links that are already affiliate are otherwise never touched. Last run
                     <strong><?php echo esc_html( $link_sync_results['time'] ?? '' ); ?></strong> &mdash;
                     <strong style="color:var(--rtg-success);"><?php echo intval( $link_sync_results['set'] ?? 0 ); ?></strong> set,
                     <strong style="color:var(--rtg-success);"><?php echo intval( $link_sync_results['upgraded'] ?? 0 ); ?></strong> upgraded,
+                    <strong style="color:var(--rtg-success);"><?php echo intval( $link_sync_results['replaced'] ?? 0 ); ?></strong> moved off delisted retailers,
                     <?php echo intval( $link_sync_results['skipped'] ?? 0 ); ?> left alone with a reason.
                 </p>
 
                 <?php
                 $link_sync_pending = array();
                 foreach ( (array) $link_sync_results['outcomes'] as $outcome_tire_id => $outcome ) {
-                    if ( ! in_array( $outcome['code'], array( 'link_set', 'link_upgraded' ), true ) ) {
+                    if ( ! in_array( $outcome['code'], array( 'link_set', 'link_upgraded', 'link_replaced' ), true ) ) {
                         $link_sync_pending[ $outcome_tire_id ] = $outcome;
                     }
                 }
