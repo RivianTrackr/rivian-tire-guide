@@ -144,6 +144,56 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
         </div>
     </div>
 
+    <?php $link_sync_results = RTG_Link_Sync::get_results(); ?>
+    <?php if ( $link_sync_results && isset( $link_sync_results['outcomes'] ) ) : ?>
+        <div class="rtg-card" style="margin-top:16px;">
+            <div class="rtg-card-header">
+                <h2>Link Sync</h2>
+            </div>
+            <div class="rtg-card-body">
+                <p class="description" style="max-width:860px;margin:0 0 12px;">
+                    Runs with the daily sweep: tires with no purchase link get the cheapest fresh tracked
+                    listing, plain retailer links are upgraded to tracked links for the same retailer, and
+                    a link whose retailer delisted the tire is moved to a retailer that still lists it.
+                    Links that are already affiliate are otherwise never touched. Last run
+                    <strong><?php echo esc_html( $link_sync_results['time'] ?? '' ); ?></strong> &mdash;
+                    <strong style="color:var(--rtg-success);"><?php echo intval( $link_sync_results['set'] ?? 0 ); ?></strong> set,
+                    <strong style="color:var(--rtg-success);"><?php echo intval( $link_sync_results['upgraded'] ?? 0 ); ?></strong> upgraded,
+                    <strong style="color:var(--rtg-success);"><?php echo intval( $link_sync_results['replaced'] ?? 0 ); ?></strong> moved off delisted retailers,
+                    <?php echo intval( $link_sync_results['skipped'] ?? 0 ); ?> left alone with a reason.
+                </p>
+
+                <?php
+                $link_sync_pending = array();
+                foreach ( (array) $link_sync_results['outcomes'] as $outcome_tire_id => $outcome ) {
+                    if ( ! in_array( $outcome['code'], array( 'link_set', 'link_upgraded', 'link_replaced' ), true ) ) {
+                        $link_sync_pending[ $outcome_tire_id ] = $outcome;
+                    }
+                }
+                ?>
+                <?php if ( ! empty( $link_sync_pending ) ) : ?>
+                    <details>
+                        <summary style="cursor:pointer;font-weight:600;">
+                            <?php echo count( $link_sync_pending ); ?> tire(s) link sync could not fix, and why
+                        </summary>
+                        <table class="rtg-table" style="margin-top:8px;">
+                            <thead><tr><th>Tire</th><th>Size</th><th>Reason</th></tr></thead>
+                            <tbody>
+                            <?php foreach ( $link_sync_pending as $outcome ) : ?>
+                                <tr>
+                                    <td><?php echo esc_html( trim( $outcome['brand'] . ' ' . $outcome['model'] ) ); ?></td>
+                                    <td style="font-family:var(--rtg-font-mono, monospace);"><?php echo esc_html( $outcome['size'] ); ?></td>
+                                    <td style="font-size:12px;color:var(--rtg-text-muted);"><?php echo esc_html( $outcome['label'] ); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </details>
+                <?php endif; ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <?php if ( $presence_counts[ RTG_Catalog_Presence::STATUS_DELISTED ] > 0 ) : ?>
         <div class="rtg-notice rtg-notice-warning" style="margin-top:16px;">
             <span>

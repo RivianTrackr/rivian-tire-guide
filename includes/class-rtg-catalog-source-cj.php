@@ -128,6 +128,43 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
   }
 }';
 
+    /**
+     * The shipped query when a website ID is configured.
+     *
+     * Identical but for linkCode, which asks CJ to mint a tracked click URL
+     * for this property per product. Kept as a second document rather than
+     * string surgery on the first, so each is readable as what is actually
+     * sent. The mapper already prefers linkCode.clickUrl over the plain link,
+     * so requesting the field is the whole change.
+     */
+    const DEFAULT_QUERY_WITH_LINKS = 'query ShoppingProducts($companyId: ID!, $partnerIds: [ID!], $keywords: [String!]!, $limit: Int!, $offset: Int, $websiteId: ID!) {
+  shoppingProducts(
+    companyId: $companyId
+    partnerIds: $partnerIds
+    keywords: $keywords
+    limit: $limit
+    offset: $offset
+  ) {
+    totalCount
+    count
+    resultList {
+      id
+      advertiserId
+      advertiserName
+      title
+      description
+      brand
+      link
+      linkCode(pid: $websiteId) { clickUrl }
+      imageLink
+      availability
+      gtin
+      mpn
+      price { amount currency }
+    }
+  }
+}';
+
     /** @var string Last failure reason, '' when the last fetch succeeded. */
     private $last_error = '';
 
@@ -214,6 +251,21 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
     }
 
     /**
+     * CJ website / property ID (PID), used to mint tracked links.
+     *
+     * This is the first number in a CJ deep link — click-101098512-13697786
+     * belongs to property 101098512. With it, CJ's linkCode field returns a
+     * ready-made tracked click URL per product; without it, candidates carry
+     * the retailer's plain product URL, which pays nothing.
+     *
+     * @return string Website ID, or '' when unconfigured.
+     */
+    public static function get_website_id() {
+        $settings = get_option( 'rtg_settings', array() );
+        return preg_replace( '/[^0-9]/', '', (string) ( $settings['cj_website_id'] ?? '' ) );
+    }
+
+    /**
      * Advertisers to search.
      *
      * @return array Advertiser ID => display name.
@@ -254,7 +306,11 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
         $settings = get_option( 'rtg_settings', array() );
         $custom   = trim( (string) ( $settings['cj_query'] ?? '' ) );
 
-        return '' !== $custom ? $custom : self::DEFAULT_QUERY;
+        if ( '' !== $custom ) {
+            return $custom;
+        }
+
+        return '' !== self::get_website_id() ? self::DEFAULT_QUERY_WITH_LINKS : self::DEFAULT_QUERY;
     }
 
     /**
@@ -468,6 +524,7 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
                 'keywords'                   => array( $keyword ),
                 'limit'                      => $limit,
                 'offset'                     => max( 0, intval( $offset ) ),
+                'websiteId'                  => self::get_website_id(),
             ),
         ) );
 
