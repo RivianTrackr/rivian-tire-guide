@@ -4,6 +4,29 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.73.0] - 2026-08-25
+
+### Added
+- **The pipeline now reports its own failures.** Everything downstream of the sweep — pricing, coverage, delisting detection — degrades silently when the sweep stops, and every failure this feature has actually had would have been invisible until someone opened the admin: a rotated CJ token failing every run with a 401 (which has already happened once), a GraphQL schema change erroring every run, WP-Cron simply not firing, a fitment quietly no longer read to completion. The digest email only fires on success, so success was loud and failure was mute. `RTG_Health` now judges each run's own records and emails the admin — **once when a problem appears and once when it clears**, so a week-long outage is two emails, not seven. A rejected token is named as such, with its fix, rather than reported as a generic failure.
+- **Delistings email as they are detected**, rather than waiting as a badge for someone to visit: the daily sync compares the delisted set against what was already reported and mails only the difference. A tire that recovers and is dropped again alerts again.
+- **A dead schedule is caught from admin visits.** The sync's own cron hook cannot report a schedule that never fires it, so any wp-admin visit also probes, throttled to once per six hours. The settings page now also documents the genuinely reliable setup: a real server cron hitting `wp-cron.php` with `DISABLE_WP_CRON` set.
+- A Health Alerts toggle beside the digest setting, on by default.
+
+### Notes
+- The evaluation is a pure function of the run's stats, and both it and the once-per-outage email lifecycle are pinned by `tests/contract/health.php`, which executes in CI. Verified in both directions: the check was run against a sabotaged build with the alert memory wiped, where four assertions fail — it is not decorative.
+- Writing that check caught a real gap before it shipped: the first version's guard against flagging coverage on stats that carry none used "at least one fitment was read completely" as its proxy, which silenced the worst case — every fitment regressing at once. The guard now tests for the presence of coverage data itself, and both cases are pinned.
+
+## [1.72.0] - 2026-08-24
+
+### Added
+- **Delisting detection on the Affiliate Links page.** A broken-link check asks whether a URL still resolves, and a tire dropped from the affiliate catalog passes it: the retailer's page is still there, the link still redirects, and the product has quietly been removed from the feed the commission and the price come from. That is invisible from the URL and plain in the sweep's own history, which records when each listing was last seen. Tires now carry a **Delisted** badge with the date and the retailer, a **Not in catalog** badge for one no sweep has ever seen, a stat card, a filter tab, and a notice when any exist.
+- A tire still listed by one retailer and dropped by another reads as listed, and says which one stopped.
+
+### Notes
+- The distinction that makes this trustworthy is the one it would have been easiest to skip: **a listing can go stale because the retailer dropped it, or because our own sweep never read that fitment.** Only a fitment the last sweep read completely can support a delisting claim; anything else is reported as not yet known. Announcing a delisting that is really our own coverage gap would send someone to renegotiate a link that was never dropped.
+- Three days is the threshold. The sweep runs daily, so one missed day is ordinary — a slow run, a failed request — and is not a delisting.
+- The first pass at the label named every retailer that had ever listed a tire, which credited one that dropped it a month ago as though it still carried it. Both that and the delisting date, which was being taken from the wrong retailer when two dropped weeks apart, are pinned by tests.
+
 ## [1.71.0] - 2026-08-24
 
 ### Added

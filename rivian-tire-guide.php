@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Rivian Tire Guide
  * Description: Interactive tire guide for Rivian vehicles with filtering, comparison, and ratings.
- * Version: 1.71.0
+ * Version: 1.73.0
  * Author: RivianTrackr
  * Text Domain: rivian-tire-guide
  * Requires at least: 5.8
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'RTG_VERSION', '1.71.0' );
+define( 'RTG_VERSION', '1.73.0' );
 define( 'RTG_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'RTG_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'RTG_PLUGIN_FILE', __FILE__ );
@@ -83,9 +83,19 @@ function rtg_init() {
     RTG_Catalog_Sync::schedule();
     add_action( RTG_Catalog_Sync::CRON_HOOK, array( 'RTG_Catalog_Sync', 'run' ) );
 
+    // Health runs after the sync on the same hook (priority 20 vs the default
+    // 10), so it judges the run that just finished — including a failed one,
+    // which is the case it exists for.
+    add_action( RTG_Catalog_Sync::CRON_HOOK, array( 'RTG_Health', 'after_sync' ), 20 );
+
     // Admin panel.
     if ( is_admin() ) {
         new RTG_Admin();
+
+        // The cron hook can't report a schedule that never fires it, so any
+        // admin visit also probes, throttled to once every few hours. Catches
+        // a dead WP-Cron the next time anyone opens the dashboard.
+        add_action( 'admin_init', array( 'RTG_Health', 'admin_probe' ) );
     }
 
     // Frontend shortcode and assets.

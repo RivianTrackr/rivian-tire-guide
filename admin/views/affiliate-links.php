@@ -60,6 +60,21 @@ foreach ( $tires as $tire ) {
 $all_tires_for_counts = ( $link_filter !== 'all' || ! empty( $search ) )
     ? RTG_Database::get_tires_for_link_management( 'all', '' )
     : $tires;
+// Catalog presence: whether the retailer is still listing each tire.
+//
+// A broken-link check asks whether the URL resolves, and a delisted tire passes
+// that — the page is still there, the link still redirects, and the product has
+// been dropped from the feed the commission and the price come from. The sweep
+// records when it last saw each listing, so a listing that stops appearing is a
+// delisting with a date on it.
+$presence = RTG_Catalog_Presence::evaluate(
+    $all_tires_for_counts,
+    RTG_Candidates::get_by_match_key(),
+    RTG_Catalog_Presence::fully_read_sizes( RTG_Catalog_Sync::get_stats() ?: array() ),
+    current_time( 'timestamp' )
+);
+$presence_counts = RTG_Catalog_Presence::summarize( $presence );
+
 $total_affiliate = 0;
 $total_regular   = 0;
 $total_missing   = 0;
@@ -123,7 +138,23 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
             <div class="rtg-stat-value" style="color: <?php echo $broken_count > 0 ? 'var(--rtg-error)' : 'var(--rtg-success)'; ?>;"><?php echo esc_html( $broken_count ); ?></div>
             <div class="rtg-stat-label">Broken Links</div>
         </div>
+        <div class="rtg-stat-card">
+            <div class="rtg-stat-value" style="color: <?php echo $presence_counts[ RTG_Catalog_Presence::STATUS_DELISTED ] > 0 ? 'var(--rtg-error)' : 'var(--rtg-success)'; ?>;"><?php echo esc_html( $presence_counts[ RTG_Catalog_Presence::STATUS_DELISTED ] ); ?></div>
+            <div class="rtg-stat-label">Delisted</div>
+        </div>
     </div>
+
+    <?php if ( $presence_counts[ RTG_Catalog_Presence::STATUS_DELISTED ] > 0 ) : ?>
+        <div class="rtg-notice rtg-notice-warning" style="margin-top:16px;">
+            <span>
+                <strong><?php echo esc_html( $presence_counts[ RTG_Catalog_Presence::STATUS_DELISTED ] ); ?>
+                tire(s) were dropped from the affiliate catalog.</strong>
+                Their links may still resolve, so a link check passes them &mdash; but the retailer has stopped
+                listing the product, so they no longer earn a commission or refresh their price. Filter by
+                <strong>Delisted</strong> to see them.
+            </span>
+        </div>
+    <?php endif; ?>
 
     <!-- Link Health Check -->
     <div class="rtg-card" style="margin-bottom:20px;">
@@ -163,6 +194,7 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
             'regular'   => 'Regular (' . $total_regular . ')',
             'missing'   => 'Missing Link (' . $total_missing . ')',
             'broken'    => 'Broken (' . $broken_count . ')',
+            'delisted'  => 'Delisted (' . $presence_counts[ RTG_Catalog_Presence::STATUS_DELISTED ] . ')',
             'no_review' => 'No Review (' . $counts['missing_review'] . ')',
         );
         foreach ( $tabs as $key => $label ) :
@@ -233,6 +265,14 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
                             if ( $link_filter === 'broken' && ! $is_broken ) {
                                 continue;
                             }
+
+                            $tire_presence   = $presence[ $tire['tire_id'] ] ?? array();
+                            $presence_status = $tire_presence['status'] ?? RTG_Catalog_Presence::STATUS_UNKNOWN;
+                            $is_delisted     = RTG_Catalog_Presence::STATUS_DELISTED === $presence_status;
+
+                            if ( $link_filter === 'delisted' && ! $is_delisted ) {
+                                continue;
+                            }
                         ?>
                             <tr data-tire-id="<?php echo esc_attr( $tire['tire_id'] ); ?>"<?php echo $is_broken ? ' data-broken="1"' : ''; ?>>
                                 <td>
@@ -243,6 +283,11 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
                                     <span class="rtg-badge <?php echo esc_attr( $badge_class ); ?> rtg-link-status-badge"><?php echo esc_html( $badge_label ); ?></span>
                                     <?php if ( $is_broken ) : ?>
                                         <span class="rtg-badge rtg-badge-error rtg-broken-badge" title="<?php echo esc_attr( $broken_reason ); ?>" style="margin-top:4px;display:inline-block;background:#ef4444;color:#fff;font-size:11px;">Broken</span>
+                                    <?php endif; ?>
+                                    <?php if ( $is_delisted ) : ?>
+                                        <span class="rtg-badge" title="<?php echo esc_attr( $tire_presence['label'] ?? '' ); ?>" style="margin-top:4px;display:inline-block;background:#f97316;color:#fff;font-size:11px;">Delisted</span>
+                                    <?php elseif ( RTG_Catalog_Presence::STATUS_NEVER_LISTED === $presence_status ) : ?>
+                                        <span class="rtg-badge rtg-badge-muted" title="<?php echo esc_attr( $tire_presence['label'] ?? '' ); ?>" style="margin-top:4px;display:inline-block;font-size:11px;">Not in catalog</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="rtg-link-cell" data-field="link">
