@@ -9,12 +9,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - **Add to Guide now brings the product image with it.** The catalog has always captured each product's image URL; importing a tire still meant finding a photo by hand. Now, saving a tire from discovery with the image field left blank downloads the candidate's product image into the site's tire images folder, named the way the hand-added ones are (`brand-model` slug, extension from what the server actually sent) — so imported tires get a permanent, self-hosted image instead of a hotlink to a retailer CDN. The Add form shows a preview of the catalog image with a note saying exactly what saving will do.
 - **A file you placed always wins.** If an image by that brand-model name already exists in the folder, it is reused without a single network request — which also means a second size of the same model shares its sibling's photo, and imports slot into the existing naming convention instead of inventing a parallel one.
+- **Tire names in the discovery queue link to the retailer's product page**, in a new tab — and deliberately to the *plain* page, not the tracked link, so reviewing a tire never registers in the affiliate network's click statistics. The unwrapping handles CJ's both link shapes (destination in a query parameter, including double-encoded, and appended to the path) and passes a direct link through untouched.
 
 ### Notes
 - The image URL comes from the affiliate feed — external data — so the fetch is defensive, and the tests pin the refusals: `wp_safe_remote_get` (no redirects into private address space), an image content type required, the bytes verified as an actual image whatever the header claims, a 5 MB cap, and only over HTTP(S). If the download fails for any reason, the tire keeps the remote URL rather than nothing — visible on the edit screen, replaceable any time.
 - Typing a filename or URL into the image field disables all of this for that save; the automation only fills silence, never overrides a choice.
 - The folder path (`assets/tire-guide/images/` under the WordPress root) is filterable via `rtg_tire_images_dir` for installs whose site root and WordPress root differ.
-- The suite lands at 213 tests, 544 assertions, green.
+- The suite lands at 215 tests, 549 assertions, green.
 
 ## [1.76.0] - 2026-08-25
 

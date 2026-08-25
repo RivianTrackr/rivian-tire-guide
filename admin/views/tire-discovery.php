@@ -689,7 +689,20 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                     ?>
                         <tr data-candidate-id="<?php echo esc_attr( $candidate['id'] ); ?>">
                             <td>
-                                <strong><?php echo esc_html( trim( $candidate['brand'] . ' ' . $candidate['model'] ) ); ?></strong>
+                                <?php
+                                // The plain product page, not the tracked link —
+                                // reviewing a tire shouldn't register affiliate clicks.
+                                $product_url  = RTG_Price_Sync::destination_url( $candidate['link'] ?? '' );
+                                $product_name = trim( $candidate['brand'] . ' ' . $candidate['model'] );
+                                ?>
+                                <?php if ( '' !== $product_url ) : ?>
+                                    <a href="<?php echo esc_url( $product_url ); ?>" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:inherit;" title="View on the retailer's site">
+                                        <strong><?php echo esc_html( $product_name ); ?></strong>
+                                        <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:10px;color:var(--rtg-text-muted);margin-left:4px;"></i>
+                                    </a>
+                                <?php else : ?>
+                                    <strong><?php echo esc_html( $product_name ); ?></strong>
+                                <?php endif; ?>
                                 <?php if ( ! empty( $candidate['matched_tire_id'] ) ) : ?>
                                     <br><span class="rtg-badge rtg-badge-muted">in guide as <?php echo esc_html( $candidate['matched_tire_id'] ); ?></span>
                                 <?php endif; ?>

@@ -84,6 +84,47 @@ class Test_RTG_Price_Sync extends WP_UnitTestCase {
         }
     }
 
+    // --- Unwrapping a link to its product page ---
+
+    /**
+     * Reviewing a tire shouldn't register affiliate clicks, so the queue
+     * links to the plain product page a tracked link ultimately lands on.
+     */
+    public function test_unwraps_a_tracked_link_to_its_product_page() {
+        $this->assertSame(
+            'https://www.tirerack.com/tires/x',
+            RTG_Price_Sync::destination_url(
+                'https://www.anrdoezrs.net/click-1234567-15559262?url=https%3A%2F%2Fwww.tirerack.com%2Ftires%2Fx'
+            )
+        );
+        // Double-encoded destinations decode all the way through.
+        $this->assertSame(
+            'https://www.tirerack.com/a',
+            RTG_Price_Sync::destination_url(
+                'https://www.dpbolvw.net/click-1-2?url=https%253A%252F%252Fwww.tirerack.com%252Fa'
+            )
+        );
+        // anrdoezrs-style links append the destination to the path instead.
+        $this->assertSame(
+            'https://simpletire.com/y',
+            RTG_Price_Sync::destination_url(
+                'https://www.anrdoezrs.net/links/101098512/type/dlg/https://simpletire.com/y'
+            )
+        );
+    }
+
+    /**
+     * A link that is already direct passes through untouched; an empty one
+     * stays empty rather than becoming a broken anchor.
+     */
+    public function test_a_direct_link_is_already_its_own_destination() {
+        $this->assertSame(
+            'https://www.tirerack.com/tires/x',
+            RTG_Price_Sync::destination_url( 'https://www.tirerack.com/tires/x' )
+        );
+        $this->assertSame( '', RTG_Price_Sync::destination_url( '' ) );
+    }
+
     // --- Decisions ---
 
     /**

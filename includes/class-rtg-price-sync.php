@@ -122,6 +122,65 @@ class RTG_Price_Sync {
     }
 
     /**
+     * The plain product page a purchase link ultimately lands on.
+     *
+     * A tracked link is the right thing to publish and the wrong thing to
+     * click while reviewing — every visit would land in the affiliate
+     * network's click statistics. This unwraps the destination so an admin
+     * can look at the product without registering as traffic: a tracking
+     * parameter's URL if one is carried, the URL embedded in the path for
+     * networks that append it there, or the link unchanged when it is
+     * already direct.
+     *
+     * @param string $link Purchase link, tracked or plain.
+     * @return string Product page URL, or '' for an empty link.
+     */
+    public static function destination_url( $link ) {
+        $link = trim( (string) $link );
+        if ( '' === $link ) {
+            return '';
+        }
+
+        // A destination URL carried in a tracking parameter.
+        $query = (string) wp_parse_url( $link, PHP_URL_QUERY );
+        if ( '' !== $query ) {
+            parse_str( $query, $params );
+
+            foreach ( self::DESTINATION_PARAMS as $key ) {
+                foreach ( $params as $name => $value ) {
+                    if ( strcasecmp( $name, $key ) !== 0 || ! is_string( $value ) || '' === $value ) {
+                        continue;
+                    }
+
+                    // Networks sometimes encode the destination twice.
+                    $candidate = $value;
+                    if ( ! preg_match( '#^https?://#i', $candidate ) ) {
+                        $candidate = rawurldecode( $candidate );
+                    }
+
+                    if ( preg_match( '#^https?://#i', $candidate ) ) {
+                        return $candidate;
+                    }
+                }
+            }
+        }
+
+        // A destination appended to the path (anrdoezrs-style .../type/dlg/https://...).
+        $embedded = stripos( $link, 'http', 8 );
+        if ( false !== $embedded ) {
+            $candidate = substr( $link, $embedded );
+            if ( ! preg_match( '#^https?://#i', $candidate ) ) {
+                $candidate = rawurldecode( $candidate );
+            }
+            if ( preg_match( '#^https?://#i', $candidate ) ) {
+                return $candidate;
+            }
+        }
+
+        return $link;
+    }
+
+    /**
      * Reduce a retailer name to a form two spellings of it can be compared in.
      *
      * A link resolves to the name this class knows a retailer by; a candidate
