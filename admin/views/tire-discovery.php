@@ -334,7 +334,13 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                     <p class="description" style="margin:12px 0 0;">
                         The whole run took
                         <?php echo esc_html( number_format( (float) $stats['elapsed'], 1 ) ); ?>s
-                        of its <?php echo esc_html( intval( $catalog_run_budget ) ); ?>s budget.
+                        of its <?php echo esc_html( intval( $stats['run_budget'] ?? $catalog_run_budget ) ); ?>s budget.
+                        <?php if ( ! empty( $stats['budget_capped'] ) ) : ?>
+                            The budget was capped because this run was started from the browser,
+                            which has to answer before the proxy in front of the site stops waiting
+                            &mdash; the nightly run uses the full
+                            <?php echo esc_html( intval( $catalog_run_budget ) ); ?>s.
+                        <?php endif; ?>
                     </p>
                 <?php endif; ?>
 
@@ -1071,6 +1077,11 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 they could outlive the request and return nothing at all. <strong>Lower this first
                                 if Run Discovery Now fails with no reply.</strong> A shorter run costs
                                 time-to-complete, never coverage &mdash; both passes resume where they stopped.
+                                This full budget applies to the nightly cron run;
+                                <strong>Run Discovery Now caps itself at
+                                <?php echo esc_html( RTG_Catalog_Sync::INTERACTIVE_BUDGET ); ?>s</strong> regardless,
+                                because the proxy in front of the site (Cloudflare&rsquo;s 524) stops waiting for a
+                                browser request after about 100 seconds &mdash; no setting can negotiate with that.
                             </p>
                         </td>
                     </tr>

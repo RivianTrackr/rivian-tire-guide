@@ -45,6 +45,19 @@ class RTG_Catalog_Sync {
     const RUN_BUDGET = 120;
 
     /**
+     * Ceiling for a run started from the browser, whatever the setting says.
+     *
+     * A CDN or proxy in front of the site (Cloudflare's 524 names its own)
+     * stops waiting for the origin after roughly 100 seconds — a limit the
+     * configured budget can't negotiate with. The browser request has to fit
+     * the sweep, the re-key, the prune, link sync and price sync all under
+     * it, so the sweep's share stops here. The nightly cron run doesn't
+     * answer to a proxy and keeps the full configured budget; the rotation
+     * cursors mean a capped run still makes progress, never loses coverage.
+     */
+    const INTERACTIVE_BUDGET = 75;
+
+    /**
      * Schedule the daily sync if it isn't already scheduled.
      *
      * Daily is deliberate: retailer catalogs turn over slowly, and a tire that
@@ -99,9 +112,13 @@ class RTG_Catalog_Sync {
     /**
      * Run a full discovery pass.
      *
+     * @param int $budget_cap Optional ceiling on the run budget, in seconds.
+     *                        A browser-started run passes INTERACTIVE_BUDGET
+     *                        so the request fits under a fronting proxy's
+     *                        wait limit; 0 means the configured budget rules.
      * @return array Statistics for the run, as saved to STATS_OPTION.
      */
-    public static function run() {
+    public static function run( $budget_cap = 0 ) {
         $settings = get_option( 'rtg_settings', array() );
 
         if ( isset( $settings['catalog_sync_enabled'] ) && ! $settings['catalog_sync_enabled'] ) {
@@ -120,6 +137,11 @@ class RTG_Catalog_Sync {
         $run_budget  = isset( $settings['catalog_run_budget'] )
             ? max( 30, min( 900, intval( $settings['catalog_run_budget'] ) ) )
             : self::RUN_BUDGET;
+
+        $budget_capped = $budget_cap > 0 && $budget_cap < $run_budget;
+        if ( $budget_capped ) {
+            $run_budget = intval( $budget_cap );
+        }
 
         $stats = array(
             'status'         => 'success',
@@ -202,7 +224,9 @@ class RTG_Catalog_Sync {
             $stats['sources'][] = $source_stats;
         }
 
-        $stats['elapsed'] = round( microtime( true ) - $run_started, 1 );
+        $stats['elapsed']       = round( microtime( true ) - $run_started, 1 );
+        $stats['run_budget']    = $run_budget;
+        $stats['budget_capped'] = $budget_capped;
 
         // Rows the sweep didn't revisit still hold the match they were given
         // when they were last seen, which the guide may have moved on from.
