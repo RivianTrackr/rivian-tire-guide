@@ -19,7 +19,7 @@ class Test_RTG_Catalog_Presence extends WP_UnitTestCase {
         $this->now = strtotime( '2026-08-24 12:00:00' );
     }
 
-    private function at( $days_ago ) {
+    private function seen_at( $days_ago ) {
         return gmdate( 'Y-m-d H:i:s', $this->now - ( $days_ago * DAY_IN_SECONDS ) );
     }
 
@@ -28,7 +28,7 @@ class Test_RTG_Catalog_Presence extends WP_UnitTestCase {
     }
 
     private function listing( $advertiser, $days_ago ) {
-        return array( 'advertiser_name' => $advertiser, 'last_seen_at' => $this->at( $days_ago ) );
+        return array( 'advertiser_name' => $advertiser, 'last_seen_at' => $this->seen_at( $days_ago ) );
     }
 
     private function keyed( $brand, $model, $size, $listings ) {

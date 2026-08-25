@@ -12,6 +12,7 @@ if ( isset( $_POST['rtg_catalog_settings_save'] ) ) {
     $settings['catalog_sync_enabled']   = ! empty( $_POST['catalog_sync_enabled'] );
     $settings['catalog_notify_enabled'] = ! empty( $_POST['catalog_notify_enabled'] );
     $settings['health_alerts_enabled']  = ! empty( $_POST['health_alerts_enabled'] );
+    $settings['stale_price_report_enabled'] = ! empty( $_POST['stale_price_report_enabled'] );
     $settings['catalog_fixture_url']    = esc_url_raw( wp_unslash( $_POST['catalog_fixture_url'] ?? '' ) );
 
     // --- CJ credentials and query ---
@@ -79,6 +80,7 @@ if ( isset( $_POST['rtg_catalog_settings_save'] ) ) {
 $sync_enabled   = $settings['catalog_sync_enabled'] ?? true;
 $notify_enabled = $settings['catalog_notify_enabled'] ?? true;
 $health_alerts  = $settings['health_alerts_enabled'] ?? true;
+$stale_price_report = $settings['stale_price_report_enabled'] ?? true;
 $fixture_url    = $settings['catalog_fixture_url'] ?? '';
 $min_load_index = isset( $settings['catalog_min_load_index'] )
     ? intval( $settings['catalog_min_load_index'] )
@@ -153,12 +155,31 @@ $size_filter = isset( $_GET['candidate_size'] )
 $vehicle_filter = isset( $_GET['candidate_vehicle'] )
     ? sanitize_text_field( wp_unslash( $_GET['candidate_vehicle'] ) )
     : '';
+$brand_filter = isset( $_GET['candidate_brand'] )
+    ? sanitize_text_field( wp_unslash( $_GET['candidate_brand'] ) )
+    : '';
 
 $candidates = RTG_Candidates::query( array(
     'status'  => $status_filter,
     'size'    => $size_filter,
     'vehicle' => $vehicle_filter,
+    'brand'   => $brand_filter,
 ) );
+
+// Volume in the queue clusters by brand — a page of one budget brand is one
+// decision, not sixty — so brands come with counts, and brands outside the
+// curated list are tallied toward the policy hint below.
+$brand_counts    = RTG_Candidates::get_brand_counts( $status_filter );
+$curated_brands  = array();
+foreach ( RTG_Admin::get_dropdown_options( 'brands' ) as $curated ) {
+    $curated_brands[ RTG_Tire_Qualifier::normalize_brand( $curated ) ] = true;
+}
+$uncovered_brand_total = 0;
+foreach ( $brand_counts as $brand_name => $brand_total ) {
+    if ( ! isset( $curated_brands[ RTG_Tire_Qualifier::normalize_brand( $brand_name ) ] ) ) {
+        $uncovered_brand_total += $brand_total;
+    }
+}
 
 $dd_sizes = RTG_Admin::get_dropdown_options( 'sizes' );
 
@@ -392,6 +413,19 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                     <?php endif; ?>
                 <?php endif; ?>
 
+                <?php
+                $pruned_total = intval( $stats['pruned']['off_fitment'] ?? 0 ) + intval( $stats['pruned']['stale'] ?? 0 );
+                ?>
+                <?php if ( $pruned_total > 0 ) : ?>
+                    <p class="description" style="margin:10px 0 0;">
+                        Housekeeping: <?php echo esc_html( number_format( $pruned_total ) ); ?> near miss(es)
+                        deleted &mdash; <?php echo esc_html( number_format( intval( $stats['pruned']['off_fitment'] ?? 0 ) ) ); ?>
+                        in fitments the guide doesn't stock,
+                        <?php echo esc_html( number_format( intval( $stats['pruned']['stale'] ?? 0 ) ) ); ?>
+                        unseen for 60+ days. A pruned product that reappears is simply re-filed by the next sweep.
+                    </p>
+                <?php endif; ?>
+
                 <?php if ( ! empty( $stats['errors'] ) ) : ?>
                     <div class="rtg-notice rtg-notice-warning" style="margin-top:16px;">
                         <span>
@@ -454,6 +488,17 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                 </select>
             <?php endif; ?>
 
+            <label for="candidate_brand" style="font-size:13px;color:var(--rtg-text-muted);">Brand</label>
+            <select name="candidate_brand" id="candidate_brand" class="rtg-select">
+                <option value="">All brands</option>
+                <?php foreach ( $brand_counts as $brand_option => $brand_total ) : ?>
+                    <?php if ( '' === $brand_option ) { continue; } ?>
+                    <option value="<?php echo esc_attr( $brand_option ); ?>" <?php selected( $brand_filter, $brand_option ); ?>>
+                        <?php echo esc_html( $brand_option . ' (' . $brand_total . ')' ); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+
             <label for="candidate_size" style="font-size:13px;color:var(--rtg-text-muted);">Size</label>
             <select name="candidate_size" id="candidate_size" class="rtg-select">
                 <option value="">All sizes</option>
@@ -462,6 +507,17 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                 <?php endforeach; ?>
             </select>
             <button type="submit" class="rtg-btn rtg-btn-secondary">Filter</button>
+
+            <?php if ( in_array( $status_filter, array( RTG_Candidates::STATUS_NEW, RTG_Candidates::STATUS_DISMISSED ), true ) && ! empty( $candidates ) ) : ?>
+                <button type="button" id="rtg-bulk-candidates" class="rtg-btn rtg-btn-danger"
+                    data-status="<?php echo esc_attr( $status_filter ); ?>"
+                    data-brand="<?php echo esc_attr( $brand_filter ); ?>"
+                    data-size="<?php echo esc_attr( $size_filter ); ?>"
+                    data-vehicle="<?php echo esc_attr( $vehicle_filter ); ?>"
+                    data-to="<?php echo esc_attr( RTG_Candidates::STATUS_NEW === $status_filter ? RTG_Candidates::STATUS_DISMISSED : RTG_Candidates::STATUS_NEW ); ?>">
+                    <?php echo RTG_Candidates::STATUS_NEW === $status_filter ? 'Dismiss everything this filter matches' : 'Restore everything this filter matches'; ?>
+                </button>
+            <?php endif; ?>
 
             <?php if ( '' !== $vehicle_filter ) : ?>
                 <span style="font-size:12px;color:var(--rtg-text-muted);">
@@ -473,6 +529,19 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
             <?php endif; ?>
         </div>
     </form>
+
+    <?php if ( RTG_Candidates::STATUS_NEW === $status_filter && $uncovered_brand_total > 0 ) : ?>
+        <div class="rtg-notice rtg-notice-info" style="margin-bottom:16px;">
+            <span>
+                <strong><?php echo esc_html( number_format( $uncovered_brand_total ) ); ?></strong> of the
+                <?php echo esc_html( number_format( $counts[ RTG_Candidates::STATUS_NEW ] ) ); ?> tire(s)
+                awaiting review are from brands outside your curated list. Setting the
+                <strong>brand policy</strong> below to <em>reject</em> files those as near misses automatically
+                on the next run — the brand filter above shows who they are, and the bulk button clears any
+                brand in one click either way.
+            </span>
+        </div>
+    <?php endif; ?>
 
     <!-- Retailer coverage and price refresh -->
     <div class="rtg-card" style="margin-bottom:20px;">
@@ -539,7 +608,7 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
 
                     <table class="rtg-table" style="margin-top:8px;">
                         <thead>
-                            <tr><th>Tire</th><th>Size</th><th>Price</th><th>Link</th><th>Why it isn't matched</th></tr>
+                            <tr><th>Tire</th><th>Size</th><th>Price</th><th>Price age</th><th>Link</th><th>Why it isn't matched</th></tr>
                         </thead>
                         <tbody>
                         <?php foreach ( $uncovered_tires as $uncovered ) : ?>
@@ -552,6 +621,20 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 </td>
                                 <td style="font-family:var(--rtg-font-mono, monospace);"><?php echo esc_html( $uncovered['size'] ); ?></td>
                                 <td><?php echo $uncovered['price'] > 0 ? '$' . esc_html( number_format( (float) $uncovered['price'], 2 ) ) : '&mdash;'; ?></td>
+                                <td style="font-size:12px;color:var(--rtg-text-muted);">
+                                    <?php
+                                    // These prices only move when a person moves them, so
+                                    // their age is the number that matters.
+                                    $price_touch = RTG_Stale_Prices::last_price_touch( $uncovered );
+                                    if ( $price_touch > 0 ) {
+                                        $price_age_days = ( current_time( 'timestamp' ) - $price_touch ) / DAY_IN_SECONDS;
+                                        echo '<span' . ( $price_age_days > RTG_Stale_Prices::DEFAULT_STALE_DAYS ? ' style="color:var(--rtg-error);font-weight:600;"' : '' ) . '>'
+                                            . esc_html( human_time_diff( $price_touch, current_time( 'timestamp' ) ) ) . ' ago</span>';
+                                    } else {
+                                        echo '&mdash;';
+                                    }
+                                    ?>
+                                </td>
                                 <td style="font-size:12px;color:var(--rtg-text-muted);">
                                     <?php
                                     $link_retailer = RTG_Price_Sync::resolve_link_retailer( $uncovered['link'] ?? '' );
@@ -573,6 +656,14 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                                 <code><?php echo esc_html( $near['model'] ?: '(no model parsed)' ); ?></code>
                                                 <?php if ( ! empty( $near['advertisers'] ) ) : ?>
                                                     &mdash; <?php echo esc_html( implode( ', ', $near['advertisers'] ) ); ?>
+                                                <?php endif; ?>
+                                                <?php if ( RTG_Coverage::GAP_MODEL_VARIANT === ( $reason['code'] ?? '' ) && '' !== $near['model'] ) : ?>
+                                                    <button type="button" class="rtg-btn rtg-btn-secondary rtg-adopt-alias"
+                                                        style="padding:2px 8px;font-size:11px;margin-left:6px;"
+                                                        data-tire-id="<?php echo esc_attr( $uncovered['tire_id'] ); ?>"
+                                                        data-alias="<?php echo esc_attr( $near['model'] ); ?>">
+                                                        Adopt as alias
+                                                    </button>
                                                 <?php endif; ?>
                                             </li>
                                         <?php endforeach; ?>
@@ -795,6 +886,21 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 <code>wp-cron.php</code> every few minutes with <code>DISABLE_WP_CRON</code> set —
                                 most hosts have a checkbox for this. Until then, any wp-admin visit also checks and
                                 will flag a schedule that has gone quiet.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="stale_price_report_enabled">Stale Price Report</label></th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="stale_price_report_enabled" id="stale_price_report_enabled" value="1" <?php checked( $stale_price_report ); ?>>
+                                Email me monthly about prices only a person can refresh
+                            </label>
+                            <p class="description" style="max-width:680px;">
+                                Covered tires re-price themselves daily. The rest update only when someone edits them,
+                                and a stale price is neither a broken link nor a failed run, so nothing else would
+                                mention it. Monthly, listing tires untouched for
+                                <?php echo esc_html( RTG_Stale_Prices::DEFAULT_STALE_DAYS ); ?>+ days, oldest first.
                             </p>
                         </td>
                     </tr>

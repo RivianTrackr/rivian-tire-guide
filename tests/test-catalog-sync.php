@@ -401,4 +401,164 @@ class Test_RTG_Catalog_Sync extends WP_UnitTestCase {
 
         $this->assertArrayNotHasKey( $key, $result['wanted'] );
     }
+
+    // --- Bulk decisions ---
+
+    private function seed_candidate( $overrides = array() ) {
+        return RTG_Candidates::upsert( array_merge( array(
+            'source'          => 'cj',
+            'advertiser_id'   => '1',
+            'advertiser_name' => 'The Tire Rack',
+            'external_id'     => 'bulk-' . wp_rand( 1, 999999 ),
+            'brand'           => 'Winrun',
+            'model'           => 'KF997',
+            'size'            => '305/45R22',
+            'qualifies'       => 1,
+        ), $overrides ) );
+    }
+
+    /**
+     * Bulk dismiss acts on what the filter matches in the database, and only
+     * that — a different brand in the same tab stays put.
+     */
+    public function test_bulk_dismiss_moves_only_the_filtered_brand() {
+        $this->seed_candidate();
+        $this->seed_candidate();
+        $keep = $this->seed_candidate( array( 'brand' => 'Michelin', 'model' => 'Defender' ) );
+
+        $changed = RTG_Candidates::bulk_set_status(
+            array( 'status' => RTG_Candidates::STATUS_NEW, 'brand' => 'Winrun' ),
+            RTG_Candidates::STATUS_DISMISSED
+        );
+
+        $this->assertSame( 2, $changed );
+        $this->assertSame( RTG_Candidates::STATUS_NEW, RTG_Candidates::get( $keep['id'] )['status'] );
+    }
+
+    /**
+     * Bulk can only write dismissed or new. An import is a human record of a
+     * tire actually saved to the guide; no bulk sweep may produce or destroy
+     * one.
+     */
+    public function test_bulk_cannot_touch_imported_rows() {
+        $row = $this->seed_candidate();
+        RTG_Candidates::set_status( $row['id'], RTG_Candidates::STATUS_IMPORTED );
+
+        $changed = RTG_Candidates::bulk_set_status(
+            array( 'status' => RTG_Candidates::STATUS_IMPORTED ),
+            RTG_Candidates::STATUS_DISMISSED
+        );
+
+        $this->assertSame( 0, $changed );
+        $this->assertSame( RTG_Candidates::STATUS_IMPORTED, RTG_Candidates::get( $row['id'] )['status'] );
+    }
+
+    /**
+     * A mistaken bulk dismiss is recoverable by the same route.
+     */
+    public function test_bulk_dismiss_is_reversible_in_bulk() {
+        $this->seed_candidate();
+
+        RTG_Candidates::bulk_set_status(
+            array( 'status' => RTG_Candidates::STATUS_NEW, 'brand' => 'Winrun' ),
+            RTG_Candidates::STATUS_DISMISSED
+        );
+        $restored = RTG_Candidates::bulk_set_status(
+            array( 'status' => RTG_Candidates::STATUS_DISMISSED, 'brand' => 'Winrun' ),
+            RTG_Candidates::STATUS_NEW
+        );
+
+        $this->assertSame( 1, $restored );
+    }
+
+    /**
+     * The brand facet counts what the queue actually holds.
+     */
+    public function test_brand_counts_reflect_the_queue() {
+        $this->seed_candidate();
+        $this->seed_candidate();
+        $this->seed_candidate( array( 'brand' => 'Michelin', 'model' => 'Defender' ) );
+
+        $counts = RTG_Candidates::get_brand_counts( RTG_Candidates::STATUS_NEW );
+
+        $this->assertSame( 2, $counts['Winrun'] );
+        $this->assertSame( 1, $counts['Michelin'] );
+    }
+
+    // --- Retention ---
+
+    /**
+     * A rejected row in a fitment the guide doesn't stock can never qualify,
+     * so it goes; a rejected row in a stocked fitment stays.
+     */
+    public function test_prune_deletes_off_fitment_near_misses_only() {
+        $off  = $this->seed_candidate( array( 'size' => '215/45R17', 'qualifies' => 0 ) );
+        $near = $this->seed_candidate( array( 'size' => '305/45R22', 'qualifies' => 0 ) );
+
+        $result = RTG_Candidates::prune( array( '305/45R22' ) );
+
+        $this->assertSame( 1, $result['off_fitment'] );
+        $this->assertNull( RTG_Candidates::get( $off['id'] ) );
+        $this->assertNotNull( RTG_Candidates::get( $near['id'] ) );
+    }
+
+    /**
+     * Human decisions are never pruned, whatever their fitment: dismissed
+     * rows are the memory that stops things resurfacing.
+     */
+    public function test_prune_never_touches_human_decisions() {
+        $row = $this->seed_candidate( array( 'size' => '215/45R17', 'qualifies' => 1 ) );
+        RTG_Candidates::set_status( $row['id'], RTG_Candidates::STATUS_DISMISSED );
+
+        RTG_Candidates::prune( array( '305/45R22' ) );
+
+        $this->assertNotNull( RTG_Candidates::get( $row['id'] ) );
+    }
+
+    /**
+     * Queue rows are awaiting a decision, not eligible for housekeeping.
+     */
+    public function test_prune_never_touches_the_review_queue() {
+        $row = $this->seed_candidate( array( 'size' => '215/45R17', 'qualifies' => 1 ) );
+
+        RTG_Candidates::prune( array( '305/45R22' ) );
+
+        $this->assertNotNull( RTG_Candidates::get( $row['id'] ) );
+    }
+
+    /**
+     * An empty size list means "off-fitment" is undefined, and nothing is
+     * deleted on that basis — the destructive version of a silent failure.
+     */
+    public function test_prune_deletes_nothing_when_the_size_list_is_empty() {
+        $row = $this->seed_candidate( array( 'size' => '215/45R17', 'qualifies' => 0 ) );
+
+        $result = RTG_Candidates::prune( array() );
+
+        $this->assertSame( 0, $result['off_fitment'] );
+        $this->assertNotNull( RTG_Candidates::get( $row['id'] ) );
+    }
+
+    /**
+     * A rejected listing the catalog itself dropped two months ago goes; a
+     * recently seen one stays.
+     */
+    public function test_prune_deletes_long_unseen_near_misses() {
+        global $wpdb;
+
+        $old  = $this->seed_candidate( array( 'size' => '305/45R22', 'qualifies' => 0 ) );
+        $new  = $this->seed_candidate( array( 'size' => '305/45R22', 'qualifies' => 0 ) );
+
+        $wpdb->update(
+            RTG_Candidates::table(),
+            array( 'last_seen_at' => gmdate( 'Y-m-d H:i:s', time() - 90 * DAY_IN_SECONDS ) ),
+            array( 'id' => $old['id'] )
+        );
+
+        $result = RTG_Candidates::prune( array( '305/45R22' ), 60 );
+
+        $this->assertSame( 1, $result['stale'] );
+        $this->assertNull( RTG_Candidates::get( $old['id'] ) );
+        $this->assertNotNull( RTG_Candidates::get( $new['id'] ) );
+    }
 }

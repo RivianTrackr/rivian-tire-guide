@@ -33,6 +33,58 @@ jobs:
       - name: Verify build
         run: npm run build
 
+  php-unit:
+    name: PHP Unit Tests
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: wordpress_test
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -proot"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mysqli
+          tools: composer
+
+      # The WordPress test library ships inside the wordpress-develop repo;
+      # a shallow clone of trunk is the whole install.
+      - name: Fetch the WordPress test library
+        run: git clone --depth 1 https://github.com/WordPress/wordpress-develop /tmp/wordpress-develop
+
+      - name: Configure the test WordPress
+        run: |
+          sed -e "s/youremptytestdbnamehere/wordpress_test/" \
+              -e "s/yourusernamehere/root/" \
+              -e "s/yourpasswordhere/root/" \
+              -e "s/localhost/127.0.0.1/" \
+              /tmp/wordpress-develop/wp-tests-config-sample.php \
+              > /tmp/wordpress-develop/wp-tests-config.php
+
+      - name: Install PHPUnit
+        run: composer global require --no-interaction "phpunit/phpunit:^9.6" "yoast/phpunit-polyfills:^1.1"
+
+      # This suite went unexecuted for its first ~75 assertions' lifetime
+      # because it needed exactly this environment; three real defects shipped
+      # in that window. It gates now.
+      - name: Run the plugin test suite
+        env:
+          WP_TESTS_DIR: /tmp/wordpress-develop/tests/phpunit
+          WP_TESTS_CONFIG_FILE_PATH: /tmp/wordpress-develop/wp-tests-config.php
+          WP_TESTS_PHPUNIT_POLYFILLS_PATH: /home/runner/.composer/vendor/yoast/phpunit-polyfills
+        run: $(composer global config home)/vendor/bin/phpunit
+
   php-lint:
     name: PHP Lint
     runs-on: ubuntu-latest

@@ -83,17 +83,22 @@ class RTG_Catalog_Presence {
      * @return array { status, label, retailers, last_seen }
      */
     public static function evaluate_one( $tire, $by_key, $read_sizes, $now, $stale_days = self::DEFAULT_STALE_DAYS ) {
-        $key  = RTG_Catalog_Sync::match_key( $tire['brand'] ?? '', $tire['model'] ?? '', $tire['size'] ?? '' );
+        $keys = RTG_Catalog_Sync::match_keys_for_tire( $tire );
         $size = RTG_Tire_Qualifier::normalize_size( $tire['size'] ?? '' );
 
-        if ( '' === $key ) {
+        if ( empty( $keys ) ) {
             return self::result(
                 self::STATUS_UNKNOWN,
                 'This tire has no brand or no readable size, so it cannot be looked up in the catalog.'
             );
         }
 
-        $candidates = $by_key[ $key ] ?? array();
+        $candidates = array();
+        foreach ( $keys as $key ) {
+            if ( ! empty( $by_key[ $key ] ) ) {
+                $candidates = array_merge( $candidates, $by_key[ $key ] );
+            }
+        }
 
         // Latest sighting across every retailer that has ever listed it.
         $last_seen = 0;

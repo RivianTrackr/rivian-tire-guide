@@ -723,6 +723,11 @@ class RTG_Admin {
             'diameter'         => sanitize_text_field( $post['diameter'] ?? '' ),
             'brand'            => sanitize_text_field( $post['brand'] ?? '' ),
             'model'            => sanitize_text_field( $post['model'] ?? '' ),
+            // One alias per line; sanitized per line so the newlines survive.
+            'model_aliases'    => implode( "\n", array_filter( array_map(
+                'sanitize_text_field',
+                preg_split( '/[\r\n]+/', (string) ( $post['model_aliases'] ?? '' ) )
+            ) ) ),
             'category'         => sanitize_text_field( $post['category'] ?? '' ),
             'price'            => floatval( $post['price'] ?? 0 ),
             'mileage_warranty' => intval( $post['mileage_warranty'] ?? 0 ),

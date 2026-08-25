@@ -15,6 +15,7 @@ $defaults = array(
     'diameter'         => '',
     'brand'            => '',
     'model'            => '',
+    'model_aliases'    => '',
     'category'         => '',
     'price'            => '',
     'mileage_warranty' => '',
@@ -166,6 +167,17 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                             <label class="rtg-field-label" for="model">Model <span class="rtg-badge-required">Required</span></label>
                         </div>
                         <input type="text" id="model" name="model" value="<?php echo esc_attr( $v['model'] ); ?>" required>
+                    </div>
+                    <div class="rtg-field-row">
+                        <div class="rtg-field-label-row">
+                            <label class="rtg-field-label" for="model_aliases">Retailer also lists this as</label>
+                        </div>
+                        <textarea id="model_aliases" name="model_aliases" rows="2" placeholder="Ridge Grappler LT"><?php echo esc_textarea( $v['model_aliases'] ?? '' ); ?></textarea>
+                        <p class="description">
+                            One name per line. Retailers spell a model their own way, and matching, pricing and
+                            delisting all key on the model — an alias lets those accept the retailer's spelling
+                            without changing the name readers see.
+                        </p>
                     </div>
                 </div>
             </div>

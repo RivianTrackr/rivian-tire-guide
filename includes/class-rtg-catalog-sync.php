@@ -230,6 +230,11 @@ class RTG_Catalog_Sync {
         // when they were last seen, which the guide may have moved on from.
         $stats['rematched'] = RTG_Candidates::refresh_matches( $guide_index );
 
+        // Near misses that can never become anything else are let go — wrong
+        // fitments, and listings the catalog itself dropped two months ago.
+        // Counted in the stats rather than silent, like everything else here.
+        $stats['pruned'] = RTG_Candidates::prune( $sizes );
+
         // Only a run that read nothing at all is a failure. The targeted pass
         // counts toward that: a sweep that timed out while the direct lookups
         // still brought tires in did work, and calling it an error would hide
@@ -340,9 +345,17 @@ class RTG_Catalog_Sync {
         $wanted = array();
 
         foreach ( RTG_Database::get_all_tires() as $tire ) {
-            $key = self::match_key( $tire['brand'] ?? '', $tire['model'] ?? '', $tire['size'] ?? '' );
+            $keys = self::match_keys_for_tire( $tire );
 
-            if ( '' === $key || isset( $covered_keys[ $key ] ) ) {
+            $covered = empty( $keys );
+            foreach ( $keys as $key ) {
+                if ( isset( $covered_keys[ $key ] ) ) {
+                    $covered = true;
+                    break;
+                }
+            }
+
+            if ( $covered ) {
                 continue;
             }
 
@@ -357,7 +370,14 @@ class RTG_Catalog_Sync {
             }
 
             $terms[ $term ] = true;
-            $wanted[ $key ] = $term;
+
+            // Every spelling maps to the term — the targeted pass judges
+            // success by whether an ingested product's key was wanted, and a
+            // product may arrive under any of them. (The previous version
+            // wrote under $key, a variable leaked from the loop above.)
+            foreach ( $keys as $tire_key ) {
+                $wanted[ $tire_key ] = $term;
+            }
         }
 
         return array(
@@ -552,8 +572,7 @@ class RTG_Catalog_Sync {
         $index = array();
 
         foreach ( RTG_Database::get_all_tires() as $tire ) {
-            $key = self::match_key( $tire['brand'] ?? '', $tire['model'] ?? '', $tire['size'] ?? '' );
-            if ( '' !== $key ) {
+            foreach ( self::match_keys_for_tire( $tire ) as $key ) {
                 $index[ $key ] = $tire['tire_id'];
             }
         }
@@ -584,6 +603,50 @@ class RTG_Catalog_Sync {
         }
 
         return $brand . '|' . $model . '|' . $size;
+    }
+
+    /**
+     * Every key a guide tire answers to: its own model, plus each alias.
+     *
+     * Retailers spell a model their own way — "Ridge Grappler LT" for the
+     * guide's "Ridge Grappler" — and matching, coverage, pricing and delisting
+     * all key on the model. Aliases let the matcher accept the retailer's
+     * spelling without renaming what readers see, and this helper is the one
+     * place the expansion happens so no caller can forget one spelling.
+     *
+     * @param array $tire Guide tire (brand, model, size, model_aliases).
+     * @return string[] Match keys, primary first, de-duplicated.
+     */
+    public static function match_keys_for_tire( $tire ) {
+        $brand = $tire['brand'] ?? '';
+        $size  = $tire['size'] ?? '';
+
+        $keys    = array();
+        $primary = self::match_key( $brand, $tire['model'] ?? '', $size );
+
+        if ( '' !== $primary ) {
+            $keys[ $primary ] = true;
+        }
+
+        foreach ( preg_split( '/[\r\n]+/', (string) ( $tire['model_aliases'] ?? '' ) ) as $alias ) {
+            $alias = trim( $alias );
+
+            // A blank line is not an alias. match_key() accepts an empty
+            // model — a legacy of guide rows that predate models — so
+            // without this every alias-less tire would gain a bogus
+            // "brand||size" key, colliding same-brand tires in the index
+            // and matching any candidate whose model failed to parse.
+            if ( '' === $alias ) {
+                continue;
+            }
+
+            $key = self::match_key( $brand, $alias, $size );
+            if ( '' !== $key ) {
+                $keys[ $key ] = true;
+            }
+        }
+
+        return array_keys( $keys );
     }
 
     /**

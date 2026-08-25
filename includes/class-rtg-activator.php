@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 20;
+    const DB_VERSION = 21;
 
     public static function activate() {
         self::create_tables();
@@ -65,6 +65,7 @@ class RTG_Activator {
             diameter VARCHAR(20) NOT NULL DEFAULT '',
             brand VARCHAR(100) NOT NULL DEFAULT '',
             model VARCHAR(200) NOT NULL DEFAULT '',
+            model_aliases TEXT NOT NULL,
             category VARCHAR(50) NOT NULL DEFAULT '',
             price DECIMAL(8,2) NOT NULL DEFAULT 0,
             mileage_warranty INT UNSIGNED NOT NULL DEFAULT 0,
@@ -234,6 +235,7 @@ class RTG_Activator {
             18 => 'migrate_18_create_candidates_table',
             19 => 'migrate_19_add_candidate_fits_vehicles',
             20 => 'migrate_20_add_tire_price_source',
+            21 => 'migrate_21_add_model_aliases',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -555,6 +557,25 @@ class RTG_Activator {
         }
         if ( ! in_array( 'price_synced_at', $cols, true ) ) {
             $wpdb->query( "ALTER TABLE {$table} ADD COLUMN price_synced_at DATETIME NULL DEFAULT NULL AFTER price_source" );
+        }
+    }
+
+    /**
+     * Migration 21 (1.74.0): alternate model names on tires.
+     *
+     * Retailers spell a model their own way — "Ridge Grappler LT" for the
+     * guide's "Ridge Grappler" — and matching, coverage and pricing all key
+     * on the model. An alias lets the matcher accept the retailer's spelling
+     * without renaming what readers see. One alias per line.
+     */
+    private static function migrate_21_add_model_aliases() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'rtg_tires';
+
+        $cols = $wpdb->get_col( "SHOW COLUMNS FROM {$table}" );
+
+        if ( ! in_array( 'model_aliases', $cols, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table} ADD COLUMN model_aliases TEXT NOT NULL AFTER model" );
         }
     }
 }

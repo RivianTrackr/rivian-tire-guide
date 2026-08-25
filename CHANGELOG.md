@@ -4,6 +4,19 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.74.0] - 2026-08-25
+
+### Added
+- **The full PHPUnit suite now runs — locally and as a gating CI job.** The ~75 database-backed assertions written across this feature had never executed anywhere (no WordPress test library, no MySQL), a caveat restated in a dozen changelogs while three real defects shipped through the gap. A CI job now stands one up (MySQL service + the WordPress test library from wordpress-develop) and gates every PR. First execution found and fixed: a test helper colliding with PHPUnit's own `at()`, one test whose fixture contradicted its own name, and one asserting pre-vehicle-aware behavior the design had deliberately replaced. The suite ends this release at **206 tests, 529 assertions, green.**
+- **Model aliases.** Retailers spell a model their own way — "Ridge Grappler LT" for the guide's "Ridge Grappler" — and matching, coverage, pricing and delisting all key on the model. A tire now carries alternate names (one per line on the edit form), every consumer keys on all of them through one helper, and the coverage report's "likely listed under another name" rows grow a one-click **Adopt as alias** button. Writing the tests caught a real bug before it shipped: splitting an empty alias field yields one empty line, which would have given every alias-less tire a bogus `brand||size` key — colliding same-brand tires in the guide index and matching any candidate whose model failed to parse.
+- **Bulk queue actions.** Dismiss (or restore) everything the current filter matches — the database query, not the visible page, and the confirmation says so. A brand filter with counts joins the queue filters, because queue volume clusters by brand: a page of one budget brand is one decision, not sixty. A hint above the queue counts how many waiting tires are from brands outside the curated list and points at the existing brand policy's *reject* setting. Bulk writes only `dismissed` or `new`, over queue or dismissed rows — an import can never be bulk-overwritten, and a mistaken sweep is reversible by the same route.
+- **Stale-price visibility.** Covered tires re-price daily; the rest update only when a person edits them, and nothing measured how long ago that was. The uncovered-tires table now shows each price's age (red past 90 days), and a monthly email lists the untouched ones oldest-first. A sync or a manual edit both reset the clock — the report is a checklist, not a nag.
+- **Candidate retention.** Each sync now deletes near misses that can never become anything else: rejected rows in fitments the guide doesn't stock (wrong fitment is permanent — ~18,000 of these had accumulated), and rejected rows unseen for 60+ days (the catalog itself dropped them). Only machine-rejected rows are ever touched — dismissed and imported rows are human decisions and are kept forever — and an empty size list deletes nothing, since "off-fitment" would be undefined. Counts appear in the sync status; a pruned product that reappears is simply re-filed by the next sweep.
+
+### Notes
+- Migration 21 adds `model_aliases` to the tires table.
+- The alias, bulk, stale-price and prune behaviors are all covered by executing tests, guardrails first: imports untouchable in bulk, human decisions unprunable, the empty-size-list refusal, both clock-reset paths.
+
 ## [1.73.0] - 2026-08-25
 
 ### Added

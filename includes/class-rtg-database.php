@@ -431,6 +431,7 @@ class RTG_Database {
             'diameter'         => '',
             'brand'            => '',
             'model'            => '',
+            'model_aliases'    => '',
             'category'         => '',
             'price'            => 0,
             'mileage_warranty' => 0,
@@ -462,7 +463,7 @@ class RTG_Database {
         $data = wp_parse_args( $data, $defaults );
 
         $formats = array(
-            '%s', '%s', '%s', '%s', '%s', '%s',
+            '%s', '%s', '%s', '%s', '%s', '%s', '%s',
             '%f', '%d', '%f',
             '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s',
             '%s', '%s',

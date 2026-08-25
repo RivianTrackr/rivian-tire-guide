@@ -36,5 +36,28 @@ function _manually_load_plugin() {
 }
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 
+/**
+ * Keep the suite off the network.
+ *
+ * The AJAX test case fires admin_init, which schedules WordPress's own
+ * update checks against wordpress.org. On a machine without outbound access
+ * the resulting notice is converted to an exception and fails every AJAX
+ * test for reasons that have nothing to do with the plugin. Tests should not
+ * depend on the network either way, so the update hooks are removed and any
+ * remaining outbound request is refused — late in the filter order, so a test
+ * that mocks pre_http_request itself still wins.
+ */
+tests_add_filter( 'muplugins_loaded', function () {
+    remove_action( 'admin_init', '_maybe_update_core' );
+    remove_action( 'admin_init', '_maybe_update_plugins' );
+    remove_action( 'admin_init', '_maybe_update_themes' );
+} );
+
+tests_add_filter( 'pre_http_request', function ( $preempt ) {
+    return false !== $preempt
+        ? $preempt
+        : new WP_Error( 'rtg_tests_offline', 'External HTTP is blocked in the test suite.' );
+}, 999 );
+
 // Start up the WP testing environment.
 require $_tests_dir . '/includes/bootstrap.php';
