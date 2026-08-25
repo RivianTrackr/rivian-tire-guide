@@ -42,10 +42,12 @@ $v = $tire ? wp_parse_args( $tire, $defaults ) : $defaults;
 // affiliate feed actually knows are filled — category, warranty, weight and
 // tread still need a human, so they are deliberately left blank rather than
 // guessed at.
-$from_candidate = ( ! $is_edit && isset( $_GET['from_candidate'] ) ) ? intval( $_GET['from_candidate'] ) : 0;
+$from_candidate       = ( ! $is_edit && isset( $_GET['from_candidate'] ) ) ? intval( $_GET['from_candidate'] ) : 0;
+$from_candidate_image = '';
 if ( $from_candidate > 0 ) {
     $candidate = RTG_Candidates::get( $from_candidate );
     if ( $candidate ) {
+        $from_candidate_image = trim( (string) $candidate['image'] );
         $v['brand']        = $candidate['brand'];
         $v['model']        = $candidate['model'];
         $v['size']         = $candidate['size'];
@@ -372,6 +374,16 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                         <?php if ( ! empty( $full_image_url ) ) : ?>
                             <div class="rtg-image-preview">
                                 <img id="image-preview" src="<?php echo esc_url( $full_image_url ); ?>" alt="Preview">
+                            </div>
+                        <?php elseif ( '' !== $from_candidate_image ) : ?>
+                            <p class="rtg-field-description" style="margin-top:8px;">
+                                <i class="fa-solid fa-cloud-arrow-down"></i>
+                                The catalog has a product image for this tire. Leave this field blank and saving
+                                will download it into your images folder automatically &mdash; or type a filename
+                                to use your own.
+                            </p>
+                            <div class="rtg-image-preview">
+                                <img id="image-preview" src="<?php echo esc_url( $from_candidate_image ); ?>" alt="Catalog product image">
                             </div>
                         <?php else : ?>
                             <div id="image-preview-container" class="rtg-image-preview" style="display:none;">

@@ -748,6 +748,22 @@ class RTG_Admin {
             'sort_order'       => intval( $post['sort_order'] ?? 0 ),
         );
 
+        // A new tire imported from discovery with the image field left blank
+        // gets the candidate's product image pulled into the tire images
+        // folder, named like the hand-added ones (brand-model slug). If the
+        // download fails, the remote URL is kept instead — an image that may
+        // someday break beats no image, and the edit screen shows which it is.
+        $from_candidate = intval( $post['from_candidate'] ?? 0 );
+        if ( 0 === $editing_id && $from_candidate > 0 && '' === trim( (string) ( $post['image'] ?? '' ) ) ) {
+            $candidate = RTG_Candidates::get( $from_candidate );
+            if ( $candidate && '' !== trim( (string) $candidate['image'] ) ) {
+                $filename      = RTG_Tire_Images::import_from_url( $candidate['image'], $data['brand'], $data['model'] );
+                $data['image'] = '' !== $filename
+                    ? $this->build_image_url( $filename )
+                    : esc_url_raw( $candidate['image'] );
+            }
+        }
+
         // Auto-calculate efficiency score and grade.
         $efficiency = RTG_Database::calculate_efficiency( $data );
         $data['efficiency_score'] = $efficiency['efficiency_score'];
@@ -788,7 +804,6 @@ class RTG_Admin {
 
             // When the tire came from the discovery queue, close out the
             // candidate so it stops appearing as awaiting review.
-            $from_candidate = intval( $post['from_candidate'] ?? 0 );
             if ( $from_candidate > 0 ) {
                 RTG_Candidates::set_status( $from_candidate, RTG_Candidates::STATUS_IMPORTED );
             }
