@@ -4,6 +4,19 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.76.0] - 2026-08-25
+
+### Added
+- **Automatic affiliate link sync.** Every daily sweep now fills in and upgrades tire links from the CJ catalog, using the same classification as the Affiliate Links page. A tire with **no link** gets the cheapest tracked listing for its exact tire; a tire with a **regular retailer link** is upgraded to the tracked equivalent — but only for the *same retailer*, so a deliberate Tire Rack link is never silently swapped to Discount Tire just because it's cheaper. A tire that already has an affiliate link is never touched, full stop.
+- **Tracked links from CJ itself.** The catalog query now asks CJ to mint the tracked click URL (`linkCode`) for each product, keyed to a new **Website ID (PID)** setting — the first number in an existing link like `click-101098512-13697786`. Until the PID is entered, CJ returns plain retailer URLs and link sync correctly refuses to apply them; the settings help text and the sync's own skip reasons both say so.
+- **A Link Sync card on the Affiliate Links page.** Shows the last run, how many links were set and upgraded, and — more usefully — an expandable list of every tire link sync looked at but could not fix, each with the reason: not in the catalog, catalog listing gone stale, retailer only listed elsewhere, or no tracked link because the PID isn't set.
+
+### Notes
+- Guardrails, stated as rules the tests pin: an affiliate link is never overwritten; catalog listings older than 3 days are ignored (a delisted product's leftover row can't donate its link); retailer identity is compared through the same normalization the price sync uses, so "The Tire Rack" and "Tire Rack" are one retailer; and when the only candidates are untracked, the skip reason names the missing PID setting instead of vaguely failing.
+- Link sync runs *before* price sync in the daily sweep, so a freshly applied link gets a price attributed in the same run rather than a day later.
+- The toggle lives next to the other sweep settings on Tire Discovery, on by default — it only ever adds or upgrades links, never removes one.
+- The suite lands at 200 tests, 517 assertions, green — the 9 new tests are written refusals-first: what the sync must *not* do (touch affiliate links, use stale rows, switch retailers, apply untracked URLs) is pinned before what it does.
+
 ## [1.75.0] - 2026-08-25
 
 ### Removed

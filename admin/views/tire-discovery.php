@@ -18,6 +18,7 @@ if ( isset( $_POST['rtg_catalog_settings_save'] ) ) {
     $settings['cj_enabled']     = ! empty( $_POST['cj_enabled'] );
     $settings['cj_company_id']  = preg_replace( '/[^0-9]/', '', wp_unslash( $_POST['cj_company_id'] ?? '' ) );
     $settings['cj_advertisers'] = sanitize_textarea_field( wp_unslash( $_POST['cj_advertisers'] ?? '' ) );
+    $settings['cj_website_id']  = preg_replace( '/[^0-9]/', '', wp_unslash( $_POST['cj_website_id'] ?? '' ) );
     $settings['cj_limit']        = max( 1, min( 1000, intval( $_POST['cj_limit'] ?? RTG_Catalog_Source_CJ::DEFAULT_LIMIT ) ) );
     $settings['cj_sweep_budget'] = max( 15, min( 600, intval( $_POST['cj_sweep_budget'] ?? RTG_Catalog_Source_CJ::SWEEP_BUDGET ) ) );
     $settings['cj_max_pages']    = max( 1, min( 50, intval( $_POST['cj_max_pages'] ?? RTG_Catalog_Source_CJ::DEFAULT_MAX_PAGES ) ) );
@@ -59,6 +60,7 @@ if ( isset( $_POST['rtg_catalog_settings_save'] ) ) {
     $settings['catalog_vehicle_min_load_index'] = $vehicle_minimums;
 
     $settings['price_sync_enabled']    = ! empty( $_POST['price_sync_enabled'] );
+    $settings['link_sync_enabled']     = ! empty( $_POST['link_sync_enabled'] );
     $settings['price_sync_max_change'] = max( 1, min( 100, intval( $_POST['price_sync_max_change'] ?? 50 ) ) );
 
     $posted_policy = sanitize_text_field( wp_unslash( $_POST['catalog_brand_policy'] ?? '' ) );
@@ -102,6 +104,8 @@ $coverage_reasons = RTG_Coverage::diagnose( $uncovered_tires );
 $coverage_summary = RTG_Coverage::summarize( $coverage_reasons );
 
 $price_sync_enabled    = $settings['price_sync_enabled'] ?? true;
+$link_sync_enabled     = $settings['link_sync_enabled'] ?? true;
+$cj_website_id         = $settings['cj_website_id'] ?? '';
 $price_sync_max_change = intval( $settings['price_sync_max_change'] ?? 50 );
 $price_results         = RTG_Price_Sync::get_results();
 
@@ -893,6 +897,26 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                         </td>
                     </tr>
                     <tr>
+                        <th scope="row"><label for="link_sync_enabled">Link Sync</label></th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="link_sync_enabled" id="link_sync_enabled" value="1" <?php checked( $link_sync_enabled ); ?>>
+                                Fill and upgrade purchase links from the catalog daily
+                            </label>
+                            <p class="description" style="max-width:680px;">
+                                A tire with <strong>no link</strong> gets the cheapest fresh tracked listing — and
+                                price sync then follows that retailer, so the price shown and the page clicked stay
+                                consistent. A tire with a <strong>plain retailer link</strong> is upgraded to a
+                                tracked link for the <em>same</em> retailer only — where the reader lands was already
+                                chosen; monetizing it is mechanical, switching retailers is not. A link that is
+                                <strong>already affiliate is never touched</strong>. Only listings the sweep has seen
+                                in the last <?php echo esc_html( RTG_Link_Sync::FRESH_DAYS ); ?> days qualify, so a
+                                delisted product's link can't be applied. Every decision is reported on the
+                                Affiliate Links page.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
                         <th scope="row"><label for="catalog_brand_policy">Brands Outside Your List</label></th>
                         <td>
                             <select name="catalog_brand_policy" id="catalog_brand_policy">
@@ -952,6 +976,21 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                         <td>
                             <input type="text" name="cj_company_id" id="cj_company_id" value="<?php echo esc_attr( $cj_company_id ); ?>" class="regular-text" inputmode="numeric">
                             <p class="description">From CJ &rarr; Account &rarr; Account Information.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="cj_website_id">Website ID (PID)</label></th>
+                        <td>
+                            <input type="text" name="cj_website_id" id="cj_website_id" value="<?php echo esc_attr( $cj_website_id ); ?>" class="regular-text" inputmode="numeric">
+                            <p class="description" style="max-width:680px;">
+                                The property your deep links are minted for — the <strong>first number</strong> in one
+                                of your existing CJ links: <code>click-<u>101098512</u>-13697786</code>. With it set,
+                                every product the sweep fetches carries a ready-made <em>tracked</em> click URL, which
+                                is what lets link sync below fill and upgrade purchase links automatically. Without
+                                it, candidates only carry the retailer's plain URL, which pays nothing. After setting
+                                it, use <strong>Test Connection</strong> — the sample product's link should show a
+                                tracking domain (tkqlhce.com or similar), not the retailer's.
+                            </p>
                         </td>
                     </tr>
                     <tr>

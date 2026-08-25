@@ -218,8 +218,11 @@ class RTG_Catalog_Sync {
             $stats['message'] = $stats['errors'][0]['message'];
         }
 
-        // Prices refresh off the same fetch. A separate schedule would double
-        // the API calls to learn what this run already knows.
+        // Links first, prices second, both off the same fetch: a tire that
+        // just gained its link gets its price in the same run instead of
+        // waiting a day, and a separate schedule would double the API calls
+        // to learn what this run already knows.
+        $stats['links']  = RTG_Link_Sync::run();
         $stats['prices'] = RTG_Price_Sync::run();
 
         update_option( self::STATS_OPTION, $stats, false );
