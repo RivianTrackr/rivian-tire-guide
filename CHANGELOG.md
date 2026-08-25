@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.78.1] - 2026-08-25
+
+### Fixed
+- **Run Discovery Now no longer dies with a misdiagnosed 524.** Cloudflare answers 524 when the origin hasn't replied within about 100 seconds — a proxy timeout, not a PHP error — but the run-failure message filed every 5xx under "an error inside the run; check the PHP error log," sending the admin to a log with nothing in it. Two fixes, one for the message and one for the cause:
+  - Browser-started runs now cap their budget at 75 seconds (`INTERACTIVE_BUDGET`), whatever the configured budget says, so the whole request — sweep, re-key, prune, link sync, price sync — answers before the proxy hangs up. The nightly cron run doesn't answer to a proxy and keeps the full configured budget; the rotation cursors mean a capped run still makes progress, never loses coverage. The run stats now record which budget actually applied, and the status line says when and why it was capped instead of showing a ceiling the run never had.
+  - A 524 or 504 now gets its own message: a timeout at the proxy, not an error in the run — which usually keeps finishing on the server, so the status below shows it after a refresh.
+- The likely trigger: minting tracked links (`linkCode`, since 1.76.0) makes CJ measurably slower per request, which pushed a previously ~54-second sweep past the proxy's limit. The cap absorbs that; the suite lands at 219 tests, 560 assertions, green.
+
 ## [1.78.0] - 2026-08-25
 
 ### Added

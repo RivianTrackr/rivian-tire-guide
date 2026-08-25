@@ -1007,15 +1007,14 @@ class RTG_Ajax {
         }
 
         if ( function_exists( 'set_time_limit' ) ) {
-            $settings = get_option( 'rtg_settings', array() );
-            $budget   = isset( $settings['catalog_run_budget'] )
-                ? max( 30, min( 900, intval( $settings['catalog_run_budget'] ) ) )
-                : RTG_Catalog_Sync::RUN_BUDGET;
-
-            @set_time_limit( $budget + RTG_Catalog_Source_CJ::REQUEST_TIMEOUT + 60 );
+            @set_time_limit( RTG_Catalog_Sync::INTERACTIVE_BUDGET + RTG_Catalog_Source_CJ::REQUEST_TIMEOUT + 60 );
         }
 
-        $result = RTG_Catalog_Sync::run();
+        // Capped below the ~100 seconds a fronting proxy waits for the origin
+        // (Cloudflare answers 524 past it) — a browser-started run that can't
+        // finish inside that window can only ever end as a timeout the admin
+        // gets to misread. The nightly cron run keeps the full budget.
+        $result = RTG_Catalog_Sync::run( RTG_Catalog_Sync::INTERACTIVE_BUDGET );
         wp_send_json_success( $result );
     }
 

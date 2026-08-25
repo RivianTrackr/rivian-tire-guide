@@ -65,6 +65,14 @@
         detail = 'The request ended without a reply — usually the run outlived the ' +
                  'server\'s time limit. Lower the run budget in settings and try again; ' +
                  'the rotation means a shorter run still makes progress.';
+      } else if (xhr.status === 524 || xhr.status === 504) {
+        // Cloudflare's 524 and a plain 504 both mean the proxy stopped
+        // waiting for the origin — a timeout, not a PHP error. Nothing in
+        // the PHP log names it, because nothing in PHP failed.
+        detail = 'The proxy in front of the site stopped waiting for a reply (HTTP ' + xhr.status +
+                 ' — a timeout, not an error in the run). The run usually keeps finishing on the ' +
+                 'server: refresh in a minute and check the sync status below. Browser-started ' +
+                 'runs are capped to fit under the proxy\'s limit, so this should not recur.';
       } else if (xhr.status >= 500) {
         detail = 'The server returned ' + xhr.status + ' ' + escapeHTML(xhr.statusText || '') +
                  '. That is an error inside the run rather than a timeout — the PHP error log ' +

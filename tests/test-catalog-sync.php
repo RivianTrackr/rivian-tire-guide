@@ -37,6 +37,31 @@ class Test_RTG_Catalog_Sync extends WP_UnitTestCase {
         ), $overrides );
     }
 
+    // --- The interactive budget cap ---
+
+    /**
+     * A browser-started run is capped under the ~100 seconds a fronting proxy
+     * waits before answering 524, whatever the configured budget says — and
+     * the stats say which budget actually applied, so the status line can't
+     * show a ceiling the run never had. A cap above the configured budget
+     * never raises it: it is a ceiling, not a request.
+     */
+    public function test_a_browser_run_is_capped_under_the_proxy_limit() {
+        RTG_Activator::activate();
+
+        $capped = RTG_Catalog_Sync::run( RTG_Catalog_Sync::INTERACTIVE_BUDGET );
+        $this->assertSame( RTG_Catalog_Sync::INTERACTIVE_BUDGET, $capped['run_budget'] );
+        $this->assertTrue( $capped['budget_capped'] );
+
+        $cron = RTG_Catalog_Sync::run();
+        $this->assertSame( RTG_Catalog_Sync::RUN_BUDGET, $cron['run_budget'] );
+        $this->assertFalse( $cron['budget_capped'] );
+
+        $roomy = RTG_Catalog_Sync::run( 900 );
+        $this->assertSame( RTG_Catalog_Sync::RUN_BUDGET, $roomy['run_budget'] );
+        $this->assertFalse( $roomy['budget_capped'] );
+    }
+
     // --- find_guide_match(): the duplicate-add guard ---
 
     /**
