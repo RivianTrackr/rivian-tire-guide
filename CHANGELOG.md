@@ -4,6 +4,18 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.73.0] - 2026-08-25
+
+### Added
+- **The pipeline now reports its own failures.** Everything downstream of the sweep — pricing, coverage, delisting detection — degrades silently when the sweep stops, and every failure this feature has actually had would have been invisible until someone opened the admin: a rotated CJ token failing every run with a 401 (which has already happened once), a GraphQL schema change erroring every run, WP-Cron simply not firing, a fitment quietly no longer read to completion. The digest email only fires on success, so success was loud and failure was mute. `RTG_Health` now judges each run's own records and emails the admin — **once when a problem appears and once when it clears**, so a week-long outage is two emails, not seven. A rejected token is named as such, with its fix, rather than reported as a generic failure.
+- **Delistings email as they are detected**, rather than waiting as a badge for someone to visit: the daily sync compares the delisted set against what was already reported and mails only the difference. A tire that recovers and is dropped again alerts again.
+- **A dead schedule is caught from admin visits.** The sync's own cron hook cannot report a schedule that never fires it, so any wp-admin visit also probes, throttled to once per six hours. The settings page now also documents the genuinely reliable setup: a real server cron hitting `wp-cron.php` with `DISABLE_WP_CRON` set.
+- A Health Alerts toggle beside the digest setting, on by default.
+
+### Notes
+- The evaluation is a pure function of the run's stats, and both it and the once-per-outage email lifecycle are pinned by `tests/contract/health.php`, which executes in CI. Verified in both directions: the check was run against a sabotaged build with the alert memory wiped, where four assertions fail — it is not decorative.
+- Writing that check caught a real gap before it shipped: the first version's guard against flagging coverage on stats that carry none used "at least one fitment was read completely" as its proxy, which silenced the worst case — every fitment regressing at once. The guard now tests for the presence of coverage data itself, and both cases are pinned.
+
 ## [1.72.0] - 2026-08-24
 
 ### Added

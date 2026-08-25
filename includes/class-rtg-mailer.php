@@ -697,4 +697,189 @@ class RTG_Mailer {
 </body>
 </html>';
     }
+
+    // --- Pipeline health ---
+
+    /**
+     * Shared card layout for the health emails.
+     *
+     * Three emails land in the same skeleton; repeating it three times, as
+     * the older notifications each do, would triple the surface for a markup
+     * typo without buying anything.
+     *
+     * @param string $heading    Card heading.
+     * @param string $inner_html Pre-escaped body HTML.
+     * @param string $cta_url    Button destination.
+     * @param string $cta_label  Button text.
+     * @return string Full HTML document.
+     */
+    private static function health_email_body( $heading, $inner_html, $cta_url, $cta_label ) {
+        $site_name = esc_html( get_bloginfo( 'name' ) );
+
+        return '<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="margin: 0; padding: 0; background-color: #f5f5f7; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f7; padding: 40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+  <tr>
+    <td style="background-color: #1d1d1f; padding: 24px 32px; text-align: center;">
+      <h1 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 600;">' . $site_name . '</h1>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 32px;">
+      <h2 style="margin: 0 0 16px 0; color: #1d1d1f; font-size: 22px; font-weight: 600;">' . esc_html( $heading ) . '</h2>
+      ' . $inner_html . '
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td align="center">
+            <a href="' . esc_url( $cta_url ) . '" style="display: inline-block; background-color: #0071e3; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">' . esc_html( $cta_label ) . '</a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 20px 32px; border-top: 1px solid #e5e5e5; text-align: center;">
+      <p style="margin: 0; color: #86868b; font-size: 12px;">
+        Health alerts can be disabled from the Tire Discovery settings in ' . $site_name . '. Each problem emails once when it appears and once when it clears.
+      </p>
+    </td>
+  </tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>';
+    }
+
+    /**
+     * Tell the admin the discovery pipeline is broken, and how.
+     *
+     * Sent when a new problem appears, not on every run it persists —
+     * RTG_Health diffs against what was already alerted, so a week-long
+     * outage is two emails, not seven.
+     *
+     * @param array $issues Issue code => description, from RTG_Health.
+     * @return bool Whether the email was sent.
+     */
+    public static function send_health_alert( $issues ) {
+        $admin_email = get_option( 'admin_email' );
+        if ( ! $admin_email || empty( $issues ) ) {
+            return false;
+        }
+
+        $items = '';
+        foreach ( $issues as $code => $label ) {
+            $items .= '<tr>
+          <td style="padding: 14px 20px; border-bottom: 1px solid #ffdada;">
+            <div style="font-size: 13px; font-weight: 600; color: #c41e3a; margin-bottom: 4px;">' . esc_html( str_replace( '_', ' ', $code ) ) . '</div>
+            <div style="font-size: 14px; color: #1d1d1f; line-height: 1.5;">' . esc_html( $label ) . '</div>
+          </td>
+        </tr>';
+        }
+
+        $inner = '<p style="margin: 0 0 20px 0; color: #6e6e73; font-size: 16px; line-height: 1.5;">
+        Tire discovery has stopped working properly. Pricing, retailer coverage and delisting
+        detection all depend on it, so they are degrading silently until this is fixed.
+      </p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fff3f3; border: 1px solid #ffdada; border-radius: 8px; margin: 0 0 24px 0;">' . $items . '</table>';
+
+        return (bool) wp_mail(
+            $admin_email,
+            'Tire Guide: discovery needs attention',
+            self::health_email_body(
+                'Discovery Needs Attention',
+                $inner,
+                admin_url( 'admin.php?page=rtg-tire-discovery' ),
+                'Open Tire Discovery'
+            ),
+            array( 'Content-Type: text/html; charset=UTF-8' )
+        );
+    }
+
+    /**
+     * Tell the admin the pipeline has recovered, closing the loop the alert
+     * opened. Without this, silence after an alert is ambiguous.
+     *
+     * @return bool Whether the email was sent.
+     */
+    public static function send_health_recovered() {
+        $admin_email = get_option( 'admin_email' );
+        if ( ! $admin_email ) {
+            return false;
+        }
+
+        $inner = '<p style="margin: 0 0 24px 0; color: #6e6e73; font-size: 16px; line-height: 1.5;">
+        The problems previously reported with tire discovery have cleared. The latest run
+        completed normally, so pricing, coverage and delisting detection are current again.
+      </p>';
+
+        return (bool) wp_mail(
+            $admin_email,
+            'Tire Guide: discovery recovered',
+            self::health_email_body(
+                'Discovery Recovered',
+                $inner,
+                admin_url( 'admin.php?page=rtg-tire-discovery' ),
+                'Open Tire Discovery'
+            ),
+            array( 'Content-Type: text/html; charset=UTF-8' )
+        );
+    }
+
+    /**
+     * Tell the admin a retailer dropped guide tires from the affiliate catalog.
+     *
+     * A delisted tire still passes the broken-link check — the page resolves,
+     * the product just stopped earning and pricing — so without this email the
+     * fact waits for someone to visit the Affiliate Links page.
+     *
+     * @param array[] $rows Newly delisted tires: brand, model, size, label.
+     * @return bool Whether the email was sent.
+     */
+    public static function send_delisting_notification( $rows ) {
+        $admin_email = get_option( 'admin_email' );
+        if ( ! $admin_email || empty( $rows ) ) {
+            return false;
+        }
+
+        $items = '';
+        foreach ( $rows as $row ) {
+            $name = trim( ( $row['brand'] ?? '' ) . ' ' . ( $row['model'] ?? '' ) );
+
+            $items .= '<tr>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #1d1d1f;">' . esc_html( $name ) . '</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px; font-family: \'SF Mono\', Monaco, monospace;">' . esc_html( $row['size'] ?? '' ) . '</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 13px; color: #6e6e73;">' . esc_html( $row['label'] ?? '' ) . '</td>
+      </tr>';
+        }
+
+        $count = count( $rows );
+        $inner = '<p style="margin: 0 0 20px 0; color: #6e6e73; font-size: 16px; line-height: 1.5;">
+        ' . intval( $count ) . ' guide ' . ( 1 === $count ? 'tire was' : 'tires were' ) . ' dropped from the
+        affiliate catalog. The links may still work, but these no longer earn a commission or refresh
+        their price — worth raising with the retailer\'s affiliate manager.
+      </p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e5e5e5; border-radius: 8px; margin: 0 0 24px 0;">
+        <tr style="background-color: #f5f5f7;">
+          <th align="left" style="padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #6e6e73;">Tire</th>
+          <th align="left" style="padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #6e6e73;">Size</th>
+          <th align="left" style="padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #6e6e73;">Detail</th>
+        </tr>' . $items . '</table>';
+
+        return (bool) wp_mail(
+            $admin_email,
+            sprintf( 'Tire Guide: %d %s dropped from the affiliate catalog', $count, 1 === $count ? 'tire' : 'tires' ),
+            self::health_email_body(
+                'Dropped From the Catalog',
+                $inner,
+                admin_url( 'admin.php?page=rtg-affiliate-links&link_filter=delisted' ),
+                'Review Delisted Tires'
+            ),
+            array( 'Content-Type: text/html; charset=UTF-8' )
+        );
+    }
 }

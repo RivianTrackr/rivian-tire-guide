@@ -11,6 +11,7 @@ if ( isset( $_POST['rtg_catalog_settings_save'] ) ) {
 
     $settings['catalog_sync_enabled']   = ! empty( $_POST['catalog_sync_enabled'] );
     $settings['catalog_notify_enabled'] = ! empty( $_POST['catalog_notify_enabled'] );
+    $settings['health_alerts_enabled']  = ! empty( $_POST['health_alerts_enabled'] );
     $settings['catalog_fixture_url']    = esc_url_raw( wp_unslash( $_POST['catalog_fixture_url'] ?? '' ) );
 
     // --- CJ credentials and query ---
@@ -77,6 +78,7 @@ if ( isset( $_POST['rtg_catalog_settings_save'] ) ) {
 
 $sync_enabled   = $settings['catalog_sync_enabled'] ?? true;
 $notify_enabled = $settings['catalog_notify_enabled'] ?? true;
+$health_alerts  = $settings['health_alerts_enabled'] ?? true;
 $fixture_url    = $settings['catalog_fixture_url'] ?? '';
 $min_load_index = isset( $settings['catalog_min_load_index'] )
     ? intval( $settings['catalog_min_load_index'] )
@@ -772,6 +774,28 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 Email me when a qualifying tire is found
                             </label>
                             <p class="description">Only newly surfaced tires are included — a run that finds nothing new sends nothing.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="health_alerts_enabled">Health Alerts</label></th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="health_alerts_enabled" id="health_alerts_enabled" value="1" <?php checked( $health_alerts ); ?>>
+                                Email me when discovery breaks, recovers, or a tire is dropped from the catalog
+                            </label>
+                            <p class="description" style="max-width:680px;">
+                                The digest only fires on success, so without this every failure is silent: a rotated
+                                CJ token failing each run with a 401, the daily schedule not firing, a fitment no
+                                longer being read completely. Each problem emails once when it appears and once when
+                                it clears — a week-long outage is two emails, not seven. Delistings email as they are
+                                detected.
+                                <br><br>
+                                <strong>For a schedule that cannot silently die:</strong> WP-Cron only fires when the
+                                site gets traffic. The reliable setup is a real server cron hitting
+                                <code>wp-cron.php</code> every few minutes with <code>DISABLE_WP_CRON</code> set —
+                                most hosts have a checkbox for this. Until then, any wp-admin visit also checks and
+                                will flag a schedule that has gone quiet.
+                            </p>
                         </td>
                     </tr>
                     <tr>
