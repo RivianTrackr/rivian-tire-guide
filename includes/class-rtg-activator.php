@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 21;
+    const DB_VERSION = 22;
 
     public static function activate() {
         self::create_tables();
@@ -236,6 +236,7 @@ class RTG_Activator {
             19 => 'migrate_19_add_candidate_fits_vehicles',
             20 => 'migrate_20_add_tire_price_source',
             21 => 'migrate_21_add_model_aliases',
+            22 => 'migrate_22_remove_retired_features',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -576,6 +577,44 @@ class RTG_Activator {
 
         if ( ! in_array( 'model_aliases', $cols, true ) ) {
             $wpdb->query( "ALTER TABLE {$table} ADD COLUMN model_aliases TEXT NOT NULL AFTER model" );
+        }
+    }
+
+    /**
+     * Migration 22 (1.75.0): sweep up after retired features.
+     *
+     * Three things left the plugin in 1.75.0 — the direct-lookup pass (its
+     * keyword form cannot beat CJ's ranking), the Google category filter (a
+     * documented trap: Tire Rack sends no category, so applying one drops the
+     * retailer), and the JSON fixture source (dev scaffolding whose bundled
+     * sample seeded "Sample Retailer" rows into real queues). Their stored
+     * leftovers go with them, so no orphaned option or demo row outlives the
+     * code that understood it.
+     */
+    private static function migrate_22_remove_retired_features() {
+        global $wpdb;
+
+        delete_option( 'rtg_cj_targeted_cursor' );
+
+        $settings = get_option( 'rtg_settings', array() );
+        if ( is_array( $settings ) ) {
+            unset(
+                $settings['cj_targeted_enabled'],
+                $settings['cj_targeted_budget'],
+                $settings['cj_targeted_limit'],
+                $settings['cj_category_names'],
+                $settings['catalog_fixture_url']
+            );
+            update_option( 'rtg_settings', $settings );
+        }
+
+        $candidates = $wpdb->prefix . 'rtg_tire_candidates';
+        $exists     = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $candidates ) );
+
+        if ( $exists === $candidates ) {
+            // Demo rows are identifiable by their source, whatever status a
+            // human may have set on one — they never described a real product.
+            $wpdb->query( $wpdb->prepare( "DELETE FROM {$candidates} WHERE source = %s", 'fixture' ) );
         }
     }
 }

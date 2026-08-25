@@ -4,6 +4,19 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.75.0] - 2026-08-25
+
+### Removed
+- **The direct-lookup pass, wholesale.** Shipped in 1.68.0, disabled by default since 1.70.0 after its own instrumentation proved the approach unworkable — a single brand-and-model keyword matched 81,653 products, of which one request reads about 1%. It has been dead weight since: three settings, a second budget, a rotation cursor, a per-term fetch path and a status panel, all guarding a pass nobody runs. Roughly four hundred lines gone across the source, the sync, the settings screen and the tests.
+- **The Google product category filter.** Documented as a trap since 1.64.1 — CJ applies it server-side, Tire Rack sends no category, so any configured value silently drops that retailer while the falling match counts look like success. A setting whose only safe value is blank is not a setting; it is an accident waiting for a click. A test now pins its absence rather than its default.
+- **The JSON fixture source and its feed-URL setting.** Development scaffolding from before the CJ adapter existed. Its fallback seeded the bundled sample into real queues whenever CJ was unconfigured — which is where the "Sample Retailer" rows in production came from.
+
+### Notes
+- Migration 22 sweeps up what the retired features stored: the targeted-pass cursor option, the five orphaned settings keys, and every fixture-sourced candidate row (the "Sample Retailer" entries disappear with it).
+- Health no longer flags "read zero products" when no source is configured at all — with the fixture fallback gone that is a setup state, not a breakage, and the settings screen already says so.
+- Kept deliberately, despite looking quiet: the editable GraphQL document (the escape hatch that recovered the schema mismatch), and the keyword probe with its offset (the instrument that settled what CJ's search actually does). Diagnostic tools earn their keep on the bad days.
+- The suite lands at 191 tests, 497 assertions, green — smaller than 1.74.0 by exactly the tests that covered what was removed.
+
 ## [1.74.0] - 2026-08-25
 
 ### Added

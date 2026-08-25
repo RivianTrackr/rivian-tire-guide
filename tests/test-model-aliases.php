@@ -113,28 +113,6 @@ class Test_RTG_Model_Aliases extends WP_UnitTestCase {
     }
 
     /**
-     * A tire covered only through its alias is not searched for again.
-     */
-    public function test_an_alias_covered_tire_is_not_uncovered() {
-        $covered = $this->make_tire();
-        // A control tire nothing covers, so the assertion below cannot pass
-        // vacuously on an empty result.
-        $this->make_tire( array( 'tire_id' => 'alias-control', 'model' => 'Trail Grappler M/T', 'model_aliases' => '' ) );
-
-        $alias_key = RTG_Catalog_Sync::match_key( 'Nitto', 'Ridge Grappler LT', '275/65R20' );
-        $uncovered = RTG_Catalog_Sync::uncovered_terms( array( $alias_key => array( 'anything' ) ) );
-
-        $this->assertArrayNotHasKey(
-            RTG_Catalog_Sync::match_key( 'Nitto', 'Ridge Grappler', '275/65R20' ),
-            $uncovered['wanted']
-        );
-        $this->assertArrayHasKey(
-            RTG_Catalog_Sync::match_key( 'Nitto', 'Trail Grappler M/T', '275/65R20' ),
-            $uncovered['wanted']
-        );
-    }
-
-    /**
      * The edit form's save path keeps line structure while sanitizing.
      */
     public function test_aliases_from_the_form_keep_their_lines() {

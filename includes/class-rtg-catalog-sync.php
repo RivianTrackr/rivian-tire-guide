@@ -73,8 +73,6 @@ class RTG_Catalog_Sync {
      * @return RTG_Catalog_Source[] Registered sources.
      */
     public static function get_sources() {
-        $settings = get_option( 'rtg_settings', array() );
-
         $sources = array();
 
         // CJ covers both retailers the guide links to, so it leads when it has
@@ -82,14 +80,6 @@ class RTG_Catalog_Sync {
         // than failing every run with the same message.
         if ( RTG_Catalog_Source_CJ::is_configured() ) {
             $sources[] = new RTG_Catalog_Source_CJ();
-        }
-
-        // The JSON source runs whenever a feed URL is set. With CJ configured
-        // and no URL set it stays out of the way, so the bundled sample can't
-        // seed demo rows into a queue holding real finds.
-        $fixture_url = trim( (string) ( $settings['catalog_fixture_url'] ?? '' ) );
-        if ( '' !== $fixture_url || empty( $sources ) ) {
-            $sources[] = new RTG_Catalog_Source_Fixture( $fixture_url );
         }
 
         /**
@@ -212,19 +202,7 @@ class RTG_Catalog_Sync {
             $stats['sources'][] = $source_stats;
         }
 
-        // Then ask directly for whatever the sweep still hasn't found, so a
-        // tire ranked below where paging stops isn't simply never seen.
-        $stats['targeted'] = self::run_targeted_lookup(
-            $context,
-            $guide_index,
-            self::seconds_left( $run_started, $run_budget )
-        );
-
         $stats['elapsed'] = round( microtime( true ) - $run_started, 1 );
-
-        foreach ( $stats['targeted']['errors'] as $targeted_error ) {
-            $stats['errors'][] = $targeted_error;
-        }
 
         // Rows the sweep didn't revisit still hold the match they were given
         // when they were last seen, which the guide may have moved on from.
@@ -235,11 +213,7 @@ class RTG_Catalog_Sync {
         // Counted in the stats rather than silent, like everything else here.
         $stats['pruned'] = RTG_Candidates::prune( $sizes );
 
-        // Only a run that read nothing at all is a failure. The targeted pass
-        // counts toward that: a sweep that timed out while the direct lookups
-        // still brought tires in did work, and calling it an error would hide
-        // that.
-        if ( ! empty( $stats['errors'] ) && 0 === $stats['fetched'] && 0 === $stats['targeted']['ingested'] ) {
+        if ( ! empty( $stats['errors'] ) && 0 === $stats['fetched'] ) {
             $stats['status']  = 'error';
             $stats['message'] = $stats['errors'][0]['message'];
         }
@@ -265,30 +239,18 @@ class RTG_Catalog_Sync {
     /**
      * Evaluate one product and write it to the candidates table.
      *
-     * Shared by the fitment sweep and the targeted pass so a product reaching
-     * the queue by either route is judged and stored identically.
+     * One path for judging and storing a fetched product, whoever fetched it.
      *
      * @param array  $product     Normalized product from a source.
      * @param string $slug        Source slug.
      * @param string $label       Source label, used when the feed names no advertiser.
      * @param array  $context     Qualification context.
      * @param array  $guide_index Match key => tire_id.
-     * @param array  $only_sizes  Store only these fitments, as a size => true
-     *                            set; empty accepts any.
-     * @return array { evaluated: array, result: array, match_key: string, skipped: bool }
+     * @return array { evaluated: array, result: array }
      */
-    public static function ingest_product( $product, $slug, $label, $context, $guide_index, $only_sizes = array() ) {
+    public static function ingest_product( $product, $slug, $label, $context, $guide_index ) {
         $evaluated = RTG_Tire_Qualifier::evaluate( $product, $context );
         $match_key = self::match_key( $evaluated['brand'], $evaluated['model'], $evaluated['size'] );
-
-        if ( ! empty( $only_sizes ) && ! isset( $only_sizes[ $evaluated['size'] ] ) ) {
-            return array(
-                'evaluated' => $evaluated,
-                'result'    => array( 'status' => '', 'newly_surfaced' => false, 'id' => 0 ),
-                'match_key' => $match_key,
-                'skipped'   => true,
-            );
-        }
 
         $result = RTG_Candidates::upsert( array(
             'source'          => $slug,
@@ -316,231 +278,7 @@ class RTG_Catalog_Sync {
         return array(
             'evaluated' => $evaluated,
             'result'    => $result,
-            'match_key' => $match_key,
-            'skipped'   => false,
         );
-    }
-
-    /**
-     * Search terms for the guide tires nothing in the queue keys to.
-     *
-     * A term names the brand and model and deliberately omits the size, which
-     * the probe settled: asking CJ for "Michelin Defender LTX M/S2 305/45R22"
-     * returned that exact model from Tire Rack in 285/45R22 and 275/45R22.
-     * The words match; the size is scored, not applied. Leaving it in the term
-     * only dilutes the part that works, and the fitment is something this side
-     * can filter on exactly.
-     *
-     * Omitting it also collapses the work: every uncovered size of one model
-     * becomes a single request rather than one per fitment.
-     *
-     * @param array $covered_keys Match keys the queue already holds.
-     * @return array {
-     *     @type string[] $terms  Distinct "Brand Model" searches to run.
-     *     @type array    $wanted Match key => term, for the tires being sought.
-     * }
-     */
-    public static function uncovered_terms( $covered_keys ) {
-        $terms  = array();
-        $wanted = array();
-
-        foreach ( RTG_Database::get_all_tires() as $tire ) {
-            $keys = self::match_keys_for_tire( $tire );
-
-            $covered = empty( $keys );
-            foreach ( $keys as $key ) {
-                if ( isset( $covered_keys[ $key ] ) ) {
-                    $covered = true;
-                    break;
-                }
-            }
-
-            if ( $covered ) {
-                continue;
-            }
-
-            $term = trim( preg_replace( '/\s+/', ' ', sprintf(
-                '%s %s',
-                $tire['brand'] ?? '',
-                $tire['model'] ?? ''
-            ) ) );
-
-            if ( '' === $term ) {
-                continue;
-            }
-
-            $terms[ $term ] = true;
-
-            // Every spelling maps to the term — the targeted pass judges
-            // success by whether an ingested product's key was wanted, and a
-            // product may arrive under any of them. (The previous version
-            // wrote under $key, a variable leaked from the loop above.)
-            foreach ( $keys as $tire_key ) {
-                $wanted[ $tire_key ] = $term;
-            }
-        }
-
-        return array(
-            'terms'  => array_keys( $terms ),
-            'wanted' => $wanted,
-        );
-    }
-
-    /**
-     * Ask each source directly for the tires the sweep didn't find.
-     *
-     * The sweep searches a bare fitment, which CJ answers with a relevance
-     * ranking thousands deep rather than a filter, so a guide tire can sit
-     * below where paging stops and never arrive. Asking for it by brand, model
-     * and size is a different question and takes one request.
-     *
-     * @param array $context     Qualification context.
-     * @param array $guide_index Match key => tire_id.
-     * @return array Statistics for the pass.
-     */
-    private static function run_targeted_lookup( $context, $guide_index, $ceiling = null ) {
-        $stats = array(
-            'terms'     => 0,
-            'tires'     => 0,
-            'checked'   => 0,
-            'answered'  => 0,
-            'matched'   => 0,
-            'pending'   => 0,
-            'ingested'  => 0,
-            'off_size'  => 0,
-            'qualified' => 0,
-            'capped'    => 0,
-            'deepest'   => 0,
-            'discarded' => 0,
-            'skipped'   => false,
-            'errors'    => array(),
-        );
-
-        $uncovered = self::uncovered_terms( RTG_Candidates::get_by_match_key() );
-
-        $stats['terms'] = count( $uncovered['terms'] );
-        $stats['tires'] = count( $uncovered['wanted'] );
-
-        if ( empty( $uncovered['terms'] ) ) {
-            return $stats;
-        }
-
-        // The sweep may already have spent the run's whole allowance. Saying
-        // so beats starting a pass that will be killed mid-request, and the
-        // rotation means the next run picks these up.
-        if ( null !== $ceiling && $ceiling <= 0 ) {
-            $stats['skipped'] = true;
-            $stats['pending'] = count( $uncovered['terms'] );
-
-            return $stats;
-        }
-
-        // Any fitment the guide covers is worth keeping, not only the one that
-        // prompted the search. A search for a model returns it in every size
-        // CJ holds, and some of those are other guide tires — dropping them
-        // would throw away a match we were about to go looking for anyway.
-        $guide_sizes = array();
-        foreach ( RTG_Admin::get_dropdown_options( 'sizes' ) as $size ) {
-            $normalized = RTG_Tire_Qualifier::normalize_size( $size );
-            if ( '' !== $normalized ) {
-                $guide_sizes[ $normalized ] = true;
-            }
-        }
-
-        $covered = array();
-
-        foreach ( self::get_sources() as $source ) {
-            if ( ! method_exists( $source, 'fetch_terms' ) ) {
-                continue;
-            }
-
-            $seen       = array();
-            $slug       = $source->get_slug();
-            $label      = $source->get_label();
-            $stats_ref  = &$stats;
-            $covered_ref = &$covered;
-
-            // Consumed as each answer arrives rather than collected first. At
-            // a thousand records a term and a hundred terms, holding every
-            // response would mean a hundred thousand products in memory to
-            // keep the few dozen in a fitment the guide uses.
-            $lookup = $source->fetch_terms(
-                $uncovered['terms'],
-                function ( $term, $products ) use (
-                    &$stats_ref, &$covered_ref, &$seen,
-                    $slug, $label, $context, $guide_index, $guide_sizes, $uncovered
-                ) {
-                    if ( empty( $products ) ) {
-                        return;
-                    }
-
-                    $stats_ref['answered']++;
-
-                    foreach ( $products as $product ) {
-                        $id = (string) ( $product['external_id'] ?? '' );
-
-                        if ( '' === $id || isset( $seen[ $id ] ) ) {
-                            continue;
-                        }
-
-                        $ingested = RTG_Catalog_Sync::ingest_product(
-                            $product,
-                            $slug,
-                            $label,
-                            $context,
-                            $guide_index,
-                            $guide_sizes
-                        );
-
-                        if ( $ingested['skipped'] ) {
-                            // Left out rather than stored. CJ scores a keyword
-                            // instead of filtering on it, so most of what a
-                            // search returns is a fitment the guide has no use
-                            // for; storing it added four thousand near misses
-                            // in one run without covering a tire. Canvassing
-                            // fitments is the sweep's job.
-                            $stats_ref['off_size']++;
-                            continue;
-                        }
-
-                        $seen[ $id ] = true;
-                        $stats_ref['ingested']++;
-
-                        if ( RTG_Candidates::STATUS_NEW === $ingested['result']['status'] ) {
-                            $stats_ref['qualified']++;
-                        }
-
-                        // The only outcome that means the pass worked: a
-                        // product came back that keys to a tire being looked
-                        // for. Counting "the request returned something"
-                        // instead reported 111 of 111 successful while
-                        // coverage did not move at all.
-                        if ( isset( $uncovered['wanted'][ $ingested['match_key'] ] ) ) {
-                            $covered_ref[ $ingested['match_key'] ] = true;
-                        }
-                    }
-                },
-                $ceiling,
-                $guide_sizes
-            );
-
-            $stats['discarded'] = ( $stats['discarded'] ?? 0 ) + intval( $lookup['discarded'] ?? 0 );
-            $stats['checked'] += $lookup['checked'];
-            $stats['pending']  = max( $stats['pending'], $lookup['pending'] );
-            $stats['capped']  += $lookup['capped'];
-            $stats['deepest']  = max( $stats['deepest'], $lookup['deepest'] );
-
-            if ( '' !== $lookup['error'] ) {
-                $stats['errors'][] = array(
-                    'source'  => $slug,
-                    'message' => $lookup['error'],
-                );
-            }
-        }
-
-        $stats['matched'] = count( $covered );
-
-        return $stats;
     }
 
     /**

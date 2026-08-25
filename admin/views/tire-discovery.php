@@ -13,7 +13,6 @@ if ( isset( $_POST['rtg_catalog_settings_save'] ) ) {
     $settings['catalog_notify_enabled'] = ! empty( $_POST['catalog_notify_enabled'] );
     $settings['health_alerts_enabled']  = ! empty( $_POST['health_alerts_enabled'] );
     $settings['stale_price_report_enabled'] = ! empty( $_POST['stale_price_report_enabled'] );
-    $settings['catalog_fixture_url']    = esc_url_raw( wp_unslash( $_POST['catalog_fixture_url'] ?? '' ) );
 
     // --- CJ credentials and query ---
     $settings['cj_enabled']     = ! empty( $_POST['cj_enabled'] );
@@ -22,11 +21,7 @@ if ( isset( $_POST['rtg_catalog_settings_save'] ) ) {
     $settings['cj_limit']        = max( 1, min( 1000, intval( $_POST['cj_limit'] ?? RTG_Catalog_Source_CJ::DEFAULT_LIMIT ) ) );
     $settings['cj_sweep_budget'] = max( 15, min( 600, intval( $_POST['cj_sweep_budget'] ?? RTG_Catalog_Source_CJ::SWEEP_BUDGET ) ) );
     $settings['cj_max_pages']    = max( 1, min( 50, intval( $_POST['cj_max_pages'] ?? RTG_Catalog_Source_CJ::DEFAULT_MAX_PAGES ) ) );
-    $settings['cj_targeted_enabled'] = ! empty( $_POST['cj_targeted_enabled'] );
-    $settings['cj_targeted_budget']  = max( 15, min( 600, intval( $_POST['cj_targeted_budget'] ?? RTG_Catalog_Source_CJ::TARGETED_BUDGET ) ) );
-    $settings['cj_targeted_limit']   = max( 1, min( 1000, intval( $_POST['cj_targeted_limit'] ?? RTG_Catalog_Source_CJ::TARGETED_LIMIT ) ) );
     $settings['catalog_run_budget']  = max( 30, min( 900, intval( $_POST['catalog_run_budget'] ?? RTG_Catalog_Sync::RUN_BUDGET ) ) );
-    $settings['cj_category_names'] = sanitize_textarea_field( wp_unslash( $_POST['cj_category_names'] ?? '' ) );
 
     // The query document is GraphQL, so it must not be run through a sanitizer
     // that mangles braces or quotes; it is never output unescaped.
@@ -81,7 +76,6 @@ $sync_enabled   = $settings['catalog_sync_enabled'] ?? true;
 $notify_enabled = $settings['catalog_notify_enabled'] ?? true;
 $health_alerts  = $settings['health_alerts_enabled'] ?? true;
 $stale_price_report = $settings['stale_price_report_enabled'] ?? true;
-$fixture_url    = $settings['catalog_fixture_url'] ?? '';
 $min_load_index = isset( $settings['catalog_min_load_index'] )
     ? intval( $settings['catalog_min_load_index'] )
     : RTG_Tire_Qualifier::DEFAULT_MIN_LOAD_INDEX;
@@ -126,11 +120,7 @@ $cj_advertisers  = $settings['cj_advertisers'] ?? '';
 $cj_limit        = intval( $settings['cj_limit'] ?? RTG_Catalog_Source_CJ::DEFAULT_LIMIT );
 $cj_sweep_budget = intval( $settings['cj_sweep_budget'] ?? RTG_Catalog_Source_CJ::SWEEP_BUDGET );
 $cj_max_pages    = intval( $settings['cj_max_pages'] ?? RTG_Catalog_Source_CJ::DEFAULT_MAX_PAGES );
-$cj_targeted_enabled = ! empty( $settings['cj_targeted_enabled'] );
-$cj_targeted_budget  = intval( $settings['cj_targeted_budget'] ?? RTG_Catalog_Source_CJ::TARGETED_BUDGET );
-$cj_targeted_limit   = intval( $settings['cj_targeted_limit'] ?? RTG_Catalog_Source_CJ::TARGETED_LIMIT );
 $catalog_run_budget  = intval( $settings['catalog_run_budget'] ?? RTG_Catalog_Sync::RUN_BUDGET );
-$cj_categories   = $settings['cj_category_names'] ?? '';
 $cj_query        = $settings['cj_query'] ?? '';
 $cj_has_pat      = '' !== RTG_Catalog_Source_CJ::get_pat();
 $cj_pat_constant = RTG_Catalog_Source_CJ::pat_is_constant();
@@ -336,81 +326,12 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                     </details>
                 <?php endif; ?>
 
-                <?php $targeted = $stats['targeted'] ?? array(); ?>
-
-                <?php if ( ! empty( $targeted['terms'] ) && empty( $targeted['checked'] ) && ! $cj_targeted_enabled ) : ?>
-                    <p class="description" style="margin:12px 0 0;max-width:860px;">
-                        <strong>Direct lookups:</strong> off, so the whole budget went to the sweep. There are
-                        <?php echo esc_html( number_format( intval( $targeted['tires'] ?? 0 ) ) ); ?>
-                        uncovered tire(s) they would search for. Turning them on is unlikely to help &mdash; a
-                        brand-and-model keyword was measured matching 81,653 products, of which one request reads
-                        about 1%.
+                <?php if ( ! empty( $stats['elapsed'] ) ) : ?>
+                    <p class="description" style="margin:12px 0 0;">
+                        The whole run took
+                        <?php echo esc_html( number_format( (float) $stats['elapsed'], 1 ) ); ?>s
+                        of its <?php echo esc_html( intval( $catalog_run_budget ) ); ?>s budget.
                     </p>
-                <?php elseif ( ! empty( $targeted['terms'] ) ) : ?>
-                    <p class="description" style="margin:12px 0 0;max-width:860px;">
-                        <strong>Direct lookups:</strong> ran
-                        <?php echo esc_html( number_format( intval( $targeted['checked'] ) ) ); ?>
-                        of <?php echo esc_html( number_format( intval( $targeted['terms'] ) ) ); ?>
-                        model search(es), covering
-                        <?php echo esc_html( number_format( intval( $targeted['tires'] ?? 0 ) ) ); ?>
-                        uncovered tire(s).
-                        <strong<?php echo empty( $targeted['matched'] ) ? ' style="color:var(--rtg-error);"' : ''; ?>>
-                            <?php echo esc_html( number_format( intval( $targeted['matched'] ?? 0 ) ) ); ?>
-                            uncovered tire(s) were actually found.
-                        </strong>
-                        <?php echo esc_html( number_format( intval( $targeted['answered'] ?? 0 ) ) ); ?>
-                        returned something,
-                        <?php echo esc_html( number_format( intval( $targeted['ingested'] ) ) ); ?>
-                        product(s) in a fitment the guide uses reached the queue, and
-                        <?php echo esc_html( number_format( intval( $targeted['discarded'] ?? 0 ) + intval( $targeted['off_size'] ?? 0 ) ) ); ?>
-                        were in fitments the guide has no use for and were left out.
-                        <?php if ( ! empty( $targeted['pending'] ) ) : ?>
-                            <?php echo esc_html( number_format( intval( $targeted['pending'] ) ) ); ?>
-                            left for the next run, which starts there.
-                        <?php endif; ?>
-                        <?php if ( ! empty( $stats['elapsed'] ) ) : ?>
-                            The whole run took
-                            <?php echo esc_html( number_format( (float) $stats['elapsed'], 1 ) ); ?>s
-                            of its <?php echo esc_html( intval( $catalog_run_budget ) ); ?>s budget.
-                        <?php endif; ?>
-                    </p>
-                    <?php if ( ! empty( $targeted['skipped'] ) ) : ?>
-                        <div class="rtg-notice rtg-notice-warning" style="margin-top:10px;">
-                            <span>
-                                The sweep used the run's whole budget, so no direct lookups ran. They start first on
-                                the next run. Raise the whole-run budget if the host allows it, or lower the sweep's.
-                            </span>
-                        </div>
-                    <?php endif; ?>
-
-                    <?php if ( ! empty( $targeted['capped'] ) ) : ?>
-                        <div class="rtg-notice rtg-notice-warning" style="margin-top:10px;">
-                            <span>
-                                <strong><?php echo esc_html( number_format( intval( $targeted['capped'] ) ) ); ?></strong>
-                                search(es) returned more matches than were read
-                                <?php if ( ! empty( $targeted['deepest'] ) ) : ?>
-                                    &mdash; the deepest reported
-                                    <strong><?php echo esc_html( number_format( intval( $targeted['deepest'] ) ) ); ?></strong>
-                                    matches
-                                <?php endif; ?>.
-                                A keyword is scored rather than filtered, so the tire being looked for can rank below
-                                where reading stops. Raise <strong>Records per search</strong> before concluding the
-                                retailer does not carry it.
-                            </span>
-                        </div>
-                    <?php endif; ?>
-
-                    <?php if ( empty( $targeted['matched'] ) && ! empty( $targeted['answered'] ) && empty( $targeted['capped'] ) ) : ?>
-                        <div class="rtg-notice rtg-notice-warning" style="margin-top:10px;">
-                            <span>
-                                Every search was answered and none returned a tire that was being looked for. Use
-                                <strong>Test Connection</strong> with one of those brand-and-model terms to see what
-                                the search actually returns &mdash; if the model comes back in other fitments only,
-                                the retailer's feed does not carry the size the guide wants, and no change to the
-                                query will conjure it.
-                            </span>
-                        </div>
-                    <?php endif; ?>
                 <?php endif; ?>
 
                 <?php
@@ -915,7 +836,7 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 </p>
                                 <table style="border-collapse:collapse;">
                                     <?php foreach ( $vehicle_size_map as $vehicle => $vehicle_sizes ) : ?>
-                                        <tr>
+                    <tr>
                                             <td style="padding:4px 12px 4px 0;">
                                                 <label for="min_li_<?php echo esc_attr( $vehicle ); ?>"><strong><?php echo esc_html( $vehicle ); ?></strong></label>
                                             </td>
@@ -1012,7 +933,7 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                     <?php if ( $cj_configured ) : ?>
                         <strong style="color:var(--rtg-success);">Configured.</strong>
                     <?php else : ?>
-                        <strong style="color:var(--rtg-warning-text);">Not configured — discovery falls back to the JSON feed.</strong>
+                        <strong style="color:var(--rtg-warning-text);">Not configured — discovery has no source until it is.</strong>
                     <?php endif; ?>
                 </p>
 
@@ -1073,32 +994,6 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><label for="cj_category_names">Product category</label></th>
-                        <td>
-                            <textarea name="cj_category_names" id="cj_category_names" rows="2" class="large-text code" placeholder="Tires"><?php echo esc_textarea( $cj_categories ); ?></textarea>
-                            <p class="description" style="max-width:680px;">
-                                One Google product category per line. <strong>Leave this blank unless you are certain
-                                every advertiser tags its products.</strong>
-                            </p>
-                            <div class="rtg-notice rtg-notice-warning" style="max-width:680px;margin:8px 0;">
-                                <span>
-                                    <strong>This filter can silently drop a whole retailer.</strong> It is applied by CJ
-                                    as a server-side filter, so any product that declares no category is excluded.
-                                    Checked against this account, SimpleTire tags its tires
-                                    (<code>… &gt; Motor Vehicle Tires &gt; Automotive Tires</code>, id 6093) and
-                                    <strong>Tire Rack sends no category at all</strong> — so setting a category here
-                                    would remove every Tire Rack listing. Worse, it would look like it worked: the match
-                                    counts would fall sharply, exactly as a correct filter would make them.
-                                </span>
-                            </div>
-                            <p class="description" style="max-width:680px;">
-                                Discovery does not need this. Paging already reaches a size's whole match set; the
-                                filter only saves requests. If you do set it, confirm afterwards that both retailers
-                                still appear in the coverage report above.
-                            </p>
-                        </td>
-                    </tr>
-                    <tr>
                         <th scope="row"><label for="cj_max_pages">Pages per size</label></th>
                         <td>
                             <input type="number" name="cj_max_pages" id="cj_max_pages" value="<?php echo esc_attr( $cj_max_pages ); ?>" min="1" max="50" class="small-text">
@@ -1106,24 +1001,6 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 How far to page through one size's matches before moving on — pages of "Records per
                                 size" each. Paging to the end of an unfiltered search would spend the whole budget on a
                                 single size, so a size stops here and the status says how much it left behind.
-                            </p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Direct lookups</th>
-                        <td>
-                            <label>
-                                <input type="checkbox" name="cj_targeted_enabled" value="1" <?php checked( $cj_targeted_enabled ); ?>>
-                                Ask for uncovered guide tires by name
-                            </label>
-                            <p class="description" style="max-width:680px;">
-                                <strong>Off by default, and the evidence is blunt.</strong> A live run reported a
-                                single brand-and-model keyword matching <strong>81,653</strong> products. A thousand
-                                records is 1.2% of that ranking; covering one search would take 82 requests and the
-                                guide's models thousands. The pass spent an entire run budget and found nothing.
-                                The sweep's fitment keyword is better by an order of magnitude &mdash; a size reports
-                                around 5,000 matches, readable in a handful of requests &mdash; so the budget belongs
-                                there. Left available in case a future catalog behaves differently.
                             </p>
                         </td>
                     </tr>
@@ -1140,30 +1017,7 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                             </p>
                         </td>
                     </tr>
-                    <tr>
-                        <th scope="row"><label for="cj_targeted_limit">Records per search</label></th>
-                        <td>
-                            <input type="number" name="cj_targeted_limit" id="cj_targeted_limit" value="<?php echo esc_attr( $cj_targeted_limit ); ?>" min="1" max="1000" class="small-text">
-                            <p class="description" style="max-width:680px;">
-                                How much of a model search's answer to read. This was 50 on the assumption that naming
-                                a tire is a precise query &mdash; it is not. CJ scores a keyword and returns a ranking,
-                                so the tire being looked for can sit well below the first few dozen results. A run at 50
-                                returned 4,924 products across 99 searches, an average of 49.7 each: every answer
-                                truncated. The status above now says when that happens.
-                            </p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="cj_targeted_budget">Direct lookup budget</label></th>
-                        <td>
-                            <input type="number" name="cj_targeted_budget" id="cj_targeted_budget" value="<?php echo esc_attr( $cj_targeted_budget ); ?>" min="15" max="600" class="small-text"> seconds
-                            <p class="description" style="max-width:680px;">
-                                Spent after the sweep's own budget, so a slow sweep shortens this pass rather than
-                                cancelling it. Raise it if the status above reports lookups left for the next run.
-                            </p>
-                        </td>
-                    </tr>
-                    <tr>
+                                                            <tr>
                         <th scope="row"><label for="cj_sweep_budget">Time budget</label></th>
                         <td>
                             <input type="number" name="cj_sweep_budget" id="cj_sweep_budget" value="<?php echo esc_attr( $cj_sweep_budget ); ?>" min="15" max="600" class="small-text"> seconds
@@ -1207,21 +1061,6 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                     </tr>
                 </table>
 
-                <h3 style="margin:24px 0 8px;">JSON Feed</h3>
-
-                <table class="form-table">
-                    <tr>
-                        <th scope="row"><label for="catalog_fixture_url">JSON Feed URL</label></th>
-                        <td>
-                            <input type="url" name="catalog_fixture_url" id="catalog_fixture_url" value="<?php echo esc_attr( $fixture_url ); ?>" class="regular-text" style="width:100%;max-width:600px;" placeholder="<?php echo esc_attr( 'Leave blank to use the bundled sample' ); ?>">
-                            <p class="description">
-                                An optional extra source — a JSON document of products to check, useful for a retailer with no
-                                machine-readable feed. With CJ configured and this blank, the bundled sample stays out of the way
-                                so demo rows can't mix into a queue holding real finds.
-                            </p>
-                        </td>
-                    </tr>
-                </table>
                 <p class="submit">
                     <input type="submit" name="rtg_catalog_settings_save" class="button button-primary" value="Save Settings">
                 </p>

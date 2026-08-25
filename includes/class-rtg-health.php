@@ -101,7 +101,8 @@ class RTG_Health {
         }
 
         if ( ! isset( $issues['auth_rejected'] ) && ! isset( $issues['sweep_failed'] )
-            && 0 === intval( $stats['fetched'] ?? 0 ) ) {
+            && 0 === intval( $stats['fetched'] ?? 0 )
+            && ! empty( $stats['sources'] ) ) {
             $issues['nothing_fetched'] = 'The last discovery run completed but read zero products. The source may be misconfigured or returning an empty catalog.';
         }
 
@@ -110,11 +111,11 @@ class RTG_Health {
         // regresses they all quietly stop meaning anything for that size.
         $read = RTG_Catalog_Presence::fully_read_sizes( $stats );
 
-        // Judged only when the run recorded coverage at all. A fixture-only
-        // run, or stats written before coverage existed, would otherwise flag
-        // every guide size as partial. Testing "at least one size was read
-        // completely" instead — as the first version did — silenced the worst
-        // case: every fitment regressing at once.
+        // Judged only when the run recorded coverage at all — stats written
+        // before coverage existed would otherwise flag every guide size as
+        // partial. Testing "at least one size was read completely" instead, as
+        // the first version did, silenced the worst case: every fitment
+        // regressing at once.
         $has_coverage_data = false;
         foreach ( (array) ( $stats['sources'] ?? array() ) as $source ) {
             if ( ! empty( $source['coverage'] ) ) {

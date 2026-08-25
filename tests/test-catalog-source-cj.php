@@ -384,45 +384,17 @@ class Test_RTG_Catalog_Source_CJ extends WP_UnitTestCase {
         $this->assertGreaterThanOrEqual( 500, RTG_Catalog_Source_CJ::DEFAULT_LIMIT );
     }
 
-    // --- Category filter ---
+    // --- Pagination ---
 
     /**
-     * No configured category means no filter, expressed as null rather than an
-     * empty list — an empty list would ask CJ for products in no category.
+     * The shipped query declares the pagination argument introspection
+     * confirmed exists, so a sweep can actually read past the first page.
      */
-    public function test_no_configured_category_applies_no_filter() {
-        update_option( 'rtg_settings', array( 'cj_category_names' => '' ) );
-        $this->assertNull( RTG_Catalog_Source_CJ::get_category_names() );
-
-        update_option( 'rtg_settings', array( 'cj_category_names' => "   \n  \n" ) );
-        $this->assertNull( RTG_Catalog_Source_CJ::get_category_names() );
-    }
-
-    /**
-     * Categories are read one per line, blanks discarded.
-     */
-    public function test_categories_parse_one_per_line() {
-        update_option( 'rtg_settings', array(
-            'cj_category_names' => "Tires\n\nMotor Vehicle Tires\n",
-        ) );
-
-        $this->assertSame(
-            array( 'Tires', 'Motor Vehicle Tires' ),
-            RTG_Catalog_Source_CJ::get_category_names()
-        );
-    }
-
-    /**
-     * The shipped query declares the arguments introspection confirmed exist,
-     * so pagination and the category filter can actually be sent.
-     */
-    public function test_the_shipped_query_declares_pagination_and_category() {
+    public function test_the_shipped_query_declares_pagination() {
         $query = RTG_Catalog_Source_CJ::DEFAULT_QUERY;
 
         $this->assertStringContainsString( '$offset: Int', $query );
         $this->assertStringContainsString( 'offset: $offset', $query );
-        $this->assertStringContainsString( '$googleProductCategoryNames', $query );
-        $this->assertStringContainsString( 'googleProductCategoryNames: $googleProductCategoryNames', $query );
     }
 
     /**
@@ -448,18 +420,17 @@ class Test_RTG_Catalog_Source_CJ extends WP_UnitTestCase {
     }
 
     /**
-     * No category filter is applied unless one is explicitly configured.
+     * The query never carries a Google product category filter.
      *
-     * This is a correctness property, not a preference. The filter is applied
-     * by CJ server-side, so it excludes every product declaring no category —
-     * and the retailers disagree about populating the field: SimpleTire tags
-     * its tires, Tire Rack sends nothing. A default category would therefore
-     * drop one retailer wholesale while the falling match counts made it look
-     * like the filter was working.
+     * The filter was removed in 1.75.0 rather than defaulted off, and this
+     * pins the removal. It is applied by CJ server-side, so it excludes every
+     * product declaring no category — and the retailers disagree about
+     * populating the field: SimpleTire tags its tires, Tire Rack sends
+     * nothing. Any category, however configured, silently drops one retailer
+     * wholesale while the falling match counts look like the filter working.
      */
-    public function test_no_category_is_applied_by_default() {
-        delete_option( 'rtg_settings' );
-
-        $this->assertNull( RTG_Catalog_Source_CJ::get_category_names() );
+    public function test_no_category_filter_exists_to_misconfigure() {
+        $this->assertStringNotContainsString( 'googleProductCategory', RTG_Catalog_Source_CJ::DEFAULT_QUERY );
+        $this->assertFalse( method_exists( RTG_Catalog_Source_CJ::class, 'get_category_names' ) );
     }
 }

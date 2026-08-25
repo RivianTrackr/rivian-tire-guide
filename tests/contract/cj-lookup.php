@@ -1,19 +1,13 @@
 <?php
 /**
- * Executable contract check for the CJ catalog source.
+ * Executable contract check for the CJ connection probe.
  *
- * The plugin's PHPUnit suite needs a WordPress test library and a database,
- * so in practice it does not run on every change — and `php -l` only proves a
- * file parses. That gap shipped a real defect: RTG_Catalog_Sync was rewritten
- * to read `$lookup['by_term']` while RTG_Catalog_Source_CJ still returned
- * `products`, which is perfectly valid PHP. Lint passed, CI went green, and
- * the targeted lookup silently ingested nothing.
- *
- * This file closes that specific gap the cheapest way that actually executes:
- * plain PHP, no WordPress, no database, a stubbed HTTP layer. It runs the real
- * fetch_terms and asserts the shape the sync depends on, checks the fitment
- * guard against a response shaped like a live one, and confirms the connection
- * probe honours the keyword it is given.
+ * The probe is the diagnostic that settled every hard question this feature
+ * faced — what a keyword really returns, whether paging advances — so its own
+ * behavior is pinned here on plain PHP with a stubbed HTTP layer: the keyword
+ * and offset it is given must reach the request and be echoed in the reply,
+ * because a probe that silently substitutes its fallback reads as an answer
+ * to a question that was never asked. That exact failure shipped once.
  *
  * Run with: php tests/contract/cj-lookup.php
  * Exits non-zero on failure, so CI gates on it.
@@ -21,18 +15,9 @@
 
 define( 'ABSPATH', __DIR__ );
 $GLOBALS['opts'] = array(
-    'rtg_settings' => array( 'cj_company_id' => '1', 'cj_pat' => 'x', 'cj_targeted_budget' => 600 ),
+    'rtg_settings' => array( 'cj_company_id' => '1', 'cj_pat' => 'x' ),
 );
 
-/** Settings with direct lookups explicitly enabled, for the mechanism checks. */
-function enable_targeted() {
-    $GLOBALS['opts']['rtg_settings']['cj_targeted_enabled'] = 1;
-}
-
-/** Settings as they ship: direct lookups off. */
-function default_settings() {
-    unset( $GLOBALS['opts']['rtg_settings']['cj_targeted_enabled'] );
-}
 function get_option( $k, $d = false ) { return $GLOBALS['opts'][$k] ?? $d; }
 function update_option( $k, $v, $a = null ) { $GLOBALS['opts'][$k] = $v; return true; }
 function wp_json_encode( $v ) { return json_encode( $v ); }
@@ -40,129 +25,54 @@ function wp_parse_url( $u, $c = -1 ) { return parse_url( $u, $c ); }
 function is_wp_error( $t ) { return false; }
 function wp_remote_retrieve_response_code( $r ) { return 200; }
 function wp_remote_retrieve_body( $r ) { return $r['body']; }
-function current_time( $t ) { return '2026-08-24 00:00:00'; }
-function apply_filters( $t, $v ) { return $v; }
+function number_format_i18n( $n ) { return number_format( $n ); }
 class RTG_Admin { public static function get_dropdown_options( $w ) { return array( '255/65R19' ); } }
 
-// One CJ response: the asked-for tire plus off-fitment noise, as observed live.
 function wp_remote_post( $url, $args ) {
     $body = json_decode( $args['body'], true );
-    $kw   = $body['variables']['keywords'][0];
-    $GLOBALS['last_offset'] = intval( $body['variables']['offset'] ?? -1 );
-    // Shaped on what CJ actually returned for this search: the right model
-    // from the right retailer, in fitments other than the one asked about,
-    // because the size in a keyword is scored rather than applied.
+    $GLOBALS['last_keyword'] = (string) $body['variables']['keywords'][0];
+    $GLOBALS['last_offset']  = intval( $body['variables']['offset'] ?? -1 );
+    $GLOBALS['last_limit']   = intval( $body['variables']['limit'] ?? -1 );
+
     $nodes = array(
         array( 'id' => '845HR2DLTX2XL', 'title' => 'Michelin Defender LTX M/S2 285/45R22 XL 114H Highway All-Season Tire 44941',
                'brand' => 'Michelin', 'advertiserId' => '1463221', 'advertiserName' => 'The Tire Rack',
                'link' => 'https://www.tirerack.com/tires/tires.jsp?partnum=845HR2DLTX2XL', 'price' => array( 'amount' => '344.99' ) ),
-        array( 'id' => '745HR2DLTX2XL', 'title' => 'Michelin Defender LTX M/S2 305/45R22 XL 118H Highway All-Season Tire 12872',
-               'brand' => 'Michelin', 'advertiserId' => '1463221', 'advertiserName' => 'The Tire Rack',
-               'link' => 'https://www.tirerack.com/tires/tires.jsp?partnum=745HR2DLTX2XL', 'price' => array( 'amount' => '358.99' ) ),
-        array( 'id' => 'b2', 'title' => 'Continental CrossContact RX 255/65R19 114V', 'brand' => 'Continental',
-               'advertiserId' => '5660604', 'advertiserName' => 'SimpleTire',
-               'link' => 'https://simpletire.com/y', 'price' => array( 'amount' => '304.15' ) ),
     );
-    // CJ reports a match count far larger than any page it returns, because a
-    // keyword is scored rather than filtered. That gap is what makes a
-    // truncated answer detectable.
-    $limit = intval( $body['variables']['limit'] );
+
     return array( 'body' => json_encode( array( 'data' => array( 'shoppingProducts' => array(
-        'totalCount' => 4213, 'count' => count( $nodes ), 'resultList' => array_slice( $nodes, 0, $limit ) ) ) ) ) );
+        'totalCount' => 4213, 'count' => count( $nodes ), 'resultList' => $nodes ) ) ) ) );
 }
 
-// The real qualifier, not a stub: the pre-filter reads a size out of a title,
-// and stubbing that would test the stub rather than the parser that decides
-// what actually reaches the queue.
 require __DIR__ . '/../../includes/class-rtg-tire-qualifier.php';
 require __DIR__ . '/../../includes/class-rtg-catalog-source.php';
 require __DIR__ . '/../../includes/class-rtg-catalog-source-cj.php';
 
 $source = new RTG_Catalog_Source_CJ();
 
-// Direct lookups ship off. A single brand-and-model keyword was measured
-// matching 81,653 products, of which a thousand records reads 1.2%; the pass
-// spent a whole run budget and found nothing. The sweep's fitment keyword
-// reports around 5,000 for a size, so the budget belongs there.
-$off = $source->fetch_terms( array( 'Michelin Defender LTX M/S2' ) );
-
 $fail = 0;
-function check( $label, $cond ) { global $fail; printf( "%-58s %s\n", $label, $cond ? 'ok' : 'FAIL' ); if ( ! $cond ) { $GLOBALS['fail']++; } }
+function check( $label, $cond ) { printf( "%-58s %s\n", $label, $cond ? 'ok' : 'FAIL' ); if ( ! $cond ) { $GLOBALS['fail']++; } }
 
-check( 'direct lookups are off unless enabled',  0 === $off['checked'] && array() === $off['by_term'] );
-
-enable_targeted();
-// The term carries no size: CJ scores that token rather than applying it.
-$terms  = array( 'Michelin Defender LTX M/S2' );
-$lookup = $source->fetch_terms( $terms );
-
-// The contract run_targeted_lookup depends on.
-check( 'fetch_terms returns by_term',            isset( $lookup['by_term'] ) && is_array( $lookup['by_term'] ) );
-check( 'by_term is keyed by the term asked',     isset( $lookup['by_term'][ $terms[0] ] ) );
-check( 'checked/pending/error present',          isset( $lookup['checked'], $lookup['pending'], $lookup['error'] ) );
-check( 'the term returned its products',         3 === count( $lookup['by_term'][ $terms[0] ] ) );
-check( 'a term carries no size token',          ! preg_match( '#\d{3}/\d{2}R\d{2}#', $terms[0] ) );
-
-// The fitment guard the sync applies, exercised on the same data. It keeps
-// any size the guide uses, not only the one that prompted the search: a model
-// search returns that model in every size CJ holds, and some of those are
-// other guide tires we were about to go looking for anyway.
-$guide_sizes = array( '305/45R22' => true, '255/65R19' => true );
-$kept = $dropped = 0;
-$kept_sizes = array();
-foreach ( $lookup['by_term'][ $terms[0] ] as $p ) {
-    preg_match( '#(\d{3})/(\d{2})[A-Z]?R(\d{2})#', $p['title'], $m );
-    $size = $m ? $m[1] . '/' . $m[2] . 'R' . $m[3] : '';
-    if ( isset( $guide_sizes[ $size ] ) ) { $kept++; $kept_sizes[] = $size; } else { $dropped++; }
-}
-check( 'a guide fitment is kept',                in_array( '305/45R22', $kept_sizes, true ) );
-check( 'another guide fitment is also kept',     in_array( '255/65R19', $kept_sizes, true ) );
-check( 'a fitment the guide never uses is left', 1 === $dropped && 2 === $kept );
-
-// A truncated answer must be reported. A 50-record cap on a ranking thousands
-// deep went a whole release unnoticed because nothing compared what came back
-// against what CJ said matched.
-check( 'a truncated answer is counted',          1 === $lookup['capped'] );
-check( 'the depth of the ranking is reported',   4213 === $lookup['deepest'] );
-check( 'the limit asked for is the constant',    1000 === RTG_Catalog_Source_CJ::TARGETED_LIMIT );
-
-// Streaming: with a callback, responses are consumed rather than accumulated.
-$streamed = array();
-$stream = $source->fetch_terms( $terms, function ( $term, $products ) use ( &$streamed ) {
-    $streamed[ $term ] = count( $products );
-} );
-check( 'a callback receives each answer',        ! empty( $streamed[ $terms[0] ] ) );
-check( 'nothing is retained when streaming',     array() === $stream['by_term'] );
-
-// A caller with less time than the pass's own budget must be obeyed. Two
-// passes each honouring only their own budget is not the same as the run
-// having one, and that gap is what killed Run Discovery Now outright.
-$exhausted = $source->fetch_terms( array( 'a', 'b', 'c' ), null, 0 );
-check( 'a spent ceiling stops after one term',   1 === $exhausted['checked'] );
-check( 'the rest are reported as pending',       2 === $exhausted['pending'] );
-
-// The pre-filter drops what the caller cannot use before it is carried further.
-$filtered = $source->fetch_terms( $terms, null, null, array( '305/45R22' => true ) );
-check( 'only the wanted fitment survives',       1 === count( $filtered['by_term'][ $terms[0] ] ) );
-check( 'what was dropped is counted',            2 === $filtered['discarded'] );
-
-// Paging. A sweep that counts records returned rather than products newly seen
-// cannot tell a deeper read from a re-read of page one, and a live run showed
-// exactly that shape: 247 products in one guide fitment and 2 in another, both
-// reported complete off 5,000+ matches.
-$GLOBALS['paging_honoured'] = true;
-$page_a = $source->test_connection( '305/45R22', 0 );
-$page_b = $source->test_connection( '305/45R22', 1000 );
-check( 'probe reports the offset it read from',  false !== strpos( $page_b['message'], 'starting at record 1,000' ) );
-check( 'the request carries the offset through', 1000 === $GLOBALS['last_offset'] );
-
-// test_connection must honour a keyword and report titles.
-$probe = $source->test_connection( 'Michelin Defender LTX M/S2' );
+// A keyword the admin typed is the keyword that is sent and reported.
+$probe = $source->test_connection( 'Michelin Defender LTX M/S2', 0 );
+check( 'probe sends the keyword it was given',   'Michelin Defender LTX M/S2' === $GLOBALS['last_keyword'] );
 check( 'probe echoes the keyword it used',       false !== strpos( $probe['message'], 'Michelin Defender LTX M/S2' ) );
+check( 'probe reports the match total',          false !== strpos( $probe['message'], '4,213' ) );
 check( 'probe returns readable titles',          ! empty( $probe['titles'] ) && is_string( $probe['titles'][0] ) );
 check( 'probe titles name the advertiser',       false !== strpos( $probe['titles'][0], 'The Tire Rack' ) );
 
+// The offset — how paging is proven to advance — reaches the request and the reply.
+$deep = $source->test_connection( '305/45R22', 1000 );
+check( 'the request carries the offset through', 1000 === $GLOBALS['last_offset'] );
+check( 'probe reports the offset it read from',  false !== strpos( $deep['message'], 'starting at record 1,000' ) );
+
+// Blank falls back to the first guide size — and says which keyword it used,
+// so a fallback can never be mistaken for the answer to a typed keyword.
 $blank = $source->test_connection( '' );
-check( 'blank probe falls back to a guide size', false !== strpos( $blank['message'], 'keyword "' ) );
+check( 'blank probe falls back to a guide size', '255/65R19' === $GLOBALS['last_keyword'] );
+check( 'the fallback keyword is reported',       false !== strpos( $blank['message'], '255/65R19' ) );
+
+// The probe reads a full page, same as the sweep.
+check( 'probe reads a full page',                1000 === $GLOBALS['last_limit'] );
 
 exit( $fail > 0 ? 1 : 0 );
