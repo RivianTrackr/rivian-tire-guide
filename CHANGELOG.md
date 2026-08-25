@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.78.0] - 2026-08-25
+
+### Added
+- **Duplicate tires can no longer be hand-added by accident.** The discovery queue was already safe — a candidate matching a guide tire files under Existing before anyone sees an Add button — but a hand-typed tire had only the tire-ID uniqueness check, and IDs auto-generate, so the same physical tire could quietly get a second entry. Saving a new tire now runs the same recognition the matcher lives by: brand and size normalized, punctuation squashed ("Defender LTX M/S 2" collides with "Defender LTX M/S2"), and model aliases expanded on **both** sides, so a retailer's spelling collides with the guide tire that carries it as an alias.
+- **Blocked, not silently merged.** A collision bounces back to the form with the brand, model, and size still filled in, a notice naming the existing tire with an **Edit the existing tire** link — and an explicit "Add anyway — this is deliberately a separate entry" checkbox for the rare legitimate case (an OEM variant kept separate, for instance). The default path protects the guide; the override is one visible tick, never assumed.
+
+### Notes
+- The check runs only on *new* tires — editing an existing tire never trips it, and the discovery Add-to-Guide flow passes through it too, as a second net behind the queue's own Existing filing.
+- The suite lands at 218 tests, 554 assertions, green — the new tests pin the guard's reach (punctuation, aliases in both directions) and its restraint (a different size is a different entry; an unkeyable tire can't be blocked).
+
 ## [1.77.0] - 2026-08-25
 
 ### Added

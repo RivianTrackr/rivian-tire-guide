@@ -322,6 +322,43 @@ class RTG_Catalog_Sync {
     }
 
     /**
+     * The guide tire a would-be new tire collides with, if any.
+     *
+     * The discovery queue can't duplicate the guide — candidates that match
+     * an existing tire file under Existing before anyone sees an Add button.
+     * A hand-typed tire had no such guard: the only uniqueness check was on
+     * the tire ID, which auto-generates. This is that check, using the same
+     * keys the matcher lives by — brand and size normalized, punctuation
+     * squashed, aliases expanded on BOTH sides, so "Defender LTX M/S 2"
+     * collides with "Defender LTX M/S2" and an alias collides with the model
+     * it aliases.
+     *
+     * @param array      $tire  Proposed tire (brand, model, size, model_aliases).
+     * @param array|null $tires Guide tires to compare against; null means all.
+     * @return string Existing tire_id, or '' when the tire is genuinely new.
+     */
+    public static function find_guide_match( $tire, $tires = null ) {
+        $keys = array_flip( self::match_keys_for_tire( $tire ) );
+        if ( empty( $keys ) ) {
+            return '';
+        }
+
+        if ( null === $tires ) {
+            $tires = RTG_Database::get_all_tires();
+        }
+
+        foreach ( $tires as $existing ) {
+            foreach ( self::match_keys_for_tire( $existing ) as $key ) {
+                if ( isset( $keys[ $key ] ) ) {
+                    return (string) ( $existing['tire_id'] ?? '' );
+                }
+            }
+        }
+
+        return '';
+    }
+
+    /**
      * Build the key used to recognize one physical tire across sources.
      *
      * @param string $brand Brand name.

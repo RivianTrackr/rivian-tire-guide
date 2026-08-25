@@ -800,6 +800,30 @@ class RTG_Admin {
                 wp_redirect( admin_url( 'admin.php?page=rtg-tire-edit&message=duplicate_id' ) );
                 exit;
             }
+
+            // The same physical tire may already be in the guide under an
+            // auto-generated ID — the ID check above can't see that. Block it
+            // by match key (brand + model/alias + size) unless the admin
+            // explicitly said this is a deliberate second entry.
+            if ( empty( $post['allow_duplicate'] ) ) {
+                $duplicate_of = RTG_Catalog_Sync::find_guide_match( $data );
+                if ( '' !== $duplicate_of ) {
+                    $args = array(
+                        'page'         => 'rtg-tire-edit',
+                        'message'      => 'duplicate_tire',
+                        'duplicate_of' => $duplicate_of,
+                        'brand'        => $data['brand'],
+                        'model'        => $data['model'],
+                        'size'         => $data['size'],
+                    );
+                    if ( $from_candidate > 0 ) {
+                        $args['from_candidate'] = $from_candidate;
+                    }
+                    wp_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) );
+                    exit;
+                }
+            }
+
             RTG_Database::insert_tire( $data );
 
             // When the tire came from the discovery queue, close out the
