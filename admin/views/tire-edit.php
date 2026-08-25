@@ -76,6 +76,20 @@ if ( $from_candidate > 0 ) {
 // Notices.
 $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) : '';
 
+// A blocked duplicate: the save collided with a tire already in the guide.
+// The identity fields ride back on the redirect so the admin sees exactly
+// what collided instead of an empty form.
+$duplicate_of      = 'duplicate_tire' === $message ? sanitize_text_field( wp_unslash( $_GET['duplicate_of'] ?? '' ) ) : '';
+$duplicate_of_tire = '' !== $duplicate_of ? RTG_Database::get_tire( $duplicate_of ) : null;
+if ( 'duplicate_tire' === $message && ! $is_edit ) {
+    foreach ( array( 'brand', 'model', 'size' ) as $identity_field ) {
+        $returned = sanitize_text_field( wp_unslash( $_GET[ $identity_field ] ?? '' ) );
+        if ( '' !== $returned ) {
+            $v[ $identity_field ] = $returned;
+        }
+    }
+}
+
 // Load managed dropdown options.
 $dd_brands        = RTG_Admin::get_dropdown_options( 'brands' );
 $dd_categories    = RTG_Admin::get_dropdown_options( 'categories' );
@@ -92,6 +106,19 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
         <div class="rtg-notice rtg-notice-error">
             <span>A tire with that ID already exists.</span>
             <button type="button" class="rtg-notice-dismiss" aria-label="Dismiss">&times;</button>
+        </div>
+    <?php endif; ?>
+
+    <?php if ( $message === 'duplicate_tire' ) : ?>
+        <div class="rtg-notice rtg-notice-warning">
+            <span>
+                <strong>This tire is already in the guide<?php echo '' !== $duplicate_of ? ' as ' . esc_html( $duplicate_of ) : ''; ?>.</strong>
+                Same brand, model (or one of its aliases), and size.
+                <?php if ( $duplicate_of_tire && ! empty( $duplicate_of_tire['id'] ) ) : ?>
+                    <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'rtg-tire-edit', 'id' => intval( $duplicate_of_tire['id'] ) ), admin_url( 'admin.php' ) ) ); ?>">Edit the existing tire</a> instead &mdash;
+                <?php endif; ?>
+                or, if this is deliberately a separate entry, tick &ldquo;Add anyway&rdquo; below the save button and save again.
+            </span>
         </div>
     <?php endif; ?>
 
@@ -497,6 +524,12 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
         <div class="rtg-footer-actions">
             <button type="submit" class="rtg-btn rtg-btn-primary"><?php echo $is_edit ? 'Update Tire' : 'Add Tire'; ?></button>
             <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires' ) ); ?>" class="rtg-btn rtg-btn-secondary">Cancel</a>
+            <?php if ( 'duplicate_tire' === $message && ! $is_edit ) : ?>
+                <label style="display:inline-flex;align-items:center;gap:6px;margin-left:12px;font-size:13px;color:#6e6e73;">
+                    <input type="checkbox" name="allow_duplicate" value="1">
+                    Add anyway &mdash; this is deliberately a separate entry
+                </label>
+            <?php endif; ?>
         </div>
     </form>
 </div>

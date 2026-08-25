@@ -37,6 +37,65 @@ class Test_RTG_Catalog_Sync extends WP_UnitTestCase {
         ), $overrides );
     }
 
+    // --- find_guide_match(): the duplicate-add guard ---
+
+    /**
+     * A hand-typed tire that already exists — under different punctuation —
+     * is recognized. The tire ID check alone can't see this: IDs
+     * auto-generate, so the same physical tire would happily get a second one.
+     */
+    public function test_a_hand_typed_duplicate_is_found_across_punctuation() {
+        $guide = array(
+            array( 'tire_id' => 'MICH-001', 'brand' => 'Michelin', 'model' => 'Defender LTX M/S2', 'size' => '275/65R18' ),
+        );
+
+        $this->assertSame( 'MICH-001', RTG_Catalog_Sync::find_guide_match(
+            array( 'brand' => 'Michelin', 'model' => 'Defender LTX M/S 2', 'size' => '275/65 R18' ),
+            $guide
+        ) );
+    }
+
+    /**
+     * Aliases count on both sides: typing a retailer's spelling collides with
+     * the guide tire that carries it as an alias, and a proposed tire's own
+     * alias collides with the model it aliases.
+     */
+    public function test_the_duplicate_guard_sees_through_aliases() {
+        $guide = array(
+            array( 'tire_id' => 'NITTO-001', 'brand' => 'Nitto', 'model' => 'Ridge Grappler',
+                'size' => '275/65R20', 'model_aliases' => "Ridge Grappler LT" ),
+        );
+
+        $this->assertSame( 'NITTO-001', RTG_Catalog_Sync::find_guide_match(
+            array( 'brand' => 'Nitto', 'model' => 'Ridge Grappler LT', 'size' => '275/65R20' ),
+            $guide
+        ) );
+        $this->assertSame( 'NITTO-001', RTG_Catalog_Sync::find_guide_match(
+            array( 'brand' => 'Nitto', 'model' => 'Trail Grappler', 'size' => '275/65R20',
+                'model_aliases' => "Ridge Grappler" ),
+            $guide
+        ) );
+    }
+
+    /**
+     * A different size of the same model is a different guide entry, not a
+     * duplicate — and a tire that can't be keyed can't be blocked.
+     */
+    public function test_a_different_size_or_unkeyable_tire_is_not_a_duplicate() {
+        $guide = array(
+            array( 'tire_id' => 'MICH-001', 'brand' => 'Michelin', 'model' => 'Defender LTX M/S2', 'size' => '275/65R18' ),
+        );
+
+        $this->assertSame( '', RTG_Catalog_Sync::find_guide_match(
+            array( 'brand' => 'Michelin', 'model' => 'Defender LTX M/S2', 'size' => '275/60R20' ),
+            $guide
+        ) );
+        $this->assertSame( '', RTG_Catalog_Sync::find_guide_match(
+            array( 'brand' => '', 'model' => 'Defender LTX M/S2', 'size' => '275/65R18' ),
+            $guide
+        ) );
+    }
+
     // --- match_key() ---
 
     /**
