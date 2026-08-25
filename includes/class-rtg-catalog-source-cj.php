@@ -69,33 +69,12 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
     const DEFAULT_MAX_PAGES = 10;
 
     /**
-     * Records requested for one targeted lookup.
+     * Records one connection probe reads.
      *
-     * This was 50, on the reasoning that a keyword naming a tire is a precise
-     * query whose answer is a handful of listings or none. The probe disproved
-     * that: CJ scores a keyword and returns a ranking, so a model search comes
-     * back with thousands of loosely related products in no particular
-     * fitment. A live run made the cost plain — 99 searches returned 4,924
-     * products, an average of 49.7 each, which is every single one truncated
-     * at the cap with nothing said about it.
-     *
-     * That is the same silent ceiling the sweep carried at 100 records until
-     * 1.63.1, reintroduced here by a comment that was never rechecked against
-     * how the API actually behaves. It matches the sweep's limit now, and a
-     * shortfall is reported rather than passed over.
+     * Full page, same as the sweep — the probe exists to show what a keyword
+     * really returns, and a smaller read would answer a smaller question.
      */
-    const TARGETED_LIMIT = 1000;
-
-    /**
-     * Wall-clock budget for the targeted pass, in seconds.
-     *
-     * Separate from the sweep's, and spent after it, so a slow sweep degrades
-     * the targeted pass rather than cancelling it.
-     */
-    const TARGETED_BUDGET = 120;
-
-    /** Where the next targeted pass resumes in the uncovered list. */
-    const TARGETED_CURSOR_OPTION = 'rtg_cj_targeted_cursor';
+    const PROBE_LIMIT = 1000;
 
     /**
      * Option holding where the next sweep should start in the size list.
@@ -122,14 +101,13 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
      * Overridable from settings so a schema mismatch is a settings edit rather
      * than a plugin release.
      */
-    const DEFAULT_QUERY = 'query ShoppingProducts($companyId: ID!, $partnerIds: [ID!], $keywords: [String!]!, $limit: Int!, $offset: Int, $googleProductCategoryNames: [String!]) {
+    const DEFAULT_QUERY = 'query ShoppingProducts($companyId: ID!, $partnerIds: [ID!], $keywords: [String!]!, $limit: Int!, $offset: Int) {
   shoppingProducts(
     companyId: $companyId
     partnerIds: $partnerIds
     keywords: $keywords
     limit: $limit
     offset: $offset
-    googleProductCategoryNames: $googleProductCategoryNames
   ) {
     totalCount
     count
@@ -267,43 +245,6 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
         }
 
         return $advertisers ?: self::DEFAULT_ADVERTISERS;
-    }
-
-    /**
-     * Google product categories to restrict the search to.
-     *
-     * Left blank by default, and that is deliberate — this filter is a trap.
-     *
-     * It looked like the answer to a keyword search returning thousands of
-     * products that are not tires. But the retailers do not populate the field
-     * consistently: SimpleTire tags its tires
-     * "Vehicles & Parts > … > Motor Vehicle Tires > Automotive Tires" (id 6093),
-     * while Tire Rack sends no category at all. A category filter is a
-     * server-side WHERE, so applying one excludes every product that declares
-     * no category — which would silently drop Tire Rack in its entirety, the
-     * very retailer whose missing listings prompted the investigation.
-     *
-     * It would also look like a success: the match counts would collapse,
-     * exactly as a working filter would make them.
-     *
-     * Pagination already reaches a size's whole match set, so this is an
-     * optimization the feature does not need. It stays configurable for a
-     * catalog where every advertiser does tag its products, and warns in the
-     * admin about what it costs.
-     *
-     * @return string[]|null Category names, or null to apply no filter.
-     */
-    public static function get_category_names() {
-        $settings = get_option( 'rtg_settings', array() );
-        $raw      = trim( (string) ( $settings['cj_category_names'] ?? '' ) );
-
-        if ( '' === $raw ) {
-            return null;
-        }
-
-        $names = array_values( array_filter( array_map( 'trim', preg_split( '/[\r\n]+/', $raw ) ), 'strlen' ) );
-
-        return $names ?: null;
     }
 
     /**
@@ -502,179 +443,6 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
     }
 
     /**
-     * Look a specific tire up by name, rather than sweeping its fitment.
-     *
-     * The sweep asks CJ for a bare size, and CJ answers with a relevance
-     * ranking rather than a filter — over five thousand products for a single
-     * fitment, most of which are not that size and many of which are not
-     * tires. Paging ten deep covers ten thousand of those, which sounds
-     * generous until a real guide tire turns out to rank below it: a live run
-     * held exactly one Michelin listing in 305/45R22 across sixteen thousand
-     * stored products, for a fitment Tire Rack demonstrably sells several of.
-     *
-     * A keyword naming the brand, model and size is a different question
-     * entirely, and one request answers it. So tires the sweep failed to find
-     * are asked for directly, by name.
-     *
-     * Rotated and budgeted like the sweep: a run takes as many as it can and
-     * the next starts where this one stopped, so a long uncovered list is
-     * worked through over successive runs instead of the same leading entries
-     * being retried forever.
-     *
-     * Results are returned per term rather than pooled, because "the request
-     * came back with products" is not evidence the tire was found. A live run
-     * had all 111 terms answer and not one guide tire match: CJ ranks a
-     * multi-word keyword the same way it ranks a bare size, so every term drew
-     * a few dozen loosely related products. Keeping the term attached lets the
-     * caller check each answer against what it asked for.
-     *
-     * A callback may be given to consume each term's products as they arrive.
-     * At a thousand records a term and a hundred terms, holding every response
-     * until the end would mean a hundred thousand products in memory to keep
-     * the few dozen that matter.
-     *
-     * @param string[]      $terms   Search terms, e.g. "Michelin Defender LTX M/S2".
-     * @param callable|null $on_term Receives ( $term, $products ) per answer.
-     *                               Responses are not retained when given.
-     * @return array {
-     *     @type array  $by_term   Term => products, when no callback was given.
-     *     @type int    $checked   Terms actually queried.
-     *     @type int    $pending   Terms left for the next run.
-     *     @type int    $capped    Terms whose answer was cut off by the limit.
-     *     @type int    $deepest   Largest match count any term reported.
-     *     @type string $error     Failure text, or ''.
-     * }
-     */
-    public function fetch_terms( $terms, $on_term = null, $ceiling = null, $keep_sizes = array() ) {
-        $result = array(
-            'by_term' => array(),
-            'checked' => 0,
-            'pending' => 0,
-            'capped'    => 0,
-            'deepest'   => 0,
-            'discarded' => 0,
-            'error'     => '',
-        );
-
-        $terms = array_values( array_filter( array_map( 'trim', (array) $terms ), 'strlen' ) );
-
-        if ( ! self::is_configured() || empty( $terms ) ) {
-            return $result;
-        }
-
-        $settings = get_option( 'rtg_settings', array() );
-
-        // Off unless explicitly turned on, and the evidence for that is
-        // blunt: a live run reported a single brand-and-model keyword
-        // matching 81,653 products. A thousand records is 1.2% of that
-        // ranking, covering one search would take 82 requests, and covering
-        // the guide's models would take thousands. The pass spent a whole run
-        // budget and found nothing.
-        //
-        // The sweep's size keyword is the better instrument by an order of
-        // magnitude — a fitment reports around 5,000 matches, which is
-        // readable in a handful of requests — so the budget belongs there.
-        if ( empty( $settings['cj_targeted_enabled'] ) ) {
-            return $result;
-        }
-
-        $budget = isset( $settings['cj_targeted_budget'] )
-            ? max( 15, min( 600, intval( $settings['cj_targeted_budget'] ) ) )
-            : self::TARGETED_BUDGET;
-
-        $limit = isset( $settings['cj_targeted_limit'] )
-            ? max( 1, min( 1000, intval( $settings['cj_targeted_limit'] ) ) )
-            : self::TARGETED_LIMIT;
-
-        if ( null !== $ceiling ) {
-            $budget = min( $budget, max( 0, (float) $ceiling ) );
-        }
-
-        $cursor = intval( get_option( self::TARGETED_CURSOR_OPTION, 0 ) );
-        if ( $cursor < 0 || $cursor >= count( $terms ) ) {
-            $cursor = 0;
-        }
-
-        $ordered  = array_merge( array_slice( $terms, $cursor ), array_slice( $terms, 0, $cursor ) );
-        $started  = microtime( true );
-        $failures = array();
-        $stopped  = null;
-
-        foreach ( $ordered as $index => $term ) {
-            if ( $index > 0 && ( microtime( true ) - $started ) > $budget ) {
-                $stopped = $index;
-                break;
-            }
-
-            $response = $this->query_keyword( $term, 0, $limit );
-            $result['checked']++;
-
-            if ( '' !== $response['error'] ) {
-                // One bad term must not end the pass; the rest are independent.
-                if ( count( $failures ) < 3 ) {
-                    $failures[] = $term . ': ' . $response['error'];
-                }
-                continue;
-            }
-
-            // How deep the ranking runs, and whether this answer was cut off.
-            // Without it a truncated answer is indistinguishable from a
-            // complete one, which is exactly how a 50-record cap went a whole
-            // release without being noticed.
-            $total    = $response['total_count'];
-            $returned = count( $response['products'] );
-
-            if ( null !== $total ) {
-                $result['deepest'] = max( $result['deepest'], intval( $total ) );
-
-                if ( $returned < intval( $total ) ) {
-                    $result['capped']++;
-                }
-            }
-
-            $products = $response['products'];
-
-            // Discard what the caller cannot use before it is carried any
-            // further. A thousand records of which a couple are in a fitment
-            // the guide stocks is a lot of array to build and hold for
-            // nothing, and this pass now reads twenty times what it used to.
-            if ( ! empty( $keep_sizes ) ) {
-                $products = array_values( array_filter( $products, function ( $product ) use ( $keep_sizes ) {
-                    return isset( $keep_sizes[ RTG_Tire_Qualifier::normalize_size(
-                        RTG_Tire_Qualifier::parse_specs( $product )['size']
-                    ) ] );
-                } ) );
-
-                $result['discarded'] += count( $response['products'] ) - count( $products );
-            }
-
-            unset( $response );
-
-            if ( is_callable( $on_term ) ) {
-                call_user_func( $on_term, $term, $products );
-            } else {
-                $result['by_term'][ $term ] = $products;
-            }
-        }
-
-        $next_cursor = null === $stopped
-            ? 0
-            : ( $cursor + $stopped ) % count( $terms );
-
-        update_option( self::TARGETED_CURSOR_OPTION, $next_cursor, false );
-
-        if ( null !== $stopped ) {
-            $result['pending'] = count( $ordered ) - $stopped;
-        }
-
-        if ( ! empty( $failures ) ) {
-            $result['error'] = implode( ' | ', $failures );
-        }
-
-        return $result;
-    }
-
-    /**
      * Run one keyword query and normalize the products it returns.
      *
      * @param string   $keyword Search keyword — a tire size, or a tire's full name.
@@ -700,10 +468,6 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
                 'keywords'                   => array( $keyword ),
                 'limit'                      => $limit,
                 'offset'                     => max( 0, intval( $offset ) ),
-                // Null means "don't filter". A keyword search ranks by
-                // relevance rather than filtering, so without a category the
-                // response is mostly products that aren't tires at all.
-                'googleProductCategoryNames' => self::get_category_names(),
             ),
         ) );
 
@@ -1045,7 +809,7 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
         }
 
         $offset = max( 0, intval( $offset ) );
-        $result = $this->query_keyword( $keyword, $offset, self::TARGETED_LIMIT );
+        $result = $this->query_keyword( $keyword, $offset, self::PROBE_LIMIT );
 
         if ( '' !== $result['error'] ) {
             return array(

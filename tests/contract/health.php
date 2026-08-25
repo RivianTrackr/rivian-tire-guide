@@ -74,7 +74,9 @@ check( 'any other failed run reports as failed',
     array( 'sweep_failed' ) === $codes( array( 'status' => 'error', 'time' => $ok_at( 2 ), 'fetched' => 0,
         'errors' => array( array( 'message' => 'GraphQL error: Cannot query field x' ) ), 'sources' => array() ) ) );
 check( 'a run that read zero products is flagged',
-    array( 'nothing_fetched' ) === $codes( array( 'status' => 'success', 'time' => $ok_at( 2 ), 'fetched' => 0, 'errors' => array(), 'sources' => array() ) ) );
+    array( 'nothing_fetched' ) === $codes( array( 'status' => 'success', 'time' => $ok_at( 2 ), 'fetched' => 0, 'errors' => array(), 'sources' => array( array( 'slug' => 'cj' ) ) ) ) );
+check( 'zero products with no source is setup, not breakage',
+    array() === $codes( array( 'status' => 'success', 'time' => $ok_at( 2 ), 'fetched' => 0, 'errors' => array(), 'sources' => array() ) ) );
 check( 'a fitment no longer read completely is flagged',
     array( 'coverage_partial' ) === $codes( array( 'status' => 'success', 'time' => $ok_at( 2 ), 'fetched' => 100, 'errors' => array(),
         'sources' => array( array( 'coverage' => array( '275/65R20' => array( 'received' => 4, 'total' => 10 ) ) ) ) ) ) );
