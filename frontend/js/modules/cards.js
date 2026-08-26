@@ -320,6 +320,27 @@ export function createSingleCard(row) {
     }
   });
 
+  // Admin-only edit shortcut. Whether anyone may edit is decided in PHP —
+  // an empty base means this viewer can't, so there is nothing to render
+  // rather than a control the script has to remember to hide.
+  const tireEditBase = (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.tireEditUrl) ? rtgData.settings.tireEditUrl : '';
+  let editBtn = null;
+  if (tireEditBase) {
+    editBtn = document.createElement('a');
+    editBtn.className = 'tire-card-edit-btn';
+    editBtn.href = tireEditBase + encodeURIComponent(tireId);
+    // A new tab: editing from the guide shouldn't cost you your scroll
+    // position and filters on the way back.
+    editBtn.target = '_blank';
+    editBtn.rel = 'noopener noreferrer';
+    editBtn.title = 'Edit this tire (only admins see this)';
+    editBtn.setAttribute('aria-label', `Edit ${safeString(brand)} ${safeString(model)} in the admin`);
+    editBtn.innerHTML = rtgIcon('pen-to-square', 14);
+    editBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+  }
+
   if (safeImage) {
     const imageContainer = document.createElement('div');
     imageContainer.className = 'tire-card-image';
@@ -339,11 +360,13 @@ export function createSingleCard(row) {
     imageContainer.appendChild(compareOverlay);
     if (favBtn) imageContainer.appendChild(favBtn);
     imageContainer.appendChild(shareBtn);
+    if (editBtn) imageContainer.appendChild(editBtn);
     card.appendChild(imageContainer);
   } else {
     card.appendChild(compareOverlay);
     if (favBtn) card.appendChild(favBtn);
     card.appendChild(shareBtn);
+    if (editBtn) card.appendChild(editBtn);
   }
 
   const bodyEl = document.createElement('div');

@@ -3,8 +3,13 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-$editing_id = isset( $_GET['id'] ) ? intval( $_GET['id'] ) : 0;
-$tire = $editing_id ? RTG_Database::get_tire_by_id( $editing_id ) : null;
+// Addressed by row number, or by tire_id — which is what everything outside
+// the admin carries. A frontend card, a tire page and a REST payload all know
+// the public identifier and none of them know the database row.
+$edit_target = RTG_Admin::resolve_edit_target( $_GET ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only screen resolution.
+$editing_id  = $edit_target['id'];
+$tire        = $edit_target['tire'];
+
 $is_edit = (bool) $tire;
 $page_title = $is_edit ? 'Edit Tire' : 'Add New Tire';
 
