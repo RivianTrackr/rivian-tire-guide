@@ -1046,12 +1046,16 @@ class RTG_Ajax {
             ) ) ),
         );
 
-        $url = RTG_Tire_Images::catalog_image_for( $tire );
-        if ( '' === $url ) {
+        // Every image the catalog knows for this tire, not just the freshest:
+        // one retailer refusing to serve its picture is not the same as there
+        // being no picture, and the guide already matches a tire across
+        // retailers.
+        $urls = RTG_Tire_Images::catalog_images_for( $tire );
+        if ( empty( $urls ) ) {
             wp_send_json_error( 'The catalog has no image for this brand, model and size — it only holds what a sweep has seen.' );
         }
 
-        $filename = RTG_Tire_Images::import_from_url( $url, $tire['brand'], $tire['model'] );
+        $filename = RTG_Tire_Images::import_first_working( $urls, $tire['brand'], $tire['model'] );
         if ( '' === $filename ) {
             wp_send_json_error( RTG_Tire_Images::get_last_error() );
         }

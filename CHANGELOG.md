@@ -4,6 +4,21 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.83.0] - 2026-08-26
+
+### Added
+- **A retailer that won't hand over its picture no longer costs the tire an image.** The catalog knows every retailer carrying a tire, but the import only ever tried one URL — so a Tire Rack image answering with a page meant no image at all, even when SimpleTire was listing the same tire with a working one. Both the Add-to-Guide import and "Fetch from catalog" now work down every image URL known for the tire, freshest first, and keep the first that downloads.
+- **Requests ask for an image the way a browser does**, with `Accept` and `Accept-Language` headers. Sending neither is one of the tells a CDN's bot filter uses before answering a picture request with a page.
+
+### Fixed
+- **The refusal message no longer blames the feed for the server's answer.** 1.82.1 said the URL "points at a page rather than a file" — but the URL that prompted this is `…/content/dam/tires/pirelli/pi_scorpion_winter_full.jpg`, a real file on the retailer's own image domain. The server is refusing us, which is a different problem with a different fix, and the message said the wrong one.
+- **It names the page that came back instead.** A CDN's bot wall and a soft 404 both answer 200 with HTML and are told apart by almost nothing else, so the page's own title now travels with the reason — "Pardon Our Interruption" against "Page Not Found | Tire Rack". That distinction is the whole diagnosis.
+
+### Notes
+- When every URL is refused the reason says how many were tried, so a run of refusals can't read as "the catalog has no image for this tire".
+- Ordering is by freshest sighting of each distinct URL, so a retailer that reshuffled its CDN still sinks below one that hasn't.
+- 7 tests added, including the reported URL and its exact symptom, that the message doesn't claim the feed pointed at a page, and the cross-retailer fallback saving the second retailer's file.
+
 ## [1.82.1] - 2026-08-26
 
 ### Fixed
