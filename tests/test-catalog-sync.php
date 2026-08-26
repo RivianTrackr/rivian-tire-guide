@@ -11,6 +11,11 @@
  */
 class Test_RTG_Catalog_Sync extends WP_UnitTestCase {
 
+    public function setUp(): void {
+        parent::setUp();
+        RTG_Activator::activate();
+    }
+
     /**
      * Build a candidate row for upsert().
      */
@@ -119,6 +124,175 @@ class Test_RTG_Catalog_Sync extends WP_UnitTestCase {
             array( 'brand' => '', 'model' => 'Defender LTX M/S2', 'size' => '275/65R18' ),
             $guide
         ) );
+    }
+
+    // --- The name-drift pass: one tire, two spellings of its name ---
+
+    /**
+     * The reported failure, both halves of it. A retailer drops the words the
+     * manufacturer puts on the box — "with Kevlar", "All Season" — and the
+     * exact key built from the shorter name misses the guide tire that already
+     * carries it, so a tire already stocked arrives as a new option to review.
+     */
+    public function test_a_listing_under_a_shorter_name_matches_the_guide_tire() {
+        $guide = $this->guide();
+        $index = $this->exact_index( $guide );
+        $vars  = RTG_Catalog_Sync::build_variant_index( $guide );
+
+        $this->assertSame( 'GY-001', RTG_Catalog_Sync::resolve_guide_match(
+            'Goodyear', 'Wrangler All-Terrain Adventure', '255/65R19', $index, $vars
+        ) );
+        $this->assertSame( 'PIR-001', RTG_Catalog_Sync::resolve_guide_match(
+            'Pirelli', 'Scorpion Zero', '255/65R19', $index, $vars
+        ) );
+    }
+
+    /**
+     * Exact keys settle it before any name is compared, and settle it with no
+     * variant index at all — the drift pass is a fallback, never the path.
+     */
+    public function test_an_exact_key_needs_no_name_comparison() {
+        $guide = $this->guide();
+
+        $this->assertSame( 'MICH-001', RTG_Catalog_Sync::resolve_guide_match(
+            'Michelin', 'Defender LTX M/S 2', '275/65 R18', $this->exact_index( $guide )
+        ) );
+    }
+
+    /**
+     * The pass only runs inside one brand and one fitment, and only on names
+     * that resemble each other. Everything else is still a new tire.
+     */
+    public function test_the_name_pass_stays_inside_one_brand_and_fitment() {
+        $guide = $this->guide();
+        $index = $this->exact_index( $guide );
+        $vars  = RTG_Catalog_Sync::build_variant_index( $guide );
+
+        foreach ( array(
+            'another fitment' => array( 'Goodyear', 'Wrangler All-Terrain Adventure', '275/65R20' ),
+            'another brand'   => array( 'Falken', 'Wrangler All-Terrain Adventure', '255/65R19' ),
+            'another model'   => array( 'Goodyear', 'Eagle Exhilarate', '255/65R19' ),
+            'no model at all' => array( 'Goodyear', '', '255/65R19' ),
+        ) as $label => $listing ) {
+            $this->assertSame( '', RTG_Catalog_Sync::resolve_guide_match(
+                $listing[0], $listing[1], $listing[2], $index, $vars
+            ), $label . ' should not match' );
+        }
+    }
+
+    /**
+     * Two guide tires whose names both contain the listing's is not a match,
+     * it is a guess — and a wrong guess hides a real find behind a tire it
+     * isn't. Ambiguity resolves to "new", which costs one dismissal.
+     */
+    public function test_two_claimants_mean_no_match() {
+        $guide   = array_merge( $this->guide(), array(
+            array( 'id' => 4, 'tire_id' => 'PIR-002', 'brand' => 'Pirelli',
+                'model' => 'Scorpion Zero Winter', 'size' => '255/65R19' ),
+        ) );
+
+        $this->assertSame( '', RTG_Catalog_Sync::variant_match(
+            'Pirelli', 'Scorpion Zero', '255/65R19', RTG_Catalog_Sync::build_variant_index( $guide )
+        ) );
+    }
+
+    /**
+     * Aliases are spellings too, so the pass reads them as well — a listing
+     * shorter than an alias matches the tire carrying it.
+     */
+    public function test_the_name_pass_reads_aliases() {
+        $guide = array(
+            array( 'id' => 5, 'tire_id' => 'NIT-001', 'brand' => 'Nitto', 'model' => 'Ridge Grappler',
+                'size' => '275/65R20', 'model_aliases' => "Ridge Grappler LT Special" ),
+        );
+
+        $this->assertSame( 'NIT-001', RTG_Catalog_Sync::variant_match(
+            'Nitto', 'Ridge Grappler LT', '275/65R20', RTG_Catalog_Sync::build_variant_index( $guide )
+        ) );
+    }
+
+    /**
+     * The hand-add guard and the queue agree about what counts as the same
+     * tire — otherwise the queue would file a listing under Existing while the
+     * form happily took a second entry for it.
+     */
+    public function test_the_duplicate_guard_sees_the_same_collision() {
+        $guide = $this->guide();
+
+        $this->assertSame( 'GY-001', RTG_Catalog_Sync::find_guide_match(
+            array( 'brand' => 'Goodyear', 'model' => 'Wrangler All-Terrain Adventure', 'size' => '255/65R19' ),
+            $guide
+        ) );
+        $this->assertSame( '', RTG_Catalog_Sync::find_guide_match(
+            array( 'brand' => 'Goodyear', 'model' => 'Eagle Exhilarate', 'size' => '255/65R19' ),
+            $guide
+        ) );
+    }
+
+    /**
+     * A name too far apart to match but close enough to be worth a look is
+     * offered against the row, with the guide tire it resembles. One word in
+     * common is not a resemblance.
+     */
+    public function test_a_near_name_is_offered_but_never_matched() {
+        $vars = RTG_Catalog_Sync::build_variant_index( $this->guide() );
+
+        $near = RTG_Catalog_Sync::nearest_guide_variant(
+            'Goodyear', 'Wrangler All Terrain Adventure Kevlar', '255/65R19', $vars
+        );
+
+        $this->assertSame( 'Wrangler All-Terrain Adventure with Kevlar', $near['model'] );
+        $this->assertSame( 1, $near['id'] );
+        $this->assertLessThan( RTG_Coverage::VARIANT_THRESHOLD, $near['similarity'] );
+
+        $this->assertNull( RTG_Catalog_Sync::nearest_guide_variant(
+            'Goodyear', 'Wrangler Territory AT', '255/65R19', $vars
+        ) );
+    }
+
+    /**
+     * A guide the matcher can't key on contributes nothing rather than a
+     * bucket everything falls into.
+     */
+    public function test_unkeyable_guide_rows_are_left_out_of_the_index() {
+        $index = RTG_Catalog_Sync::build_variant_index( array(
+            array( 'id' => 1, 'tire_id' => 'A', 'brand' => '', 'model' => 'Mystery', 'size' => '255/65R19' ),
+            array( 'id' => 2, 'tire_id' => 'B', 'brand' => 'Goodyear', 'model' => 'Mystery', 'size' => 'n/a' ),
+            array( 'id' => 3, 'tire_id' => 'C', 'brand' => 'Goodyear', 'model' => '', 'size' => '255/65R19' ),
+        ) );
+
+        $this->assertSame( array(), $index );
+    }
+
+    /**
+     * Guide tires used by the name-drift tests: two the retailers spell
+     * shorter than the guide does, one that keys exactly.
+     */
+    private function guide() {
+        return array(
+            array( 'id' => 1, 'tire_id' => 'GY-001', 'brand' => 'Goodyear',
+                'model' => 'Wrangler All-Terrain Adventure with Kevlar', 'size' => '255/65R19' ),
+            array( 'id' => 2, 'tire_id' => 'PIR-001', 'brand' => 'Pirelli',
+                'model' => 'Scorpion Zero All Season', 'size' => '255/65R19' ),
+            array( 'id' => 3, 'tire_id' => 'MICH-001', 'brand' => 'Michelin',
+                'model' => 'Defender LTX M/S2', 'size' => '275/65R18' ),
+        );
+    }
+
+    /**
+     * The exact key => tire_id map build_guide_index() builds from the guide,
+     * without needing the guide in the database.
+     */
+    private function exact_index( $tires ) {
+        $index = array();
+
+        foreach ( $tires as $tire ) {
+            foreach ( RTG_Catalog_Sync::match_keys_for_tire( $tire ) as $key ) {
+                $index[ $key ] = $tire['tire_id'];
+            }
+        }
+
+        return $index;
     }
 
     // --- match_key() ---
@@ -338,6 +512,98 @@ class Test_RTG_Catalog_Sync extends WP_UnitTestCase {
 
         $this->assertSame( 2, $counts['Winrun'] );
         $this->assertSame( 1, $counts['Michelin'] );
+    }
+
+    // --- Reconciling the queue with the guide ---
+
+    /**
+     * Add the tire to the guide by hand and its listings stop being offered as
+     * new options — without waiting for the nightly sweep to come back around
+     * to that fitment, which is what left already-stocked tires sitting in the
+     * queue for days.
+     */
+    public function test_adding_a_tire_settles_its_queued_listings() {
+        $queued = RTG_Candidates::upsert( $this->candidate( array(
+            'external_id' => 'drift-1',
+            'brand'       => 'Goodyear',
+            'model'       => 'Wrangler All-Terrain Adventure',
+            'size'        => '255/65R19',
+            'match_key'   => RTG_Catalog_Sync::match_key( 'Goodyear', 'Wrangler All-Terrain Adventure', '255/65R19' ),
+        ) ) );
+
+        $this->assertSame( RTG_Candidates::STATUS_NEW, $queued['status'] );
+
+        RTG_Database::insert_tire( array(
+            'tire_id' => 'GY-001',
+            'brand'   => 'Goodyear',
+            'model'   => 'Wrangler All-Terrain Adventure with Kevlar',
+            'size'    => '255/65R19',
+        ) );
+
+        RTG_Candidates::reconcile_with_guide();
+
+        $settled = RTG_Candidates::get( $queued['id'] );
+        $this->assertSame( RTG_Candidates::STATUS_EXISTING, $settled['status'] );
+        $this->assertSame( 'GY-001', $settled['matched_tire_id'] );
+    }
+
+    /**
+     * Reconciling re-runs the machine's own conclusion, never a person's. A
+     * dismissed listing stays dismissed even once its tire joins the guide.
+     */
+    public function test_reconciling_leaves_human_decisions_alone() {
+        $queued = RTG_Candidates::upsert( $this->candidate( array(
+            'external_id' => 'drift-2',
+            'brand'       => 'Goodyear',
+            'model'       => 'Wrangler All-Terrain Adventure',
+            'size'        => '255/65R19',
+            'match_key'   => RTG_Catalog_Sync::match_key( 'Goodyear', 'Wrangler All-Terrain Adventure', '255/65R19' ),
+        ) ) );
+
+        RTG_Candidates::set_status( $queued['id'], RTG_Candidates::STATUS_DISMISSED );
+
+        RTG_Database::insert_tire( array(
+            'tire_id' => 'GY-002',
+            'brand'   => 'Goodyear',
+            'model'   => 'Wrangler All-Terrain Adventure with Kevlar',
+            'size'    => '255/65R19',
+        ) );
+
+        RTG_Candidates::reconcile_with_guide();
+
+        $this->assertSame(
+            RTG_Candidates::STATUS_DISMISSED,
+            RTG_Candidates::get( $queued['id'] )['status']
+        );
+    }
+
+    /**
+     * The other end of the same match: a retailer carrying the tire under the
+     * shorter name counts as carrying it, so coverage says so and its price
+     * has somewhere to come from.
+     */
+    public function test_a_drifted_name_still_counts_as_retailer_coverage() {
+        RTG_Candidates::upsert( $this->candidate( array(
+            'external_id'     => 'drift-3',
+            'advertiser_name' => 'SimpleTire',
+            'brand'           => 'Pirelli',
+            'model'           => 'Scorpion Zero',
+            'size'            => '255/65R19',
+            'match_key'       => RTG_Catalog_Sync::match_key( 'Pirelli', 'Scorpion Zero', '255/65R19' ),
+        ) ) );
+
+        RTG_Database::insert_tire( array(
+            'tire_id' => 'PIR-001',
+            'brand'   => 'Pirelli',
+            'model'   => 'Scorpion Zero All Season',
+            'size'    => '255/65R19',
+        ) );
+
+        $by_tire = RTG_Candidates::get_matched_by_tire();
+
+        $this->assertArrayHasKey( 'PIR-001', $by_tire );
+        $this->assertSame( 'Scorpion Zero', $by_tire['PIR-001'][0]['model'] );
+        $this->assertSame( array( 'SimpleTire' ), RTG_Candidates::get_retailer_coverage()['PIR-001'] );
     }
 
     // --- Retention ---

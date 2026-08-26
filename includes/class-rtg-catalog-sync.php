@@ -132,6 +132,7 @@ class RTG_Catalog_Sync {
         $sizes       = RTG_Admin::get_dropdown_options( 'sizes' );
         $context     = RTG_Tire_Qualifier::default_context();
         $guide_index = self::build_guide_index();
+        $variants    = self::build_variant_index();
 
         $run_started = microtime( true );
         $run_budget  = isset( $settings['catalog_run_budget'] )
@@ -185,7 +186,7 @@ class RTG_Catalog_Sync {
             );
 
             foreach ( $products as $product ) {
-                $ingested  = self::ingest_product( $product, $slug, $source->get_label(), $context, $guide_index );
+                $ingested  = self::ingest_product( $product, $slug, $source->get_label(), $context, $guide_index, $variants );
                 $evaluated = $ingested['evaluated'];
                 $result    = $ingested['result'];
 
@@ -230,7 +231,7 @@ class RTG_Catalog_Sync {
 
         // Rows the sweep didn't revisit still hold the match they were given
         // when they were last seen, which the guide may have moved on from.
-        $stats['rematched'] = RTG_Candidates::refresh_matches( $guide_index );
+        $stats['rematched'] = RTG_Candidates::refresh_matches( $guide_index, $variants );
 
         // Near misses that can never become anything else are let go — wrong
         // fitments, and listings the catalog itself dropped two months ago.
@@ -273,9 +274,11 @@ class RTG_Catalog_Sync {
      * @param string $label       Source label, used when the feed names no advertiser.
      * @param array  $context     Qualification context.
      * @param array  $guide_index Match key => tire_id.
+     * @param array  $variants    Variant index from build_variant_index(), or null to skip
+     *                            the name-drift pass.
      * @return array { evaluated: array, result: array }
      */
-    public static function ingest_product( $product, $slug, $label, $context, $guide_index ) {
+    public static function ingest_product( $product, $slug, $label, $context, $guide_index, $variants = null ) {
         $evaluated = RTG_Tire_Qualifier::evaluate( $product, $context );
         $match_key = self::match_key( $evaluated['brand'], $evaluated['model'], $evaluated['size'] );
 
@@ -298,7 +301,13 @@ class RTG_Catalog_Sync {
             'fail_reasons'    => $evaluated['reasons'],
             'warnings'        => $evaluated['warnings'] ?? array(),
             'fits_vehicles'   => $evaluated['fits_vehicles'] ?? array(),
-            'matched_tire_id' => $guide_index[ $match_key ] ?? '',
+            'matched_tire_id' => self::resolve_guide_match(
+                $evaluated['brand'],
+                $evaluated['model'],
+                $evaluated['size'],
+                $guide_index,
+                $variants
+            ),
             'raw'             => $product,
         ) );
 
@@ -346,6 +355,197 @@ class RTG_Catalog_Sync {
     }
 
     /**
+     * Guide tires bucketed by brand and fitment, for the name-drift pass.
+     *
+     * The exact index only recognizes a listing the retailer spells the way
+     * the guide does. Retailers routinely don't: Goodyear's "Wrangler
+     * All-Terrain Adventure with Kevlar" is listed as "Wrangler All-Terrain
+     * Adventure", and a key built from the shorter name misses the tire the
+     * guide already carries. Every such listing then arrives as a new option
+     * for a tire already stocked, which is the queue lying about its own job.
+     *
+     * Aliases fix this one spelling at a time, by hand, after someone notices.
+     * This bucket lets the matcher notice on its own, and it is deliberately
+     * narrow: brand and fitment must already be identical, so all the model
+     * comparison decides is whether two names for the same brand's same-size
+     * tire are one tire.
+     *
+     * @param array|null $tires Guide tires to index; null means all.
+     * @return array "brandkey|size" => list of { tire_id, id, model }.
+     */
+    public static function build_variant_index( $tires = null ) {
+        if ( null === $tires ) {
+            $tires = RTG_Database::get_all_tires();
+        }
+
+        $index = array();
+
+        foreach ( (array) $tires as $tire ) {
+            $brand_key = RTG_Tire_Qualifier::normalize_brand( $tire['brand'] ?? '' );
+            $size      = RTG_Tire_Qualifier::normalize_size( $tire['size'] ?? '' );
+
+            if ( '' === $brand_key || '' === $size ) {
+                continue;
+            }
+
+            foreach ( self::model_spellings( $tire ) as $spelling ) {
+                $index[ $brand_key . '|' . $size ][] = array(
+                    'tire_id' => (string) ( $tire['tire_id'] ?? '' ),
+                    'id'      => intval( $tire['id'] ?? 0 ),
+                    'model'   => $spelling,
+                );
+            }
+        }
+
+        return $index;
+    }
+
+    /**
+     * Every name a guide tire goes by: its model, then each alias.
+     *
+     * Blank lines are dropped, and so is a blank model — a tire with no name
+     * can't be recognized by one.
+     *
+     * @param array $tire Guide tire (model, model_aliases).
+     * @return string[] Spellings, primary first.
+     */
+    public static function model_spellings( $tire ) {
+        $spellings = array();
+
+        foreach ( array_merge(
+            array( (string) ( $tire['model'] ?? '' ) ),
+            preg_split( '/[\r\n]+/', (string) ( $tire['model_aliases'] ?? '' ) )
+        ) as $name ) {
+            $name = trim( $name );
+            if ( '' !== $name ) {
+                $spellings[ $name ] = true;
+            }
+        }
+
+        return array_keys( $spellings );
+    }
+
+    /**
+     * The guide tire a catalog listing already is, if the guide has it.
+     *
+     * Exact keys first, because they are certain. Only when none matches does
+     * the name-drift pass run, and only on a listing whose brand and fitment
+     * already sit on a guide tire.
+     *
+     * @param string     $brand    Listing brand.
+     * @param string     $model    Listing model, as the retailer spells it.
+     * @param string     $size     Listing size.
+     * @param array      $index    Match key => tire_id, from build_guide_index().
+     * @param array|null $variants Variant index, or null to use exact keys only.
+     * @return string Guide tire_id, or '' when the listing is genuinely new.
+     */
+    public static function resolve_guide_match( $brand, $model, $size, $index, $variants = null ) {
+        $key = self::match_key( $brand, $model, $size );
+
+        if ( '' !== $key && isset( $index[ $key ] ) ) {
+            return (string) $index[ $key ];
+        }
+
+        if ( empty( $variants ) ) {
+            return '';
+        }
+
+        return self::variant_match( $brand, $model, $size, $variants );
+    }
+
+    /**
+     * The one guide tire whose name is this listing's name, spelled differently.
+     *
+     * Sameness is RTG_Coverage's containment rule — the one the coverage page
+     * already uses to report a tire as "listed under another name" — so both
+     * screens agree about what counts as the same tire instead of holding two
+     * opinions.
+     *
+     * Two claimants mean no match. A listing called "Scorpion" sits inside
+     * both "Scorpion Zero" and "Scorpion Verde", and picking either would file
+     * the listing under a tire it may well not be. Ambiguity resolves to "new":
+     * a queue row a human dismisses costs a click, a wrong match hides a real
+     * find.
+     *
+     * @param string $brand    Listing brand.
+     * @param string $model    Listing model.
+     * @param string $size     Listing size.
+     * @param array  $variants Variant index from build_variant_index().
+     * @return string Guide tire_id, or '' when nothing unambiguously matches.
+     */
+    public static function variant_match( $brand, $model, $size, $variants ) {
+        $bucket = self::variant_bucket( $brand, $model, $size, $variants );
+        $found  = array();
+
+        foreach ( $bucket as $entry ) {
+            if ( RTG_Coverage::model_similarity( $entry['model'], $model ) >= RTG_Coverage::VARIANT_THRESHOLD ) {
+                $found[ $entry['tire_id'] ] = true;
+            }
+        }
+
+        return 1 === count( $found ) ? (string) key( $found ) : '';
+    }
+
+    /**
+     * The guide tire whose name most resembles a listing's, match or not.
+     *
+     * What the queue shows against a row it is still calling new: this brand
+     * makes a tire in this fitment and the guide carries it, so if the two
+     * names are the same tire the fix is one alias, not a second entry. Only
+     * names sharing something are offered — an unrelated model in the same
+     * fitment is noise, not a lead.
+     *
+     * @param string $brand    Listing brand.
+     * @param string $model    Listing model.
+     * @param string $size     Listing size.
+     * @param array  $variants Variant index from build_variant_index().
+     * @param float  $floor    Similarity a name must reach to be worth showing.
+     * @return array|null { tire_id, id, model, similarity }, or null.
+     */
+    public static function nearest_guide_variant( $brand, $model, $size, $variants, $floor = 0.5 ) {
+        $nearest = null;
+
+        foreach ( self::variant_bucket( $brand, $model, $size, $variants ) as $entry ) {
+            $score = RTG_Coverage::model_similarity( $entry['model'], $model );
+
+            if ( $score < $floor ) {
+                continue;
+            }
+
+            if ( null === $nearest || $score > $nearest['similarity'] ) {
+                $nearest = array(
+                    'tire_id'    => $entry['tire_id'],
+                    'id'         => $entry['id'],
+                    'model'      => $entry['model'],
+                    'similarity' => $score,
+                );
+            }
+        }
+
+        return $nearest;
+    }
+
+    /**
+     * Guide tires sharing a listing's brand and fitment.
+     *
+     * @param string $brand    Listing brand.
+     * @param string $model    Listing model.
+     * @param string $size     Listing size.
+     * @param array  $variants Variant index from build_variant_index().
+     * @return array Entries in the shape build_variant_index() stores.
+     */
+    private static function variant_bucket( $brand, $model, $size, $variants ) {
+        $brand_key = RTG_Tire_Qualifier::normalize_brand( $brand );
+        $size      = RTG_Tire_Qualifier::normalize_size( $size );
+
+        if ( '' === $brand_key || '' === $size || '' === trim( (string) $model ) ) {
+            return array();
+        }
+
+        return (array) ( $variants[ $brand_key . '|' . $size ] ?? array() );
+    }
+
+    /**
      * The guide tire a would-be new tire collides with, if any.
      *
      * The discovery queue can't duplicate the guide — candidates that match
@@ -355,7 +555,9 @@ class RTG_Catalog_Sync {
      * keys the matcher lives by — brand and size normalized, punctuation
      * squashed, aliases expanded on BOTH sides, so "Defender LTX M/S 2"
      * collides with "Defender LTX M/S2" and an alias collides with the model
-     * it aliases.
+     * it aliases — and then the same name-drift pass the discovery queue uses,
+     * so a tire typed in under the retailer's shorter name collides with the
+     * guide entry carrying the manufacturer's full one.
      *
      * @param array      $tire  Proposed tire (brand, model, size, model_aliases).
      * @param array|null $tires Guide tires to compare against; null means all.
@@ -376,6 +578,15 @@ class RTG_Catalog_Sync {
                 if ( isset( $keys[ $key ] ) ) {
                     return (string) ( $existing['tire_id'] ?? '' );
                 }
+            }
+        }
+
+        $variants = self::build_variant_index( $tires );
+
+        foreach ( self::model_spellings( $tire ) as $spelling ) {
+            $match = self::variant_match( $tire['brand'] ?? '', $spelling, $tire['size'] ?? '', $variants );
+            if ( '' !== $match ) {
+                return $match;
             }
         }
 

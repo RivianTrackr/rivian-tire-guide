@@ -113,7 +113,8 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
         <div class="rtg-notice rtg-notice-warning">
             <span>
                 <strong>This tire is already in the guide<?php echo '' !== $duplicate_of ? ' as ' . esc_html( $duplicate_of ) : ''; ?>.</strong>
-                Same brand, model (or one of its aliases), and size.
+                Same brand and size, under a model name the matcher reads as this tire &mdash;
+                its own, one of its aliases, or a longer or shorter spelling of it.
                 <?php if ( $duplicate_of_tire && ! empty( $duplicate_of_tire['id'] ) ) : ?>
                     <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'rtg-tire-edit', 'id' => intval( $duplicate_of_tire['id'] ) ), admin_url( 'admin.php' ) ) ); ?>">Edit the existing tire</a> instead &mdash;
                 <?php endif; ?>

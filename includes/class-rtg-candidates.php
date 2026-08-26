@@ -361,6 +361,10 @@ class RTG_Candidates {
      * Comparing keys here costs one extra pass over the guide and fixes both:
      * coverage reflects the guide as it stands right now.
      *
+     * Names are compared as well as keys, on the same rule the matcher uses,
+     * so a retailer listing the tire under a shorter name than the guide's
+     * still counts as carrying it.
+     *
      * Dismissed rows are included deliberately: dismissing a candidate means
      * "don't offer this as a new tire", not "stop pricing the tire I already
      * stock from it".
@@ -368,22 +372,62 @@ class RTG_Candidates {
      * @return array tire_id => candidate rows.
      */
     public static function get_matched_by_tire() {
-        $by_key  = self::get_by_match_key();
+        $by_key   = self::get_by_match_key();
+        $tires    = RTG_Database::get_all_tires();
+        $variants = RTG_Catalog_Sync::build_variant_index( $tires );
+
+        // The listings this brand makes in this fitment whose name is a guide
+        // tire's name spelled differently. Without them a retailer carrying
+        // the tire under a shorter name reads as no retailer carrying it at
+        // all, and the tire's price has nowhere to come from.
+        //
+        // Resolved once per listing rather than once per listing per tire: the
+        // answer depends only on the listing, and the guide runs to hundreds
+        // of rows.
+        $by_name = array();
+
+        foreach ( $by_key as $rows ) {
+            foreach ( $rows as $row ) {
+                $tire_id = RTG_Catalog_Sync::variant_match(
+                    $row['brand'],
+                    $row['model'],
+                    $row['size'],
+                    $variants
+                );
+
+                if ( '' !== $tire_id ) {
+                    $by_name[ $tire_id ][] = $row;
+                }
+            }
+        }
+
         $by_tire = array();
 
-        foreach ( RTG_Database::get_all_tires() as $tire ) {
-            $rows = array();
+        foreach ( $tires as $tire ) {
+            $tire_id = (string) $tire['tire_id'];
+            $rows    = array();
+            $seen    = array();
 
             // A tire answers to its own model and to each alias, and a
             // retailer may list it under either — collect every spelling.
             foreach ( RTG_Catalog_Sync::match_keys_for_tire( $tire ) as $key ) {
-                if ( ! empty( $by_key[ $key ] ) ) {
-                    $rows = array_merge( $rows, $by_key[ $key ] );
+                foreach ( $by_key[ $key ] ?? array() as $row ) {
+                    $rows[]                       = $row;
+                    $seen[ intval( $row['id'] ) ] = true;
                 }
             }
 
+            foreach ( $by_name[ $tire_id ] ?? array() as $row ) {
+                if ( isset( $seen[ intval( $row['id'] ) ] ) ) {
+                    continue;
+                }
+
+                $rows[]                       = $row;
+                $seen[ intval( $row['id'] ) ] = true;
+            }
+
             if ( ! empty( $rows ) ) {
-                $by_tire[ (string) $tire['tire_id'] ] = $rows;
+                $by_tire[ $tire_id ] = $rows;
             }
         }
 
@@ -403,22 +447,30 @@ class RTG_Candidates {
      * A status a person set is left alone. Only the machine ones follow the
      * new match.
      *
-     * @param array $guide_index Match key => tire_id, from RTG_Catalog_Sync.
+     * @param array      $guide_index Match key => tire_id, from RTG_Catalog_Sync.
+     * @param array|null $variants    Variant index, or null for exact keys only.
      * @return int Rows whose match changed.
      */
-    public static function refresh_matches( $guide_index ) {
+    public static function refresh_matches( $guide_index, $variants = null ) {
         global $wpdb;
         $table = self::table();
 
         $rows = $wpdb->get_results(
-            "SELECT id, match_key, matched_tire_id, status, qualifies FROM {$table} WHERE match_key <> ''",
+            "SELECT id, match_key, matched_tire_id, status, qualifies, brand, model, size
+             FROM {$table} WHERE match_key <> ''",
             ARRAY_A
         );
 
         $changed = 0;
 
         foreach ( $rows ?: array() as $row ) {
-            $should = (string) ( $guide_index[ $row['match_key'] ] ?? '' );
+            $should = RTG_Catalog_Sync::resolve_guide_match(
+                $row['brand'],
+                $row['model'],
+                $row['size'],
+                $guide_index,
+                $variants
+            );
 
             if ( $should === (string) $row['matched_tire_id'] ) {
                 continue;
@@ -445,6 +497,27 @@ class RTG_Candidates {
         }
 
         return $changed;
+    }
+
+    /**
+     * Re-point every stored match at the guide as it stands right now.
+     *
+     * refresh_matches() runs inside a catalog sync, which is nightly. A tire
+     * added or renamed between syncs left its listings sitting in the queue
+     * under "awaiting review" for a tire already stocked — the admin's own
+     * edit didn't reach the queue until the next run. Opening the queue
+     * reconciles it, so what the page shows is the guide as it is, not as the
+     * last sweep left it.
+     *
+     * @return int Rows whose match changed.
+     */
+    public static function reconcile_with_guide() {
+        $tires = RTG_Database::get_all_tires();
+
+        return self::refresh_matches(
+            RTG_Catalog_Sync::build_guide_index(),
+            RTG_Catalog_Sync::build_variant_index( $tires )
+        );
     }
 
     /**
