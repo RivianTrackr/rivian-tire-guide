@@ -209,6 +209,25 @@ $spec_groups = array(
   .rtg-tp a { color: var(--rtg-tp-accent); text-decoration: none; }
   .rtg-tp a:hover { color: var(--rtg-tp-accent-hover); }
 
+  /* --- Admin bar (only rendered for users who can edit) --- */
+  .rtg-tp .rtg-tp-admin {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+    margin: 0 0 16px; padding: 8px 12px;
+    border: 1px dashed color-mix(in srgb, var(--rtg-tp-accent) 45%, var(--rtg-tp-border));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--rtg-tp-accent) 8%, var(--rtg-tp-deep));
+    font-size: 13px;
+  }
+  .rtg-tp .rtg-tp-admin-badge {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    color: var(--rtg-tp-accent);
+  }
+  .rtg-tp .rtg-tp-admin-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-weight: 600; color: var(--rtg-tp-accent);
+  }
+  .rtg-tp .rtg-tp-admin-note { color: var(--rtg-tp-muted); font-size: 12px; }
+
   /* --- Breadcrumb --- */
   .rtg-tp .rtg-tp-breadcrumb { font-size: 13px; color: var(--rtg-tp-muted); margin: 0 0 24px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .rtg-tp .rtg-tp-breadcrumb a { color: var(--rtg-tp-muted); }
@@ -331,6 +350,16 @@ $spec_groups = array(
 </style>
 
 <div class="rtg-tp">
+  <?php if ( RTG_Admin::can_edit_tires() ) : ?>
+  <div class="rtg-tp-admin">
+    <span class="rtg-tp-admin-badge">Admin</span>
+    <a class="rtg-tp-admin-link" href="<?php echo esc_url( RTG_Admin::tire_edit_url( $tire_id ) ); ?>">
+      <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>Edit this tire
+    </a>
+    <span class="rtg-tp-admin-note">Only you can see this row.</span>
+  </div>
+  <?php endif; ?>
+
   <nav class="rtg-tp-breadcrumb" aria-label="Breadcrumb">
     <?php
     $last = count( $breadcrumb_items ) - 1;

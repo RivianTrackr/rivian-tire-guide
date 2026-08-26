@@ -4,6 +4,18 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.80.0] - 2026-08-26
+
+### Added
+- **Edit a tire from the front of the site.** Spotting a wrong spec while browsing the guide meant remembering the tire, opening the admin, finding it in the list, and editing it there — enough friction that small corrections didn't get made. Tire cards now carry a pencil beside Share, and the full-specs page carries an "Edit this tire" row above the breadcrumb. Both open the tire's edit screen in a new tab, so your scroll position and filters survive the trip.
+- **The edit screen answers to a tire_id.** It had only ever been addressed by database row number, which is the one identifier nothing outside the admin holds — a card, a tire page and a REST payload all carry the public `tire_id`. It now takes either, and a tire reached by `tire_id` still reports the row number the form posts back, so the save path never learns there were two ways in.
+
+### Notes
+- Visitors are never sent the control, not merely shown a hidden one: the cards are built in JavaScript from localized settings, and the edit URL is localized as an empty string for anyone without the capability — so there is nothing in the page to reveal, and nothing for the script to remember to hide. The capability is the same `manage_options` every admin screen here is registered under, named once (`RTG_Admin::EDIT_CAPABILITY`) so the two answers can't drift apart.
+- The tire page's row is dashed and labelled "Admin — only you can see this", because an editing control that looks like site furniture is one someone eventually screenshots.
+- Both surfaces render for logged-in users only, and page caches bypass logged-in requests, so a cached page can't carry an admin's edit link to a visitor.
+- Suite up by 5 tests: the capability answer for admin, subscriber and logged-out; the URL shape and its base; resolution by either address; unresolvable addresses meaning "adding" rather than a fatal; and that a visitor's localized guide data carries no edit URL at all.
+
 ## [1.79.0] - 2026-08-26
 
 ### Fixed

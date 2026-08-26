@@ -5,6 +5,81 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class RTG_Admin {
 
+    /**
+     * The capability every admin screen in this plugin is registered under.
+     * Named once so the frontend's "can this person edit?" question and the
+     * menu's own answer can never drift apart.
+     */
+    const EDIT_CAPABILITY = 'manage_options';
+
+    /**
+     * Whether the current user may edit tires.
+     *
+     * @return bool
+     */
+    public static function can_edit_tires() {
+        return current_user_can( self::EDIT_CAPABILITY );
+    }
+
+    /**
+     * The admin edit screen for one tire, addressed by its public tire_id.
+     *
+     * Keyed on tire_id rather than the row number because that is the
+     * identifier the frontend already carries — a card, a tire page, a REST
+     * payload all know it, and none of them know the database row.
+     *
+     * @param string $tire_id Tire identifier.
+     * @return string Absolute admin URL.
+     */
+    public static function tire_edit_url( $tire_id ) {
+        return self::tire_edit_url_base() . rawurlencode( (string) $tire_id );
+    }
+
+    /**
+     * The same URL with the identifier left off, for callers that append one
+     * themselves — the guide's cards are built in JavaScript and hold only the
+     * tire_id, so they complete this rather than reimplement it.
+     *
+     * @return string Absolute admin URL ending in "tire_id=".
+     */
+    public static function tire_edit_url_base() {
+        return admin_url( 'admin.php?page=rtg-tire-edit&tire_id=' );
+    }
+
+    /**
+     * Resolve which tire an edit-screen request is for.
+     *
+     * The screen has always been addressed by row number ("id"). It now also
+     * answers to "tire_id", because every link into it from outside the admin
+     * carries that instead. Row number wins when both are given: it is the
+     * older contract and the one the form itself posts back.
+     *
+     * @param array $request Query parameters, typically $_GET.
+     * @return array {
+     *     @type int        $id   Row id being edited, 0 when adding.
+     *     @type array|null $tire The tire row, or null when adding.
+     * }
+     */
+    public static function resolve_edit_target( $request ) {
+        $id   = isset( $request['id'] ) ? intval( $request['id'] ) : 0;
+        $tire = $id ? RTG_Database::get_tire_by_id( $id ) : null;
+
+        if ( ! $tire && isset( $request['tire_id'] ) ) {
+            $tire_id = sanitize_text_field( wp_unslash( $request['tire_id'] ) );
+
+            if ( RTG_Database::validate_tire_id( $tire_id ) ) {
+                $tire = RTG_Database::get_tire( $tire_id );
+            }
+        }
+
+        return array(
+            // A tire_id that resolved carries the row number the form posts
+            // back, so the save path never learns there were two ways in.
+            'id'   => $tire ? intval( $tire['id'] ) : 0,
+            'tire' => $tire ?: null,
+        );
+    }
+
     public function __construct() {
         add_action( 'admin_menu', array( $this, 'register_menu' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
