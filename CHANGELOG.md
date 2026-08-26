@@ -4,6 +4,17 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.80.1] - 2026-08-26
+
+### Changed
+- **Brands and categories with nothing to show are hidden, not listed as "(0)".** Filtering to a size left the brand list mostly zeroes — a couple of dozen "Falken (0)", "Kenda (0)", "Toyo (0)" rows to scroll past to reach the four brands that actually make a tire in that fitment. An option that would return nothing isn't an answer, it's noise, so it now leaves the list until it has something in it again.
+- **Size is deliberately exempt.** People arrive knowing their fitment and look for it by name; "your size, and nothing in it" is a real answer and worth seeing, where a brand that doesn't make that size never was.
+
+### Notes
+- The option you have selected stays listed even at zero — a filter you can't see in the list is one you can't reason about or undo from it. That's the only case where a "(0)" still appears.
+- Counts are computed with each dropdown's own filter removed, so switching brands never changes what any brand counts: the list only shifts when the filters around it do.
+- Server-side pagination mode is unaffected — it has never rendered counts, since the browser holds one page of rows rather than all of them.
+
 ## [1.80.0] - 2026-08-26
 
 ### Added
