@@ -380,22 +380,42 @@ class RTG_Tire_Images {
      * @return array|WP_Error The response, as wp_safe_remote_get returns it.
      */
     private static function request( $url, $referer ) {
-        // A browser asking for an image says so, and says what it can read.
-        // WordPress sends neither header, which is one of the tells a CDN's
-        // bot filter uses before it answers a picture request with a page.
         $headers = array(
-            'Accept'          => 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
             'Accept-Language' => 'en-US,en;q=0.9',
+            'sec-ch-ua'        => '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+            'sec-ch-ua-mobile' => '?0',
+            'sec-ch-ua-platform' => '"macOS"',
         );
 
-        if ( '' !== $referer ) {
-            $headers['Referer'] = $referer;
+        if ( '' === $referer ) {
+            // Shaped like typing the URL into the address bar, which is the
+            // one request we know a retailer that refuses us will answer: a
+            // top-level navigation, so a document Accept rather than an image
+            // one, and no site it came from.
+            $headers['Accept']                    = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8';
+            $headers['Sec-Fetch-Dest']            = 'document';
+            $headers['Sec-Fetch-Mode']            = 'navigate';
+            $headers['Sec-Fetch-Site']            = 'none';
+            $headers['Sec-Fetch-User']            = '?1';
+            $headers['Upgrade-Insecure-Requests'] = '1';
+        } else {
+            // Shaped like a page on the retailer's own site loading its
+            // picture, which is what hotlink protection is looking for.
+            $headers['Accept']         = 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8';
+            $headers['Referer']        = $referer;
+            $headers['Sec-Fetch-Dest'] = 'image';
+            $headers['Sec-Fetch-Mode'] = 'no-cors';
+            $headers['Sec-Fetch-Site'] = 'same-origin';
         }
 
         return wp_safe_remote_get( $url, array(
             'timeout'             => 15,
             'limit_response_size' => self::MAX_BYTES,
             'user-agent'          => self::USER_AGENT,
+            // WordPress asks in HTTP/1.0 unless told otherwise, and no browser
+            // has spoken 1.0 in decades — to anything watching for automated
+            // traffic that is a louder signal than any header could undo.
+            'httpversion'         => '1.1',
             'headers'             => $headers,
         ) );
     }
