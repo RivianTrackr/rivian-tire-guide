@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Notes
 - The freshest sighting wins when several candidate rows carry images — a retailer that reshuffled its CDN leaves stale rows pointing at dead URLs. A tire the catalog has never seen says so honestly instead of failing vaguely.
 - The 1.78.2 fallback notice now points at the button as the retry path.
+- Textareas now match every other form control — the shared input styling covered every input type and `select` but never `textarea`, so the model-aliases box rendered with browser defaults beside fields that all match.
 
 ## [1.78.2] - 2026-08-26
 
