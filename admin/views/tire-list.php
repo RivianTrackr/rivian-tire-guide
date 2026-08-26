@@ -28,7 +28,7 @@ if ( 'added' === $message && ! empty( $_GET['image_fallback'] ) ) {
     $notices['added'] = array(
         'error',
         'Tire added, but its image could not be downloaded into the images folder — it is using the retailer\'s image URL instead. Reason: '
-        . $image_reason . ' Fix the cause and re-save with the image field cleared, or upload a file yourself.',
+        . $image_reason . ' Fix the cause, then use "Fetch from catalog" on the tire\'s edit form to retry.',
     );
 }
 

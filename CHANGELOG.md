@@ -4,6 +4,15 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.78.3] - 2026-08-26
+
+### Added
+- **A "Fetch from catalog" button on the tire edit form.** The automatic image import only runs when a tire is first added from discovery — there was no way to retry a failed download or backfill an existing tire's image, and clearing the field and re-saving (as 1.78.2's notice wrongly suggested) did nothing. The button works on any tire, any time, from the form's current field values: it finds the freshest catalog image for the brand, model (aliases included) and size, downloads it into the images folder, fills the field, and shows the preview — or tells you exactly why it couldn't, right next to the button. No save round-trip; failure is a sentence, not silence.
+
+### Notes
+- The freshest sighting wins when several candidate rows carry images — a retailer that reshuffled its CDN leaves stale rows pointing at dead URLs. A tire the catalog has never seen says so honestly instead of failing vaguely.
+- The 1.78.2 fallback notice now points at the button as the retry path.
+
 ## [1.78.2] - 2026-08-26
 
 ### Fixed
