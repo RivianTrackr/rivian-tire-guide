@@ -37,6 +37,37 @@ class Test_RTG_Tire_Images extends WP_UnitTestCase {
         parent::tearDown();
     }
 
+    /**
+     * Fake the remote server, recording what was asked of it and answering
+     * from a callback so a second request can be given a different answer.
+     *
+     * @param callable $answer  fn( $url, $args, $attempt ) => response array.
+     * @param array    $seen    Filled with { url, referer } per request.
+     */
+    private function remote_records( callable $answer, array &$seen ) {
+        $seen = array();
+
+        add_filter( 'pre_http_request', function ( $preempt, $args, $url ) use ( $answer, &$seen ) {
+            $headers = array_change_key_case( (array) ( $args['headers'] ?? array() ) );
+
+            $seen[] = array(
+                'url'     => $url,
+                'referer' => (string) ( $headers['referer'] ?? '' ),
+            );
+
+            return $answer( $url, $args, count( $seen ) );
+        }, 10, 3 );
+    }
+
+    /** A well-formed response array, as WP_Http would return one. */
+    private function response( $body, $type, $code = 200 ) {
+        return array(
+            'headers'  => array( 'content-type' => $type ),
+            'body'     => $body,
+            'response' => array( 'code' => $code, 'message' => '' ),
+        );
+    }
+
     /** Fake the remote server's answer for the next request. */
     private function remote_responds( $body, $type, $code = 200 ) {
         add_filter( 'pre_http_request', function () use ( $body, $type, $code ) {
@@ -200,5 +231,120 @@ class Test_RTG_Tire_Images extends WP_UnitTestCase {
         $filename = RTG_Tire_Images::import_from_url( 'https://img.example/no-extension?id=99', 'Nitto', 'Ridge Grappler' );
 
         $this->assertSame( 'nitto-ridge-grappler.jpg', $filename );
+    }
+
+    // --- Getting past a page where an image should be ---
+
+    /**
+     * The reported failure: a Tire Rack image came back as "text/html".
+     *
+     * A feed's image field sometimes carries the network's tracked link
+     * rather than the file. Following one lands on a redirect page — HTML,
+     * not an image — and registers an affiliate click nobody made. The plain
+     * destination is what gets fetched.
+     */
+    public function test_a_tracked_image_link_is_unwrapped_before_fetching() {
+        $seen = array();
+        $this->remote_records( function () {
+            return $this->response( self::GIF, 'image/gif' );
+        }, $seen );
+
+        $filename = RTG_Tire_Images::import_from_url(
+            'https://www.dpbolvw.net/click-101098512-13697786?url='
+                . rawurlencode( 'https://www.tirerack.com/images/tires/toyo/oc-at3-ev.gif' ),
+            'Toyo',
+            'Open Country A/T III EV'
+        );
+
+        $this->assertSame( 'toyo-open-country-a-t-iii-ev.gif', $filename );
+        $this->assertCount( 1, $seen );
+        $this->assertSame( 'https://www.tirerack.com/images/tires/toyo/oc-at3-ev.gif', $seen[0]['url'] );
+    }
+
+    /**
+     * A plain image URL is fetched exactly as given — unwrapping something
+     * that isn't wrapped must not mangle it.
+     */
+    public function test_an_ordinary_image_url_is_fetched_untouched() {
+        $seen = array();
+        $this->remote_records( function () {
+            return $this->response( self::GIF, 'image/gif' );
+        }, $seen );
+
+        RTG_Tire_Images::import_from_url(
+            'https://www.tirerack.com/images/tires/toyo/oc.gif?w=600', 'Toyo', 'Open Country' );
+
+        $this->assertSame( 'https://www.tirerack.com/images/tires/toyo/oc.gif?w=600', $seen[0]['url'] );
+    }
+
+    /**
+     * The other way an image URL returns a page: the CDN sees no referer,
+     * decides this is a bot, and answers with one. Asked again as a browser
+     * arriving from the retailer's own site, it serves the file.
+     */
+    public function test_html_is_retried_once_with_a_referer() {
+        $seen = array();
+        $this->remote_records( function ( $url, $args, $attempt ) {
+            return 1 === $attempt
+                ? $this->response( '<html>denied</html>', 'text/html' )
+                : $this->response( self::GIF, 'image/gif' );
+        }, $seen );
+
+        $filename = RTG_Tire_Images::import_from_url(
+            'https://www.tirerack.com/images/tires/toyo/oc.gif', 'Toyo', 'Open Country' );
+
+        $this->assertSame( 'toyo-open-country.gif', $filename );
+        $this->assertCount( 2, $seen );
+        $this->assertSame( '', $seen[0]['referer'] );
+        $this->assertSame( 'https://www.tirerack.com', $seen[1]['referer'] );
+    }
+
+    /** A 403 is the same refusal wearing a status code. */
+    public function test_a_403_is_retried_once_with_a_referer() {
+        $seen = array();
+        $this->remote_records( function ( $url, $args, $attempt ) {
+            return 1 === $attempt
+                ? $this->response( '', 'text/html', 403 )
+                : $this->response( self::GIF, 'image/gif' );
+        }, $seen );
+
+        $this->assertSame( 'toyo-open-country.gif', RTG_Tire_Images::import_from_url(
+            'https://www.tirerack.com/images/tires/toyo/oc.gif', 'Toyo', 'Open Country' ) );
+        $this->assertCount( 2, $seen );
+    }
+
+    /**
+     * Asking again more politely won't conjure a file that isn't there, so a
+     * 404 is one request and done.
+     */
+    public function test_a_missing_file_is_not_retried() {
+        $seen = array();
+        $this->remote_records( function () {
+            return $this->response( '', 'text/html', 404 );
+        }, $seen );
+
+        $this->assertSame( '', RTG_Tire_Images::import_from_url(
+            'https://www.tirerack.com/images/tires/toyo/oc.gif', 'Toyo', 'Open Country' ) );
+        $this->assertCount( 1, $seen );
+    }
+
+    /**
+     * When it is still a page after both attempts, the reason says so and
+     * names the URL that was actually fetched — the next report of this
+     * diagnoses itself.
+     */
+    public function test_a_page_after_both_attempts_names_what_was_fetched() {
+        $seen = array();
+        $this->remote_records( function () {
+            return $this->response( '<html>nope</html>', 'text/html' );
+        }, $seen );
+
+        $this->assertSame( '', RTG_Tire_Images::import_from_url(
+            'https://www.tirerack.com/tires/tires.jsp?tireMake=Toyo', 'Toyo', 'Open Country' ) );
+
+        $error = RTG_Tire_Images::get_last_error();
+        $this->assertStringContainsString( 'text/html', $error );
+        $this->assertStringContainsString( 'with and without a browser referer', $error );
+        $this->assertStringContainsString( 'https://www.tirerack.com/tires/tires.jsp', $error );
     }
 }

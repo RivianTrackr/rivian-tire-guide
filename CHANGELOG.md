@@ -4,6 +4,19 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.82.1] - 2026-08-26
+
+### Fixed
+- **A tracked link in the feed's image field is unwrapped before the download.** A network's click URL isn't a file: following one lands on its redirect page — HTML, not an image, which is exactly what a "text/html" refusal looks like — and registers an affiliate click nobody made. The plain destination is fetched now, through the same unwrapper the product links already use. A URL that isn't wrapped comes back untouched, query string and all.
+- **A page where an image should be is retried once as a browser.** The other way a CDN answers an image request with HTML is hotlink protection: no referer, so it decides this is a bot and serves a 403 or a 200 "access denied" page. The retry sends a referer from the image's own origin, which is what the CDN expects to see. A 404 or a transport error is not retried — asking again more politely won't conjure a file that isn't there.
+
+### Changed
+- **A refusal that survives both attempts names the URL it actually fetched**, and says the referer was tried, so the next report of this diagnoses itself instead of starting another round of questions. The remaining cause a retry can't fix — a feed whose image field holds a product page rather than a picture — is visible in that line.
+
+### Notes
+- Everything the downloader already refused, it still refuses: a body that isn't a readable image whatever the header claimed, a truncated file at the size cap, an unwritable folder. The two new attempts feed the same checks.
+- 6 tests added: the tracked link unwrapped and fetched, an ordinary URL left alone, HTML and 403 each retried with a referer, a 404 not retried, and the failure sentence naming what it fetched.
+
 ## [1.82.0] - 2026-08-26
 
 ### Fixed
