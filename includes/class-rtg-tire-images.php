@@ -50,6 +50,32 @@ class RTG_Tire_Images {
         'image/avif' => 'avif',
     );
 
+    /** Option recording the most recent import attempt, for the admin notice. */
+    const LAST_OPTION = 'rtg_tire_images_last';
+
+    /**
+     * Sent instead of WordPress's default user agent, which image CDNs
+     * routinely refuse as bot traffic.
+     */
+    const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36';
+
+    /** Why the last import_from_url() call returned '', or '' on success. */
+    private static $last_error = '';
+
+    /**
+     * @return string Why the last import failed, in a sentence — '' if it didn't.
+     */
+    public static function get_last_error() {
+        return self::$last_error;
+    }
+
+    /**
+     * @return array|false The most recent import attempt: time, url, filename, error.
+     */
+    public static function get_last() {
+        return get_option( self::LAST_OPTION, false );
+    }
+
     /**
      * Filesystem path of the image folder.
      *
@@ -116,55 +142,115 @@ class RTG_Tire_Images {
     public static function import_from_url( $url, $brand, $model ) {
         $base = self::basename_for( $brand, $model );
         if ( '' === $base ) {
-            return '';
+            return self::fail( $url, 'The tire has no brand or model to name the file by.' );
         }
 
         $existing = self::existing_file( $base );
         if ( '' !== $existing ) {
-            return $existing;
+            return self::succeed( $url, $existing );
         }
 
         $url = trim( (string) $url );
         if ( ! preg_match( '#^https?://#i', $url ) ) {
-            return '';
+            return self::fail( $url, 'The catalog image URL is not an http(s) URL.' );
         }
 
         // safe_remote_get refuses redirects into private address space — the
         // URL came from an affiliate feed, not from anyone this site trusts.
+        // The user agent is a browser's: image CDNs routinely 403 the default
+        // "WordPress/x.y" agent as bot traffic.
         $response = wp_safe_remote_get( $url, array(
             'timeout'             => 15,
             'limit_response_size' => self::MAX_BYTES,
+            'user-agent'          => self::USER_AGENT,
         ) );
 
-        if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
-            return '';
+        if ( is_wp_error( $response ) ) {
+            return self::fail( $url, sprintf( 'The request failed: %s', $response->get_error_message() ) );
+        }
+
+        $code = (int) wp_remote_retrieve_response_code( $response );
+        if ( 200 !== $code ) {
+            return self::fail( $url, sprintf( 'The image server answered HTTP %d.', $code ) );
         }
 
         $type = strtolower( trim( strtok( (string) wp_remote_retrieve_header( $response, 'content-type' ), ';' ) ) );
         if ( ! isset( self::CONTENT_TYPES[ $type ] ) ) {
-            return '';
+            return self::fail( $url, sprintf( 'The server sent "%s", not an image type.', '' !== $type ? $type : 'no content type' ) );
         }
 
+        // A body that reaches the cap exactly was almost certainly cut off
+        // mid-file by limit_response_size — saving it would store a broken
+        // image that looks fine in a directory listing.
         $body = wp_remote_retrieve_body( $response );
-        if ( '' === $body || strlen( $body ) > self::MAX_BYTES ) {
-            return '';
+        if ( '' === $body || strlen( $body ) >= self::MAX_BYTES ) {
+            return self::fail( $url, '' === $body
+                ? 'The server sent an empty body.'
+                : sprintf( 'The image is larger than the %d MB cap.', self::MAX_BYTES / 1048576 ) );
         }
 
         // The header said image; make the bytes agree. AVIF is exempt only
         // because PHP before 8.1 cannot read its dimensions — the content
         // type still had to say image/avif to get here.
         if ( 'avif' !== self::CONTENT_TYPES[ $type ] && false === @getimagesizefromstring( $body ) ) {
-            return '';
+            return self::fail( $url, 'The downloaded bytes are not a readable image, whatever the header claimed.' );
         }
 
         $dir = self::dir();
         if ( ! wp_mkdir_p( $dir ) ) {
-            return '';
+            return self::fail( $url, sprintf( 'The folder %s could not be created — PHP may not be allowed to write outside wp-content on this host.', $dir ) );
+        }
+
+        if ( ! is_writable( $dir ) ) {
+            return self::fail( $url, sprintf( 'The folder %s exists but PHP cannot write to it — check its ownership and permissions.', $dir ) );
         }
 
         $filename = $base . '.' . self::CONTENT_TYPES[ $type ];
         $written  = file_put_contents( $dir . '/' . $filename, $body );
 
-        return false === $written ? '' : $filename;
+        if ( false === $written ) {
+            return self::fail( $url, sprintf( 'Writing %s into %s failed.', $filename, $dir ) );
+        }
+
+        return self::succeed( $url, $filename );
+    }
+
+    /**
+     * Record a failed attempt — the reason is the product, since the caller
+     * falls back silently and the admin needs to know what to fix.
+     *
+     * @param string $url    URL that was attempted.
+     * @param string $reason One sentence naming the failing step.
+     * @return string Always '' — the caller's failure value.
+     */
+    private static function fail( $url, $reason ) {
+        self::$last_error = $reason;
+
+        update_option( self::LAST_OPTION, array(
+            'time'     => current_time( 'mysql' ),
+            'url'      => (string) $url,
+            'filename' => '',
+            'error'    => $reason,
+        ), false );
+
+        return '';
+    }
+
+    /**
+     * @param string $url      URL that was attempted (or skipped, on reuse).
+     * @param string $filename Filename now referenced.
+     * @return string The filename — the caller's success value.
+     */
+    private static function succeed( $url, $filename ) {
+        self::$last_error = '';
+
+        update_option( self::LAST_OPTION, array(
+            'time'     => current_time( 'mysql' ),
+            'url'      => (string) $url,
+            'filename' => $filename,
+            'error'    => '',
+        ), false );
+
+        return $filename;
     }
 }
