@@ -743,11 +743,29 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                             array( 'page' => 'rtg-tire-edit', 'id' => intval( $near_tire['id'] ) ),
                                             admin_url( 'admin.php' )
                                         );
+
+                                        // A rating that disagrees is the ordinary shape of a
+                                        // variant, not a spelling difference, so the row says
+                                        // so instead of proposing an alias that would file
+                                        // this listing under a tire it isn't.
+                                        $near_differs = RTG_Catalog_Sync::load_ratings_disagree(
+                                            $candidate['load_index'],
+                                            $near_tire['load_index'] ?? ''
+                                        );
                                         ?>
                                         <br><span style="font-size:11px;color:var(--rtg-text-muted);">
                                             Guide already has
                                             <a href="<?php echo esc_url( $near_url ); ?>"><?php echo esc_html( $near_tire['model'] ); ?></a>
-                                            in this size &mdash; same tire? Add this listing's name as a model alias.
+                                            in this size
+                                            <?php if ( $near_differs ) : ?>
+                                                at load <?php echo esc_html( $near_tire['load_index'] ); ?>, where this listing is
+                                                <?php echo esc_html( $candidate['load_index'] ); ?> &mdash; usually a different tire.
+                                                Alias it only if it isn't.
+                                            <?php else : ?>
+                                                &mdash; same tire? Add
+                                                <code><?php echo esc_html( $candidate['model'] ); ?></code>
+                                                as a model alias on it.
+                                            <?php endif; ?>
                                         </span>
                                     <?php endif; ?>
                                 <?php endif; ?>

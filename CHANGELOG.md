@@ -4,6 +4,20 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.82.0] - 2026-08-26
+
+### Fixed
+- **An alias pasted with the brand on the front now works.** The queue's own hint says to add "this listing's name" as a model alias, and the name it shows carries the brand — "Toyo Open Country A/T III EV All Terrain". Keys hold the brand separately, so pasting that put the brand in twice and the alias matched nothing: the tire stayed in the review queue with no sign of why. Both forms are indexed now, so the natural paste works and a model-only alias is unchanged. The trap was ours, not the admin's.
+- **A load rating that disagrees stops a name-only match.** "Scorpion XTM AT" sits inside "Scorpion XTM AT Elect All Terrain", so the name-drift pass filed an EV listing under the non-EV tire and the queue linked to the wrong one — 116 against the listing's 119. Two tires of one brand and fitment whose ratings differ are the ordinary shape of a variant, not two spellings of one tire, so the rating is now checked before a name comparison may claim a match.
+
+### Changed
+- **The near-name hint says what to paste, and what doesn't add up.** It names the exact alias text rather than "this listing's name", and where the ratings differ it says so — "Guide already has Scorpion XTM AT in this size at load 116, where this listing is 119 — usually a different tire" — instead of proposing an alias that would bury the listing under a tire it isn't.
+
+### Notes
+- Only a rating known on both sides counts against a match. A feed that omits one is silent, not contradictory, and an exact name is never overruled by a rating — a feed reporting one loosely must not un-match a tire the guide names exactly.
+- The rating narrows rather than empties: where the guide holds both the 116 and the EV-specific 119, the listing now finds the right one instead of being turned away as ambiguous.
+- 6 tests added over both reported rows, the guards around them, and what counts as disagreement (blank, zero, and a dual "119/116" reading as its single-wheel figure).
+
 ## [1.81.0] - 2026-08-26
 
 ### Changed

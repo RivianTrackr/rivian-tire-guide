@@ -514,6 +514,134 @@ class Test_RTG_Catalog_Sync extends WP_UnitTestCase {
         $this->assertSame( 1, $counts['Michelin'] );
     }
 
+    // --- An alias carrying the brand, and load ratings that disagree ---
+
+    /**
+     * The queue tells you to add "this listing's name" as an alias, and the
+     * name it shows carries the brand — so pasting it put the brand in twice
+     * and the alias matched nothing. That trap was ours; both forms key now.
+     */
+    public function test_an_alias_typed_with_the_brand_still_matches() {
+        $guide = array(
+            array(
+                'tire_id'       => 'tire096',
+                'brand'         => 'Toyo',
+                'model'         => 'Open Country A/T III EV',
+                'size'          => '275/60R20',
+                'load_index'    => '123',
+                'model_aliases' => 'Toyo Open Country A/T III EV All Terrain',
+            ),
+            // The non-EV of the same fitment: its name sits inside the
+            // listing's too, so without the alias this is ambiguous.
+            array(
+                'tire_id'    => 'tireOTHER',
+                'brand'      => 'Toyo',
+                'model'      => 'Open Country A/T III',
+                'size'       => '275/60R20',
+                'load_index' => '123',
+            ),
+        );
+
+        $this->assertSame( 'tire096', RTG_Catalog_Sync::resolve_guide_match(
+            'Toyo', 'Open Country A/T III EV All Terrain', '275/60R20',
+            $this->exact_index( $guide ), RTG_Catalog_Sync::build_variant_index( $guide ), '123'
+        ) );
+    }
+
+    /**
+     * A brand on its own leaves nothing to key on, so it adds no spelling —
+     * a tire answering to its bare brand would collide with every sibling.
+     */
+    public function test_a_brand_only_alias_adds_no_spelling() {
+        $spellings = RTG_Catalog_Sync::model_spellings( array(
+            'brand'         => 'Toyo',
+            'model'         => 'Open Country A/T III EV',
+            'model_aliases' => 'Toyo',
+        ) );
+
+        $this->assertSame( array( 'Open Country A/T III EV', 'Toyo' ), $spellings );
+        $this->assertNotContains( '', $spellings );
+    }
+
+    /**
+     * The reported wrong-tire link. "Scorpion XTM AT" sits inside "Scorpion
+     * XTM AT Elect All Terrain", so a name comparison alone files the EV
+     * listing under the non-EV tire. Their load ratings say otherwise, and
+     * that is the ordinary shape of a variant — so it stays for review.
+     */
+    public function test_a_load_rating_that_disagrees_blocks_a_name_match() {
+        $guide = array(
+            array(
+                'tire_id'    => 'PIR-116',
+                'brand'      => 'Pirelli',
+                'model'      => 'Scorpion XTM AT',
+                'size'       => '275/50R22',
+                'load_index' => '116',
+            ),
+        );
+
+        $this->assertSame( '', RTG_Catalog_Sync::resolve_guide_match(
+            'Pirelli', 'Scorpion XTM AT Elect All Terrain', '275/50R22',
+            $this->exact_index( $guide ), RTG_Catalog_Sync::build_variant_index( $guide ), '119'
+        ) );
+    }
+
+    /**
+     * And with the right tire in the guide, the same listing finds it —
+     * the rating narrows the field rather than emptying it.
+     */
+    public function test_the_rating_picks_the_variant_the_listing_actually_is() {
+        $guide = array(
+            array( 'tire_id' => 'PIR-116', 'brand' => 'Pirelli', 'model' => 'Scorpion XTM AT',
+                'size' => '275/50R22', 'load_index' => '116' ),
+            array( 'tire_id' => 'PIR-ELECT', 'brand' => 'Pirelli', 'model' => 'Scorpion XTM AT Elect',
+                'size' => '275/50R22', 'load_index' => '119' ),
+        );
+
+        $this->assertSame( 'PIR-ELECT', RTG_Catalog_Sync::resolve_guide_match(
+            'Pirelli', 'Scorpion XTM AT Elect All Terrain', '275/50R22',
+            $this->exact_index( $guide ), RTG_Catalog_Sync::build_variant_index( $guide ), '119'
+        ) );
+    }
+
+    /**
+     * A rating only counts against a match when both sides have one, and an
+     * exact name is never overruled by one — a feed reporting a rating
+     * loosely must not un-match a tire the guide names exactly.
+     */
+    public function test_an_unknown_or_exact_match_is_not_overruled_by_a_rating() {
+        $guide = array(
+            array( 'tire_id' => 'PIR-116', 'brand' => 'Pirelli', 'model' => 'Scorpion XTM AT',
+                'size' => '275/50R22', 'load_index' => '116' ),
+        );
+        $index    = $this->exact_index( $guide );
+        $variants = RTG_Catalog_Sync::build_variant_index( $guide );
+
+        // The listing never says what it carries.
+        $this->assertSame( 'PIR-116', RTG_Catalog_Sync::resolve_guide_match(
+            'Pirelli', 'Scorpion XTM AT All Terrain', '275/50R22', $index, $variants, ''
+        ) );
+
+        // The name is exactly the guide's, and the rating disagrees.
+        $this->assertSame( 'PIR-116', RTG_Catalog_Sync::resolve_guide_match(
+            'Pirelli', 'Scorpion XTM AT', '275/50R22', $index, $variants, '119'
+        ) );
+    }
+
+    /**
+     * What counts as disagreement: both readable, and different. A dual
+     * rating reads as its single-wheel figure, the one the guide compares.
+     */
+    public function test_when_two_load_ratings_disagree() {
+        $this->assertTrue( RTG_Catalog_Sync::load_ratings_disagree( '119', '116' ) );
+        $this->assertFalse( RTG_Catalog_Sync::load_ratings_disagree( '119', '119' ) );
+        $this->assertFalse( RTG_Catalog_Sync::load_ratings_disagree( '119', '' ) );
+        $this->assertFalse( RTG_Catalog_Sync::load_ratings_disagree( '', '116' ) );
+        $this->assertFalse( RTG_Catalog_Sync::load_ratings_disagree( '0', '116' ) );
+        $this->assertFalse( RTG_Catalog_Sync::load_ratings_disagree( '119/116', ' 119 ' ) );
+        $this->assertTrue( RTG_Catalog_Sync::load_ratings_disagree( '119/116', '116' ) );
+    }
+
     // --- Reconciling the queue with the guide ---
 
     /**

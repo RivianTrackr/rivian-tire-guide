@@ -306,7 +306,8 @@ class RTG_Catalog_Sync {
                 $evaluated['model'],
                 $evaluated['size'],
                 $guide_index,
-                $variants
+                $variants,
+                $evaluated['load_index']
             ),
             'raw'             => $product,
         ) );
@@ -390,9 +391,10 @@ class RTG_Catalog_Sync {
 
             foreach ( self::model_spellings( $tire ) as $spelling ) {
                 $index[ $brand_key . '|' . $size ][] = array(
-                    'tire_id' => (string) ( $tire['tire_id'] ?? '' ),
-                    'id'      => intval( $tire['id'] ?? 0 ),
-                    'model'   => $spelling,
+                    'tire_id'    => (string) ( $tire['tire_id'] ?? '' ),
+                    'id'         => intval( $tire['id'] ?? 0 ),
+                    'model'      => $spelling,
+                    'load_index' => (string) ( $tire['load_index'] ?? '' ),
                 );
             }
         }
@@ -410,6 +412,7 @@ class RTG_Catalog_Sync {
      * @return string[] Spellings, primary first.
      */
     public static function model_spellings( $tire ) {
+        $brand     = (string) ( $tire['brand'] ?? '' );
         $spellings = array();
 
         foreach ( array_merge(
@@ -417,8 +420,15 @@ class RTG_Catalog_Sync {
             preg_split( '/[\r\n]+/', (string) ( $tire['model_aliases'] ?? '' ) )
         ) as $name ) {
             $name = trim( $name );
-            if ( '' !== $name ) {
-                $spellings[ $name ] = true;
+            if ( '' === $name ) {
+                continue;
+            }
+
+            $spellings[ $name ] = true;
+
+            $without_brand = self::without_brand_prefix( $name, $brand );
+            if ( '' !== $without_brand ) {
+                $spellings[ $without_brand ] = true;
             }
         }
 
@@ -437,11 +447,15 @@ class RTG_Catalog_Sync {
      * @param string     $size     Listing size.
      * @param array      $index    Match key => tire_id, from build_guide_index().
      * @param array|null $variants Variant index, or null to use exact keys only.
+     * @param string     $load_index The listing's load rating, when it has one.
      * @return string Guide tire_id, or '' when the listing is genuinely new.
      */
-    public static function resolve_guide_match( $brand, $model, $size, $index, $variants = null ) {
+    public static function resolve_guide_match( $brand, $model, $size, $index, $variants = null, $load_index = '' ) {
         $key = self::match_key( $brand, $model, $size );
 
+        // An exact key is certain enough to stand on its own. The load rating
+        // is deliberately not consulted here: a feed that reports one loosely
+        // must not un-match a tire the guide names exactly.
         if ( '' !== $key && isset( $index[ $key ] ) ) {
             return (string) $index[ $key ];
         }
@@ -450,7 +464,7 @@ class RTG_Catalog_Sync {
             return '';
         }
 
-        return self::variant_match( $brand, $model, $size, $variants );
+        return self::variant_match( $brand, $model, $size, $variants, $load_index );
     }
 
     /**
@@ -467,23 +481,53 @@ class RTG_Catalog_Sync {
      * a queue row a human dismisses costs a click, a wrong match hides a real
      * find.
      *
-     * @param string $brand    Listing brand.
-     * @param string $model    Listing model.
-     * @param string $size     Listing size.
-     * @param array  $variants Variant index from build_variant_index().
+     * A load rating that disagrees settles it: two tires of one brand, one
+     * fitment and near-identical names but different ratings are the ordinary
+     * shape of a variant — "Scorpion XTM AT" at 116 beside the EV-specific
+     * "Scorpion XTM AT Elect" at 119 — and a name comparison alone would file
+     * one under the other. Only a rating known on both sides counts against a
+     * match; a feed that omits it is silent, not contradictory.
+     *
+     * @param string $brand      Listing brand.
+     * @param string $model      Listing model.
+     * @param string $size       Listing size.
+     * @param array  $variants   Variant index from build_variant_index().
+     * @param string $load_index The listing's load rating, when it has one.
      * @return string Guide tire_id, or '' when nothing unambiguously matches.
      */
-    public static function variant_match( $brand, $model, $size, $variants ) {
+    public static function variant_match( $brand, $model, $size, $variants, $load_index = '' ) {
         $bucket = self::variant_bucket( $brand, $model, $size, $variants );
         $found  = array();
 
         foreach ( $bucket as $entry ) {
+            if ( self::load_ratings_disagree( $load_index, $entry['load_index'] ?? '' ) ) {
+                continue;
+            }
+
             if ( RTG_Coverage::model_similarity( $entry['model'], $model ) >= RTG_Coverage::VARIANT_THRESHOLD ) {
                 $found[ $entry['tire_id'] ] = true;
             }
         }
 
         return 1 === count( $found ) ? (string) key( $found ) : '';
+    }
+
+    /**
+     * Whether two load ratings are both known and not the same.
+     *
+     * Ratings arrive as "119", "119/116" (single- then dual-wheel) and blank.
+     * The leading figure is the one the guide compares, and a blank on either
+     * side means unknown — which is not disagreement.
+     *
+     * @param string $listing Listing load rating.
+     * @param string $guide   Guide tire load rating.
+     * @return bool True only when both are readable and differ.
+     */
+    public static function load_ratings_disagree( $listing, $guide ) {
+        $a = intval( trim( (string) $listing ) );
+        $b = intval( trim( (string) $guide ) );
+
+        return $a > 0 && $b > 0 && $a !== $b;
     }
 
     /**
@@ -517,6 +561,7 @@ class RTG_Catalog_Sync {
                     'tire_id'    => $entry['tire_id'],
                     'id'         => $entry['id'],
                     'model'      => $entry['model'],
+                    'load_index' => $entry['load_index'] ?? '',
                     'similarity' => $score,
                 );
             }
@@ -584,7 +629,13 @@ class RTG_Catalog_Sync {
         $variants = self::build_variant_index( $tires );
 
         foreach ( self::model_spellings( $tire ) as $spelling ) {
-            $match = self::variant_match( $tire['brand'] ?? '', $spelling, $tire['size'] ?? '', $variants );
+            $match = self::variant_match(
+                $tire['brand'] ?? '',
+                $spelling,
+                $tire['size'] ?? '',
+                $variants,
+                $tire['load_index'] ?? ''
+            );
             if ( '' !== $match ) {
                 return $match;
             }
@@ -634,32 +685,57 @@ class RTG_Catalog_Sync {
         $brand = $tire['brand'] ?? '';
         $size  = $tire['size'] ?? '';
 
-        $keys    = array();
-        $primary = self::match_key( $brand, $tire['model'] ?? '', $size );
+        $keys = array();
 
-        if ( '' !== $primary ) {
-            $keys[ $primary ] = true;
-        }
-
-        foreach ( preg_split( '/[\r\n]+/', (string) ( $tire['model_aliases'] ?? '' ) ) as $alias ) {
-            $alias = trim( $alias );
-
-            // A blank line is not an alias. match_key() accepts an empty
-            // model — a legacy of guide rows that predate models — so
-            // without this every alias-less tire would gain a bogus
-            // "brand||size" key, colliding same-brand tires in the index
-            // and matching any candidate whose model failed to parse.
-            if ( '' === $alias ) {
-                continue;
-            }
-
-            $key = self::match_key( $brand, $alias, $size );
+        foreach ( self::model_spellings( $tire ) as $spelling ) {
+            $key = self::match_key( $brand, $spelling, $size );
             if ( '' !== $key ) {
                 $keys[ $key ] = true;
             }
         }
 
+        // A tire with no model at all still keys on brand and size. match_key()
+        // accepts an empty model — a legacy of guide rows that predate models —
+        // and model_spellings() drops the blank, so it is added back here
+        // rather than being lost. A tire that HAS a name never gets this key:
+        // it would collide same-brand tires in the index and match any
+        // candidate whose model failed to parse.
+        if ( empty( $keys ) ) {
+            $primary = self::match_key( $brand, $tire['model'] ?? '', $size );
+            if ( '' !== $primary ) {
+                $keys[ $primary ] = true;
+            }
+        }
+
         return array_keys( $keys );
+    }
+
+    /**
+     * One name with the tire's own brand taken off the front, when it's there.
+     *
+     * The queue tells an admin to add "this listing's name" as an alias, and a
+     * listing's name reads "Toyo Open Country A/T III EV All Terrain" — brand
+     * included, because that is how the row displays it. Keys carry the brand
+     * separately, so pasting that put the brand in twice and the alias matched
+     * nothing, which is a trap of our own making. Both forms are indexed now:
+     * the natural paste works, and a model-only alias is unaffected.
+     *
+     * @param string $name  Name as typed.
+     * @param string $brand The tire's brand.
+     * @return string The remainder, normalized, or '' when there is no brand
+     *                on the front or nothing would be left of the name.
+     */
+    public static function without_brand_prefix( $name, $brand ) {
+        $brand_key = RTG_Tire_Qualifier::normalize_brand( $brand );
+        $name_key  = RTG_Tire_Qualifier::normalize_brand( $name );
+
+        if ( '' === $brand_key || '' === $name_key || 0 !== strpos( $name_key, $brand_key ) ) {
+            return '';
+        }
+
+        // "Toyo" alone as an alias leaves nothing to key on, which would make
+        // the tire answer to its bare brand and collide with every sibling.
+        return substr( $name_key, strlen( $brand_key ) );
     }
 
     /**
