@@ -582,12 +582,16 @@ function updateDropdownCounts() {
 
   // For each dropdown, count against rows filtered with that dropdown's
   // filter removed so users see how many tires each option would yield.
+  // Size stays listed whatever its count: people arrive knowing their
+  // fitment, and "your size, nothing in it" is an answer. A brand or
+  // category that would yield nothing is not an answer, it's noise — a
+  // dozen "(0)" rows to read past to reach the four that have tires.
   updateSelectCounts("filterSize", 1, { ...filters, Size: "" });
-  updateSelectCounts("filterBrand", 3, { ...filters, Brand: "" });
-  updateSelectCounts("filterCategory", 5, { ...filters, Category: "" });
+  updateSelectCounts("filterBrand", 3, { ...filters, Brand: "" }, true);
+  updateSelectCounts("filterCategory", 5, { ...filters, Category: "" }, true);
 }
 
-function updateSelectCounts(selectId, rowIndex, filtersExcludingSelf) {
+function updateSelectCounts(selectId, rowIndex, filtersExcludingSelf, hideEmpty = false) {
   const select = getDOMElement(selectId);
   if (!select) return;
 
@@ -608,6 +612,10 @@ function updateSelectCounts(selectId, rowIndex, filtersExcludingSelf) {
     const count = counts.get(baseText) || 0;
     opt.textContent = `${baseText} (${count})`;
     opt.disabled = false;
+
+    // Never hide what's currently selected, even at zero: a filter you
+    // can't see in the list is one you can't reason about or undo from it.
+    opt.hidden = hideEmpty && count === 0 && opt.value !== select.value;
   });
 }
 
