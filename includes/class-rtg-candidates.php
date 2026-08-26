@@ -392,7 +392,8 @@ class RTG_Candidates {
                     $row['brand'],
                     $row['model'],
                     $row['size'],
-                    $variants
+                    $variants,
+                    $row['load_index'] ?? ''
                 );
 
                 if ( '' !== $tire_id ) {
@@ -456,7 +457,7 @@ class RTG_Candidates {
         $table = self::table();
 
         $rows = $wpdb->get_results(
-            "SELECT id, match_key, matched_tire_id, status, qualifies, brand, model, size
+            "SELECT id, match_key, matched_tire_id, status, qualifies, brand, model, size, load_index
              FROM {$table} WHERE match_key <> ''",
             ARRAY_A
         );
@@ -469,7 +470,8 @@ class RTG_Candidates {
                 $row['model'],
                 $row['size'],
                 $guide_index,
-                $variants
+                $variants,
+                $row['load_index']
             );
 
             if ( $should === (string) $row['matched_tire_id'] ) {
