@@ -151,6 +151,8 @@ class RTG_Ajax {
         add_action( 'wp_ajax_rtg_catalog_sync_now', array( $this, 'catalog_sync_now' ) );
         add_action( 'wp_ajax_rtg_candidate_set_status', array( $this, 'candidate_set_status' ) );
         add_action( 'wp_ajax_rtg_cj_test_connection', array( $this, 'cj_test_connection' ) );
+
+        add_action( 'wp_ajax_rtg_fetch_tire_image', array( $this, 'fetch_tire_image' ) );
         add_action( 'wp_ajax_rtg_adopt_model_alias', array( $this, 'adopt_model_alias' ) );
         add_action( 'wp_ajax_rtg_candidate_bulk', array( $this, 'candidate_bulk' ) );
     }
@@ -1016,6 +1018,48 @@ class RTG_Ajax {
         // gets to misread. The nightly cron run keeps the full budget.
         $result = RTG_Catalog_Sync::run( RTG_Catalog_Sync::INTERACTIVE_BUDGET );
         wp_send_json_success( $result );
+    }
+
+    /**
+     * Download the catalog's product image for the tire on the edit form.
+     *
+     * The button-driven counterpart to the automatic import that runs when a
+     * tire is first added from discovery — this one works on any tire, any
+     * time, from the form's current field values (no save needed first).
+     * On failure the response IS the reason, because "nothing happened" was
+     * exactly the bug this replaces.
+     */
+    public function fetch_tire_image() {
+        check_ajax_referer( 'rtg_admin_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized.' );
+        }
+
+        $tire = array(
+            'brand'         => sanitize_text_field( wp_unslash( $_POST['brand'] ?? '' ) ),
+            'model'         => sanitize_text_field( wp_unslash( $_POST['model'] ?? '' ) ),
+            'size'          => sanitize_text_field( wp_unslash( $_POST['size'] ?? '' ) ),
+            'model_aliases' => implode( "\n", array_filter( array_map(
+                'sanitize_text_field',
+                preg_split( '/[\r\n]+/', (string) wp_unslash( $_POST['model_aliases'] ?? '' ) )
+            ) ) ),
+        );
+
+        $url = RTG_Tire_Images::catalog_image_for( $tire );
+        if ( '' === $url ) {
+            wp_send_json_error( 'The catalog has no image for this brand, model and size — it only holds what a sweep has seen.' );
+        }
+
+        $filename = RTG_Tire_Images::import_from_url( $url, $tire['brand'], $tire['model'] );
+        if ( '' === $filename ) {
+            wp_send_json_error( RTG_Tire_Images::get_last_error() );
+        }
+
+        wp_send_json_success( array(
+            'filename' => $filename,
+            'url'      => RTG_Tire_Images::URL_PREFIX . $filename,
+        ) );
     }
 
     /**

@@ -92,6 +92,47 @@ class RTG_Tire_Images {
     }
 
     /**
+     * The freshest catalog image URL for a tire, or '' when none is known.
+     *
+     * Matched by the same keys everything else matches on (brand, model or
+     * alias, size), and freshest sighting wins — a retailer that reshuffled
+     * its CDN leaves stale rows pointing at dead URLs.
+     *
+     * @param array $tire Tire fields (brand, model, size, model_aliases).
+     * @return string Image URL from the candidate rows, or ''.
+     */
+    public static function catalog_image_for( $tire ) {
+        $keys = array_flip( RTG_Catalog_Sync::match_keys_for_tire( $tire ) );
+        if ( empty( $keys ) ) {
+            return '';
+        }
+
+        $best      = '';
+        $best_seen = 0;
+
+        foreach ( RTG_Candidates::get_by_match_key() as $key => $rows ) {
+            if ( ! isset( $keys[ $key ] ) ) {
+                continue;
+            }
+
+            foreach ( $rows as $row ) {
+                $image = trim( (string) ( $row['image'] ?? '' ) );
+                if ( '' === $image ) {
+                    continue;
+                }
+
+                $seen = (int) strtotime( (string) ( $row['last_seen_at'] ?? '' ) );
+                if ( $seen > $best_seen ) {
+                    $best_seen = $seen;
+                    $best      = $image;
+                }
+            }
+        }
+
+        return $best;
+    }
+
+    /**
      * The base filename (no extension) a tire's image goes by.
      *
      * Brand and model, slugified — "Nitto" + "Ridge Grappler" becomes

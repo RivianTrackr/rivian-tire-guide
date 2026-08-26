@@ -196,6 +196,7 @@
 .rtg-wrap input[type="url"],
 .rtg-wrap input[type="search"],
 .rtg-wrap input[type="email"],
+.rtg-wrap textarea,
 .rtg-wrap select {
     padding: 10px 12px;
     font-size: 15px;
@@ -215,6 +216,7 @@
 .rtg-wrap input[type="url"]:focus,
 .rtg-wrap input[type="search"]:focus,
 .rtg-wrap input[type="email"]:focus,
+.rtg-wrap textarea:focus,
 .rtg-wrap select:focus,
 .rtg-input:focus,
 .rtg-select:focus {
@@ -834,7 +836,19 @@
 
 /* One tidy row: the search field takes twice the share of a dropdown, all
    controls share the same height, and the base 400px input cap is lifted
-   so widths are governed by the flex ratios instead. */
+   so widths are governed by the flex ratios instead. The height is pinned
+   explicitly because matching paddings is not enough — wp-admin's own
+   stylesheet forces line-height: 2 on selects, which inflates them past
+   any button whose padding "matches". */
+.rtg-search-box input[type="search"],
+.rtg-search-box select,
+.rtg-search-box .rtg-btn {
+    height: 44px;
+    line-height: normal;
+    box-sizing: border-box;
+    font-size: 15px;
+}
+
 .rtg-search-box input[type="search"] {
     flex: 2 1 260px;
     min-width: 220px;
@@ -850,10 +864,6 @@
 
 .rtg-search-box .rtg-btn {
     flex: 0 0 auto;
-    /* Match the inputs' height (10px padding + 15px text vs 8px + 14px). */
-    padding-top: 10px;
-    padding-bottom: 10px;
-    font-size: 15px;
 }
 
 /* ==========================================================================

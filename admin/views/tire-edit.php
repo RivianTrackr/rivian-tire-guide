@@ -395,6 +395,45 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                             <input type="text" id="image" name="image" value="<?php echo esc_attr( $image_display ); ?>" class="rtg-input-wide" style="border-radius:0 8px 8px 0;" placeholder="filename.webp">
                         </div>
                         <input type="hidden" id="image_prefix" value="<?php echo esc_attr( $image_prefix ); ?>">
+                        <p style="margin:8px 0 0;display:flex;align-items:center;gap:10px;">
+                            <button type="button" id="rtg-fetch-image-btn" class="rtg-btn rtg-btn-secondary">
+                                <i class="fa-solid fa-cloud-arrow-down"></i> Fetch from catalog
+                            </button>
+                            <span id="rtg-fetch-image-msg" style="font-size:13px;"></span>
+                        </p>
+                        <script>
+                        jQuery(function ($) {
+                            $('#rtg-fetch-image-btn').on('click', function () {
+                                var $btn = $(this), $msg = $('#rtg-fetch-image-msg');
+                                $btn.prop('disabled', true);
+                                $msg.css('color', '').text('Fetching…');
+
+                                $.post(ajaxurl, {
+                                    action: 'rtg_fetch_tire_image',
+                                    nonce: '<?php echo esc_js( wp_create_nonce( 'rtg_admin_nonce' ) ); ?>',
+                                    brand: $('#brand').val() || '',
+                                    model: $('#model').val() || '',
+                                    size: $('#size').val() || '',
+                                    model_aliases: $('#model_aliases').val() || ''
+                                }, function (r) {
+                                    $btn.prop('disabled', false);
+                                    if (r && r.success) {
+                                        $('#image').val(r.data.filename);
+                                        $('#image-preview').attr('src', r.data.url);
+                                        $('#image-preview').closest('.rtg-image-preview, #image-preview-container').show();
+                                        $msg.css('color', 'var(--rtg-success, #34c759)')
+                                            .text(r.data.filename + ' saved to the images folder — save the tire to keep it.');
+                                    } else {
+                                        $msg.css('color', 'var(--rtg-error, #ff3b30)')
+                                            .text((r && r.data) ? r.data : 'The request failed.');
+                                    }
+                                }).fail(function () {
+                                    $btn.prop('disabled', false);
+                                    $msg.css('color', 'var(--rtg-error, #ff3b30)').text('The request failed.');
+                                });
+                            });
+                        });
+                        </script>
                         <?php
                         $full_image_url = $v['image'];
                         ?>

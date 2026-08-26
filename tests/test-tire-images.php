@@ -139,6 +139,46 @@ class Test_RTG_Tire_Images extends WP_UnitTestCase {
         $this->assertSame( 'nitto-ridge-grappler.gif', RTG_Tire_Images::get_last()['filename'] );
     }
 
+    /**
+     * The Fetch-from-catalog button finds the freshest candidate image by the
+     * same keys everything else matches on — rows without images are skipped,
+     * the latest sighting wins (stale rows can point at reshuffled CDNs), and
+     * a tire the catalog has never seen honestly yields nothing.
+     */
+    public function test_the_catalog_image_is_the_freshest_sighting() {
+        RTG_Activator::activate();
+
+        $key = RTG_Catalog_Sync::match_key( 'Nitto', 'Ridge Grappler', '275/65R20' );
+        foreach ( array(
+            array( 'external_id' => 'img-1', 'image' => '', 'last_seen_at' => '2026-08-25 00:00:00' ),
+            array( 'external_id' => 'img-2', 'image' => 'https://img.example/old.jpg', 'last_seen_at' => '2026-08-20 00:00:00' ),
+            array( 'external_id' => 'img-3', 'image' => 'https://img.example/fresh.jpg', 'last_seen_at' => '2026-08-25 00:00:00' ),
+        ) as $row ) {
+            RTG_Candidates::upsert( array_merge( array(
+                'source'          => 'cj',
+                'advertiser_id'   => '1463221',
+                'advertiser_name' => 'The Tire Rack',
+                'brand'           => 'Nitto',
+                'model'           => 'Ridge Grappler',
+                'size'            => '275/65R20',
+                'match_key'       => $key,
+                'qualifies'       => 1,
+            ), $row ) );
+        }
+        // upsert stamps last_seen_at itself, so pin the fixtures' timestamps.
+        global $wpdb;
+        foreach ( array( 'img-2' => '2026-08-20 00:00:00', 'img-3' => '2026-08-25 00:00:00' ) as $ext => $seen ) {
+            $wpdb->update( $wpdb->prefix . 'rtg_tire_candidates', array( 'last_seen_at' => $seen ), array( 'external_id' => $ext ) );
+        }
+
+        $tire = array( 'brand' => 'Nitto', 'model' => 'Ridge Grappler', 'size' => '275/65R20' );
+        $this->assertSame( 'https://img.example/fresh.jpg', RTG_Tire_Images::catalog_image_for( $tire ) );
+
+        $this->assertSame( '', RTG_Tire_Images::catalog_image_for(
+            array( 'brand' => 'Michelin', 'model' => 'Defender', 'size' => '275/65R20' )
+        ) );
+    }
+
     // --- The write ---
 
     public function test_a_product_image_is_downloaded_and_named_by_convention() {
