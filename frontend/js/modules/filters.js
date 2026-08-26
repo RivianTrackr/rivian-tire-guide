@@ -603,6 +603,37 @@ function updateSelectCounts(selectId, rowIndex, filtersExcludingSelf, hideEmpty 
     if (val) counts.set(val, (counts.get(val) || 0) + 1);
   });
 
+  applyOptionCounts(select, counts, hideEmpty);
+}
+
+/**
+ * Bring one select's options into step with a set of counts.
+ *
+ * Split out from the counting above because this is where the decisions are:
+ * what each option now reads, which ones step out of the list, and which come
+ * back. It takes a select and a Map rather than reading the page, so it can be
+ * driven directly.
+ *
+ * @param {HTMLSelectElement} select    The dropdown to update.
+ * @param {Map<string, number>} counts  Option label => tires it would yield.
+ * @param {boolean} hideEmpty           Whether a zero leaves the list.
+ */
+export function applyOptionCounts(select, counts, hideEmpty) {
+  const selected = select.value;
+  const stash = hideEmpty ? optionStash(select) : null;
+
+  // Anything that has tires again comes back first, so the pass below sees
+  // the full list and every option's fate is settled in one place.
+  if (stash) {
+    Array.from(stash.entries()).forEach(([value, option]) => {
+      const baseText = option.dataset.baseText || value;
+      if ((counts.get(baseText) || 0) > 0 || value === selected) {
+        attachInOrder(select, option);
+        stash.delete(value);
+      }
+    });
+  }
+
   // Update option text with counts
   const options = select.querySelectorAll("option, optgroup option");
   options.forEach(opt => {
@@ -613,9 +644,70 @@ function updateSelectCounts(selectId, rowIndex, filtersExcludingSelf, hideEmpty 
     opt.textContent = `${baseText} (${count})`;
     opt.disabled = false;
 
-    // Never hide what's currently selected, even at zero: a filter you
+    // Cleared in case an earlier release marked this option hidden — that
+    // approach is what this replaced, and a cached page may still carry it.
+    opt.hidden = false;
+
+    // Never take away what's currently selected, even at zero: a filter you
     // can't see in the list is one you can't reason about or undo from it.
-    opt.hidden = hideEmpty && count === 0 && opt.value !== select.value;
+    if (stash && count === 0 && opt.value !== selected) {
+      stash.set(opt.value, opt);
+      opt.remove();
+    }
+  });
+}
+
+/**
+ * Options set aside because they'd return nothing, kept per select so they
+ * can come back the moment they would return something.
+ *
+ * They are detached from the DOM rather than marked hidden. Marking wasn't
+ * enough: browsers honour `hidden` and `display:none` unevenly inside a
+ * native select popup — Safari renders such options regardless — so the
+ * "(0)" rows stayed on screen. Removing the node is the one thing every
+ * browser agrees on.
+ */
+const detachedOptions = new WeakMap();
+
+function optionStash(select) {
+  let stash = detachedOptions.get(select);
+  if (!stash) {
+    stash = new Map();
+    detachedOptions.set(select, stash);
+  }
+  return stash;
+}
+
+/**
+ * Put an option back where it belongs — these lists are alphabetical, and a
+ * brand that reappeared at the bottom would be as hard to find as one that
+ * was missing.
+ */
+function attachInOrder(select, option) {
+  const baseText = option.dataset.baseText || option.value;
+  const before = Array.from(select.options)
+    .filter(o => o.value)
+    .find(o => (o.dataset.baseText || o.value).localeCompare(baseText) > 0);
+
+  select.insertBefore(option, before || null);
+}
+
+/**
+ * Reattach everything, in every dropdown that sets options aside.
+ *
+ * Setting `select.value` to an option that isn't in the DOM silently clears
+ * the select instead, so anything restoring a filter from outside the UI —
+ * the back button, a URL, a shortcode — has to see the whole list. The next
+ * render sets aside whatever is still empty, so this costs nothing.
+ */
+export function restoreDetachedFilterOptions() {
+  ["filterBrand", "filterCategory"].forEach(id => {
+    const select = getDOMElement(id);
+    if (!select) return;
+
+    const stash = optionStash(select);
+    stash.forEach(option => attachInOrder(select, option));
+    stash.clear();
   });
 }
 
@@ -1091,6 +1183,11 @@ export function updateURLFromFilters() {
 }
 
 export function applyFiltersFromURL() {
+  // A brand set aside as empty can't be selected while it's out of the DOM,
+  // so the whole list goes back before any value is restored — otherwise the
+  // back button would quietly drop the filter it was returning to.
+  restoreDetachedFilterOptions();
+
   const params = new URLSearchParams(window.location.search);
 
   const setVal = (id, val) => {
@@ -1250,6 +1347,9 @@ export function applyTireDeepLink() {
 
 export function applyShortcodePrefilters() {
   if (typeof rtgData === 'undefined' || !rtgData.settings || !rtgData.settings.prefilters) return;
+
+  restoreDetachedFilterOptions();
+
   const pf = rtgData.settings.prefilters;
   // Vehicle must be applied before size so the cascade narrows the size dropdown first.
   if (pf.vehicle && state.VALID_VEHICLES.includes(pf.vehicle)) {
