@@ -582,11 +582,12 @@ function updateDropdownCounts() {
 
   // For each dropdown, count against rows filtered with that dropdown's
   // filter removed so users see how many tires each option would yield.
-  // Size stays listed whatever its count: people arrive knowing their
-  // fitment, and "your size, nothing in it" is an answer. A brand or
-  // category that would yield nothing is not an answer, it's noise — a
-  // dozen "(0)" rows to read past to reach the four that have tires.
-  updateSelectCounts("filterSize", 1, { ...filters, Size: "" });
+  // An option that would return nothing leaves the list, in all three: a
+  // dozen "(0)" rows to read past to reach the few with tires is noise
+  // wherever it appears. The size list is already scoped to the chosen
+  // vehicle's fitments, so what drops out of it is a size this vehicle
+  // takes that nothing in the current filters comes in.
+  updateSelectCounts("filterSize", 1, { ...filters, Size: "" }, true);
   updateSelectCounts("filterBrand", 3, { ...filters, Brand: "" }, true);
   updateSelectCounts("filterCategory", 5, { ...filters, Category: "" }, true);
 }
@@ -620,26 +621,71 @@ function updateSelectCounts(selectId, rowIndex, filtersExcludingSelf, hideEmpty 
  */
 export function applyOptionCounts(select, counts, hideEmpty) {
   const selected = select.value;
-  const stash = hideEmpty ? optionStash(select) : null;
+
+  if (!hideEmpty) {
+    stampAndLabel(select, counts, null, selected);
+    return;
+  }
+
+  const stash = optionStash(select);
+  const groups = groupStash(select);
 
   // Anything that has tires again comes back first, so the pass below sees
   // the full list and every option's fate is settled in one place.
-  if (stash) {
-    Array.from(stash.entries()).forEach(([value, option]) => {
-      const baseText = option.dataset.baseText || value;
-      if ((counts.get(baseText) || 0) > 0 || value === selected) {
-        attachInOrder(select, option);
-        stash.delete(value);
-      }
-    });
-  }
+  Array.from(stash.entries()).forEach(([value, entry]) => {
+    const baseText = entry.option.dataset.baseText || value;
+    if ((counts.get(baseText) || 0) === 0 && value !== selected) {
+      return;
+    }
 
-  // Update option text with counts
+    // Its group may have stepped out too, when this was the last size in it.
+    if (entry.parent !== select && groups.has(entry.parent.label)) {
+      insertByOrder(select, entry.parent);
+      groups.delete(entry.parent.label);
+    }
+
+    insertByOrder(entry.parent, entry.option);
+    stash.delete(value);
+  });
+
+  stampAndLabel(select, counts, stash, selected);
+
+  // A wheel size whose every fitment has gone leaves a heading with nothing
+  // under it, which reads worse than the zeroes did.
+  Array.from(select.querySelectorAll("optgroup")).forEach(group => {
+    if (!group.querySelector("option")) {
+      groups.set(group.label, group);
+      group.remove();
+    }
+  });
+}
+
+/**
+ * Write each option's count into its label, and set aside the empty ones.
+ *
+ * @param {HTMLSelectElement} select   The dropdown.
+ * @param {Map<string, number>} counts Option label => tires it would yield.
+ * @param {Map|null} stash             Where empties go, or null to keep them.
+ * @param {string} selected            The value currently chosen.
+ */
+function stampAndLabel(select, counts, stash, selected) {
   const options = select.querySelectorAll("option, optgroup option");
+
+  // Every position is recorded before anything moves. Stamping as we went
+  // read each node's index out of a list the previous detach had already
+  // shortened, so an option that came back landed wherever that off-by-N
+  // put it — for the guide's brands, alphabetical order quietly broke.
+  select.querySelectorAll("optgroup").forEach(stampOrder);
+  options.forEach(opt => {
+    if (opt.value) stampOrder(opt);
+  });
+
   options.forEach(opt => {
     if (!opt.value) return; // skip "All X" option
+
     const baseText = opt.dataset.baseText || opt.value;
     opt.dataset.baseText = baseText;
+
     const count = counts.get(baseText) || 0;
     opt.textContent = `${baseText} (${count})`;
     opt.disabled = false;
@@ -651,7 +697,7 @@ export function applyOptionCounts(select, counts, hideEmpty) {
     // Never take away what's currently selected, even at zero: a filter you
     // can't see in the list is one you can't reason about or undo from it.
     if (stash && count === 0 && opt.value !== selected) {
-      stash.set(opt.value, opt);
+      stash.set(opt.value, { option: opt, parent: opt.parentNode });
       opt.remove();
     }
   });
@@ -669,27 +715,63 @@ export function applyOptionCounts(select, counts, hideEmpty) {
  */
 const detachedOptions = new WeakMap();
 
-function optionStash(select) {
-  let stash = detachedOptions.get(select);
+/** Optgroups set aside because every option under them stepped out. */
+const detachedGroups = new WeakMap();
+
+function stashFor(store, select) {
+  let stash = store.get(select);
   if (!stash) {
     stash = new Map();
-    detachedOptions.set(select, stash);
+    store.set(select, stash);
   }
   return stash;
 }
 
-/**
- * Put an option back where it belongs — these lists are alphabetical, and a
- * brand that reappeared at the bottom would be as hard to find as one that
- * was missing.
- */
-function attachInOrder(select, option) {
-  const baseText = option.dataset.baseText || option.value;
-  const before = Array.from(select.options)
-    .filter(o => o.value)
-    .find(o => (o.dataset.baseText || o.value).localeCompare(baseText) > 0);
+function optionStash(select) {
+  return stashFor(detachedOptions, select);
+}
 
-  select.insertBefore(option, before || null);
+function groupStash(select) {
+  return stashFor(detachedGroups, select);
+}
+
+/**
+ * Record where a node sits among its siblings, once, while the list is still
+ * whole. Position is remembered rather than recomputed because these lists
+ * aren't all ordered the same way — brands read alphabetically, sizes sit in
+ * numbered wheel groups — and a restored option belongs where it was, not
+ * where a comparison would put it.
+ */
+function stampOrder(node) {
+  if (node.dataset.rtgOrder !== undefined) return;
+
+  const siblings = Array.from(node.parentNode.children)
+    .filter(n => n.tagName === node.tagName);
+
+  node.dataset.rtgOrder = String(siblings.indexOf(node));
+}
+
+/** Put a node back in the position stampOrder() remembered for it. */
+function insertByOrder(parent, node) {
+  const order = Number(node.dataset.rtgOrder);
+  const before = Array.from(parent.children)
+    .find(n => n.tagName === node.tagName
+      && n.dataset.rtgOrder !== undefined
+      && Number(n.dataset.rtgOrder) > order);
+
+  parent.insertBefore(node, before || null);
+}
+
+/**
+ * Forget what a select set aside.
+ *
+ * Repopulating a dropdown replaces every node in it, so anything held from
+ * the old list is a stale node that must never be put back — the size list is
+ * rebuilt from scratch each time the vehicle changes.
+ */
+function clearDetached(select) {
+  detachedOptions.delete(select);
+  detachedGroups.delete(select);
 }
 
 /**
@@ -701,12 +783,17 @@ function attachInOrder(select, option) {
  * render sets aside whatever is still empty, so this costs nothing.
  */
 export function restoreDetachedFilterOptions() {
-  ["filterBrand", "filterCategory"].forEach(id => {
+  ["filterSize", "filterBrand", "filterCategory"].forEach(id => {
     const select = getDOMElement(id);
     if (!select) return;
 
+    // Groups first: an option can't go back into a heading that isn't there.
+    const groups = groupStash(select);
+    groups.forEach(group => insertByOrder(select, group));
+    groups.clear();
+
     const stash = optionStash(select);
-    stash.forEach(option => attachInOrder(select, option));
+    stash.forEach(entry => insertByOrder(entry.parent, entry.option));
     stash.clear();
   });
 }
@@ -714,6 +801,8 @@ export function restoreDetachedFilterOptions() {
 export function populateDropdown(id, values) {
   const select = getDOMElement(id);
   if (!select) return;
+
+  clearDetached(select);
 
   const cleaned = [...new Set(values.map(v => safeString(v).trim()))]
     .filter(v => v && v.length <= 100)
@@ -732,6 +821,8 @@ export function populateDropdown(id, values) {
 export function populateSizeDropdownGrouped(id, sizesOrRows) {
   const select = getDOMElement(id);
   if (!select) return;
+
+  clearDetached(select);
 
   // Accept either an array of size strings or an array of row arrays.
   const sizes = [...new Set(

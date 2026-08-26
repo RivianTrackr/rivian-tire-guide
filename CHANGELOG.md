@@ -4,6 +4,20 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.81.0] - 2026-08-26
+
+### Changed
+- **Sizes with no tires leave the list too.** The exemption 1.80.1 made for size is gone: a "(0)" is noise wherever it appears, and the size list is already scoped to the chosen vehicle's fitments, so what drops out of it is a size that vehicle takes but nothing in the current filters comes in.
+- **A wheel-size heading with nothing under it goes with them.** Sizes sit in `19" Wheels` / `22" Wheels` groups, and a heading left standing over an empty group reads worse than the zeroes did. It comes back, in its place, when one of its sizes does.
+
+### Fixed
+- **Restored options land where they belong, not where an off-by-N put them.** Position was being read out of a list that the previous detach had already shortened, so every option stamped after the first removal recorded the wrong index — enough to quietly break alphabetical order in the brand list once two or more brands came back. Positions are now recorded before anything moves. Caught by the new test, not in the browser.
+
+### Notes
+- Restoring is by remembered position rather than by re-sorting, because these lists aren't ordered the same way — brands read alphabetically, sizes sit in numbered wheel groups — and an option belongs where it was, not where a comparison would put it.
+- Changing vehicle rebuilds the size list from scratch, so anything set aside from the old list is dropped rather than reinserted as a stale node. The test drives the real rebuild to prove it.
+- `tests/test-dropdown-options.mjs` is up to 17 checks, now covering grouped lists end to end: an emptied heading leaving and returning, a selected size holding its place under its heading at zero, and the vehicle rebuild.
+
 ## [1.80.2] - 2026-08-26
 
 ### Fixed

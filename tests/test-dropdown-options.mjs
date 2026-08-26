@@ -17,51 +17,92 @@
  */
 
 // --- Minimal DOM ---------------------------------------------------------
-class FakeOption {
-  constructor(value) {
-    this.value = value;
-    this.dataset = { baseText: value };
-    this.textContent = value;
-    this.hidden = false;
-    this.disabled = false;
-    this.parent = null;
+class FakeNode {
+  constructor(tagName) {
+    this.tagName = tagName;
+    this.dataset = {};
+    this.children = [];
+    this.parentNode = null;
   }
   remove() {
-    if (this.parent) {
-      const i = this.parent.children.indexOf(this);
-      if (i >= 0) this.parent.children.splice(i, 1);
-      this.parent = null;
+    if (this.parentNode) {
+      const i = this.parentNode.children.indexOf(this);
+      if (i >= 0) this.parentNode.children.splice(i, 1);
+      this.parentNode = null;
     }
-  }
-}
-
-class FakeSelect {
-  constructor(values) {
-    const placeholder = new FakeOption('');
-    placeholder.dataset = {};
-    this.children = [placeholder];
-    placeholder.parent = this;
-    values.forEach(v => {
-      const o = new FakeOption(v);
-      o.parent = this;
-      this.children.push(o);
-    });
-    this._value = '';
-  }
-  get options() { return this.children; }
-  get value() { return this._value; }
-  set value(v) {
-    // Matches a real <select>: a value with no matching option clears it.
-    this._value = this.children.some(o => o.value === v) ? v : '';
   }
   insertBefore(node, ref) {
     node.remove();
     const i = ref ? this.children.indexOf(ref) : this.children.length;
     this.children.splice(i < 0 ? this.children.length : i, 0, node);
-    node.parent = this;
+    node.parentNode = this;
   }
-  querySelectorAll() { return this.children.slice(); }
-  visible() { return this.children.filter(o => o.value).map(o => o.textContent); }
+  appendChild(node) { this.insertBefore(node, null); }
+  set innerHTML(value) {
+    if (value !== '') throw new Error('the harness only models innerHTML = ""');
+    this.children.forEach(child => { child.parentNode = null; });
+    this.children = [];
+    this._value = '';
+  }
+  descendants() {
+    return this.children.flatMap(c => [c, ...c.descendants()]);
+  }
+  querySelectorAll(selector) {
+    const wanted = selector.split(',').map(s => s.trim().split(' ').pop().toUpperCase());
+    return this.descendants().filter(n => wanted.includes(n.tagName));
+  }
+  querySelector(selector) { return this.querySelectorAll(selector)[0] || null; }
+}
+
+class FakeOption extends FakeNode {
+  constructor(value) {
+    super('OPTION');
+    this.value = value;
+    this.dataset = { baseText: value };
+    this.textContent = value;
+    this.hidden = false;
+    this.disabled = false;
+  }
+}
+
+class FakeGroup extends FakeNode {
+  constructor(label = '', values = []) {
+    super('OPTGROUP');
+    this.label = label;
+    this.value = '';
+    values.forEach(v => this.appendChild(new FakeOption(v)));
+  }
+}
+
+class FakeSelect extends FakeNode {
+  /**
+   * @param {Array<string|{label: string, values: string[]}>} entries
+   *   Plain values for a flat list, {label, values} for a grouped one.
+   */
+  constructor(entries) {
+    super('SELECT');
+    const placeholder = new FakeOption('');
+    placeholder.dataset = {};
+    this.appendChild(placeholder);
+    entries.forEach(entry => {
+      this.appendChild(typeof entry === 'string'
+        ? new FakeOption(entry)
+        : new FakeGroup(entry.label, entry.values));
+    });
+    this._value = '';
+  }
+  get options() { return this.querySelectorAll('option'); }
+  get value() { return this._value; }
+  set value(v) {
+    // Matches a real <select>: a value with no matching option clears it.
+    this._value = this.options.some(o => o.value === v) ? v : '';
+  }
+  /** What the popup would show, headings included. */
+  visible() {
+    return this.children.flatMap(node => node.tagName === 'OPTGROUP'
+      ? [`[${node.label}]`, ...node.children.map(o => o.textContent)]
+      : (node.value ? [node.textContent] : []));
+  }
 }
 
 // --- Globals the module graph touches at import time ---------------------
@@ -77,7 +118,11 @@ globalThis.document = {
   addEventListener: noop, removeEventListener: noop,
   querySelector: () => null, querySelectorAll: () => [],
   getElementById: () => null,
-  createElement: () => ({ style: {}, dataset: {}, classList: { add: noop, remove: noop, toggle: noop }, appendChild: noop, addEventListener: noop, setAttribute: noop }),
+  createElement: tag => {
+    if (tag === 'option') return new FakeOption('');
+    if (tag === 'optgroup') return new FakeGroup();
+    return { style: {}, dataset: {}, classList: { add: noop, remove: noop, toggle: noop }, appendChild: noop, addEventListener: noop, setAttribute: noop };
+  },
   dispatchEvent: noop,
 };
 Object.defineProperty(globalThis, 'navigator', { value: { userAgent: 'node' }, configurable: true });
@@ -138,11 +183,56 @@ restoreDetachedFilterOptions();
 brandSelect.value = 'Toyo';
 check('after restoring, the back button gets its filter', 'Toyo', brandSelect.value);
 
-console.log("size keeps its zeroes");
-const sizeSelect = new FakeSelect(['255/65R19', '275/50R22']);
-applyOptionCounts(sizeSelect, counts({ '275/50R22': 5 }), false);
-check('nothing leaves the size list',
-  ['255/65R19 (0)', '275/50R22 (5)'], sizeSelect.visible());
+console.log("sizes drop out of their wheel group, and take an emptied heading with them");
+const makeSizes = () => new FakeSelect([
+  { label: '19" Wheels', values: ['255/65R19', '275/60R19'] },
+  { label: '22" Wheels', values: ['275/50R22'] },
+]);
+
+let sizeSelect = makeSizes();
+state.domCache.filterSize = sizeSelect;
+
+applyOptionCounts(sizeSelect, counts({ '255/65R19': 4, '275/50R22': 5 }), true);
+check('an empty size goes, its heading stays while a sibling remains',
+  ['[19" Wheels]', '255/65R19 (4)', '[22" Wheels]', '275/50R22 (5)'],
+  sizeSelect.visible());
+
+applyOptionCounts(sizeSelect, counts({ '275/50R22': 5 }), true);
+check('a heading with nothing left under it goes too',
+  ['[22" Wheels]', '275/50R22 (5)'], sizeSelect.visible());
+
+applyOptionCounts(sizeSelect, counts({ '255/65R19': 1, '275/60R19': 2, '275/50R22': 5 }), true);
+check('the group comes back, in its place, with its sizes in order',
+  ['[19" Wheels]', '255/65R19 (1)', '275/60R19 (2)', '[22" Wheels]', '275/50R22 (5)'],
+  sizeSelect.visible());
+
+console.log("a size still listed can be selected, and survives at zero");
+sizeSelect.value = '275/60R19';
+applyOptionCounts(sizeSelect, counts({ '275/50R22': 5 }), true);
+check('the chosen size holds its place under its heading',
+  ['[19" Wheels]', '275/60R19 (0)', '[22" Wheels]', '275/50R22 (5)'],
+  sizeSelect.visible());
+check('and is still the value', '275/60R19', sizeSelect.value);
+
+console.log("changing vehicle rebuilds the size list in place");
+// The real cascade wipes this same element and refills it, so anything held
+// back from the old list is a stale node that must never be put back.
+const { populateSizeDropdownGrouped } = filters;
+sizeSelect = new FakeSelect([]);
+state.domCache.filterSize = sizeSelect;
+
+populateSizeDropdownGrouped('filterSize', ['255/65R19', '275/60R19', '275/50R22']);
+applyOptionCounts(sizeSelect, counts({ '275/50R22': 5 }), true);
+check('the wide list narrows to what has tires',
+  ['[22" Wheels]', '275/50R22 (5)'], sizeSelect.visible());
+
+populateSizeDropdownGrouped('filterSize', ['275/50R22', '285/45R22']);
+check('the rebuilt list is only the new vehicle\'s fitments',
+  ['[22" Wheels]', '275/50R22', '285/45R22'], sizeSelect.visible());
+
+restoreDetachedFilterOptions();
+check('and nothing from the old list comes back with it',
+  ['[22" Wheels]', '275/50R22', '285/45R22'], sizeSelect.visible());
 
 console.log("an option a cached page left hidden is un-hidden on the way back in");
 const stale = new FakeSelect(['Michelin']);
