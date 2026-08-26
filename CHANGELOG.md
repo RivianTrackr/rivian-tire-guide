@@ -17,7 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Notes
 - When every URL is refused the reason says how many were tried, so a run of refusals can't read as "the catalog has no image for this tire".
 - Ordering is by freshest sighting of each distinct URL, so a retailer that reshuffled its CDN still sinks below one that hasn't.
-- 7 tests added, including the reported URL and its exact symptom, that the message doesn't claim the feed pointed at a page, and the cross-retailer fallback saving the second retailer's file.
+- **At most four sources are tried.** A refused URL costs two requests — plain, then as a browser — at 15 seconds apiece, and "Fetch from catalog" answers a browser waiting on AJAX. Four is two minutes of worst case, inside a default PHP limit; the reason says how many of how many were reached.
+- 8 tests added, including the reported URL and its exact symptom, that the message doesn't claim the feed pointed at a page, the cross-retailer fallback saving the second retailer's file, and the cap.
 
 ## [1.82.1] - 2026-08-26
 

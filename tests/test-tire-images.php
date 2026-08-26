@@ -426,8 +426,16 @@ class Test_RTG_Tire_Images extends WP_UnitTestCase {
         $this->assertSame( 'pirelli-scorpion-winter.gif', $filename );
         $this->assertSame( '', RTG_Tire_Images::get_last_error() );
 
-        // Tire Rack first (it was listed first), SimpleTire second.
-        $this->assertCount( 2, $seen );
+        // Three requests, not two: the first URL is asked twice — once plainly
+        // and once as a browser with a referer — before the next one is tried
+        // at all. Falling through early would skip the retry that rescues a
+        // merely hotlink-protected image.
+        $this->assertCount( 3, $seen );
+        $this->assertStringContainsString( 'tirerack', $seen[0]['url'] );
+        $this->assertSame( '', $seen[0]['referer'] );
+        $this->assertStringContainsString( 'tirerack', $seen[1]['url'] );
+        $this->assertSame( 'https://www.tirerack.com', $seen[1]['referer'] );
+        $this->assertStringContainsString( 'simpletire', $seen[2]['url'] );
     }
 
     /**
@@ -446,8 +454,34 @@ class Test_RTG_Tire_Images extends WP_UnitTestCase {
             'Scorpion Winter'
         ) );
 
-        $this->assertStringContainsString( '2 catalog images were tried', RTG_Tire_Images::get_last_error() );
+        $this->assertStringContainsString( '2 of 2 catalog images were tried', RTG_Tire_Images::get_last_error() );
         $this->assertStringContainsString( 'Access Denied', RTG_Tire_Images::get_last_error() );
+    }
+
+    /**
+     * A refused URL costs two requests at 15 seconds apiece, and this answers
+     * a browser waiting on AJAX — so the list is capped, and the reason says
+     * how many of how many were reached.
+     */
+    public function test_the_number_of_sources_tried_is_capped() {
+        $seen = array();
+        $this->remote_records( function () {
+            return $this->response( '<html><title>Access Denied</title></html>', 'text/html' );
+        }, $seen );
+
+        $urls = array();
+        for ( $i = 0; $i < RTG_Tire_Images::MAX_SOURCES + 3; $i++ ) {
+            $urls[] = sprintf( 'https://retailer%d.example/tire.jpg', $i );
+        }
+
+        $this->assertSame( '', RTG_Tire_Images::import_first_working( $urls, 'Pirelli', 'Scorpion Winter' ) );
+
+        // Two requests per URL — plain, then with a referer.
+        $this->assertCount( RTG_Tire_Images::MAX_SOURCES * 2, $seen );
+        $this->assertStringContainsString(
+            sprintf( '%d of %d catalog images were tried', RTG_Tire_Images::MAX_SOURCES, count( $urls ) ),
+            RTG_Tire_Images::get_last_error()
+        );
     }
 
     /** Nothing to try is its own answer, not a download failure. */

@@ -50,6 +50,17 @@ class RTG_Tire_Images {
         'image/avif' => 'avif',
     );
 
+    /**
+     * How many catalog URLs one import may try.
+     *
+     * A refused URL costs two requests — plain, then as a browser — at 15
+     * seconds apiece, and "Fetch from catalog" answers a browser waiting on
+     * AJAX. Four sources is two minutes of worst case, which stays inside a
+     * default PHP limit; past that another retailer is unlikely to be the one
+     * that works anyway.
+     */
+    const MAX_SOURCES = 4;
+
     /** Option recording the most recent import attempt, for the admin notice. */
     const LAST_OPTION = 'rtg_tire_images_last';
 
@@ -162,12 +173,15 @@ class RTG_Tire_Images {
      * @return string Bare filename inside the folder, or ''.
      */
     public static function import_first_working( $urls, $brand, $model ) {
-        $urls    = array_values( array_filter( (array) $urls, 'strlen' ) );
-        $refused = array();
+        $urls = array_values( array_unique( array_filter( (array) $urls, 'strlen' ) ) );
 
         if ( empty( $urls ) ) {
             return self::fail( '', 'The catalog holds no image URL for this tire.' );
         }
+
+        $available = count( $urls );
+        $urls      = array_slice( $urls, 0, self::MAX_SOURCES );
+        $refused   = array();
 
         foreach ( $urls as $url ) {
             $filename = self::import_from_url( $url, $brand, $model );
@@ -183,8 +197,9 @@ class RTG_Tire_Images {
         // tried so a single retailer's refusal doesn't read as "no image".
         if ( count( $urls ) > 1 ) {
             return self::fail( end( $urls ), sprintf(
-                '%d catalog images were tried and none could be downloaded. The last said: %s',
+                '%d of %d catalog images were tried and none could be downloaded. The last said: %s',
                 count( $urls ),
+                $available,
                 (string) end( $refused )
             ) );
         }
