@@ -833,7 +833,16 @@ class RTG_Admin {
         if ( 0 === $editing_id && $from_candidate > 0 && '' === trim( (string) ( $post['image'] ?? '' ) ) ) {
             $candidate = RTG_Candidates::get( $from_candidate );
             if ( $candidate && '' !== trim( (string) $candidate['image'] ) ) {
-                $filename       = RTG_Tire_Images::import_from_url( $candidate['image'], $data['brand'], $data['model'] );
+                // This candidate's own image leads — it is the listing being
+                // imported — but the other retailers carrying the same tire
+                // are tried after it. One CDN refusing to serve its picture
+                // shouldn't cost the tire an image the guide already knows.
+                $urls = array_merge(
+                    array( $candidate['image'] ),
+                    RTG_Tire_Images::catalog_images_for( $data )
+                );
+
+                $filename       = RTG_Tire_Images::import_first_working( $urls, $data['brand'], $data['model'] );
                 $image_fallback = '' === $filename;
                 $data['image']  = ! $image_fallback
                     ? $this->build_image_url( $filename )

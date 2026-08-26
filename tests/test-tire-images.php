@@ -347,4 +347,146 @@ class Test_RTG_Tire_Images extends WP_UnitTestCase {
         $this->assertStringContainsString( 'with and without a browser referer', $error );
         $this->assertStringContainsString( 'https://www.tirerack.com/tires/tires.jsp', $error );
     }
+
+    // --- When one retailer won't hand its picture over ---
+
+    /**
+     * The reported case, exactly: a real .jpg on the retailer's own image
+     * domain that answers with a page whatever we send. The reason has to say
+     * what came back rather than blame the feed — the URL is a file, so the
+     * server is refusing us, and the page's title is what tells a bot wall
+     * from a soft 404.
+     */
+    public function test_a_refused_image_names_the_page_it_got_instead() {
+        $seen = array();
+        $this->remote_records( function () {
+            return $this->response(
+                '<html><head><title>Pardon Our Interruption</title></head><body>..</body></html>',
+                'text/html'
+            );
+        }, $seen );
+
+        $this->assertSame( '', RTG_Tire_Images::import_from_url(
+            'https://www.tirerack.com/content/dam/tires/pirelli/pi_scorpion_winter_full.jpg',
+            'Pirelli',
+            'Scorpion Winter'
+        ) );
+
+        $error = RTG_Tire_Images::get_last_error();
+        $this->assertStringContainsString( 'text/html', $error );
+        $this->assertStringContainsString( 'Pardon Our Interruption', $error );
+        $this->assertStringContainsString( 'pi_scorpion_winter_full.jpg', $error );
+
+        // It must not claim the feed pointed at a page: this URL is a file.
+        $this->assertStringNotContainsString( 'points at a page', $error );
+    }
+
+    /** A browser asks for an image and says what it can read. */
+    public function test_the_request_asks_for_an_image() {
+        $captured = array();
+
+        add_filter( 'pre_http_request', function ( $preempt, $args ) use ( &$captured ) {
+            $captured = array_change_key_case( (array) ( $args['headers'] ?? array() ) );
+
+            return array(
+                'headers'  => array( 'content-type' => 'image/gif' ),
+                'body'     => self::GIF,
+                'response' => array( 'code' => 200, 'message' => '' ),
+            );
+        }, 10, 2 );
+
+        RTG_Tire_Images::import_from_url( 'https://img.example/oc.gif', 'Toyo', 'Open Country' );
+
+        $this->assertStringContainsString( 'image/webp', $captured['accept'] ?? '' );
+        $this->assertNotEmpty( $captured['accept-language'] ?? '' );
+    }
+
+    /**
+     * One retailer refusing is not the same as there being no picture: the
+     * next catalog URL for the same tire is tried, and it is the one that
+     * gets saved.
+     */
+    public function test_the_next_retailers_image_is_used_when_the_first_refuses() {
+        $seen = array();
+        $this->remote_records( function ( $url ) {
+            return false !== strpos( $url, 'tirerack' )
+                ? $this->response( '<html><title>Access Denied</title></html>', 'text/html' )
+                : $this->response( self::GIF, 'image/gif' );
+        }, $seen );
+
+        $filename = RTG_Tire_Images::import_first_working(
+            array(
+                'https://www.tirerack.com/content/dam/tires/pirelli/pi_scorpion_winter_full.jpg',
+                'https://images.simpletire.com/pirelli-scorpion-winter.gif',
+            ),
+            'Pirelli',
+            'Scorpion Winter'
+        );
+
+        $this->assertSame( 'pirelli-scorpion-winter.gif', $filename );
+        $this->assertSame( '', RTG_Tire_Images::get_last_error() );
+
+        // Three requests, not two: the first URL is asked twice — once plainly
+        // and once as a browser with a referer — before the next one is tried
+        // at all. Falling through early would skip the retry that rescues a
+        // merely hotlink-protected image.
+        $this->assertCount( 3, $seen );
+        $this->assertStringContainsString( 'tirerack', $seen[0]['url'] );
+        $this->assertSame( '', $seen[0]['referer'] );
+        $this->assertStringContainsString( 'tirerack', $seen[1]['url'] );
+        $this->assertSame( 'https://www.tirerack.com', $seen[1]['referer'] );
+        $this->assertStringContainsString( 'simpletire', $seen[2]['url'] );
+    }
+
+    /**
+     * When every retailer refuses, the reason says how many were tried — so a
+     * run of refusals doesn't read as "the catalog has no image".
+     */
+    public function test_every_url_refusing_says_how_many_were_tried() {
+        $seen = array();
+        $this->remote_records( function () {
+            return $this->response( '<html><title>Access Denied</title></html>', 'text/html' );
+        }, $seen );
+
+        $this->assertSame( '', RTG_Tire_Images::import_first_working(
+            array( 'https://a.example/one.jpg', 'https://b.example/two.jpg' ),
+            'Pirelli',
+            'Scorpion Winter'
+        ) );
+
+        $this->assertStringContainsString( '2 of 2 catalog images were tried', RTG_Tire_Images::get_last_error() );
+        $this->assertStringContainsString( 'Access Denied', RTG_Tire_Images::get_last_error() );
+    }
+
+    /**
+     * A refused URL costs two requests at 15 seconds apiece, and this answers
+     * a browser waiting on AJAX — so the list is capped, and the reason says
+     * how many of how many were reached.
+     */
+    public function test_the_number_of_sources_tried_is_capped() {
+        $seen = array();
+        $this->remote_records( function () {
+            return $this->response( '<html><title>Access Denied</title></html>', 'text/html' );
+        }, $seen );
+
+        $urls = array();
+        for ( $i = 0; $i < RTG_Tire_Images::MAX_SOURCES + 3; $i++ ) {
+            $urls[] = sprintf( 'https://retailer%d.example/tire.jpg', $i );
+        }
+
+        $this->assertSame( '', RTG_Tire_Images::import_first_working( $urls, 'Pirelli', 'Scorpion Winter' ) );
+
+        // Two requests per URL — plain, then with a referer.
+        $this->assertCount( RTG_Tire_Images::MAX_SOURCES * 2, $seen );
+        $this->assertStringContainsString(
+            sprintf( '%d of %d catalog images were tried', RTG_Tire_Images::MAX_SOURCES, count( $urls ) ),
+            RTG_Tire_Images::get_last_error()
+        );
+    }
+
+    /** Nothing to try is its own answer, not a download failure. */
+    public function test_no_urls_at_all_says_so() {
+        $this->assertSame( '', RTG_Tire_Images::import_first_working( array(), 'Pirelli', 'Scorpion Winter' ) );
+        $this->assertStringContainsString( 'no image URL', RTG_Tire_Images::get_last_error() );
+    }
 }

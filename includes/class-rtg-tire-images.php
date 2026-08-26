@@ -50,6 +50,17 @@ class RTG_Tire_Images {
         'image/avif' => 'avif',
     );
 
+    /**
+     * How many catalog URLs one import may try.
+     *
+     * A refused URL costs two requests — plain, then as a browser — at 15
+     * seconds apiece, and "Fetch from catalog" answers a browser waiting on
+     * AJAX. Four sources is two minutes of worst case, which stays inside a
+     * default PHP limit; past that another retailer is unlikely to be the one
+     * that works anyway.
+     */
+    const MAX_SOURCES = 4;
+
     /** Option recording the most recent import attempt, for the admin notice. */
     const LAST_OPTION = 'rtg_tire_images_last';
 
@@ -102,13 +113,30 @@ class RTG_Tire_Images {
      * @return string Image URL from the candidate rows, or ''.
      */
     public static function catalog_image_for( $tire ) {
+        $images = self::catalog_images_for( $tire );
+
+        return $images ? $images[0] : '';
+    }
+
+    /**
+     * Every catalog image URL known for a tire, freshest sighting first.
+     *
+     * One retailer refusing to serve its picture is not the same as there
+     * being no picture: the guide matches a tire across retailers, so a tire
+     * Tire Rack won't hand over is usually one SimpleTire will. Freshest still
+     * leads — a retailer that reshuffled its CDN leaves stale rows pointing at
+     * dead URLs — but the rest are there to fall back on.
+     *
+     * @param array $tire Tire fields (brand, model, size, model_aliases).
+     * @return string[] Image URLs, de-duplicated, freshest first.
+     */
+    public static function catalog_images_for( $tire ) {
         $keys = array_flip( RTG_Catalog_Sync::match_keys_for_tire( $tire ) );
         if ( empty( $keys ) ) {
-            return '';
+            return array();
         }
 
-        $best      = '';
-        $best_seen = 0;
+        $seen_urls = array();
 
         foreach ( RTG_Candidates::get_by_match_key() as $key => $rows ) {
             if ( ! isset( $keys[ $key ] ) ) {
@@ -122,14 +150,61 @@ class RTG_Tire_Images {
                 }
 
                 $seen = (int) strtotime( (string) ( $row['last_seen_at'] ?? '' ) );
-                if ( $seen > $best_seen ) {
-                    $best_seen = $seen;
-                    $best      = $image;
+
+                // The freshest sighting of each distinct URL is the one that
+                // decides where it sits in the order.
+                if ( ! isset( $seen_urls[ $image ] ) || $seen > $seen_urls[ $image ] ) {
+                    $seen_urls[ $image ] = $seen;
                 }
             }
         }
 
-        return $best;
+        arsort( $seen_urls );
+
+        return array_keys( $seen_urls );
+    }
+
+    /**
+     * Import the first of several candidate images that a server will hand over.
+     *
+     * @param string[] $urls  Image URLs to try, in order.
+     * @param string   $brand Tire brand, for the filename.
+     * @param string   $model Tire model, for the filename.
+     * @return string Bare filename inside the folder, or ''.
+     */
+    public static function import_first_working( $urls, $brand, $model ) {
+        $urls = array_values( array_unique( array_filter( (array) $urls, 'strlen' ) ) );
+
+        if ( empty( $urls ) ) {
+            return self::fail( '', 'The catalog holds no image URL for this tire.' );
+        }
+
+        $available = count( $urls );
+        $urls      = array_slice( $urls, 0, self::MAX_SOURCES );
+        $refused   = array();
+
+        foreach ( $urls as $url ) {
+            $filename = self::import_from_url( $url, $brand, $model );
+
+            if ( '' !== $filename ) {
+                return $filename;
+            }
+
+            $refused[] = self::get_last_error();
+        }
+
+        // The last attempt's reason is already recorded; say how many were
+        // tried so a single retailer's refusal doesn't read as "no image".
+        if ( count( $urls ) > 1 ) {
+            return self::fail( end( $urls ), sprintf(
+                '%d of %d catalog images were tried and none could be downloaded. The last said: %s',
+                count( $urls ),
+                $available,
+                (string) end( $refused )
+            ) );
+        }
+
+        return '';
     }
 
     /**
@@ -241,10 +316,17 @@ class RTG_Tire_Images {
 
         $type = self::content_type( $response );
         if ( ! isset( self::CONTENT_TYPES[ $type ] ) ) {
+            // Which of the two this is matters, and the page itself says so:
+            // a bot wall is titled like one, a soft 404 like a missing page.
+            // Naming the URL and that title is the difference between another
+            // round of questions and an answer.
+            $title = self::page_title( wp_remote_retrieve_body( $response ) );
+
             return self::fail( $url, sprintf(
-                'The server sent "%s", not an image type%s. The URL in the feed points at a page rather than a file: %s',
+                'The server sent "%s", not an image type%s%s. It was asked for: %s',
                 '' !== $type ? $type : 'no content type',
                 $tried_referer ? ', with and without a browser referer' : '',
+                '' !== $title ? sprintf( ', and the page it sent back is titled "%s"', $title ) : '',
                 $url
             ) );
         }
@@ -298,17 +380,24 @@ class RTG_Tire_Images {
      * @return array|WP_Error The response, as wp_safe_remote_get returns it.
      */
     private static function request( $url, $referer ) {
-        $args = array(
-            'timeout'             => 15,
-            'limit_response_size' => self::MAX_BYTES,
-            'user-agent'          => self::USER_AGENT,
+        // A browser asking for an image says so, and says what it can read.
+        // WordPress sends neither header, which is one of the tells a CDN's
+        // bot filter uses before it answers a picture request with a page.
+        $headers = array(
+            'Accept'          => 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+            'Accept-Language' => 'en-US,en;q=0.9',
         );
 
         if ( '' !== $referer ) {
-            $args['headers'] = array( 'Referer' => $referer );
+            $headers['Referer'] = $referer;
         }
 
-        return wp_safe_remote_get( $url, $args );
+        return wp_safe_remote_get( $url, array(
+            'timeout'             => 15,
+            'limit_response_size' => self::MAX_BYTES,
+            'user-agent'          => self::USER_AGENT,
+            'headers'             => $headers,
+        ) );
     }
 
     /**
@@ -333,6 +422,30 @@ class RTG_Tire_Images {
         }
 
         return 200 === $code && ! isset( self::CONTENT_TYPES[ self::content_type( $response ) ] );
+    }
+
+    /**
+     * The <title> of an HTML page, for saying what came back instead of a file.
+     *
+     * A CDN's bot wall and a soft 404 both answer 200 with HTML and are told
+     * apart by almost nothing else — "Pardon Our Interruption" against "Page
+     * Not Found". Trimmed hard: this goes in a notice, not a log.
+     *
+     * @param string $body Response body.
+     * @return string Title text, or '' when there isn't one.
+     */
+    private static function page_title( $body ) {
+        if ( ! preg_match( '#<title[^>]*>(.*?)</title>#is', (string) $body, $match ) ) {
+            return '';
+        }
+
+        $title = trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( html_entity_decode(
+            $match[1],
+            ENT_QUOTES | ENT_HTML5,
+            'UTF-8'
+        ) ) ) );
+
+        return mb_substr( $title, 0, 80 );
     }
 
     /**
