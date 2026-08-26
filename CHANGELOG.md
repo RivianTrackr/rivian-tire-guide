@@ -4,6 +4,19 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.80.2] - 2026-08-26
+
+### Fixed
+- **The empty brands actually go now.** 1.80.1 marked them `hidden`, which browsers honour unevenly inside a native select popup — Safari renders such options regardless — so on macOS the "(0)" rows were still on screen. They are removed from the list instead, which is the one thing every browser agrees on, and put back in alphabetical order the moment they have tires again.
+
+### Added
+- **The guide's first DOM-level test** (`tests/test-dropdown-options.mjs`, wired into `npm test`). Both bugs here were invisible to reading, so the option-list logic is now driven directly against a mini-DOM: empties leave, the selected option survives at zero, restored options land in order rather than at the bottom, size keeps its zeroes, and an option a cached page left `hidden` is un-hidden on the way back in.
+- The reconciliation moved into `applyOptionCounts( select, counts, hideEmpty )` — a select and a Map rather than a read of the page — which is what makes it drivable at all.
+
+### Notes
+- Detaching an option has one hazard the test now pins down: setting `select.value` to something that isn't in the DOM silently clears the select instead. Anything restoring a filter from outside the UI — the back button, a URL, a shortcode — reattaches the full list first, and the next render sets aside whatever is still empty.
+- Size still keeps its zeroes, unchanged from 1.80.1.
+
 ## [1.80.1] - 2026-08-26
 
 ### Changed
