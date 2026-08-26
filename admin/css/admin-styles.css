@@ -196,6 +196,7 @@
 .rtg-wrap input[type="url"],
 .rtg-wrap input[type="search"],
 .rtg-wrap input[type="email"],
+.rtg-wrap textarea,
 .rtg-wrap select {
     padding: 10px 12px;
     font-size: 15px;
@@ -215,6 +216,7 @@
 .rtg-wrap input[type="url"]:focus,
 .rtg-wrap input[type="search"]:focus,
 .rtg-wrap input[type="email"]:focus,
+.rtg-wrap textarea:focus,
 .rtg-wrap select:focus,
 .rtg-input:focus,
 .rtg-select:focus {
