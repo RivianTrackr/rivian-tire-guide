@@ -4,6 +4,23 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.79.0] - 2026-08-26
+
+### Fixed
+- **Tires already in the guide stopped arriving as new options.** Two of them were sitting in the review queue with an Add to Guide button beside tires the guide has carried for months. The matcher only ever recognized a listing spelled exactly the way the guide spells it, and retailers don't: Goodyear's "Wrangler All-Terrain Adventure with Kevlar" is listed as "Wrangler All-Terrain Adventure", Pirelli's "Scorpion Zero All Season" as "Scorpion Zero". A key built from the shorter name misses the tire that already carries it, and the queue then offers a tire you stock as something to review — which is the queue lying about the one job it has.
+- **A name-drift pass now runs when the exact keys miss.** Same brand, same fitment, and a model name that is the other one with words added or dropped — the containment rule the coverage screen already uses to report a tire as "listed under another name". Both screens now hold one opinion about what counts as the same tire instead of two.
+- **The queue reconciles with the guide when you open it.** Re-keying only ran inside the nightly sweep, so a tire added or renamed by hand didn't reach the queue until the next run — the admin's own edit sat unnoticed for a day. Opening Tire Discovery re-points every stored match at the guide as it stands, so what the page shows is the guide as it is, not as the last sweep left it.
+
+### Added
+- **A near-name hint on rows still called new.** When a listing's brand and fitment sit on a guide tire whose name resembles it but not closely enough to match — "Wrangler All Terrain Adventure Kevlar" against "…All-Terrain Adventure with Kevlar" — the row says so and links to that tire, so the fix is one alias rather than a second entry nobody notices for months.
+- **The hand-add duplicate guard reads the same drift.** Typing a tire in under a retailer's shorter name now collides with the guide entry carrying the manufacturer's full one, with the same "Add anyway" override for a deliberate second entry.
+- **Retailer coverage counts a drifted name too.** A retailer carrying the tire under the shorter name now counts as carrying it, so coverage says so and the tire's price has somewhere to come from.
+
+### Notes
+- Two claimants mean no match. A listing called "Scorpion" sits inside both "Scorpion Zero" and "Scorpion Verde", and picking either would file it under a tire it may not be — so ambiguity resolves to "new", which costs one dismissal. A false "new" is visible and cheap; a false "already have it" hides a genuine find.
+- A match made on the name rather than the guide's own spelling says so on the row and keeps its Add to Guide button, so a reading of two names as one tire stays overrulable rather than final.
+- Suite up by 11 tests covering the drift pass, its guards, the ambiguity rule, reconciliation, and that a person's dismissal still outranks whatever a re-key concludes.
+
 ## [1.78.3] - 2026-08-26
 
 ### Added

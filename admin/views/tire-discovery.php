@@ -82,11 +82,26 @@ $min_load_index = isset( $settings['catalog_min_load_index'] )
     ? intval( $settings['catalog_min_load_index'] )
     : RTG_Tire_Qualifier::DEFAULT_MIN_LOAD_INDEX;
 
+// The queue answers to the guide as it is now, not as the last nightly sweep
+// left it — a tire added or renamed since then must not still be offered here
+// as something new.
+RTG_Candidates::reconcile_with_guide();
+
 // Retailer coverage: which guide tires a retailer actually carries. Tires with
 // no match are expected while affiliate links are still being filled in, so
 // they are listed plainly rather than treated as a fault.
 $retailer_coverage = RTG_Candidates::get_retailer_coverage();
 $guide_tires       = RTG_Database::get_all_tires();
+
+// Guide tires bucketed by brand and fitment. The matcher uses it to recognize
+// a tire the retailer spells differently; the queue uses it below to say when
+// a row it is still calling new looks like a tire already stocked.
+$guide_variants = RTG_Catalog_Sync::build_variant_index( $guide_tires );
+
+// The exact keys, kept beside it so a row can say which of the two matched it.
+// A name-drift match is a judgement about two spellings and has to be visibly
+// one, with the way to overrule it left open.
+$guide_key_index = RTG_Catalog_Sync::build_guide_index();
 
 $covered_tires   = array();
 $uncovered_tires = array();
@@ -676,6 +691,17 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                             ),
                             admin_url( 'admin.php' )
                         );
+
+                        // Matched on the key the guide spells the tire with, or
+                        // on a reading of two names as one tire? The second is
+                        // a judgement, so it says so and stays overrulable.
+                        $candidate_key = RTG_Catalog_Sync::match_key(
+                            $candidate['brand'],
+                            $candidate['model'],
+                            $candidate['size']
+                        );
+                        $matched_by_name = ! empty( $candidate['matched_tire_id'] )
+                            && ( '' === $candidate_key || ! isset( $guide_key_index[ $candidate_key ] ) );
                     ?>
                         <tr data-candidate-id="<?php echo esc_attr( $candidate['id'] ); ?>">
                             <td>
@@ -695,6 +721,35 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 <?php endif; ?>
                                 <?php if ( ! empty( $candidate['matched_tire_id'] ) ) : ?>
                                     <br><span class="rtg-badge rtg-badge-muted">in guide as <?php echo esc_html( $candidate['matched_tire_id'] ); ?></span>
+                                    <?php if ( $matched_by_name ) : ?>
+                                        <br><span style="font-size:11px;color:var(--rtg-text-muted);">
+                                            Matched on the name, not the guide's own spelling &mdash; add it anyway if it's a different tire.
+                                        </span>
+                                    <?php endif; ?>
+                                <?php else :
+                                    // Same brand, same fitment, a name that shares
+                                    // something with a tire already in the guide.
+                                    // Not close enough for the matcher to call it
+                                    // the same tire, close enough that a human
+                                    // should look before adding a second entry.
+                                    $near_tire = RTG_Catalog_Sync::nearest_guide_variant(
+                                        $candidate['brand'],
+                                        $candidate['model'],
+                                        $candidate['size'],
+                                        $guide_variants
+                                    );
+                                    if ( $near_tire ) :
+                                        $near_url = add_query_arg(
+                                            array( 'page' => 'rtg-tire-edit', 'id' => intval( $near_tire['id'] ) ),
+                                            admin_url( 'admin.php' )
+                                        );
+                                        ?>
+                                        <br><span style="font-size:11px;color:var(--rtg-text-muted);">
+                                            Guide already has
+                                            <a href="<?php echo esc_url( $near_url ); ?>"><?php echo esc_html( $near_tire['model'] ); ?></a>
+                                            in this size &mdash; same tire? Add this listing's name as a model alias.
+                                        </span>
+                                    <?php endif; ?>
                                 <?php endif; ?>
 
                                 <?php
@@ -749,7 +804,8 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                     <a href="<?php echo esc_url( $candidate['link'] ); ?>" target="_blank" rel="noopener noreferrer nofollow" class="rtg-btn rtg-btn-secondary" style="text-decoration:none;">Listing</a>
                                 <?php endif; ?>
 
-                                <?php if ( RTG_Candidates::STATUS_IMPORTED !== $status_filter && RTG_Candidates::STATUS_EXISTING !== $status_filter ) : ?>
+                                <?php if ( RTG_Candidates::STATUS_IMPORTED !== $status_filter
+                                    && ( RTG_Candidates::STATUS_EXISTING !== $status_filter || $matched_by_name ) ) : ?>
                                     <a href="<?php echo esc_url( $add_url ); ?>" class="rtg-btn rtg-btn-primary" style="text-decoration:none;">Add to Guide</a>
                                 <?php endif; ?>
 
