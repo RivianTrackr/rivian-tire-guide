@@ -187,9 +187,8 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
     </div>
 
     <p style="margin:0 0 20px;color:var(--rtg-text-muted);max-width:820px;">
-        Watches affiliate catalogs for tires in Rivian fitments that aren't in the guide yet, so new
-        arrivals surface on their own instead of waiting on a manual search. Every product seen is
-        remembered — dismiss one and it won't come back.
+        Watches affiliate catalogs for Rivian-fitment tires that aren't in the guide yet.
+        Dismissed products stay dismissed.
     </p>
 
     <!-- Counts -->
@@ -273,15 +272,9 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                             Fitment coverage &mdash; how much of each size's match set has been read
                         </summary>
                         <p class="description" style="max-width:860px;margin:8px 0;">
-                            This is the number that decides whether "no retailer is carrying it" can be believed. A
-                            fitment read completely means the guide's tires in that size either arrived or genuinely
-                            are not in the feed. A fitment read partially means neither conclusion is available yet.
-                            Each run resumes where the last stopped.
-                            <br><br>
-                            <strong>Read the Distinct column first.</strong> Records read counts what came back;
-                            distinct counts what was new. If distinct is far lower, the pages overlapped &mdash; the
-                            sweep re-read the same products rather than going deeper &mdash; and "complete" describes
-                            a re-read, not coverage. Nothing else on this page can be trusted while that is true.
+                            <strong>Complete</strong> means an absence from that fitment is real, not a sweep gap.
+                            If <strong>Distinct</strong> falls far below Read (shown in red), the pages overlapped
+                            and &ldquo;complete&rdquo; means re-read &mdash; distrust it.
                         </p>
                         <table class="rtg-table" style="margin-top:8px;">
                             <thead><tr><th>Size</th><th>Read</th><th>Distinct</th><th>Matches</th><th>Coverage</th></tr></thead>
@@ -332,15 +325,12 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
 
                 <?php if ( ! empty( $stats['elapsed'] ) ) : ?>
                     <p class="description" style="margin:12px 0 0;">
-                        The whole run took
-                        <?php echo esc_html( number_format( (float) $stats['elapsed'], 1 ) ); ?>s
-                        of its <?php echo esc_html( intval( $stats['run_budget'] ?? $catalog_run_budget ) ); ?>s budget.
-                        <?php if ( ! empty( $stats['budget_capped'] ) ) : ?>
-                            The budget was capped because this run was started from the browser,
-                            which has to answer before the proxy in front of the site stops waiting
-                            &mdash; the nightly run uses the full
-                            <?php echo esc_html( intval( $catalog_run_budget ) ); ?>s.
-                        <?php endif; ?>
+                        Run: <?php echo esc_html( number_format( (float) $stats['elapsed'], 1 ) ); ?>s
+                        of <?php echo esc_html( intval( $stats['run_budget'] ?? $catalog_run_budget ) ); ?>s<?php
+                        if ( ! empty( $stats['budget_capped'] ) ) {
+                            printf( ' (browser cap &mdash; the nightly run gets %ds)', intval( $catalog_run_budget ) );
+                        }
+                        ?>.
                     </p>
                 <?php endif; ?>
 
@@ -349,11 +339,9 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                 ?>
                 <?php if ( $pruned_total > 0 ) : ?>
                     <p class="description" style="margin:10px 0 0;">
-                        Housekeeping: <?php echo esc_html( number_format( $pruned_total ) ); ?> near miss(es)
-                        deleted &mdash; <?php echo esc_html( number_format( intval( $stats['pruned']['off_fitment'] ?? 0 ) ) ); ?>
-                        in fitments the guide doesn't stock,
-                        <?php echo esc_html( number_format( intval( $stats['pruned']['stale'] ?? 0 ) ) ); ?>
-                        unseen for 60+ days. A pruned product that reappears is simply re-filed by the next sweep.
+                        Pruned <?php echo esc_html( number_format( $pruned_total ) ); ?> near misses
+                        (<?php echo esc_html( number_format( intval( $stats['pruned']['off_fitment'] ?? 0 ) ) ); ?> off-fitment,
+                        <?php echo esc_html( number_format( intval( $stats['pruned']['stale'] ?? 0 ) ) ); ?> unseen 60+ days).
                     </p>
                 <?php endif; ?>
 
@@ -466,10 +454,9 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
             <span>
                 <strong><?php echo esc_html( number_format( $uncovered_brand_total ) ); ?></strong> of the
                 <?php echo esc_html( number_format( $counts[ RTG_Candidates::STATUS_NEW ] ) ); ?> tire(s)
-                awaiting review are from brands outside your curated list. Setting the
-                <strong>brand policy</strong> below to <em>reject</em> files those as near misses automatically
-                on the next run — the brand filter above shows who they are, and the bulk button clears any
-                brand in one click either way.
+                awaiting review are from brands outside your curated list &mdash; set the
+                <strong>brand policy</strong> to <em>reject</em> to file them automatically, or clear a brand
+                with the filter and bulk button.
             </span>
         </div>
     <?php endif; ?>
@@ -507,13 +494,10 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                         <?php echo count( $uncovered_tires ); ?> tire(s) no retailer is carrying
                     </summary>
                     <p class="description" style="max-width:820px;margin:8px 0;">
-                        Nothing in the queue keys to these tires, so their prices can't refresh on their own.
-                        Only <strong>likely listed under another name</strong> is worth acting on — there a
-                        listing's name really does resemble the guide's, and aligning the two matches the tire
-                        on the next run. Every other row means the sweep has not seen the tire: the listings
-                        shown beneath each one are what <em>did</em> arrive in that brand and fitment, offered
-                        as evidence of how thin the coverage is rather than as the same tire under a
-                        different name.
+                        These have no catalog match, so their prices don't refresh on their own. Only
+                        <strong>likely listed under another name</strong> is actionable (adopt the alias and
+                        the next run matches it); other rows just show what <em>did</em> arrive in that brand
+                        and fitment.
                     </p>
 
                     <?php if ( ! empty( $coverage_summary ) ) : ?>

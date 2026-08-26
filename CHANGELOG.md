@@ -4,6 +4,12 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.78.2] - 2026-08-26
+
+### Changed
+- **The recurring status text now states facts instead of teaching lessons.** The status areas had been written like documentation — every run re-explaining why each number is true, forever. The explanations earned their place the first time each situation appeared; after that they were ink. Tightened across Tire Discovery and Affiliate Links: the run line ("Run: 65.0s of 75s (browser cap — the nightly run gets 120s)"), the housekeeping line ("Pruned 15,421 near misses (15,421 off-fitment, 0 unseen 60+ days)"), the fitment-coverage preamble (down to the two rules that matter: complete means an absence is real; a red Distinct means "complete" means re-read), the uncovered-tires explainer, the delisted notice, the brand-policy hint, the Link Sync card (counts up front, rules pointed at rather than restated), and the page intro.
+- Where the long form stays, deliberately: **settings help** (read rarely, on purpose) and **error messages** (when something is wrong, the why is the point). No behavior changed — copy only; suite unchanged at 219 tests, 560 assertions, green.
+
 ## [1.78.1] - 2026-08-25
 
 ### Fixed
