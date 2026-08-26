@@ -381,12 +381,17 @@ class Test_RTG_Tire_Images extends WP_UnitTestCase {
         $this->assertStringNotContainsString( 'points at a page', $error );
     }
 
-    /** A browser asks for an image and says what it can read. */
-    public function test_the_request_asks_for_an_image() {
+    /**
+     * The first ask is shaped like typing the URL into the address bar —
+     * the one request we know a retailer that refuses us will answer.
+     */
+    public function test_the_first_request_is_shaped_like_a_navigation() {
         $captured = array();
+        $version  = '';
 
-        add_filter( 'pre_http_request', function ( $preempt, $args ) use ( &$captured ) {
+        add_filter( 'pre_http_request', function ( $preempt, $args ) use ( &$captured, &$version ) {
             $captured = array_change_key_case( (array) ( $args['headers'] ?? array() ) );
+            $version  = (string) ( $args['httpversion'] ?? '' );
 
             return array(
                 'headers'  => array( 'content-type' => 'image/gif' ),
@@ -397,8 +402,50 @@ class Test_RTG_Tire_Images extends WP_UnitTestCase {
 
         RTG_Tire_Images::import_from_url( 'https://img.example/oc.gif', 'Toyo', 'Open Country' );
 
-        $this->assertStringContainsString( 'image/webp', $captured['accept'] ?? '' );
+        $this->assertStringContainsString( 'text/html', $captured['accept'] ?? '' );
+        $this->assertSame( 'navigate', $captured['sec-fetch-mode'] ?? '' );
+        $this->assertSame( 'none', $captured['sec-fetch-site'] ?? '' );
+        $this->assertArrayNotHasKey( 'referer', $captured );
         $this->assertNotEmpty( $captured['accept-language'] ?? '' );
+
+        // WordPress asks in HTTP/1.0 unless told otherwise, and no browser has
+        // spoken 1.0 in decades.
+        $this->assertSame( '1.1', $version );
+    }
+
+    /**
+     * The retry is shaped like a page on the retailer's own site loading its
+     * picture, which is what hotlink protection is looking for.
+     */
+    public function test_the_retry_is_shaped_like_an_image_on_their_page() {
+        $captured = array();
+
+        add_filter( 'pre_http_request', function ( $preempt, $args ) use ( &$captured ) {
+            $headers = array_change_key_case( (array) ( $args['headers'] ?? array() ) );
+
+            if ( isset( $headers['referer'] ) ) {
+                $captured = $headers;
+
+                return array(
+                    'headers'  => array( 'content-type' => 'image/gif' ),
+                    'body'     => self::GIF,
+                    'response' => array( 'code' => 200, 'message' => '' ),
+                );
+            }
+
+            return array(
+                'headers'  => array( 'content-type' => 'text/html' ),
+                'body'     => '<html><title>Tire Rack</title></html>',
+                'response' => array( 'code' => 200, 'message' => '' ),
+            );
+        }, 10, 2 );
+
+        $this->assertSame( 'toyo-open-country.gif', RTG_Tire_Images::import_from_url(
+            'https://www.tirerack.com/images/oc.gif', 'Toyo', 'Open Country' ) );
+
+        $this->assertStringContainsString( 'image/webp', $captured['accept'] ?? '' );
+        $this->assertSame( 'https://www.tirerack.com', $captured['referer'] ?? '' );
+        $this->assertSame( 'image', $captured['sec-fetch-dest'] ?? '' );
     }
 
     /**

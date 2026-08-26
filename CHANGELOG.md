@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.83.1] - 2026-08-26
+
+### Fixed
+- **Image requests are made in HTTP/1.1.** WordPress asks in HTTP/1.0 unless told otherwise, and no browser has spoken 1.0 in decades — to anything watching for automated traffic that is a louder signal than any header could undo. It was the one clear anomaly left in a request that already carried a browser's user agent, referer and Accept.
+- **The first attempt is shaped like typing the URL into the address bar.** The retailer refusing us serves that same image to a browser navigating straight to it, so the first ask now matches what demonstrably works: a document `Accept`, `Sec-Fetch-Mode: navigate`, `Sec-Fetch-Site: none`, no referer. The retry keeps the hotlink shape — image `Accept`, referer, `Sec-Fetch-Dest: image` — which is what a CDN checking for hotlinking looks for. Two attempts, each mimicking a request that gets served for a different reason.
+
+### Notes
+- Client-hint headers (`sec-ch-ua` and friends) travel with both, consistent with the user agent already claimed rather than a mixture.
+- **This may not be enough, and the reason is worth stating.** A filter keyed on the TLS or HTTP/2 fingerprint of the client rather than on anything in the request cannot be satisfied from PHP, whatever the headers say. Where that is what's happening the honest answer is a file placed in the images folder by hand — an existing file always wins over a download, so "Fetch from catalog" then picks it up without touching the network — and meanwhile the retailer's own URL keeps working for visitors, since browsers are exactly who it serves.
+
 ## [1.83.0] - 2026-08-26
 
 ### Added
