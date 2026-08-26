@@ -192,19 +192,39 @@ class RTG_Tire_Images {
         }
 
         $url = trim( (string) $url );
+
+        // A feed's image field sometimes carries the network's tracked link
+        // rather than the file. Following one lands on a redirect page — HTML,
+        // not an image, which is exactly what a "text/html" refusal looks like
+        // — and registers an affiliate click nobody made. The plain
+        // destination is the thing to fetch, and unwrapping a URL that isn't
+        // wrapped returns it untouched.
+        $url = RTG_Price_Sync::destination_url( $url );
+
         if ( ! preg_match( '#^https?://#i', $url ) ) {
             return self::fail( $url, 'The catalog image URL is not an http(s) URL.' );
         }
 
-        // safe_remote_get refuses redirects into private address space — the
-        // URL came from an affiliate feed, not from anyone this site trusts.
-        // The user agent is a browser's: image CDNs routinely 403 the default
-        // "WordPress/x.y" agent as bot traffic.
-        $response = wp_safe_remote_get( $url, array(
-            'timeout'             => 15,
-            'limit_response_size' => self::MAX_BYTES,
-            'user-agent'          => self::USER_AGENT,
-        ) );
+        $response      = self::request( $url, '' );
+        $tried_referer = false;
+
+        // Hotlink protection is the other way an image URL returns a page:
+        // the CDN sees no referer, decides this is a bot, and answers 403 or
+        // 200 with an "access denied" page. A browser arriving from the
+        // retailer's own site is what it expects to see, so ask again as one
+        // before giving up.
+        if ( self::looks_refused( $response ) ) {
+            $origin = self::origin_of( $url );
+
+            if ( '' !== $origin ) {
+                $retry         = self::request( $url, $origin );
+                $tried_referer = true;
+
+                if ( ! is_wp_error( $retry ) ) {
+                    $response = $retry;
+                }
+            }
+        }
 
         if ( is_wp_error( $response ) ) {
             return self::fail( $url, sprintf( 'The request failed: %s', $response->get_error_message() ) );
@@ -212,12 +232,21 @@ class RTG_Tire_Images {
 
         $code = (int) wp_remote_retrieve_response_code( $response );
         if ( 200 !== $code ) {
-            return self::fail( $url, sprintf( 'The image server answered HTTP %d.', $code ) );
+            return self::fail( $url, sprintf(
+                'The image server answered HTTP %d%s.',
+                $code,
+                $tried_referer ? ', with and without a browser referer' : ''
+            ) );
         }
 
-        $type = strtolower( trim( strtok( (string) wp_remote_retrieve_header( $response, 'content-type' ), ';' ) ) );
+        $type = self::content_type( $response );
         if ( ! isset( self::CONTENT_TYPES[ $type ] ) ) {
-            return self::fail( $url, sprintf( 'The server sent "%s", not an image type.', '' !== $type ? $type : 'no content type' ) );
+            return self::fail( $url, sprintf(
+                'The server sent "%s", not an image type%s. The URL in the feed points at a page rather than a file: %s',
+                '' !== $type ? $type : 'no content type',
+                $tried_referer ? ', with and without a browser referer' : '',
+                $url
+            ) );
         }
 
         // A body that reaches the cap exactly was almost certainly cut off
@@ -254,6 +283,83 @@ class RTG_Tire_Images {
         }
 
         return self::succeed( $url, $filename );
+    }
+
+    /**
+     * One fetch of a remote image.
+     *
+     * safe_remote_get refuses redirects into private address space — the URL
+     * came from an affiliate feed, not from anyone this site trusts. The user
+     * agent is a browser's: image CDNs routinely refuse the default
+     * "WordPress/x.y" agent as bot traffic.
+     *
+     * @param string $url     Image URL.
+     * @param string $referer Referer to send, or '' to send none.
+     * @return array|WP_Error The response, as wp_safe_remote_get returns it.
+     */
+    private static function request( $url, $referer ) {
+        $args = array(
+            'timeout'             => 15,
+            'limit_response_size' => self::MAX_BYTES,
+            'user-agent'          => self::USER_AGENT,
+        );
+
+        if ( '' !== $referer ) {
+            $args['headers'] = array( 'Referer' => $referer );
+        }
+
+        return wp_safe_remote_get( $url, $args );
+    }
+
+    /**
+     * Whether a response looks like a refusal a referer might get past.
+     *
+     * A 403, or a 200 carrying something that isn't an image — the two shapes
+     * hotlink protection takes. A transport error or a 404 is not one of them:
+     * asking again more politely won't change either.
+     *
+     * @param array|WP_Error $response Response to judge.
+     * @return bool
+     */
+    private static function looks_refused( $response ) {
+        if ( is_wp_error( $response ) ) {
+            return false;
+        }
+
+        $code = (int) wp_remote_retrieve_response_code( $response );
+
+        if ( 403 === $code ) {
+            return true;
+        }
+
+        return 200 === $code && ! isset( self::CONTENT_TYPES[ self::content_type( $response ) ] );
+    }
+
+    /**
+     * @param array $response Response to read.
+     * @return string Lowercased content type, without any charset.
+     */
+    private static function content_type( $response ) {
+        return strtolower( trim( strtok(
+            (string) wp_remote_retrieve_header( $response, 'content-type' ),
+            ';'
+        ) ) );
+    }
+
+    /**
+     * The scheme and host a URL sits on, for use as its own referer.
+     *
+     * @param string $url Absolute URL.
+     * @return string e.g. "https://www.tirerack.com", or '' if unreadable.
+     */
+    private static function origin_of( $url ) {
+        $parts = wp_parse_url( $url );
+
+        if ( empty( $parts['scheme'] ) || empty( $parts['host'] ) ) {
+            return '';
+        }
+
+        return $parts['scheme'] . '://' . $parts['host'];
     }
 
     /**
