@@ -99,6 +99,46 @@ class Test_RTG_Tire_Images extends WP_UnitTestCase {
         $this->assertSame( '', RTG_Tire_Images::import_from_url( '', 'Nitto', 'Ridge Grappler' ) );
     }
 
+    /**
+     * A body that reaches the size cap exactly was almost certainly cut off
+     * mid-file by limit_response_size. Saving it would store a broken image
+     * that looks fine in a directory listing — refuse it instead.
+     */
+    public function test_a_body_that_hits_the_cap_is_treated_as_truncated() {
+        $this->remote_responds( str_repeat( 'x', RTG_Tire_Images::MAX_BYTES ), 'image/jpeg' );
+
+        $this->assertSame( '', RTG_Tire_Images::import_from_url( 'https://img.example/big.jpg', 'Nitto', 'Ridge Grappler' ) );
+        $this->assertStringContainsString( 'cap', RTG_Tire_Images::get_last_error() );
+    }
+
+    /**
+     * The caller falls back silently, so the reason IS the product: every
+     * refusal must name its failing step, and the last attempt must be
+     * readable later for the admin notice.
+     */
+    public function test_every_refusal_names_its_reason() {
+        $this->remote_responds( self::GIF, 'image/gif', 404 );
+        RTG_Tire_Images::import_from_url( 'https://img.example/x.gif', 'Nitto', 'Ridge Grappler' );
+        $this->assertStringContainsString( 'HTTP 404', RTG_Tire_Images::get_last_error() );
+
+        $last = RTG_Tire_Images::get_last();
+        $this->assertSame( 'https://img.example/x.gif', $last['url'] );
+        $this->assertStringContainsString( 'HTTP 404', $last['error'] );
+
+        // And success clears it.
+        remove_all_filters( 'pre_http_request' );
+        add_filter( 'pre_http_request', function () {
+            return array(
+                'headers'  => array( 'content-type' => 'image/gif' ),
+                'body'     => self::GIF,
+                'response' => array( 'code' => 200, 'message' => '' ),
+            );
+        } );
+        RTG_Tire_Images::import_from_url( 'https://img.example/x.gif', 'Nitto', 'Ridge Grappler' );
+        $this->assertSame( '', RTG_Tire_Images::get_last_error() );
+        $this->assertSame( 'nitto-ridge-grappler.gif', RTG_Tire_Images::get_last()['filename'] );
+    }
+
     // --- The write ---
 
     public function test_a_product_image_is_downloaded_and_named_by_convention() {

@@ -152,15 +152,12 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
             </div>
             <div class="rtg-card-body">
                 <p class="description" style="max-width:860px;margin:0 0 12px;">
-                    Runs with the daily sweep: tires with no purchase link get the cheapest fresh tracked
-                    listing, plain retailer links are upgraded to tracked links for the same retailer, and
-                    a link whose retailer delisted the tire is moved to a retailer that still lists it.
-                    Links that are already affiliate are otherwise never touched. Last run
-                    <strong><?php echo esc_html( $link_sync_results['time'] ?? '' ); ?></strong> &mdash;
+                    Last run <strong><?php echo esc_html( $link_sync_results['time'] ?? '' ); ?></strong> &mdash;
                     <strong style="color:var(--rtg-success);"><?php echo intval( $link_sync_results['set'] ?? 0 ); ?></strong> set,
                     <strong style="color:var(--rtg-success);"><?php echo intval( $link_sync_results['upgraded'] ?? 0 ); ?></strong> upgraded,
                     <strong style="color:var(--rtg-success);"><?php echo intval( $link_sync_results['replaced'] ?? 0 ); ?></strong> moved off delisted retailers,
-                    <?php echo intval( $link_sync_results['skipped'] ?? 0 ); ?> left alone with a reason.
+                    <?php echo intval( $link_sync_results['skipped'] ?? 0 ); ?> skipped with a reason.
+                    Rules live on the <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-discovery' ) ); ?>">Tire Discovery</a> settings.
                 </p>
 
                 <?php
@@ -198,10 +195,8 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
         <div class="rtg-notice rtg-notice-warning" style="margin-top:16px;">
             <span>
                 <strong><?php echo esc_html( $presence_counts[ RTG_Catalog_Presence::STATUS_DELISTED ] ); ?>
-                tire(s) were dropped from the affiliate catalog.</strong>
-                Their links may still resolve, so a link check passes them &mdash; but the retailer has stopped
-                listing the product, so they no longer earn a commission or refresh their price. Filter by
-                <strong>Delisted</strong> to see them.
+                tire(s) were dropped from the affiliate catalog</strong> &mdash; their links still resolve
+                but no longer earn or price. Filter by <strong>Delisted</strong> to see them.
             </span>
         </div>
     <?php endif; ?>

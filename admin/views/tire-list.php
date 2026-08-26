@@ -18,6 +18,20 @@ $notices = array(
     'error'        => array( 'error', 'An error occurred.' ),
 );
 
+// The tire saved, but its product image could not be downloaded — it is
+// hotlinking the retailer's copy. Name the failing step, since the fix
+// (permissions, size, a blocking CDN) depends entirely on which it was.
+if ( 'added' === $message && ! empty( $_GET['image_fallback'] ) ) {
+    $image_last   = RTG_Tire_Images::get_last();
+    $image_reason = $image_last && ! empty( $image_last['error'] ) ? $image_last['error'] : 'No reason was recorded.';
+
+    $notices['added'] = array(
+        'error',
+        'Tire added, but its image could not be downloaded into the images folder — it is using the retailer\'s image URL instead. Reason: '
+        . $image_reason . ' Fix the cause and re-save with the image field cleared, or upload a file yourself.',
+    );
+}
+
 // Search and filters.
 $search = isset( $_GET['s'] ) ? sanitize_text_field( $_GET['s'] ) : '';
 $orderby = isset( $_GET['orderby'] ) ? sanitize_text_field( $_GET['orderby'] ) : 'id';

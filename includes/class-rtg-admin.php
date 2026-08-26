@@ -754,11 +754,13 @@ class RTG_Admin {
         // download fails, the remote URL is kept instead — an image that may
         // someday break beats no image, and the edit screen shows which it is.
         $from_candidate = intval( $post['from_candidate'] ?? 0 );
+        $image_fallback = false;
         if ( 0 === $editing_id && $from_candidate > 0 && '' === trim( (string) ( $post['image'] ?? '' ) ) ) {
             $candidate = RTG_Candidates::get( $from_candidate );
             if ( $candidate && '' !== trim( (string) $candidate['image'] ) ) {
-                $filename      = RTG_Tire_Images::import_from_url( $candidate['image'], $data['brand'], $data['model'] );
-                $data['image'] = '' !== $filename
+                $filename       = RTG_Tire_Images::import_from_url( $candidate['image'], $data['brand'], $data['model'] );
+                $image_fallback = '' === $filename;
+                $data['image']  = ! $image_fallback
                     ? $this->build_image_url( $filename )
                     : esc_url_raw( $candidate['image'] );
             }
@@ -832,7 +834,7 @@ class RTG_Admin {
                 RTG_Candidates::set_status( $from_candidate, RTG_Candidates::STATUS_IMPORTED );
             }
 
-            wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=added' ) );
+            wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=added' . ( $image_fallback ? '&image_fallback=1' : '' ) ) );
         }
         exit;
     }
