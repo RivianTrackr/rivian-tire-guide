@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.84.1] - 2026-08-29
+
+### Fixed
+- **The "same tire?" hint stopped proposing to merge two different tires.** "Goodyear Wrangler AT/S" was offered as an alias for "Wrangler TrailRunner AT" — they share a family and a type word and nothing else, which scored 0.533 against a floor of 0.5. A hint that is wrong is worse than no hint here, because acting on it files two tires as one. The floor is 0.65 now, named and set from the scores actually observed: 0.533 for that pair, 0.640 for "All Terrain T/A KO2" against "KO3" — both different tires — and 0.667 for "…Adventure with Kevlar" against "…Adventure Kevlar", which is one tire spelled two ways and the case the hint exists for.
+- **The hint only appears on a row still awaiting review.** It was rendering on rows already added to the guide, where "same tire? add an alias" is advice about a decision that was taken — the row in question was in the Added tab, with no action left on it but the listing link.
+
+### Notes
+- Nothing about matching changed. This governs only what the queue suggests; the threshold that actually files a listing under a guide tire is untouched.
+- 2 tests, one for each rejected pair, alongside the existing one proving a real spelling difference is still offered.
+
 ## [1.84.0] - 2026-08-29
 
 ### Added

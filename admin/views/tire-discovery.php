@@ -726,12 +726,17 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                             Matched on the name, not the guide's own spelling &mdash; add it anyway if it's a different tire.
                                         </span>
                                     <?php endif; ?>
-                                <?php else :
+                                <?php elseif ( RTG_Candidates::STATUS_NEW === $candidate['status'] ) :
                                     // Same brand, same fitment, a name that shares
                                     // something with a tire already in the guide.
                                     // Not close enough for the matcher to call it
                                     // the same tire, close enough that a human
                                     // should look before adding a second entry.
+                                    //
+                                    // Only on a row still being offered as new: on
+                                    // one already added, or dismissed, "same tire?
+                                    // add an alias" is advice about a decision that
+                                    // has been taken.
                                     $near_tire = RTG_Catalog_Sync::nearest_guide_variant(
                                         $candidate['brand'],
                                         $candidate['model'],

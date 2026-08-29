@@ -536,6 +536,25 @@ class RTG_Catalog_Sync {
     }
 
     /**
+     * How alike two names must be before the queue offers one as the other.
+     *
+     * Below RTG_Coverage::VARIANT_THRESHOLD nothing is matched — this only
+     * governs the "same tire?" hint, and a hint that is wrong is worse than no
+     * hint, because it proposes an alias that would file two tires as one.
+     *
+     * Set from what the scores actually are. Sharing only a family and a type
+     * word is not a resemblance:
+     *
+     *   Wrangler TrailRunner AT   vs Wrangler AT/S                    0.533
+     *   All Terrain T/A KO2       vs All Terrain T/A KO3              0.640
+     *   Wrangler …Adventure with Kevlar vs …Adventure Kevlar          0.667
+     *
+     * The first two are different tires. The third is one tire spelled two
+     * ways, and is the case the hint exists for.
+     */
+    const NEAR_NAME_FLOOR = 0.65;
+
+    /**
      * The guide tire whose name most resembles a listing's, match or not.
      *
      * What the queue shows against a row it is still calling new: this brand
@@ -549,9 +568,10 @@ class RTG_Catalog_Sync {
      * @param string $size     Listing size.
      * @param array  $variants Variant index from build_variant_index().
      * @param float  $floor    Similarity a name must reach to be worth showing.
-     * @return array|null { tire_id, id, model, similarity }, or null.
+     *                         Defaults to NEAR_NAME_FLOOR.
+     * @return array|null { tire_id, id, model, load_index, similarity }, or null.
      */
-    public static function nearest_guide_variant( $brand, $model, $size, $variants, $floor = 0.5 ) {
+    public static function nearest_guide_variant( $brand, $model, $size, $variants, $floor = self::NEAR_NAME_FLOOR ) {
         $nearest = null;
 
         foreach ( self::variant_bucket( $brand, $model, $size, $variants ) as $entry ) {
