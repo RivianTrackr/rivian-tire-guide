@@ -55,15 +55,18 @@ function validateNumeric(value, bounds, defaultValue = 0) {
   return value;
 }
 
+// Mirrors VALIDATION_PATTERNS.IMAGE_EXTENSIONS, which mirrors
+// RTG_Tire_Images::KNOWN_EXTENSIONS — the set the importer writes.
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'];
+
 function safeImageURL(url) {
   if (typeof url !== 'string' || !url.trim()) return '';
   const trimmed = url.trim();
-  if (
-    !/^https:\/\/riviantrackr\.com\/.*\.(jpg|jpeg|png|webp|gif)$/i.test(
-      trimmed
-    )
-  )
-    return '';
+  const allowed = new RegExp(
+    '^https://riviantrackr\\.com/.*\\.(' + IMAGE_EXTENSIONS.join('|') + ')$',
+    'i'
+  );
+  if (!allowed.test(trimmed)) return '';
   try {
     const urlObj = new URL(trimmed);
     if (urlObj.protocol !== 'https:') return '';
@@ -426,6 +429,39 @@ suite('safeImageURL', () => {
     safeImageURL('https://riviantrackr.com/img/photo.webp'),
     'https://riviantrackr.com/img/photo.webp',
     'valid WebP URL passes'
+  );
+
+  // The importer saves AVIF and GIF too. When this list and the importer's
+  // disagree, the file lands on disk and the card renders with no image area
+  // at all — which reads as a failed download rather than a refused format.
+  assertEqual(
+    safeImageURL('https://riviantrackr.com/img/nokian-hakkapeliitta-01-studded.avif'),
+    'https://riviantrackr.com/img/nokian-hakkapeliitta-01-studded.avif',
+    'AVIF passes — the importer writes them'
+  );
+
+  assertEqual(
+    safeImageURL('https://riviantrackr.com/img/photo.AVIF'),
+    'https://riviantrackr.com/img/photo.AVIF',
+    'extension match is case-insensitive'
+  );
+
+  assertEqual(
+    safeImageURL('https://riviantrackr.com/img/photo.gif'),
+    'https://riviantrackr.com/img/photo.gif',
+    'GIF passes — the importer writes them'
+  );
+
+  assertEqual(
+    safeImageURL('https://riviantrackr.com/img/photo.svg'),
+    '',
+    'SVG is still refused — it can carry script'
+  );
+
+  assertEqual(
+    safeImageURL('https://evil.example/img/photo.avif'),
+    '',
+    'another host is refused whatever the extension'
   );
 
   assertEqual(

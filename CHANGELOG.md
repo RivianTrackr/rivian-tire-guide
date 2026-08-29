@@ -4,6 +4,21 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.83.2] - 2026-08-26
+
+### Fixed
+- **An AVIF image downloaded fine and then wasn't shown.** The importer accepts and saves six formats — jpg, jpeg, png, webp, gif and avif — but the guide's own URL check only allowed four of them. A retailer's AVIF was fetched, named and written into the images folder exactly as intended, and the card then refused to display it. Both lists now hold the same six.
+- **It failed in the worst possible way, which is why it looked like a download problem.** A card whose image URL doesn't pass renders with no image area at all rather than a broken one, so a refused format is indistinguishable on screen from a picture that was never fetched. The two warnings that exist for this case listed their own extensions and didn't include AVIF either, so nothing reached the console.
+
+### Changed
+- The extensions live in one exported list (`IMAGE_EXTENSIONS`) that the URL pattern and both warnings are built from, so a format can't be half-supported again. The list names `RTG_Tire_Images::KNOWN_EXTENSIONS` as the set it has to match.
+- The copy of this check in `tests/test-validation.js` had drifted the other way — it allowed GIF where the real code didn't — so it would have passed a URL the guide rejected. It's built from the same list now.
+
+### Notes
+- SVG is still refused, and refusing it is the point of having a list at all: it can carry script. Host and protocol checks are unchanged.
+- Nothing else was affected. The compare and review pages use the shared validator, which checks host and protocol but not extension, so they were showing these images all along — the guide's cards were the only place they vanished.
+- If an AVIF still doesn't render after this, the next thing to check is the server: a host whose MIME table predates AVIF serves the file as `application/octet-stream` and the browser won't paint it. That's a one-line `AddType image/avif .avif`, not a plugin change.
+
 ## [1.83.1] - 2026-08-26
 
 ### Fixed
