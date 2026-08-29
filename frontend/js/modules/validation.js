@@ -6,14 +6,32 @@
 
 import { safeString } from './helpers.js';
 
+/**
+ * Image extensions the guide will display.
+ *
+ * Must stay in step with RTG_Tire_Images::KNOWN_EXTENSIONS, the set the
+ * importer actually writes into the images folder. When the two disagree the
+ * importer saves a file the guide then refuses — and refuses it in the worst
+ * way, because a card with no usable image renders with no image area at all,
+ * so it reads as "no picture was ever downloaded" rather than "this one is
+ * not allowed". An AVIF from a retailer sat on disk unseen for exactly that
+ * reason.
+ */
+export const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'];
+
+const IMAGE_EXTENSION_GROUP = '(' + IMAGE_EXTENSIONS.join('|') + ')';
+
 // Security: Input validation patterns
 export const VALIDATION_PATTERNS = {
   search: /^[a-zA-Z0-9\s\-\/\.\+\*\(\)]*$/,
   tireId: /^[a-zA-Z0-9\-_]+$/,
   numeric: /^\d+(\.\d+)?$/,
   affiliateUrl: /^https:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}\/[a-zA-Z0-9\-\/_\.%&=?#:+]*$/,
-  imageUrl: /^https:\/\/riviantrackr\.com\/.*\.(jpg|jpeg|png|webp)$/i
+  imageUrl: new RegExp('^https://riviantrackr\\.com/.*\\.' + IMAGE_EXTENSION_GROUP + '$', 'i')
 };
+
+/** Looks like an image URL at all — used only to decide whether to warn. */
+const LOOKS_LIKE_IMAGE = new RegExp('\\.' + IMAGE_EXTENSION_GROUP + '$', 'i');
 
 // Security: Numeric bounds
 export const NUMERIC_BOUNDS = {
@@ -58,7 +76,7 @@ export function safeImageURL(url) {
   const trimmed = url.trim();
 
   if (!VALIDATION_PATTERNS.imageUrl.test(trimmed)) {
-    if (trimmed.match(/\.(jpg|jpeg|png|webp|gif)$/i)) {
+    if (LOOKS_LIKE_IMAGE.test(trimmed)) {
       console.warn('Image URL failed validation:', trimmed);
     }
     return "";
@@ -76,7 +94,7 @@ export function safeImageURL(url) {
 
     return trimmed;
   } catch (e) {
-    if (trimmed.match(/\.(jpg|jpeg|png|webp|gif)$/i)) {
+    if (LOOKS_LIKE_IMAGE.test(trimmed)) {
       console.warn('Invalid image URL:', trimmed);
     }
     return "";
