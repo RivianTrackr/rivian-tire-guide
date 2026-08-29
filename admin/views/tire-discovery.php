@@ -702,6 +702,16 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                         );
                         $matched_by_name = ! empty( $candidate['matched_tire_id'] )
                             && ( '' === $candidate_key || ! isset( $guide_key_index[ $candidate_key ] ) );
+
+                        // Marked as added, yet nothing in the guide answers to
+                        // it. Re-keying above has already backfilled every
+                        // imported row that still matches a tire, and returned
+                        // every one whose recorded tire was deleted — so what
+                        // is left here was imported before that id was kept,
+                        // and its tire has since been removed or renamed.
+                        // Undecidable from here, and a click to settle.
+                        $imported_orphan = RTG_Candidates::STATUS_IMPORTED === $candidate['status']
+                            && empty( $candidate['matched_tire_id'] );
                     ?>
                         <tr data-candidate-id="<?php echo esc_attr( $candidate['id'] ); ?>">
                             <td>
@@ -726,6 +736,10 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                             Matched on the name, not the guide's own spelling &mdash; add it anyway if it's a different tire.
                                         </span>
                                     <?php endif; ?>
+                                <?php elseif ( $imported_orphan ) : ?>
+                                    <br><span style="font-size:11px;color:var(--rtg-warning-text);">
+                                        No guide tire matches this any more &mdash; removed, or renamed since it was added.
+                                    </span>
                                 <?php elseif ( RTG_Candidates::STATUS_NEW === $candidate['status'] ) :
                                     // Same brand, same fitment, a name that shares
                                     // something with a tire already in the guide.
@@ -830,6 +844,10 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 <?php if ( RTG_Candidates::STATUS_IMPORTED !== $status_filter
                                     && ( RTG_Candidates::STATUS_EXISTING !== $status_filter || $matched_by_name ) ) : ?>
                                     <a href="<?php echo esc_url( $add_url ); ?>" class="rtg-btn rtg-btn-primary" style="text-decoration:none;">Add to Guide</a>
+                                <?php endif; ?>
+
+                                <?php if ( $imported_orphan ) : ?>
+                                    <button type="button" class="rtg-btn rtg-btn-secondary rtg-candidate-action" data-status="<?php echo esc_attr( RTG_Candidates::STATUS_NEW ); ?>">Return to review</button>
                                 <?php endif; ?>
 
                                 <?php if ( RTG_Candidates::STATUS_DISMISSED === $status_filter ) : ?>

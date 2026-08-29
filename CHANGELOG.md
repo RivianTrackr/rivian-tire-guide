@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.84.2] - 2026-08-29
+
+### Added
+- **A listing stranded in Added can be sent back to review in one click.** 1.84.0 returns a listing automatically when the tire it became is deleted, but only for imports that recorded which tire that was. Anything imported before then, and since removed from the guide, was left in the Added tab with no way out — the tab has never carried an action beyond the listing link. Those rows now say so and offer **Return to review**, which puts the listing back through the same door a restore uses: to the queue if it still qualifies, to near misses if it doesn't.
+
+### Notes
+- Only rows that genuinely have nowhere to point are flagged. Re-keying runs before the page renders, so by then every imported row that still matches a tire has had that id recorded, and every one whose recorded tire was deleted has already gone back on its own. What remains has no tire answering to it.
+- The wording doesn't claim deletion, because renaming a tire produces the same state and is undecidable from here: "removed, or renamed since it was added". If it was renamed, an alias on that tire re-links it; if it was removed, the button is the answer.
+- No new endpoint. The button is the existing candidate-status action, which already declines to put a listing back in the queue when it would no longer qualify.
+
 ## [1.84.1] - 2026-08-29
 
 ### Fixed
