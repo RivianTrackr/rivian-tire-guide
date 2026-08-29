@@ -915,7 +915,13 @@ class RTG_Admin {
             // When the tire came from the discovery queue, close out the
             // candidate so it stops appearing as awaiting review.
             if ( $from_candidate > 0 ) {
-                RTG_Candidates::set_status( $from_candidate, RTG_Candidates::STATUS_IMPORTED );
+                // Recording which tire it became is what lets the listing come
+                // back to the queue if that tire is ever deleted.
+                RTG_Candidates::set_status(
+                    $from_candidate,
+                    RTG_Candidates::STATUS_IMPORTED,
+                    $data['tire_id']
+                );
             }
 
             wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=added' . ( $image_fallback ? '&image_fallback=1' : '' ) ) );

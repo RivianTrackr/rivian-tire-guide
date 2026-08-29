@@ -452,7 +452,7 @@ class RTG_Candidates {
      * @param array|null $variants    Variant index, or null for exact keys only.
      * @return int Rows whose match changed.
      */
-    public static function refresh_matches( $guide_index, $variants = null ) {
+    public static function refresh_matches( $guide_index, $variants = null, $live_tire_ids = null ) {
         global $wpdb;
         $table = self::table();
 
@@ -462,6 +462,7 @@ class RTG_Candidates {
             ARRAY_A
         );
 
+        $live    = is_array( $live_tire_ids ) ? array_flip( $live_tire_ids ) : null;
         $changed = 0;
 
         foreach ( $rows ?: array() as $row ) {
@@ -473,6 +474,11 @@ class RTG_Candidates {
                 $variants,
                 $row['load_index']
             );
+
+            if ( self::STATUS_IMPORTED === (string) $row['status'] ) {
+                $changed += self::refresh_imported( $row, $should, $live );
+                continue;
+            }
 
             if ( $should === (string) $row['matched_tire_id'] ) {
                 continue;
@@ -502,6 +508,73 @@ class RTG_Candidates {
     }
 
     /**
+     * Keep one imported row honest about the tire it became.
+     *
+     * "Imported" is a statement of fact about the guide — a person added this
+     * listing to it — and unlike a dismissal, that fact can stop being true.
+     * Delete the tire and nothing brought the listing back: it was in neither
+     * the guide nor the queue, which is the one way a tire can go missing
+     * without anything saying so.
+     *
+     * Only the tire_id recorded at import decides it. Re-matching by name
+     * would resurface every tire whose model was edited on the way in — a
+     * routine thing to do, and not a deletion — where an id that is no longer
+     * in the guide can only mean one thing.
+     *
+     * A row imported before ids were recorded has nothing to go on and is left
+     * alone, except to note the tire it still matches, so it is covered the
+     * next time round.
+     *
+     * @param array      $row    Candidate row.
+     * @param string     $should The guide tire it matches now, or ''.
+     * @param array|null $live   tire_id => any, for every tire in the guide;
+     *                           null when the caller didn't say.
+     * @return int 1 when the row changed, 0 when it didn't.
+     */
+    private static function refresh_imported( $row, $should, $live ) {
+        global $wpdb;
+
+        $recorded = (string) $row['matched_tire_id'];
+
+        // Nothing recorded, but it matches a tire today — remember which, so a
+        // later deletion is recognizable.
+        if ( '' === $recorded ) {
+            if ( '' === $should ) {
+                return 0;
+            }
+
+            $wpdb->update(
+                self::table(),
+                array( 'matched_tire_id' => $should ),
+                array( 'id' => intval( $row['id'] ) ),
+                array( '%s' ),
+                array( '%d' )
+            );
+
+            return 1;
+        }
+
+        if ( null === $live || isset( $live[ $recorded ] ) ) {
+            return 0;
+        }
+
+        // The tire this became is gone from the guide, so the listing is
+        // undecided again — back to whatever the rules make of it.
+        $wpdb->update(
+            self::table(),
+            array(
+                'matched_tire_id' => '',
+                'status'          => ! empty( $row['qualifies'] ) ? self::STATUS_NEW : self::STATUS_REJECTED,
+            ),
+            array( 'id' => intval( $row['id'] ) ),
+            array( '%s', '%s' ),
+            array( '%d' )
+        );
+
+        return 1;
+    }
+
+    /**
      * Re-point every stored match at the guide as it stands right now.
      *
      * refresh_matches() runs inside a catalog sync, which is nightly. A tire
@@ -518,7 +591,8 @@ class RTG_Candidates {
 
         return self::refresh_matches(
             RTG_Catalog_Sync::build_guide_index(),
-            RTG_Catalog_Sync::build_variant_index( $tires )
+            RTG_Catalog_Sync::build_variant_index( $tires ),
+            wp_list_pluck( $tires, 'tire_id' )
         );
     }
 
@@ -704,7 +778,7 @@ class RTG_Candidates {
      * @param string $status One of the STATUS_* constants.
      * @return bool Whether the row was updated.
      */
-    public static function set_status( $id, $status ) {
+    public static function set_status( $id, $status, $tire_id = null ) {
         global $wpdb;
         $table = self::table();
 
@@ -720,14 +794,25 @@ class RTG_Candidates {
             return false;
         }
 
+        $data = array(
+            'status'      => $status,
+            'reviewed_at' => current_time( 'mysql' ),
+        );
+        $formats = array( '%s', '%s' );
+
+        // Which tire this listing became. Recorded on import so that deleting
+        // that tire can bring the listing back to the queue rather than
+        // stranding it in neither place.
+        if ( null !== $tire_id ) {
+            $data['matched_tire_id'] = (string) $tire_id;
+            $formats[]               = '%s';
+        }
+
         $updated = $wpdb->update(
             $table,
-            array(
-                'status'      => $status,
-                'reviewed_at' => current_time( 'mysql' ),
-            ),
+            $data,
             array( 'id' => intval( $id ) ),
-            array( '%s', '%s' ),
+            $formats,
             array( '%d' )
         );
 

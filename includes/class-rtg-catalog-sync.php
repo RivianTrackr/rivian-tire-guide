@@ -131,8 +131,9 @@ class RTG_Catalog_Sync {
 
         $sizes       = RTG_Admin::get_dropdown_options( 'sizes' );
         $context     = RTG_Tire_Qualifier::default_context();
+        $guide_tires = RTG_Database::get_all_tires();
         $guide_index = self::build_guide_index();
-        $variants    = self::build_variant_index();
+        $variants    = self::build_variant_index( $guide_tires );
 
         $run_started = microtime( true );
         $run_budget  = isset( $settings['catalog_run_budget'] )
@@ -231,7 +232,11 @@ class RTG_Catalog_Sync {
 
         // Rows the sweep didn't revisit still hold the match they were given
         // when they were last seen, which the guide may have moved on from.
-        $stats['rematched'] = RTG_Candidates::refresh_matches( $guide_index, $variants );
+        $stats['rematched'] = RTG_Candidates::refresh_matches(
+            $guide_index,
+            $variants,
+            wp_list_pluck( $guide_tires, 'tire_id' )
+        );
 
         // Near misses that can never become anything else are let go — wrong
         // fitments, and listings the catalog itself dropped two months ago.

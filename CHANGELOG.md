@@ -4,6 +4,19 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.84.0] - 2026-08-29
+
+### Added
+- **Delete a tire from the guide and its listing comes back to the queue.** "Imported" was permanent: a listing added to the guide and then removed from it stayed marked as added, so it was in neither the guide nor the review queue. Nothing said so, and nothing would ever have — the one way a tire could go missing silently. Every re-key now checks that the tire an imported listing became is still there, so removing a tire puts its listing back where it can be reconsidered.
+- **The tire a listing becomes is recorded at import.** That id is what makes the deletion recognizable later; a listing imported before this simply notes the tire it still matches the next time the queue reconciles, and is covered from then on.
+
+### Notes
+- **Only the recorded id decides it.** Editing the model on the way into the guide is routine — the queue's own hint suggests it — and re-matching by name would resurface every tire that had been renamed, which is not a deletion. An id that is no longer in the guide can only mean one thing.
+- A returned listing answers to the rules again rather than landing in the queue by right: one that would no longer qualify goes back to near misses.
+- A dismissal is untouched. It is a standing judgement about the listing, not a claim about the guide, so nothing in the guide revisits it.
+- The check runs wherever re-keying already does — opening Tire Discovery, and the nightly sweep — so no new schedule and no new query.
+- 5 tests: the round trip, a returned listing still failing the rules, a rename **not** resurfacing anything, a dismissal surviving, and an older import recording its tire and then being covered by a deletion.
+
 ## [1.83.2] - 2026-08-26
 
 ### Fixed
