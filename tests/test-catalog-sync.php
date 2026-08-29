@@ -734,6 +734,146 @@ class Test_RTG_Catalog_Sync extends WP_UnitTestCase {
         $this->assertSame( array( 'SimpleTire' ), RTG_Candidates::get_retailer_coverage()['PIR-001'] );
     }
 
+    // --- A tire removed from the guide ---
+
+    /**
+     * Add a listing to the guide, then delete that tire, and the listing has
+     * to come back to the queue. Otherwise it is in neither place — the one
+     * way a tire can go missing with nothing saying so.
+     */
+    public function test_deleting_a_tire_returns_its_listing_to_the_queue() {
+        $queued = RTG_Candidates::upsert( $this->candidate( array( 'external_id' => 'gone-1' ) ) );
+
+        RTG_Database::insert_tire( array(
+            'tire_id' => 'MICH-001',
+            'brand'   => 'Michelin',
+            'model'   => 'Defender LTX M/S2',
+            'size'    => '275/65R18',
+        ) );
+        RTG_Candidates::set_status( $queued['id'], RTG_Candidates::STATUS_IMPORTED, 'MICH-001' );
+
+        // Still stocked: reconciling leaves it alone.
+        RTG_Candidates::reconcile_with_guide();
+        $this->assertSame(
+            RTG_Candidates::STATUS_IMPORTED,
+            RTG_Candidates::get( $queued['id'] )['status']
+        );
+
+        RTG_Database::delete_tire( 'MICH-001' );
+        RTG_Candidates::reconcile_with_guide();
+
+        $back = RTG_Candidates::get( $queued['id'] );
+        $this->assertSame( RTG_Candidates::STATUS_NEW, $back['status'] );
+        $this->assertSame( '', $back['matched_tire_id'] );
+    }
+
+    /**
+     * A listing that wouldn't qualify goes back to near misses rather than to
+     * the review queue — deleting a tire undoes the import, it doesn't excuse
+     * the listing from the rules.
+     */
+    public function test_a_returned_listing_still_answers_to_the_rules() {
+        $queued = RTG_Candidates::upsert( $this->candidate( array(
+            'external_id' => 'gone-2',
+            'qualifies'   => 0,
+        ) ) );
+
+        RTG_Database::insert_tire( array(
+            'tire_id' => 'MICH-002',
+            'brand'   => 'Michelin',
+            'model'   => 'Defender LTX M/S2',
+            'size'    => '275/65R18',
+        ) );
+        RTG_Candidates::set_status( $queued['id'], RTG_Candidates::STATUS_IMPORTED, 'MICH-002' );
+
+        RTG_Database::delete_tire( 'MICH-002' );
+        RTG_Candidates::reconcile_with_guide();
+
+        $this->assertSame(
+            RTG_Candidates::STATUS_REJECTED,
+            RTG_Candidates::get( $queued['id'] )['status']
+        );
+    }
+
+    /**
+     * Renaming a tire on the way into the guide is routine and is not a
+     * deletion. Only the recorded tire_id decides, so a listing whose model
+     * was edited stays imported however far the names have drifted.
+     */
+    public function test_renaming_the_tire_does_not_resurface_the_listing() {
+        $queued = RTG_Candidates::upsert( $this->candidate( array( 'external_id' => 'gone-3' ) ) );
+
+        RTG_Database::insert_tire( array(
+            'tire_id' => 'MICH-003',
+            'brand'   => 'Michelin',
+            'model'   => 'Something Else Entirely',
+            'size'    => '275/65R18',
+        ) );
+        RTG_Candidates::set_status( $queued['id'], RTG_Candidates::STATUS_IMPORTED, 'MICH-003' );
+
+        RTG_Candidates::reconcile_with_guide();
+
+        $this->assertSame(
+            RTG_Candidates::STATUS_IMPORTED,
+            RTG_Candidates::get( $queued['id'] )['status']
+        );
+    }
+
+    /**
+     * A dismissal is a standing judgement about the listing, not a claim about
+     * the guide, so nothing in the guide changes it.
+     */
+    public function test_a_dismissal_survives_a_deletion() {
+        $queued = RTG_Candidates::upsert( $this->candidate( array( 'external_id' => 'gone-4' ) ) );
+        RTG_Candidates::set_status( $queued['id'], RTG_Candidates::STATUS_DISMISSED );
+
+        RTG_Database::insert_tire( array(
+            'tire_id' => 'MICH-004',
+            'brand'   => 'Michelin',
+            'model'   => 'Defender LTX M/S2',
+            'size'    => '275/65R18',
+        ) );
+        RTG_Database::delete_tire( 'MICH-004' );
+        RTG_Candidates::reconcile_with_guide();
+
+        $this->assertSame(
+            RTG_Candidates::STATUS_DISMISSED,
+            RTG_Candidates::get( $queued['id'] )['status']
+        );
+    }
+
+    /**
+     * Rows imported before the tire_id was recorded have nothing to go on, so
+     * they are left where they are — but the tire they still match is noted,
+     * which is what covers them the next time round.
+     */
+    public function test_an_older_import_records_the_tire_it_matches() {
+        $queued = RTG_Candidates::upsert( $this->candidate( array( 'external_id' => 'gone-5' ) ) );
+        RTG_Candidates::set_status( $queued['id'], RTG_Candidates::STATUS_IMPORTED );
+
+        RTG_Database::insert_tire( array(
+            'tire_id' => 'MICH-005',
+            'brand'   => 'Michelin',
+            'model'   => 'Defender LTX M/S2',
+            'size'    => '275/65R18',
+        ) );
+
+        RTG_Candidates::reconcile_with_guide();
+
+        $backfilled = RTG_Candidates::get( $queued['id'] );
+        $this->assertSame( RTG_Candidates::STATUS_IMPORTED, $backfilled['status'] );
+        $this->assertSame( 'MICH-005', $backfilled['matched_tire_id'] );
+
+        // And now that it is recorded, the deletion is recognizable.
+        RTG_Database::delete_tire( 'MICH-005' );
+        RTG_Candidates::reconcile_with_guide();
+
+        $this->assertSame(
+            RTG_Candidates::STATUS_NEW,
+            RTG_Candidates::get( $queued['id'] )['status']
+        );
+    }
+
     // --- Retention ---
 
     /**
