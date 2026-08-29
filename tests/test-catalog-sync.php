@@ -251,6 +251,40 @@ class Test_RTG_Catalog_Sync extends WP_UnitTestCase {
     }
 
     /**
+     * Sharing a family and a type word is not a resemblance. "Wrangler AT/S"
+     * against "Wrangler TrailRunner AT" scored just over the old floor, so the
+     * queue proposed aliasing two different Goodyears into one tire — worse
+     * than saying nothing, because acting on it merges them.
+     */
+    public function test_two_different_tires_of_one_family_are_not_offered() {
+        $guide = array(
+            array( 'id' => 9, 'tire_id' => 'GY-TR', 'brand' => 'Goodyear',
+                'model' => 'Wrangler TrailRunner AT', 'size' => '275/65R20' ),
+        );
+
+        $this->assertNull( RTG_Catalog_Sync::nearest_guide_variant(
+            'Goodyear', 'Wrangler AT/S', '275/65R20',
+            RTG_Catalog_Sync::build_variant_index( $guide )
+        ) );
+    }
+
+    /**
+     * Nor is one character of a model code. KO2 and KO3 are different tires
+     * and scored 0.640, under the same floor.
+     */
+    public function test_a_model_code_one_digit_apart_is_not_offered() {
+        $guide = array(
+            array( 'id' => 10, 'tire_id' => 'BFG-KO2', 'brand' => 'BFGoodrich',
+                'model' => 'All Terrain T/A KO2', 'size' => '275/65R20' ),
+        );
+
+        $this->assertNull( RTG_Catalog_Sync::nearest_guide_variant(
+            'BFGoodrich', 'All Terrain T/A KO3', '275/65R20',
+            RTG_Catalog_Sync::build_variant_index( $guide )
+        ) );
+    }
+
+    /**
      * A guide the matcher can't key on contributes nothing rather than a
      * bucket everything falls into.
      */
