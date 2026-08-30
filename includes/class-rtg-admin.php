@@ -1069,6 +1069,17 @@ class RTG_Admin {
 
         check_admin_referer( 'rtg_save_settings', 'rtg_settings_nonce' );
 
+        $this->save_settings_from_post();
+
+        wp_redirect( admin_url( 'admin.php?page=rtg-settings&message=saved' ) );
+        exit;
+    }
+
+    /**
+     * Persist the Settings page form from $_POST. Capability and nonce are the
+     * caller's responsibility — handle_settings_save() checks both.
+     */
+    public function save_settings_from_post() {
         // Theme colors — sanitize hex values.
         $theme_colors = array();
         $raw_colors = $_POST['rtg_colors'] ?? array();
@@ -1083,8 +1094,19 @@ class RTG_Admin {
         $retention_days = intval( $_POST['analytics_retention_days'] ?? 90 );
         $retention_days = max( 7, min( 365, $retention_days ) );
 
-        $settings = array(
-            'rows_per_page'            => intval( $_POST['rows_per_page'] ?? 12 ),
+        $rows_per_page = intval( $_POST['rows_per_page'] ?? 12 );
+        $rows_per_page = max( 4, min( 48, $rows_per_page ) );
+
+        // Merge over the stored option: rtg_settings also carries the keys the
+        // Roamer Sync and Tire Discovery pages save (CJ credentials, sync
+        // toggles, …). Replacing the whole option here would wipe them.
+        $settings = get_option( 'rtg_settings', array() );
+        if ( ! is_array( $settings ) ) {
+            $settings = array();
+        }
+
+        $settings = array_merge( $settings, array(
+            'rows_per_page'            => $rows_per_page,
             'cdn_prefix'               => esc_url_raw( $_POST['cdn_prefix'] ?? '' ),
             'compare_slug'             => sanitize_title( $_POST['compare_slug'] ?? 'tire-compare' ),
             'user_reviews_slug'        => sanitize_title( $_POST['user_reviews_slug'] ?? 'user-reviews' ),
@@ -1092,7 +1114,7 @@ class RTG_Admin {
             'server_side_pagination'   => ! empty( $_POST['server_side_pagination'] ),
             'theme_colors'             => $theme_colors,
             'analytics_retention_days' => $retention_days,
-        );
+        ) );
 
         update_option( 'rtg_settings', $settings );
 
@@ -1160,9 +1182,6 @@ class RTG_Admin {
 
         // Flush rewrite rules if compare slug changed.
         update_option( 'rtg_flush_rewrite', 1 );
-
-        wp_redirect( admin_url( 'admin.php?page=rtg-settings&message=saved' ) );
-        exit;
     }
 
     private function handle_rating_delete() {
@@ -1467,39 +1486,13 @@ class RTG_Admin {
                 continue; // Skip blank rows.
             }
 
-            $data = array();
-            foreach ( self::$csv_columns as $col ) {
-                if ( isset( $col_map[ $col ] ) && isset( $row[ $col_map[ $col ] ] ) ) {
-                    $data[ $col ] = trim( $row[ $col_map[ $col ] ] );
-                } else {
-                    $data[ $col ] = '';
-                }
-            }
-
-            // Sanitize.
-            $data = $this->sanitize_tire_import( $data );
-
-            // Auto-generate tire_id if blank.
-            if ( empty( $data['tire_id'] ) ) {
-                $data['tire_id'] = RTG_Database::get_next_tire_id();
-            }
-
-            // Auto-calculate efficiency.
-            $efficiency = RTG_Database::calculate_efficiency( $data );
-            $data['efficiency_score'] = $efficiency['efficiency_score'];
-            $data['efficiency_grade'] = $efficiency['efficiency_grade'];
-
-            // Check for duplicates.
-            if ( RTG_Database::tire_id_exists( $data['tire_id'] ) ) {
-                if ( $mode === 'update' ) {
-                    RTG_Database::update_tire( $data['tire_id'], $data );
-                    $updated++;
-                } else {
-                    $skipped++;
-                }
-            } else {
-                RTG_Database::insert_tire( $data );
+            $result = $this->import_csv_row( $row, $col_map, $mode );
+            if ( 'imported' === $result ) {
                 $imported++;
+            } elseif ( 'updated' === $result ) {
+                $updated++;
+            } else {
+                $skipped++;
             }
         }
 
@@ -1514,6 +1507,67 @@ class RTG_Admin {
         );
         wp_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) );
         exit;
+    }
+
+    /**
+     * Import a single CSV data row.
+     *
+     * @param array  $row     Raw cells from fgetcsv.
+     * @param array  $col_map Column name => cell index, only for columns
+     *                        actually present in the file's header.
+     * @param string $mode    'update' overwrites an existing tire_id;
+     *                        anything else skips it.
+     * @return string 'imported', 'updated', or 'skipped'.
+     */
+    public function import_csv_row( $row, $col_map, $mode ) {
+        $data = array();
+        foreach ( self::$csv_columns as $col ) {
+            if ( isset( $col_map[ $col ] ) && isset( $row[ $col_map[ $col ] ] ) ) {
+                $data[ $col ] = trim( $row[ $col_map[ $col ] ] );
+            } else {
+                $data[ $col ] = '';
+            }
+        }
+
+        // Sanitize.
+        $data = $this->sanitize_tire_import( $data );
+
+        // Auto-generate tire_id if blank.
+        if ( empty( $data['tire_id'] ) ) {
+            $data['tire_id'] = RTG_Database::get_next_tire_id();
+        }
+
+        // Check for duplicates.
+        if ( RTG_Database::tire_id_exists( $data['tire_id'] ) ) {
+            if ( $mode !== 'update' ) {
+                return 'skipped';
+            }
+
+            // Only write the columns the file actually carries — a column
+            // absent from the header must not blank the stored value.
+            // Efficiency is derived from the stored row with the file's
+            // values merged over it, so a partial file can't zero the grade
+            // either.
+            $partial = array_intersect_key( $data, $col_map );
+            unset( $partial['tire_id'] );
+
+            $existing = RTG_Database::get_tire( $data['tire_id'] );
+            $merged   = array_merge( is_array( $existing ) ? $existing : array(), $partial );
+
+            $efficiency = RTG_Database::calculate_efficiency( $merged );
+            $partial['efficiency_score'] = $efficiency['efficiency_score'];
+            $partial['efficiency_grade'] = $efficiency['efficiency_grade'];
+
+            RTG_Database::update_tire( $data['tire_id'], $partial );
+            return 'updated';
+        }
+
+        $efficiency = RTG_Database::calculate_efficiency( $data );
+        $data['efficiency_score'] = $efficiency['efficiency_score'];
+        $data['efficiency_grade'] = $efficiency['efficiency_grade'];
+
+        RTG_Database::insert_tire( $data );
+        return 'imported';
     }
 
     private function sanitize_tire_import( $data ) {

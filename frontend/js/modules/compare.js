@@ -2,10 +2,16 @@
 
 /**
  * Compare bar — select, track, and open tire comparisons.
+ *
+ * Selections are keyed on tire_id (row[0]), not positions in state.allRows:
+ * positions don't exist in server-side pagination mode (allRows stays empty)
+ * and shift whenever the catalog changes, which made shared ?compare= links
+ * show different tires over time.
  */
 
 import { state } from './state.js';
 import { getDOMElement } from './helpers.js';
+import { VALIDATION_PATTERNS } from './validation.js';
 
 export function updateCompareBar() {
   const bar = getDOMElement("compareBar");
@@ -20,16 +26,16 @@ export function updateCompareBar() {
 export function openComparison() {
   if (!state.compareList.length) return;
 
-  const validIndexes = state.compareList
-    .filter(index => Number.isInteger(index) && index >= 0 && index < state.allRows.length)
+  const validIds = state.compareList
+    .filter(id => typeof id === 'string' && VALIDATION_PATTERNS.tireId.test(id))
     .slice(0, 4);
 
-  if (!validIndexes.length) return;
+  if (!validIds.length) return;
 
   try {
     const compareBase = (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.compareUrl) ? rtgData.settings.compareUrl : '/tire-compare/';
     const url = new URL(compareBase, location.origin);
-    url.searchParams.set("compare", validIndexes.join(","));
+    url.searchParams.set("compare", validIds.join(","));
     window.open(url.toString(), "_blank", "noopener,noreferrer");
   } catch (e) {
     console.error('Error creating comparison URL:', e);
@@ -50,17 +56,17 @@ export function setupCompareCheckboxes() {
   checkboxes.forEach(cb => {
     cb.dataset.listenerAttached = "true";
     cb.addEventListener("change", () => {
-      const index = parseInt(cb.dataset.index);
-      if (!Number.isInteger(index) || index < 0) return;
+      const tireId = cb.dataset.id || '';
+      if (!VALIDATION_PATTERNS.tireId.test(tireId)) return;
 
       if (cb.checked) {
         if (state.compareList.length >= 4) {
           cb.checked = false;
           return;
         }
-        if (!state.compareList.includes(index)) state.compareList.push(index);
+        if (!state.compareList.includes(tireId)) state.compareList.push(tireId);
       } else {
-        state.compareList = state.compareList.filter(i => i !== index);
+        state.compareList = state.compareList.filter(id => id !== tireId);
       }
       updateCompareBar();
       document.querySelectorAll(".compare-checkbox").forEach(box => {

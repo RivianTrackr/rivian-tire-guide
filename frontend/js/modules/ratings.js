@@ -14,6 +14,10 @@ export function initializeRatingSystem() {
   }
 }
 
+// Resolvers for every loadTireRatings() call awaiting the current debounced
+// flush — settled together when it completes (or fails, or can't run).
+const pendingRatingResolvers = [];
+
 export function loadTireRatings(tireIds) {
   if (!tireIds.length) return Promise.resolve();
 
@@ -32,7 +36,17 @@ export function loadTireRatings(tireIds) {
   }
 
   return new Promise((resolve) => {
+    // Calls inside the debounce window share one flush. Every caller's
+    // resolver is kept and settled together — clearing the previous timer
+    // must never orphan an earlier caller's promise, or the render pipeline
+    // awaiting it (sort-by-rating) hangs forever.
+    pendingRatingResolvers.push(resolve);
+
     state.ratingRequestTimeout = setTimeout(() => {
+      const settleAll = () => {
+        pendingRatingResolvers.splice(0).forEach(fn => fn());
+      };
+
       const uniqueIds = [...new Set(state.ratingRequestQueue)];
       state.ratingRequestQueue = [];
 
@@ -42,7 +56,7 @@ export function loadTireRatings(tireIds) {
 
       if (typeof tireRatingAjax === 'undefined') {
         console.warn('WordPress rating system not available');
-        resolve();
+        settleAll();
         return;
       }
 
@@ -71,11 +85,11 @@ export function loadTireRatings(tireIds) {
           }
           state.isLoggedIn = data.data.is_logged_in === true || data.data.is_logged_in === '1' || data.data.is_logged_in === 1;
         }
-        resolve();
+        settleAll();
       })
       .catch(error => {
         console.error('Error loading tire ratings:', error);
-        resolve();
+        settleAll();
       });
     }, 50);
   });

@@ -143,6 +143,17 @@ function binarySearchMin(arr, minValue) {
   return new Set(arr.slice(left).map(item => item.index));
 }
 
+/**
+ * The price slider's live ceiling. adaptPriceSlider() raises input.max above
+ * the template default of 600 to cover the priciest tire, so "no price filter
+ * active" means "at the current ceiling" — never a hardcoded 600.
+ */
+function getPriceCeiling() {
+  const el = getDOMElement("priceMax");
+  const max = el ? Number(el.max) : NaN;
+  return Number.isFinite(max) && max > 0 ? max : 600;
+}
+
 function getFilteredIndexes(filters) {
   let candidateIndexes = new Set(state.allRows.map((_, i) => i));
 
@@ -166,7 +177,7 @@ function getFilteredIndexes(filters) {
     candidateIndexes = new Set([...candidateIndexes].filter(x => categorySet.has(x)));
   }
 
-  if (filters.PriceMax < 600) {
+  if (filters.PriceMax < getPriceCeiling()) {
     const priceSet = binarySearchMax(filterIndexes.priceIndex, filters.PriceMax);
     candidateIndexes = new Set([...candidateIndexes].filter(x => priceSet.has(x)));
   }
@@ -345,7 +356,8 @@ export function filterAndRender() {
   const sortBy = getDOMElement("sortBy");
 
   const searchVal = searchInput ? sanitizeInput(searchInput.value, VALIDATION_PATTERNS.search) : "";
-  const priceVal = priceMax ? validateNumeric(priceMax.value, NUMERIC_BOUNDS.price, 600) : 600;
+  const priceCeiling = getPriceCeiling();
+  const priceVal = priceMax ? validateNumeric(priceMax.value, NUMERIC_BOUNDS.price, priceCeiling) : priceCeiling;
   const warrantyVal = warrantyMin ? validateNumeric(warrantyMin.value, NUMERIC_BOUNDS.warranty, 0) : 0;
 
   const vehicleVal = getSelectedVehicle();
@@ -387,7 +399,7 @@ export function filterAndRender() {
   if (f.Category) activeFilters.category = f.Category;
   if (f["3PMS"]) activeFilters.three_pms = true;
   if (f["OEM"]) activeFilters.oem = true;
-  if (f.PriceMax < 600) activeFilters.price_max = f.PriceMax;
+  if (f.PriceMax < priceCeiling) activeFilters.price_max = f.PriceMax;
   if (f.WarrantyMin > 0) activeFilters.warranty_min = f.WarrantyMin;
 
   if (f.search || Object.keys(activeFilters).length > 0) {
@@ -491,14 +503,16 @@ function finishFilterAndRender() {
   if (tireCountEl) {
     tireCountEl.textContent = `Showing ${state.filteredRows.length} tire${state.filteredRows.length === 1 ? "" : "s"}`;
   }
-  if (state.initialRenderDone) {
-    state.currentPage = 1;
-  } else {
+  if (!state.initialRenderDone || state.restoringFromURL) {
+    // Initial load and browser navigation restore the page number from the
+    // URL — clamp it, don't reset it.
     const totalPages = Math.max(1, Math.ceil(state.filteredRows.length / ROWS_PER_PAGE));
     if (state.currentPage > totalPages) {
       state.currentPage = totalPages;
     }
     state.initialRenderDone = true;
+  } else {
+    state.currentPage = 1;
   }
   throttledRender();
   updateURLFromFilters();
@@ -506,6 +520,7 @@ function finishFilterAndRender() {
   updateFilterResultCount();
   updateMobileFilterBadge();
   updateDropdownCounts();
+  state.restoringFromURL = false;
 }
 
 function getActiveFilterCount() {
@@ -516,7 +531,7 @@ function getActiveFilterCount() {
   if (getDOMElement("filterBrand")?.value) count++;
   if (getDOMElement("filterCategory")?.value) count++;
   const priceEl = getDOMElement("priceMax");
-  if (priceEl && parseInt(priceEl.value) < 600) count++;
+  if (priceEl && parseInt(priceEl.value) < getPriceCeiling()) count++;
   const warrantyEl = getDOMElement("warrantyMin");
   if (warrantyEl && parseInt(warrantyEl.value) > 0) count++;
   if (getDOMElement("filter3pms")?.checked) count++;
@@ -565,7 +580,7 @@ function getCurrentFilters() {
 
   return {
     search: searchVal.toLowerCase(),
-    PriceMax: priceMax ? validateNumeric(priceMax.value, NUMERIC_BOUNDS.price, 600) : 600,
+    PriceMax: priceMax ? validateNumeric(priceMax.value, NUMERIC_BOUNDS.price, getPriceCeiling()) : getPriceCeiling(),
     WarrantyMin: warrantyMin ? validateNumeric(warrantyMin.value, NUMERIC_BOUNDS.warranty, 0) : 0,
     "3PMS": filter3pms?.checked || false,
     "OEM": filterOEM?.checked || false,
@@ -1082,7 +1097,7 @@ export function renderSmartNoResults() {
   if (sizeEl?.value) activeFilterNames.push("Size");
   if (brandEl?.value) activeFilterNames.push("Brand");
   if (categoryEl?.value) activeFilterNames.push("Category");
-  if (priceEl && parseInt(priceEl.value) < 600) activeFilterNames.push("Price");
+  if (priceEl && parseInt(priceEl.value) < getPriceCeiling()) activeFilterNames.push("Price");
   if (warrantyEl && parseInt(warrantyEl.value) > 0) activeFilterNames.push("Warranty");
   if (getDOMElement("filter3pms")?.checked) activeFilterNames.push("3PMS");
   if (getDOMElement("filterOEM")?.checked) activeFilterNames.push("OEM");
@@ -1206,6 +1221,11 @@ export function renderSmartNoResults() {
 }
 
 export function updateURLFromFilters() {
+  // During a popstate restore the URL is the source of truth — writing it
+  // back (pushState during popstate handling) would add history entries and
+  // trap the back button.
+  if (state.restoringFromURL) return;
+
   const params = new URLSearchParams();
 
   if (state.currentPage > 1) {
@@ -1249,7 +1269,7 @@ export function updateURLFromFilters() {
   }
 
   const priceVal = parseInt(getVal("priceMax"));
-  if (priceVal && priceVal !== 600 && priceVal >= 0 && priceVal <= 2000) {
+  if (priceVal && priceVal < getPriceCeiling() && priceVal >= 0 && priceVal <= 2000) {
     params.set("price", priceVal);
   }
 
@@ -1281,72 +1301,73 @@ export function applyFiltersFromURL() {
 
   const params = new URLSearchParams(window.location.search);
 
+  // On browser navigation (state.restoringFromURL) the URL is the complete
+  // source of truth: a control whose param is absent goes back to its
+  // default — only setting the params that were present left back/forward
+  // showing a clean URL over still-active filters. On initial load, absent
+  // params instead leave controls alone, so shortcode prefilters (applied
+  // just before this runs) survive; present params still override them.
+  const restoring = state.restoringFromURL;
+
   const setVal = (id, val) => {
     const el = document.getElementById(id);
-    if (el && val !== null) {
-      const sanitized = sanitizeInput(val, VALIDATION_PATTERNS.search);
-      el.value = sanitized;
-    }
+    if (el) el.value = val;
   };
 
   const setChecked = (id, val) => {
     const el = document.getElementById(id);
-    if (el) el.checked = val === "1";
+    if (el && (val !== null || restoring)) el.checked = val === "1";
   };
 
   const searchParam = params.get("search");
-  if (searchParam) {
-    setVal("searchInput", searchParam);
-  }
+  if (searchParam) setVal("searchInput", sanitizeInput(searchParam, VALIDATION_PATTERNS.search));
+  else if (restoring) setVal("searchInput", "");
 
   // Vehicle must be applied before size so the cascade narrows the size dropdown first.
   const vehicleParam = sanitizeInput(params.get("vehicle"));
-  if (vehicleParam && state.VALID_VEHICLES.includes(vehicleParam)) {
-    setActiveVehicle(vehicleParam);
-    cascadeVehicleToSizes(vehicleParam, state.VALID_SIZES);
+  const vehicle = vehicleParam && state.VALID_VEHICLES.includes(vehicleParam) ? vehicleParam : '';
+  if (vehicle || restoring) {
+    setActiveVehicle(vehicle);
+    cascadeVehicleToSizes(vehicle, state.VALID_SIZES);
   }
 
   const size = sanitizeInput(params.get("size"));
-  if (size && state.VALID_SIZES.includes(size)) {
-    const el = document.getElementById("filterSize");
-    if (el) el.value = size;
-  }
+  if (size && state.VALID_SIZES.includes(size)) setVal("filterSize", size);
+  else if (restoring) setVal("filterSize", "");
 
   const brand = sanitizeInput(params.get("brand"));
-  if (brand && state.VALID_BRANDS.includes(brand)) {
-    const el = document.getElementById("filterBrand");
-    if (el) el.value = brand;
-  }
+  if (brand && state.VALID_BRANDS.includes(brand)) setVal("filterBrand", brand);
+  else if (restoring) setVal("filterBrand", "");
 
   const category = sanitizeInput(params.get("category"));
-  if (category && state.VALID_CATEGORIES.includes(category)) {
-    const el = document.getElementById("filterCategory");
-    if (el) el.value = category;
-  }
+  if (category && state.VALID_CATEGORIES.includes(category)) setVal("filterCategory", category);
+  else if (restoring) setVal("filterCategory", "");
 
   setChecked("filter3pms", params.get("3pms"));
   setChecked("filterOEM", params.get("oem"));
   setChecked("filterFavorites", params.get("favorites"));
 
   const sort = params.get("sort");
-  if (sort && ALLOWED_SORT_OPTIONS.includes(sort)) {
-    const el = document.getElementById("sortBy");
-    if (el) el.value = sort;
-  }
+  if (sort && ALLOWED_SORT_OPTIONS.includes(sort)) setVal("sortBy", sort);
+  else if (restoring) setVal("sortBy", "roamer-efficiency");
 
+  const priceEl = document.getElementById("priceMax");
   const price = params.get("price");
-  const warranty = params.get("warranty");
-
-  if (price) {
-    const validPrice = validateNumeric(price, NUMERIC_BOUNDS.price, 600);
-    const el = document.getElementById("priceMax");
-    if (el) el.value = validPrice;
+  if (priceEl && (price !== null || restoring)) {
+    const ceiling = Number(priceEl.max) || 600;
+    priceEl.value = price !== null ? validateNumeric(price, NUMERIC_BOUNDS.price, ceiling) : ceiling;
+    const priceLabel = document.getElementById("priceVal");
+    if (priceLabel) priceLabel.textContent = `≤ $${priceEl.value}`;
+    updateSliderBackground(priceEl);
   }
 
-  if (warranty) {
-    const validWarranty = validateNumeric(warranty, NUMERIC_BOUNDS.warranty, 0);
-    const el = document.getElementById("warrantyMin");
-    if (el) el.value = validWarranty;
+  const warrantyEl = document.getElementById("warrantyMin");
+  const warranty = params.get("warranty");
+  if (warrantyEl && (warranty !== null || restoring)) {
+    warrantyEl.value = warranty !== null ? validateNumeric(warranty, NUMERIC_BOUNDS.warranty, 0) : 0;
+    const warrantyLabel = document.getElementById("warrantyVal");
+    if (warrantyLabel) warrantyLabel.textContent = `≥ ${Number(warrantyEl.value).toLocaleString()} miles`;
+    updateSliderBackground(warrantyEl);
   }
 
   const pageParam = params.get("pg") || params.get("page");
@@ -1364,19 +1385,15 @@ export function applyCompareFromURL() {
   if (!compareParam) return;
 
   const { updateCompareBar } = require_compare();
-  const indexes = compareParam.split(",")
-    .map(n => {
-      const num = parseInt(n.trim());
-      return validateNumeric(num, { min: 0, max: 10000 }, -1);
-    })
-    .filter(n => n >= 0)
+  const ids = compareParam.split(",")
+    .map(s => s.trim())
+    .filter(s => VALIDATION_PATTERNS.tireId.test(s))
     .slice(0, 4);
 
-  state.compareList = indexes;
+  state.compareList = ids;
 
   document.querySelectorAll(".compare-checkbox").forEach(cb => {
-    const idx = parseInt(cb.dataset.index);
-    if (state.compareList.includes(idx)) cb.checked = true;
+    if (state.compareList.includes(cb.dataset.id)) cb.checked = true;
   });
 
   updateCompareBar();

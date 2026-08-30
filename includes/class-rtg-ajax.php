@@ -540,7 +540,9 @@ class RTG_Ajax {
         }
 
         $settings = get_option( 'rtg_settings', array() );
-        $per_page = intval( $settings['rows_per_page'] ?? 12 );
+        // Guard against a stored 0/negative value: it would LIMIT 0 below and
+        // divide by zero in total_pages.
+        $per_page = max( 1, intval( $settings['rows_per_page'] ?? 12 ) );
 
         $filters = array(
             'tire_id'      => sanitize_text_field( $_POST['tire_id'] ?? '' ),

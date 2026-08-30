@@ -236,4 +236,41 @@ class Test_RTG_Database extends WP_UnitTestCase {
         $ratings = RTG_Database::get_tire_ratings( $ids );
         $this->assertEmpty( $ratings );
     }
+
+    // --- Frontend row format ---
+
+    /**
+     * The JS reads fixed indexes up to row[28] (slug), so every producer of
+     * frontend rows must emit the same 29 columns. get_filtered_tires() once
+     * lagged at 28, which silently dropped the tire-page links whenever
+     * server-side pagination was on.
+     */
+    public function test_every_frontend_row_producer_emits_the_same_29_columns() {
+        RTG_Database::insert_tire( $this->sample_tire( array(
+            'tire_id' => 'row-format-001',
+            'brand'   => 'RowBrand',
+            'model'   => 'RowModel',
+        ) ) );
+
+        $expected_slug = RTG_Database::get_tire( 'row-format-001' )['slug'];
+        $this->assertNotSame( '', $expected_slug, 'insert should have derived a slug' );
+
+        $producers = array(
+            'get_tires_as_array' => RTG_Database::get_tires_as_array(),
+            'get_tires_by_ids'   => RTG_Database::get_tires_by_ids( array( 'row-format-001' ) ),
+            'get_filtered_tires' => RTG_Database::get_filtered_tires( array( 'search' => 'RowBrand' ) )['rows'],
+        );
+
+        foreach ( $producers as $name => $rows ) {
+            $row = null;
+            foreach ( $rows as $candidate ) {
+                if ( 'row-format-001' === $candidate[0] ) {
+                    $row = $candidate;
+                }
+            }
+            $this->assertNotNull( $row, "$name should return the inserted tire" );
+            $this->assertCount( 29, $row, "$name row width" );
+            $this->assertSame( $expected_slug, $row[28], "$name slug at index 28" );
+        }
+    }
 }
