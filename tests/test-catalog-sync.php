@@ -984,4 +984,28 @@ class Test_RTG_Catalog_Sync extends WP_UnitTestCase {
         $this->assertNull( RTG_Candidates::get( $old['id'] ) );
         $this->assertNotNull( RTG_Candidates::get( $new['id'] ) );
     }
+
+    /**
+     * count_matching() answers query()'s filters without its limit, so the
+     * admin queue can say "showing N of M" instead of silently truncating
+     * at the query cap.
+     */
+    public function test_count_matching_mirrors_query_filters() {
+        RTG_Candidates::upsert( $this->candidate( array( 'external_id' => 'CNT-1', 'qualifies' => true ) ) );
+        RTG_Candidates::upsert( $this->candidate( array( 'external_id' => 'CNT-2', 'qualifies' => true ) ) );
+        RTG_Candidates::upsert( $this->candidate( array( 'external_id' => 'CNT-3', 'qualifies' => true, 'size' => '275/50R22' ) ) );
+
+        $all = RTG_Candidates::count_matching( array( 'status' => RTG_Candidates::STATUS_NEW ) );
+        $this->assertSame( 3, $all );
+
+        $narrowed = RTG_Candidates::count_matching( array(
+            'status' => RTG_Candidates::STATUS_NEW,
+            'size'   => '275/50R22',
+        ) );
+        $this->assertSame( 1, $narrowed );
+
+        $rows = RTG_Candidates::query( array( 'status' => RTG_Candidates::STATUS_NEW, 'limit' => 2 ) );
+        $this->assertCount( 2, $rows, 'the listing respects its limit' );
+        $this->assertGreaterThan( count( $rows ), $all, 'while the count sees past it' );
+    }
 }

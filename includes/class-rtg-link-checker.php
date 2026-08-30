@@ -20,6 +20,14 @@ class RTG_Link_Checker {
     /** Option key where results are persisted. */
     const RESULTS_OPTION = 'rtg_link_check_results';
 
+    /**
+     * Option key for the rotation cursor. The weekly run checks BATCH_SIZE
+     * links starting here and advances, so a catalog larger than one batch
+     * is still fully covered over successive runs instead of the same
+     * alphabetically-first batch being re-checked forever.
+     */
+    const CURSOR_OPTION = 'rtg_link_check_cursor';
+
     /** Maximum number of links to check per run (avoids timeouts). */
     const BATCH_SIZE = 50;
 
@@ -59,47 +67,56 @@ class RTG_Link_Checker {
      * @return array The full results array that was saved.
      */
     public static function run() {
-        $tires = RTG_Database::get_tires_for_link_management( 'all', '' );
+        $linkable = self::get_linkable_tires();
+        $count    = count( $linkable );
 
         $results = array(
             'checked_at' => current_time( 'mysql' ),
             'total'      => 0,
+            'link_count' => $count,
             'broken'     => array(),
         );
 
-        $checked = 0;
+        if ( 0 === $count ) {
+            update_option( self::RESULTS_OPTION, $results, false );
+            return $results;
+        }
 
-        foreach ( $tires as $tire ) {
-            if ( empty( $tire['link'] ) ) {
-                continue;
-            }
+        // This run's slice, starting at the cursor and wrapping.
+        $cursor = intval( get_option( self::CURSOR_OPTION, 0 ) ) % $count;
+        $batch  = array_slice( $linkable, $cursor, self::BATCH_SIZE );
+        if ( count( $batch ) < self::BATCH_SIZE && $count > count( $batch ) ) {
+            $remaining = min( self::BATCH_SIZE - count( $batch ), $cursor );
+            $batch     = array_merge( $batch, array_slice( $linkable, 0, $remaining ) );
+        }
 
-            if ( $checked >= self::BATCH_SIZE ) {
-                break;
-            }
+        $outcome = self::check_batch( $batch );
 
-            $checked++;
-            $status = self::check_single_link( $tire['link'] );
+        update_option( self::CURSOR_OPTION, ( $cursor + count( $batch ) ) % $count, false );
 
-            if ( 'ok' !== $status['status'] ) {
-                $results['broken'][] = array(
-                    'tire_id' => $tire['tire_id'],
-                    'brand'   => $tire['brand'],
-                    'model'   => $tire['model'],
-                    'url'     => $tire['link'],
-                    'status'  => $status['status'],
-                    'reason'  => $status['reason'],
-                    'http'    => $status['http_code'],
-                );
+        // A rotating run only re-judged its own slice: keep the previous
+        // verdicts for links outside it (as long as those tires still carry
+        // a link), replace verdicts inside it.
+        $batch_ids    = wp_list_pluck( $batch, 'tire_id' );
+        $linkable_ids = wp_list_pluck( $linkable, 'tire_id' );
+        $previous     = get_option( self::RESULTS_OPTION, array() );
+        $kept         = array();
+        if ( ! empty( $previous['broken'] ) && is_array( $previous['broken'] ) ) {
+            foreach ( $previous['broken'] as $entry ) {
+                if ( ! in_array( $entry['tire_id'], $batch_ids, true ) && in_array( $entry['tire_id'], $linkable_ids, true ) ) {
+                    $kept[] = $entry;
+                }
             }
         }
 
-        $results['total'] = $checked;
+        $results['broken'] = array_merge( $kept, $outcome['broken'] );
+        $results['total']  = count( $batch );
 
         update_option( self::RESULTS_OPTION, $results, false );
 
-        // Send admin email if broken links were found.
-        if ( ! empty( $results['broken'] ) ) {
+        // Email only for breakage this run actually found — carried-over
+        // entries were already reported when their run found them.
+        if ( ! empty( $outcome['broken'] ) ) {
             RTG_Mailer::send_broken_links_notification( $results );
         }
 
@@ -173,10 +190,15 @@ class RTG_Link_Checker {
         $results = array(
             'checked_at' => current_time( 'mysql' ),
             'total'      => $total,
+            'link_count' => $total,
             'broken'     => $broken,
         );
 
         update_option( self::RESULTS_OPTION, $results, false );
+
+        // A manual full check covered everything — the weekly rotation can
+        // start over.
+        update_option( self::CURSOR_OPTION, 0, false );
 
         if ( ! empty( $broken ) ) {
             RTG_Mailer::send_broken_links_notification( $results );

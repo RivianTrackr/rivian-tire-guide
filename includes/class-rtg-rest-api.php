@@ -25,6 +25,9 @@ class RTG_REST_API {
      * Rate limits: requests per minute per IP.
      */
     const RATE_LIMIT_READ  = 60;
+
+    /** Transient holding the built /feed payload; flushed with the tire cache. */
+    const FEED_CACHE_KEY = 'rtg_feed_cache';
     const RATE_LIMIT_WRITE = 10;
 
     /**
@@ -150,6 +153,17 @@ class RTG_REST_API {
             return $rate_check;
         }
 
+        // The feed is the API's expensive endpoint — the full catalog plus a
+        // ratings join, public, CORS *. Serve the built payload from a
+        // transient; tire writes flush it via flush_cache(), and ratings ride
+        // the TTL.
+        $cached = get_transient( self::FEED_CACHE_KEY );
+        if ( is_array( $cached ) ) {
+            $response = new WP_REST_Response( $cached, 200 );
+            $response->header( 'Access-Control-Allow-Origin', '*' );
+            return $response;
+        }
+
         $tires    = RTG_Database::get_all_tires();
         $tire_ids = wp_list_pluck( $tires, 'tire_id' );
 
@@ -197,15 +211,16 @@ class RTG_REST_API {
             );
         }
 
-        $response = new WP_REST_Response(
-            array(
-                'name'         => get_bloginfo( 'name' ) . ' — Tire Guide',
-                'generated_at' => gmdate( 'c' ),
-                'total_tires'  => count( $feed_tires ),
-                'tires'        => $feed_tires,
-            ),
-            200
+        $payload = array(
+            'name'         => get_bloginfo( 'name' ) . ' — Tire Guide',
+            'generated_at' => gmdate( 'c' ),
+            'total_tires'  => count( $feed_tires ),
+            'tires'        => $feed_tires,
         );
+
+        set_transient( self::FEED_CACHE_KEY, $payload, HOUR_IN_SECONDS );
+
+        $response = new WP_REST_Response( $payload, 200 );
 
         // Allow CORS for easy external consumption.
         $response->header( 'Access-Control-Allow-Origin', '*' );
@@ -440,21 +455,25 @@ class RTG_REST_API {
      * @return true|WP_Error
      */
     private function check_rate_limit( $bucket, $limit, $window = 60 ) {
-        $raw_ip = isset( $_SERVER['REMOTE_ADDR'] ) ? trim( $_SERVER['REMOTE_ADDR'] ) : '';
-        $ip     = filter_var( $raw_ip, FILTER_VALIDATE_IP ) ? $raw_ip : '0.0.0.0';
-        $key    = 'rtg_rl_' . $bucket . '_' . md5( $ip );
+        // Shared limiter: object-cache-aware atomic counting, keyed on the
+        // user/IP+UA fingerprint rather than raw REMOTE_ADDR — behind a
+        // proxy or CDN that doesn't rewrite the address, keying on the IP
+        // alone throttled the whole site as one client. The "rest_" prefix
+        // keeps REST buckets separate from the AJAX buckets of the same name.
+        $blocked = RTG_Rate_Limiter::hit(
+            'rest_' . $bucket,
+            RTG_Rate_Limiter::fingerprint(),
+            $limit,
+            $window
+        );
 
-        $current = (int) get_transient( $key );
-
-        if ( $current >= $limit ) {
+        if ( $blocked ) {
             return new WP_Error(
                 'rtg_rate_limit',
                 'Rate limit exceeded. Please try again later.',
                 array( 'status' => 429 )
             );
         }
-
-        set_transient( $key, $current + 1, $window );
 
         return true;
     }

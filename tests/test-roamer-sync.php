@@ -119,4 +119,93 @@ class Test_RTG_Roamer_Sync extends WP_UnitTestCase {
         $breakdown = json_decode( $result['roamer_vehicle_breakdown'], true );
         $this->assertContains( array( 'Gen 2 R1S', 3 ), $breakdown );
     }
+
+    // --- Change detection (what decides whether the sync writes at all) ---
+
+    /**
+     * MySQL hands numbers back as strings ("12345.00"); an unchanged feed
+     * must not read as a change, or every five-minute run rewrites every
+     * matched tire — which is the churn this check exists to stop.
+     */
+    public function test_identical_data_in_mysql_string_form_is_not_a_change() {
+        $current = array(
+            'roamer_efficiency'        => '2.50',
+            'roamer_total_km'          => '12345.00',
+            'roamer_vehicle_count'     => '4',
+            'roamer_vehicle_breakdown' => '[["Gen 1 R1T",4]]',
+        );
+        $update = array(
+            'roamer_efficiency'        => 2.5,
+            'roamer_total_km'          => 12345.0,
+            'roamer_vehicle_count'     => 4,
+            'roamer_vehicle_breakdown' => '[["Gen 1 R1T",4]]',
+        );
+
+        $this->assertFalse( RTG_Roamer_Sync::roamer_data_changed( $current, $update ) );
+    }
+
+    public function test_a_moved_number_or_new_breakdown_is_a_change() {
+        $current = array(
+            'roamer_efficiency'        => '2.50',
+            'roamer_vehicle_breakdown' => '[["Gen 1 R1T",4]]',
+        );
+
+        $this->assertTrue( RTG_Roamer_Sync::roamer_data_changed( $current, array( 'roamer_efficiency' => 2.51 ) ) );
+        $this->assertTrue( RTG_Roamer_Sync::roamer_data_changed( $current, array( 'roamer_vehicle_breakdown' => '[["Gen 1 R1T",5]]' ) ) );
+        $this->assertTrue( RTG_Roamer_Sync::roamer_data_changed( array(), array( 'roamer_tire_id' => 'r-1' ) ) );
+    }
+
+    // --- The targeted writer (feed data must not look like a human edit) ---
+
+    /**
+     * update_roamer_data() writes the feed columns without bumping
+     * updated_at — that column tracks human edits, and the stale-price
+     * report reads it. update_tire() would have fired the schema's
+     * ON UPDATE CURRENT_TIMESTAMP.
+     */
+    public function test_roamer_write_leaves_updated_at_alone() {
+        RTG_Activator::activate();
+        RTG_Database::insert_tire( array(
+            'tire_id' => 'roamer-write-001',
+            'brand'   => 'TestBrand',
+            'model'   => 'TestModel',
+            'size'    => '275/65R20',
+        ) );
+
+        $before = RTG_Database::get_tire( 'roamer-write-001' );
+
+        // updated_at has one-second resolution; cross a boundary so a bump
+        // would be visible.
+        sleep( 1 );
+
+        RTG_Database::update_roamer_data( 'roamer-write-001', array(
+            'roamer_efficiency' => 2.31,
+            'roamer_synced_at'  => current_time( 'mysql' ),
+        ) );
+
+        $after = RTG_Database::get_tire( 'roamer-write-001' );
+        $this->assertEquals( 2.31, floatval( $after['roamer_efficiency'] ) );
+        $this->assertSame( $before['updated_at'], $after['updated_at'] );
+    }
+
+    public function test_roamer_write_supports_null_and_ignores_foreign_columns() {
+        RTG_Activator::activate();
+        RTG_Database::insert_tire( array(
+            'tire_id'          => 'roamer-write-002',
+            'brand'            => 'TestBrand',
+            'model'            => 'TestModel',
+            'size'             => '275/65R20',
+            'price'            => 199.99,
+            'roamer_synced_at' => '2026-01-01 00:00:00',
+        ) );
+
+        RTG_Database::update_roamer_data( 'roamer-write-002', array(
+            'roamer_synced_at' => null,
+            'price'            => 1.00, // not a roamer column — must be ignored
+        ) );
+
+        $tire = RTG_Database::get_tire( 'roamer-write-002' );
+        $this->assertNull( $tire['roamer_synced_at'] );
+        $this->assertEquals( 199.99, floatval( $tire['price'] ) );
+    }
 }

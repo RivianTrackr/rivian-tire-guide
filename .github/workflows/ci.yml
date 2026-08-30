@@ -33,9 +33,24 @@ jobs:
       - name: Verify build
         run: npm run build
 
+      # The minified assets are committed and served in production whenever
+      # SCRIPT_DEBUG is off. Without this, a PR that edits source without
+      # rebuilding ships stale .min files silently.
+      - name: Verify committed minified assets match the source
+        run: |
+          git diff --exit-code -- '*.min.js' '*.min.css' || {
+            echo '::error::Minified assets are out of date — run `npm run build` and commit the result.'
+            exit 1
+          }
+
   php-unit:
     name: PHP Unit Tests
     runs-on: ubuntu-latest
+    strategy:
+      # The plugin supports 7.4+, but the suite only ever ran on 8.2 — a
+      # 7.4-incompatible behavior (not syntax, which lint catches) would ship.
+      matrix:
+        php-version: ['7.4', '8.0', '8.2']
     services:
       mysql:
         image: mysql:8.0
@@ -54,7 +69,7 @@ jobs:
 
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: ${{ matrix.php-version }}
           extensions: mysqli
           tools: composer
 

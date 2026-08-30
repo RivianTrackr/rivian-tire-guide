@@ -1,12 +1,12 @@
 {
   "name": "rivian-tire-guide",
-  "version": "1.85.0",
+  "version": "1.86.0",
   "private": true,
   "description": "Interactive tire guide for Rivian vehicles — WordPress plugin",
   "scripts": {
     "build": "node esbuild.config.mjs",
     "build:watch": "node esbuild.config.mjs --watch",
-    "test": "node tests/test-validation.js && node tests/test-dropdown-options.mjs"
+    "test": "node tests/test-validation.js && node tests/test-dropdown-options.mjs && node tests/test-domain-sync.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.28.1"

@@ -159,7 +159,7 @@ if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
                                 <th>mi/kWh</th>
                                 <th>Distance</th>
                                 <th>Vehicles</th>
-                                <th>Last Synced</th>
+                                <th title="When this tire's Roamer data last changed — the sync itself runs every five minutes but only writes when the feed's numbers move.">Data Updated</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
