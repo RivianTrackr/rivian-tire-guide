@@ -161,4 +161,143 @@ class Test_RTG_Admin extends WP_UnitTestCase {
         $this->assertNotSame( '', $visitor_data, 'the visitor should still be given the guide data' );
         $this->assertStringNotContainsString( 'rtg-tire-edit', $visitor_data );
     }
+
+    // --- Settings save ---
+
+    public function tearDown(): void {
+        $_POST = array();
+        parent::tearDown();
+    }
+
+    private function settings_post( $overrides = array() ) {
+        return array_merge( array(
+            'rows_per_page'            => '12',
+            'cdn_prefix'               => '',
+            'compare_slug'             => 'tire-compare',
+            'user_reviews_slug'        => 'user-reviews',
+            'tire_review_slug'         => 'tire-review',
+            'analytics_retention_days' => '90',
+        ), $overrides );
+    }
+
+    /**
+     * rtg_settings also carries the keys the Roamer Sync and Tire Discovery
+     * pages save (CJ credentials, sync toggles, custom URLs). Saving the main
+     * Settings page must merge over them, never replace the whole option.
+     */
+    public function test_settings_save_preserves_keys_owned_by_other_pages() {
+        update_option( 'rtg_settings', array(
+            'rows_per_page'        => 12,
+            'cj_pat'               => 'secret-token',
+            'cj_company_id'        => '1234567',
+            'catalog_sync_enabled' => true,
+            'roamer_sync_url'      => 'https://example.com/feed.json',
+        ) );
+
+        $_POST = $this->settings_post( array( 'rows_per_page' => '24' ) );
+        $this->admin->save_settings_from_post();
+
+        $saved = get_option( 'rtg_settings' );
+        $this->assertSame( 24, $saved['rows_per_page'] );
+        $this->assertSame( 'secret-token', $saved['cj_pat'], 'the CJ credential must survive a Settings save' );
+        $this->assertSame( '1234567', $saved['cj_company_id'] );
+        $this->assertTrue( $saved['catalog_sync_enabled'] );
+        $this->assertSame( 'https://example.com/feed.json', $saved['roamer_sync_url'] );
+    }
+
+    /**
+     * A cleared or absurd rows-per-page field must never reach the database:
+     * a stored 0 meant LIMIT 0 plus a division by zero on every server-side
+     * pagination request.
+     */
+    public function test_rows_per_page_is_clamped_on_save() {
+        $_POST = $this->settings_post( array( 'rows_per_page' => '0' ) );
+        $this->admin->save_settings_from_post();
+        $this->assertSame( 4, get_option( 'rtg_settings' )['rows_per_page'] );
+
+        $_POST = $this->settings_post( array( 'rows_per_page' => '500' ) );
+        $this->admin->save_settings_from_post();
+        $this->assertSame( 48, get_option( 'rtg_settings' )['rows_per_page'] );
+    }
+
+    // --- CSV import ---
+
+    private function csv_tire( $tire_id ) {
+        $data = array(
+            'tire_id'          => $tire_id,
+            'size'             => '275/65R20',
+            'diameter'         => '20"',
+            'brand'            => 'Michelin',
+            'model'            => 'Defender LTX',
+            'category'         => 'All-Season',
+            'price'            => 299.99,
+            'mileage_warranty' => 60000,
+            'weight_lb'        => 38.5,
+            'three_pms'        => 'No',
+            'tread'            => '10/32',
+            'load_index'       => '116',
+            'max_load_lb'      => 2756,
+            'load_range'       => 'SL',
+            'speed_rating'     => 'T',
+            'psi'              => '51',
+            'utqg'             => '620 A B',
+            'tags'             => 'oem',
+            'link'             => 'https://example.com/tire',
+        );
+        $efficiency = RTG_Database::calculate_efficiency( $data );
+        return array_merge( $data, $efficiency );
+    }
+
+    /**
+     * An update-mode file carrying only some columns must leave every other
+     * stored column untouched — a partial price file once blanked size,
+     * category, links and tags, and re-derived the grade from empty specs.
+     */
+    public function test_partial_csv_update_only_writes_the_columns_present() {
+        RTG_Database::insert_tire( $this->csv_tire( 'CSV-001' ) );
+        $before = RTG_Database::get_tire( 'CSV-001' );
+
+        $col_map = array( 'tire_id' => 0, 'price' => 1 );
+        $result  = $this->admin->import_csv_row( array( 'CSV-001', '199.99' ), $col_map, 'update' );
+
+        $this->assertSame( 'updated', $result );
+        $after = RTG_Database::get_tire( 'CSV-001' );
+        $this->assertEquals( 199.99, floatval( $after['price'] ) );
+        $this->assertSame( $before['size'], $after['size'] );
+        $this->assertSame( $before['category'], $after['category'] );
+        $this->assertSame( $before['link'], $after['link'] );
+        $this->assertSame( $before['tags'], $after['tags'] );
+        $this->assertSame( $before['weight_lb'], $after['weight_lb'] );
+        $this->assertSame( $before['mileage_warranty'], $after['mileage_warranty'] );
+        $this->assertSame(
+            $before['efficiency_grade'],
+            $after['efficiency_grade'],
+            'a price-only update must not re-derive the grade from blanked specs'
+        );
+    }
+
+    public function test_duplicate_csv_row_is_skipped_outside_update_mode() {
+        RTG_Database::insert_tire( $this->csv_tire( 'CSV-002' ) );
+        $before = RTG_Database::get_tire( 'CSV-002' );
+
+        $col_map = array( 'tire_id' => 0, 'price' => 1 );
+        $result  = $this->admin->import_csv_row( array( 'CSV-002', '1.00' ), $col_map, 'skip' );
+
+        $this->assertSame( 'skipped', $result );
+        $this->assertSame( $before['price'], RTG_Database::get_tire( 'CSV-002' )['price'] );
+    }
+
+    public function test_new_csv_row_is_imported_with_a_derived_grade() {
+        $col_map = array( 'tire_id' => 0, 'brand' => 1, 'model' => 2, 'size' => 3, 'weight_lb' => 4, 'category' => 5 );
+        $result  = $this->admin->import_csv_row(
+            array( 'CSV-003', 'Goodyear', 'Wrangler', '275/65R20', '42', 'All-Terrain' ),
+            $col_map,
+            'skip'
+        );
+
+        $this->assertSame( 'imported', $result );
+        $tire = RTG_Database::get_tire( 'CSV-003' );
+        $this->assertSame( 'Goodyear', $tire['brand'] );
+        $this->assertContains( $tire['efficiency_grade'], array( 'A', 'B', 'C', 'D', 'F' ) );
+    }
 }

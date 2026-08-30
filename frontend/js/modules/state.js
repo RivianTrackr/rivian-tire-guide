@@ -48,6 +48,11 @@ export const state = {
   initialRenderDone: false,
   renderAnimationFrame: null,
 
+  // True while restoring filter state from the URL (popstate). Keeps the
+  // restored page number intact and suppresses history writes, so browser
+  // navigation never pushes new entries or resets to page 1.
+  restoringFromURL: false,
+
   // Event delegation
   eventDelegationSetup: false,
 

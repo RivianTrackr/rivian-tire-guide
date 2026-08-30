@@ -29,12 +29,18 @@ function safeReviewLinkURL(url) {
   return RTG_SHARED.safeReviewLinkURL(url);
 }
 
-function getCompareIndexes() {
+function getCompareTokens() {
   const params = new URLSearchParams(window.location.search);
+  const seen = new Set();
   return (params.get("compare") || "")
     .split(",")
-    .map(n => parseInt(n.trim()))
-    .filter(n => !isNaN(n));
+    .map(s => s.trim())
+    .filter(s => {
+      if (!s || seen.has(s)) return false;
+      seen.add(s);
+      return true;
+    })
+    .slice(0, 4);
 }
 
 function fmtPrice(v) {
@@ -164,8 +170,17 @@ function specSection(icon, title, rows, tires, best, colCount) {
 }
 
 // --- Main render ---
-function renderComparison(rows, indexes) {
-  const tires = indexes.map(i => rows[i]).filter(Boolean);
+function renderComparison(rows, tokens) {
+  // Tokens are tire_ids; a purely numeric token that matches no tire_id is
+  // treated as a legacy row index so links shared before the ID format keep
+  // rendering something.
+  const tires = tokens
+    .map(tok => {
+      const byId = rows.find(r => r && String(r[COL.tireId]) === tok);
+      if (byId) return byId;
+      return /^\d+$/.test(tok) ? rows[parseInt(tok, 10)] : null;
+    })
+    .filter(Boolean);
   const container = document.getElementById("comparisonContent");
 
   if (!tires.length) return; // Keep the default empty state from PHP.
@@ -295,12 +310,12 @@ function initShareButton() {
 
 // --- Init ---
 document.addEventListener("DOMContentLoaded", () => {
-  const indexes = getCompareIndexes();
+  const tokens = getCompareTokens();
   initShareButton();
-  if (!indexes.length) return;
+  if (!tokens.length) return;
 
   if (typeof rtgData !== 'undefined' && rtgData.tires && Array.isArray(rtgData.tires)) {
-    renderComparison(rtgData.tires, indexes);
+    renderComparison(rtgData.tires, tokens);
   } else {
     document.getElementById("comparisonContent").innerHTML =
       '<div class="cmp-empty"><div class="cmp-empty-icon">' + rtgIcon('triangle-exclamation', 48) + '</div>' +

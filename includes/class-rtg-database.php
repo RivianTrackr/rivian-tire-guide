@@ -266,48 +266,54 @@ class RTG_Database {
     }
 
     /**
+     * Convert one tire row (associative) into the numerically-indexed frontend
+     * row format. Single source of truth: every producer of frontend rows must
+     * use this so the column layout can't drift between code paths — the JS
+     * reads fixed indexes up to row[28] (slug).
+     *
+     * @param array $tire Tire row as associative array.
+     * @return array Numerically-indexed frontend row (29 elements).
+     */
+    public static function to_frontend_row( $tire ) {
+        return array(
+            (string) $tire['tire_id'],
+            (string) $tire['size'],
+            (string) $tire['diameter'],
+            (string) $tire['brand'],
+            (string) $tire['model'],
+            (string) $tire['category'],
+            (string) $tire['price'],
+            (string) $tire['mileage_warranty'],
+            (string) $tire['weight_lb'],
+            (string) $tire['three_pms'],
+            (string) $tire['tread'],
+            (string) $tire['load_index'],
+            (string) $tire['max_load_lb'],
+            (string) $tire['load_range'],
+            (string) $tire['speed_rating'],
+            (string) $tire['psi'],
+            (string) $tire['utqg'],
+            (string) $tire['tags'],
+            (string) $tire['link'],
+            (string) $tire['image'],
+            (string) $tire['efficiency_score'],
+            (string) $tire['efficiency_grade'],
+            (string) $tire['review_link'],
+            (string) $tire['created_at'],
+            (string) $tire['roamer_efficiency'],
+            (string) $tire['roamer_total_km'],
+            (string) $tire['roamer_vehicle_count'],
+            (string) ( $tire['roamer_vehicle_breakdown'] ?? '' ),
+            (string) ( $tire['slug'] ?? '' ),
+        );
+    }
+
+    /**
      * Returns tires as a numerically-indexed array of arrays matching the CSV column order.
      * This is the format the frontend JS expects (same as PapaParse output).
      */
     public static function get_tires_as_array() {
-        $tires = self::get_all_tires();
-        $result = array();
-
-        foreach ( $tires as $tire ) {
-            $result[] = array(
-                (string) $tire['tire_id'],
-                (string) $tire['size'],
-                (string) $tire['diameter'],
-                (string) $tire['brand'],
-                (string) $tire['model'],
-                (string) $tire['category'],
-                (string) $tire['price'],
-                (string) $tire['mileage_warranty'],
-                (string) $tire['weight_lb'],
-                (string) $tire['three_pms'],
-                (string) $tire['tread'],
-                (string) $tire['load_index'],
-                (string) $tire['max_load_lb'],
-                (string) $tire['load_range'],
-                (string) $tire['speed_rating'],
-                (string) $tire['psi'],
-                (string) $tire['utqg'],
-                (string) $tire['tags'],
-                (string) $tire['link'],
-                (string) $tire['image'],
-                (string) $tire['efficiency_score'],
-                (string) $tire['efficiency_grade'],
-                (string) $tire['review_link'],
-                (string) $tire['created_at'],
-                (string) $tire['roamer_efficiency'],
-                (string) $tire['roamer_total_km'],
-                (string) $tire['roamer_vehicle_count'],
-                (string) ( $tire['roamer_vehicle_breakdown'] ?? '' ),
-                (string) ( $tire['slug'] ?? '' ),
-            );
-        }
-
-        return $result;
+        return array_map( array( __CLASS__, 'to_frontend_row' ), self::get_all_tires() );
     }
 
     /**
@@ -346,43 +352,7 @@ class RTG_Database {
         );
         $rows = $wpdb->get_results( $sql, ARRAY_A );
 
-        // Convert to frontend array format.
-        $result = array();
-        foreach ( $rows as $tire ) {
-            $result[] = array(
-                (string) $tire['tire_id'],
-                (string) $tire['size'],
-                (string) $tire['diameter'],
-                (string) $tire['brand'],
-                (string) $tire['model'],
-                (string) $tire['category'],
-                (string) $tire['price'],
-                (string) $tire['mileage_warranty'],
-                (string) $tire['weight_lb'],
-                (string) $tire['three_pms'],
-                (string) $tire['tread'],
-                (string) $tire['load_index'],
-                (string) $tire['max_load_lb'],
-                (string) $tire['load_range'],
-                (string) $tire['speed_rating'],
-                (string) $tire['psi'],
-                (string) $tire['utqg'],
-                (string) $tire['tags'],
-                (string) $tire['link'],
-                (string) $tire['image'],
-                (string) $tire['efficiency_score'],
-                (string) $tire['efficiency_grade'],
-                (string) $tire['review_link'],
-                (string) $tire['created_at'],
-                (string) $tire['roamer_efficiency'],
-                (string) $tire['roamer_total_km'],
-                (string) $tire['roamer_vehicle_count'],
-                (string) ( $tire['roamer_vehicle_breakdown'] ?? '' ),
-                (string) ( $tire['slug'] ?? '' ),
-            );
-        }
-
-        return $result;
+        return array_map( array( __CLASS__, 'to_frontend_row' ), $rows );
     }
 
     /**
@@ -859,43 +829,8 @@ class RTG_Database {
         $all_vals = array_merge( $values, array( $per_page, $offset ) );
         $rows     = $wpdb->get_results( $wpdb->prepare( $data_sql, ...$all_vals ), ARRAY_A );
 
-        // Convert to frontend array format.
-        $result = array();
-        foreach ( $rows as $tire ) {
-            $result[] = array(
-                (string) $tire['tire_id'],
-                (string) $tire['size'],
-                (string) $tire['diameter'],
-                (string) $tire['brand'],
-                (string) $tire['model'],
-                (string) $tire['category'],
-                (string) $tire['price'],
-                (string) $tire['mileage_warranty'],
-                (string) $tire['weight_lb'],
-                (string) $tire['three_pms'],
-                (string) $tire['tread'],
-                (string) $tire['load_index'],
-                (string) $tire['max_load_lb'],
-                (string) $tire['load_range'],
-                (string) $tire['speed_rating'],
-                (string) $tire['psi'],
-                (string) $tire['utqg'],
-                (string) $tire['tags'],
-                (string) $tire['link'],
-                (string) $tire['image'],
-                (string) $tire['efficiency_score'],
-                (string) $tire['efficiency_grade'],
-                (string) $tire['review_link'],
-                (string) $tire['created_at'],
-                (string) $tire['roamer_efficiency'],
-                (string) $tire['roamer_total_km'],
-                (string) $tire['roamer_vehicle_count'],
-                (string) ( $tire['roamer_vehicle_breakdown'] ?? '' ),
-            );
-        }
-
         return array(
-            'rows'  => $result,
+            'rows'  => array_map( array( __CLASS__, 'to_frontend_row' ), $rows ),
             'total' => $total,
         );
     }

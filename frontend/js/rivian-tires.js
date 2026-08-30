@@ -248,6 +248,7 @@ function initializeUI() {
 window.addEventListener('popstate', function() {
   if (isServerSide()) return;
   state.lastFilterState = null;
+  state.restoringFromURL = true; // cleared by finishFilterAndRender
   applyFiltersFromURL();
   filterAndRender();
 });

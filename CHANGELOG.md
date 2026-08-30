@@ -4,6 +4,26 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.85.0] - 2026-08-30
+
+All ten high-priority findings from the v1.84.2 full-codebase review, in one release.
+
+### Fixed
+- **Saving the Settings page no longer wipes the Discovery, Roamer, and CJ configuration.** The handler rebuilt `rtg_settings` from its own 8 fields and replaced the whole option, destroying the ~25 keys the Roamer Sync and Tire Discovery pages store there — CJ credentials included. It now merges over the stored option, the way those pages always have.
+- **A CSV import in update mode only writes the columns the file carries.** Every column absent from the header was written as an empty string, so a price-only file blanked size, category, warranty, links, image and tags on every matched tire — and then re-derived the efficiency grade from the emptied specs. Absent columns are untouched now, and the grade is derived from the stored row with the file's values merged over it.
+- **Server-side pagination serves the same 29-column rows as everything else.** `get_filtered_tires()` still emitted the 28-column layout from before slugs existed, so `row[28]` was undefined and every card in server-side mode silently lost its link to the crawlable `/tires/{slug}/` page. All three row producers now share one `to_frontend_row()` builder, so the layout can't drift by copy again; a test holds all three to it.
+- **Compare works in server-side mode, and compare links stay true over time.** Selections were keyed on positions in the client-side row array — an array that is empty in server-side mode (every checkbox mapped to −1 and did nothing) and that shifts with every catalog change (a shared `?compare=0,3,7` link quietly showed different tires later). Selections and URLs now carry tire ids. Old numeric links still render via a fallback, and the URL path now enforces the same 4-tire cap as the checkboxes.
+- **The back button restores exactly the state the URL describes.** Filters whose parameter was absent from the URL were left as they stood, so navigating back to a clean URL kept filtering; the restored page number was then reset to 1; and the URL was pushed *during* popstate handling, adding history entries the back button had to fight through. Restoring now resets absent filters to their defaults, keeps the page number, and writes no history.
+- **The price filter works above $600.** The adaptive slider raises its ceiling to cover the priciest tire, but six comparisons still hardcoded the old $600 default — dragging to $650 under a $750 ceiling applied no price constraint at all, and the badge count, chips, no-results hints, analytics and shared URLs each disagreed about whether a price filter was active. Every site now asks the slider for its live ceiling.
+- **A cleared "tires per page" field can't take the guide down.** The value was stored unclamped, so an emptied field saved 0 — `LIMIT 0` plus a division by zero (HTTP 500) on every server-side request. Saves now clamp to the form's own 4–48 range, and the AJAX handler guards against any bad value already stored.
+- **Every rating request settles.** Calls to the batched ratings loader inside its 50 ms debounce window cancelled the previous caller's timer — and with it the only path to that caller's `resolve`, leaving cards stuck on "No reviews" and, under sort-by-rating, hanging the render pipeline. All callers in a window now share one flush and settle together.
+
+### Added
+- **Regression tests for the paths that broke.** The settings merge (CJ credential survival), rows-per-page clamping, partial-CSV column preservation, skip/insert modes, and the 29-column row contract across all three producers. The settings and CSV handlers were restructured so their logic is callable without the redirect-and-exit wrapper — which is what had kept them untested.
+
+### Notes
+- Guide URLs that carried the old position-based `?compare=` values were session-scoped (the guide page rebuilt them constantly); only the compare page itself kept long-lived links, and those fall back as before.
+
 ## [1.84.2] - 2026-08-29
 
 ### Added

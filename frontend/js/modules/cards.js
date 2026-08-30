@@ -100,13 +100,6 @@ export function renderCards(rows) {
     const tireId = card.dataset.tireId;
     if (targetTireIds.has(tireId)) {
       cardsToKeep.add(tireId);
-      const row = rows.find(r => r[0] === tireId);
-      if (row) {
-        const checkbox = card.querySelector('.compare-checkbox');
-        if (checkbox) {
-          checkbox.dataset.index = state.allRows.indexOf(row);
-        }
-      }
     } else {
       cardsToRemove.push(card);
     }
@@ -261,7 +254,10 @@ export function createSingleCard(row) {
   compareCheckbox.type = 'checkbox';
   compareCheckbox.className = 'compare-checkbox';
   compareCheckbox.dataset.id = tireId;
-  compareCheckbox.dataset.index = state.allRows.indexOf(row).toString();
+  // A selection survives re-renders and page changes: restore it from the
+  // ID-keyed compare list.
+  compareCheckbox.checked = state.compareList.includes(tireId);
+  compareCheckbox.disabled = !compareCheckbox.checked && state.compareList.length >= 4;
 
   const compareIcon = document.createElement('span');
   compareIcon.className = 'compare-overlay-icon';
