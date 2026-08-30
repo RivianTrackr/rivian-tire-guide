@@ -51,12 +51,7 @@ class RTG_Ajax {
      * @return string Opaque identifier.
      */
     private function get_client_fingerprint() {
-        if ( is_user_logged_in() ) {
-            return 'u' . get_current_user_id();
-        }
-        $ip = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
-        $ua = isset( $_SERVER['HTTP_USER_AGENT'] ) ? substr( (string) $_SERVER['HTTP_USER_AGENT'], 0, 200 ) : '';
-        return 'g' . md5( $ip . '|' . $ua );
+        return RTG_Rate_Limiter::fingerprint();
     }
 
     /**
@@ -438,25 +433,7 @@ class RTG_Ajax {
      * @return bool True when the request should be blocked.
      */
     private function check_rate_limit( $bucket, $fingerprint, $limit, $window ) {
-        $key = 'rtg_' . $bucket . '_' . md5( $fingerprint );
-
-        if ( function_exists( 'wp_using_ext_object_cache' ) && wp_using_ext_object_cache() ) {
-            $group = 'rtg_rate_limit';
-            if ( wp_cache_add( $key, 1, $group, $window ) ) {
-                return 1 > $limit;
-            }
-            $count = wp_cache_incr( $key, 1, $group );
-            return (int) $count > $limit;
-        }
-
-        // Transient fallback. Reads a hint, writes the incremented value.
-        // Not strictly atomic, but the blast radius under concurrency is just
-        // a few extra requests slipping through per window — acceptable for
-        // a best-effort soft limit in a shared-nothing PHP-FPM environment.
-        $current = get_transient( $key );
-        $new     = ( false === $current ) ? 1 : (int) $current + 1;
-        set_transient( $key, $new, $window );
-        return $new > $limit;
+        return RTG_Rate_Limiter::hit( $bucket, $fingerprint, $limit, $window );
     }
 
     /**
@@ -1369,7 +1346,10 @@ class RTG_Ajax {
         $update['roamer_tire_id']   = implode( ',', $all_ids );
         $update['roamer_synced_at'] = current_time( 'mysql' );
 
-        $result = RTG_Database::update_tire( $tire_id, $update );
+        // Roamer columns only — must not bump updated_at (that column tracks
+        // human edits, and the stale-price report reads it).
+        $result = RTG_Database::update_roamer_data( $tire_id, $update );
+        RTG_Database::flush_cache();
 
         if ( false === $result ) {
             wp_send_json_error( 'Failed to update tire.' );
@@ -1419,7 +1399,7 @@ class RTG_Ajax {
             wp_send_json_error( 'Missing tire_id.' );
         }
 
-        $result = RTG_Database::update_tire( $tire_id, array(
+        $result = RTG_Database::update_roamer_data( $tire_id, array(
             'roamer_tire_id'            => '',
             'roamer_efficiency'         => 0,
             'roamer_total_km'           => 0,
@@ -1427,6 +1407,7 @@ class RTG_Ajax {
             'roamer_vehicle_breakdown'  => '',
             'roamer_synced_at'          => null,
         ) );
+        RTG_Database::flush_cache();
 
         if ( false === $result ) {
             wp_send_json_error( 'Failed to unlink tire.' );

@@ -145,6 +145,15 @@ class RTG_Catalog_Sync {
             $run_budget = intval( $budget_cap );
         }
 
+        // The run budget can exceed PHP's execution limit — on hosts where
+        // WP-Cron runs under the web default (30–60s), the nightly run was
+        // killed mid-flight with nothing recorded, the exact failure
+        // RTG_Health exists to diagnose. Allow the budget plus room for the
+        // final request and the link/price/reconcile work that follows.
+        if ( function_exists( 'set_time_limit' ) ) {
+            @set_time_limit( $run_budget + RTG_Catalog_Source_CJ::REQUEST_TIMEOUT + 120 );
+        }
+
         $stats = array(
             'status'         => 'success',
             'time'           => current_time( 'mysql' ),

@@ -4,6 +4,34 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.86.0] - 2026-08-30
+
+All fifteen medium-priority findings from the v1.84.2 full-codebase review, in one release.
+
+### Fixed
+- **The weekly link check now rotates through the whole catalog.** It checked the same alphabetically-first 50 links every run, forever — a catalog past 50 links left everything from ~"H" onward never cron-checked, while the results claimed a full pass. Runs now advance a cursor, carry forward verdicts for links outside the current slice, only email about breakage the run itself found, and the Affiliate Links page says when the last run was one slice ("50 of N links this run"). A manual full check resets the rotation.
+- **The five-minute Roamer sync only writes tires whose data actually moved — and feed writes no longer count as edits.** Every run used to rewrite every matched tire: `updated_at` bumped on rows nobody touched (blinding the stale-price report, which reads it), and the hour-long tire cache was flushed every five minutes. Unchanged tires are now skipped, and Roamer columns are written through a dedicated writer that explicitly holds `updated_at` where it was. The per-tire timestamp column now honestly means "data last changed" and is labeled accordingly.
+- **The nightly catalog sync raises PHP's time limit for itself.** The browser-started run always did; the cron run didn't, so on hosts where WP-Cron runs under the web default (30–60s) the nightly run was killed mid-flight with nothing recorded — the exact failure RTG_Health exists to diagnose, self-inflicted.
+- **The Tire Discovery vehicle counts render again.** The page read `$status_filter` twenty-nine lines before assigning it — a PHP 8 warning, and a `WHERE status = ''` that matched nothing, so the "(N)" counts in the Vehicle dropdown had never rendered on any tab.
+- **A partial CSV export is a real backup now.** `model_aliases` (which drive discovery matching, pricing, and delisting) and `bundle_link` were silently dropped from the export the page called re-importable. Both are in the CSV contract, import and export, with the aliases keeping their one-per-line shape; the column reference on the Import page also gained the `review_link` row it had always omitted.
+- **A blocked duplicate save keeps everything you typed.** Colliding with an existing tire used to throw away every field except brand, model, and size (and the duplicate-ID case restored nothing at all). The whole submission is now stashed and the form comes back exactly as you left it — tick "Add anyway" and save, without retyping.
+- **The compare page's escaping can no longer be bypassed by a stored value.** Any spec value starting with `<` was trusted as markup. Markup-producing renderers now declare themselves explicitly and everything else is escaped unconditionally — which also fixed best-value highlighting for the real-world efficiency row, whose markup had never compared as a number.
+- **The two URL allowlists agree again, permanently.** The guide's copy and the compare/review pages' copy had drifted in both directions — five retailers rendered on the guide but their buy buttons vanished on the compare page, two vice versa. The canonical lists now live in one module (`allowed-domains.js`); a new test fails CI whenever `rtg-shared.js`'s copy drifts, the same construction that ended the image-extension drift in 1.83.2. The guide's image validator also accepts `cdn.riviantrackr.com` (it refused the CDN the shared validator allowed), and the shared one is HTTPS-only (it accepted `http:` images the guide refused).
+
+### Changed
+- **One rate limiter.** REST kept its own copy keyed on raw `REMOTE_ADDR` with non-atomic transients — behind a proxy or CDN that doesn't rewrite the address, the whole site throttled as one client. Both AJAX and REST now share `RTG_Rate_Limiter`: object-cache-aware atomic counting, keyed on the logged-in user or IP + user agent.
+- **The public `/feed` endpoint serves a cached payload.** It's the API's expensive route — the full catalog plus a ratings join, `CORS *` — and was rebuilt on every hit. The built payload now lives in a transient for an hour and is flushed with the tire cache on any write.
+- **The discovery queue is honest about truncation and cheaper to open.** The listing caps at 200 rows; a tab whose badge said "Dismissed (900)" silently showed 200. It now says "showing the 200 most recent of N" with the filters as the way in. Opening the page also re-keyed every candidate against the guide on every view — that pass is throttled to once per 10 minutes, shared with the nightly sweep's own pass, and a guide edit clears the throttle so a rename shows immediately.
+- **The candidate fuzzy-match table is computed once per run.** Link sync, price sync, and the discovery page each rebuilt it with identical inputs — a similarity comparison of every candidate against every same-brand/size guide entry, tens of millions of string comparisons per sync at catalog scale. It's memoized per request; every candidate or guide write forgets it.
+- **`build.sh` is a thin wrapper over the real pipeline.** It was a second, divergent build: 3 of esbuild's 8 targets (a checkout built with it 404'd every admin script) and a no-tooling fallback that stripped `//.*$` — corrupting any line carrying `https://` inside a string. It now runs `npm run build`, full stop.
+
+### CI
+- **Committed minified assets can't drift from source.** The build job now fails if `npm run build` changes any `.min.js`/`.min.css` — editing source without rebuilding used to ship stale minified assets silently.
+- **PHPUnit runs on PHP 7.4, 8.0, and 8.2** — the plugin's whole supported range — instead of 8.2 alone, so a 7.4-incompatible behavior (not just syntax) fails before it ships.
+
+### Tests
+- Roamer change detection (MySQL string forms don't read as changes), the `updated_at`-preserving writer (NULL support, foreign columns ignored), the shared rate limiter (limits, bucket/fingerprint independence, guest UA distinction), candidate `count_matching` vs the listing cap, the CSV round trip for the new columns, the one-shot blocked-save stash, and the allowlist sync check that gates the drift.
+
 ## [1.85.0] - 2026-08-30
 
 All ten high-priority findings from the v1.84.2 full-codebase review, in one release.

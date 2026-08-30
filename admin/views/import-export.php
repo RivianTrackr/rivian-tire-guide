@@ -140,6 +140,7 @@ $skipped  = isset( $_GET['skipped'] ) ? intval( $_GET['skipped'] ) : 0;
                         <tr><td><code>tire_id</code></td><td>No (auto-generated)</td><td>Text</td><td>tire001</td></tr>
                         <tr><td><code>brand</code></td><td><strong>Yes</strong></td><td>Text</td><td>Michelin</td></tr>
                         <tr><td><code>model</code></td><td><strong>Yes</strong></td><td>Text</td><td>Defender LTX M/S 2</td></tr>
+                        <tr><td><code>model_aliases</code></td><td>No</td><td>Text (one alias per line, quoted)</td><td>Defender LTX MS2</td></tr>
                         <tr><td><code>size</code></td><td>No</td><td>Text</td><td>275/65R20</td></tr>
                         <tr><td><code>diameter</code></td><td>No</td><td>Text</td><td>20"</td></tr>
                         <tr><td><code>category</code></td><td>No</td><td>Text</td><td>All-Season</td></tr>
@@ -156,7 +157,9 @@ $skipped  = isset( $_GET['skipped'] ) ? intval( $_GET['skipped'] ) : 0;
                         <tr><td><code>utqg</code></td><td>No</td><td>Text</td><td>620 A B</td></tr>
                         <tr><td><code>tags</code></td><td>No</td><td>Text</td><td>EV Rated, RIV</td></tr>
                         <tr><td><code>link</code></td><td>No</td><td>URL</td><td>https://example.com/tire</td></tr>
+                        <tr><td><code>bundle_link</code></td><td>No</td><td>URL</td><td>https://example.com/tire-bundle</td></tr>
                         <tr><td><code>image</code></td><td>No</td><td>URL</td><td>https://example.com/tire.jpg</td></tr>
+                        <tr><td><code>review_link</code></td><td>No</td><td>URL</td><td>https://youtube.com/watch?v=…</td></tr>
                         <tr><td><code>sort_order</code></td><td>No</td><td>Integer</td><td>0</td></tr>
                     </tbody>
                 </table>

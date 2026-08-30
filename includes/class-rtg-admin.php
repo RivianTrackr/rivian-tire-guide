@@ -883,6 +883,7 @@ class RTG_Admin {
         } else {
             // Check uniqueness.
             if ( RTG_Database::tire_id_exists( $data['tire_id'] ) ) {
+                self::stash_blocked_save( $data );
                 wp_redirect( admin_url( 'admin.php?page=rtg-tire-edit&message=duplicate_id' ) );
                 exit;
             }
@@ -894,6 +895,7 @@ class RTG_Admin {
             if ( empty( $post['allow_duplicate'] ) ) {
                 $duplicate_of = RTG_Catalog_Sync::find_guide_match( $data );
                 if ( '' !== $duplicate_of ) {
+                    self::stash_blocked_save( $data );
                     $args = array(
                         'page'         => 'rtg-tire-edit',
                         'message'      => 'duplicate_tire',
@@ -927,6 +929,27 @@ class RTG_Admin {
             wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=added' . ( $image_fallback ? '&image_fallback=1' : '' ) ) );
         }
         exit;
+    }
+
+    /**
+     * Keep everything a blocked save carried so the form comes back filled —
+     * a duplicate verdict used to cost the admin every field they had typed
+     * except brand, model, and size.
+     */
+    private static function stash_blocked_save( array $data ) {
+        set_transient( 'rtg_blocked_save_' . get_current_user_id(), $data, 10 * MINUTE_IN_SECONDS );
+    }
+
+    /**
+     * Retrieve (and clear) the last blocked save for the current admin.
+     *
+     * @return array The stashed form data, or an empty array.
+     */
+    public static function take_blocked_save() {
+        $key  = 'rtg_blocked_save_' . get_current_user_id();
+        $data = get_transient( $key );
+        delete_transient( $key );
+        return is_array( $data ) ? $data : array();
     }
 
     private function handle_tire_delete() {
@@ -1365,10 +1388,10 @@ class RTG_Admin {
      * CSV column order — matches the database columns used for tire data.
      */
     private static $csv_columns = array(
-        'tire_id', 'size', 'diameter', 'brand', 'model', 'category',
+        'tire_id', 'size', 'diameter', 'brand', 'model', 'model_aliases', 'category',
         'price', 'mileage_warranty', 'weight_lb', 'three_pms', 'tread',
         'load_index', 'max_load_lb', 'load_range', 'speed_rating', 'psi',
-        'utqg', 'tags', 'link', 'image', 'review_link', 'sort_order',
+        'utqg', 'tags', 'link', 'bundle_link', 'image', 'review_link', 'sort_order',
     );
 
     private function handle_csv_export() {
@@ -1586,7 +1609,16 @@ class RTG_Admin {
         $data['max_load_lb']      = intval( $data['max_load_lb'] ?? 0 );
         $data['sort_order']       = intval( $data['sort_order'] ?? 0 );
 
+        // One alias per line, sanitized per line — sanitize_text_field would
+        // strip the newlines the format depends on. Same treatment as the
+        // tire edit form.
+        $data['model_aliases'] = implode( "\n", array_filter( array_map(
+            'sanitize_text_field',
+            preg_split( '/[\r\n]+/', (string) ( $data['model_aliases'] ?? '' ) )
+        ) ) );
+
         $data['link']        = esc_url_raw( $data['link'] ?? '' );
+        $data['bundle_link'] = esc_url_raw( $data['bundle_link'] ?? '' );
         $data['image']       = esc_url_raw( $data['image'] ?? '' );
         $data['review_link'] = esc_url_raw( $data['review_link'] ?? '' );
 

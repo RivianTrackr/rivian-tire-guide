@@ -60,6 +60,7 @@ class RTG_Candidates {
      * }
      */
     public static function upsert( $row ) {
+        self::forget_matched_by_tire();
         global $wpdb;
         $table = self::table();
 
@@ -257,6 +258,54 @@ class RTG_Candidates {
     }
 
     /**
+     * How many rows match a query() filter set, ignoring its limit — so a
+     * capped listing can say "showing N of M" instead of silently truncating.
+     *
+     * @param array $args Same filter keys as query(); limit/offset ignored.
+     * @return int Matching row count.
+     */
+    public static function count_matching( $args = array() ) {
+        global $wpdb;
+        $table = self::table();
+
+        $args = wp_parse_args( $args, array(
+            'status'  => self::STATUS_NEW,
+            'size'    => '',
+            'source'  => '',
+            'brand'   => '',
+            'vehicle' => '',
+        ) );
+
+        $where  = array( '1=1' );
+        $params = array();
+
+        if ( '' !== $args['status'] && 'all' !== $args['status'] ) {
+            $where[]  = 'status = %s';
+            $params[] = $args['status'];
+        }
+        if ( '' !== $args['size'] ) {
+            $where[]  = 'size = %s';
+            $params[] = $args['size'];
+        }
+        if ( '' !== $args['source'] ) {
+            $where[]  = 'source = %s';
+            $params[] = $args['source'];
+        }
+        if ( '' !== ( $args['brand'] ?? '' ) ) {
+            $where[]  = 'brand = %s';
+            $params[] = $args['brand'];
+        }
+        if ( '' !== $args['vehicle'] ) {
+            $where[]  = 'FIND_IN_SET( %s, fits_vehicles )';
+            $params[] = $args['vehicle'];
+        }
+
+        $sql = 'SELECT COUNT(*) FROM ' . $table . ' WHERE ' . implode( ' AND ', $where );
+
+        return intval( $wpdb->get_var( $params ? $wpdb->prepare( $sql, $params ) : $sql ) );
+    }
+
+    /**
      * Count candidates grouped by status.
      *
      * @return array Status slug => count, with every known status present.
@@ -372,6 +421,16 @@ class RTG_Candidates {
      * @return array tire_id => candidate rows.
      */
     public static function get_matched_by_tire() {
+        // One catalog run asks for this table up to three times with identical
+        // inputs (link sync, price sync, and the discovery admin page), and
+        // computing it means a similarity comparison of every candidate
+        // against every same-brand/size guide entry — tens of millions of
+        // string comparisons at catalog scale. Memoize per request; every
+        // candidate mutator forgets it.
+        if ( null !== self::$matched_by_tire_memo ) {
+            return self::$matched_by_tire_memo;
+        }
+
         $by_key   = self::get_by_match_key();
         $tires    = RTG_Database::get_all_tires();
         $variants = RTG_Catalog_Sync::build_variant_index( $tires );
@@ -432,7 +491,20 @@ class RTG_Candidates {
             }
         }
 
+        self::$matched_by_tire_memo = $by_tire;
+
         return $by_tire;
+    }
+
+    /** Request-level memo for get_matched_by_tire(); null = not computed. */
+    private static $matched_by_tire_memo = null;
+
+    /**
+     * Forget the memoized match table. Called by every method that writes
+     * candidate rows; guide-tire writes reach it via RTG_Database::flush_cache().
+     */
+    public static function forget_matched_by_tire() {
+        self::$matched_by_tire_memo = null;
     }
 
     /**
@@ -453,6 +525,7 @@ class RTG_Candidates {
      * @return int Rows whose match changed.
      */
     public static function refresh_matches( $guide_index, $variants = null, $live_tire_ids = null ) {
+        self::forget_matched_by_tire();
         global $wpdb;
         $table = self::table();
 
@@ -503,6 +576,10 @@ class RTG_Candidates {
             $wpdb->update( $table, $data, array( 'id' => intval( $row['id'] ) ), $formats, array( '%d' ) );
             $changed++;
         }
+
+        // This WAS a reconcile pass — the discovery page's throttled one can
+        // stand down for the window.
+        set_transient( 'rtg_discovery_reconciled', 1, 10 * MINUTE_IN_SECONDS );
 
         return $changed;
     }
@@ -641,6 +718,7 @@ class RTG_Candidates {
      * @return array { off_fitment: int, stale: int }
      */
     public static function prune( $guide_sizes, $stale_days = 60 ) {
+        self::forget_matched_by_tire();
         global $wpdb;
         $table = self::table();
 
@@ -729,6 +807,7 @@ class RTG_Candidates {
      * @return int Rows changed.
      */
     public static function bulk_set_status( $filter, $to ) {
+        self::forget_matched_by_tire();
         global $wpdb;
         $table = self::table();
 
@@ -779,6 +858,7 @@ class RTG_Candidates {
      * @return bool Whether the row was updated.
      */
     public static function set_status( $id, $status, $tire_id = null ) {
+        self::forget_matched_by_tire();
         global $wpdb;
         $table = self::table();
 

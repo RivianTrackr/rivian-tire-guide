@@ -84,8 +84,28 @@ $min_load_index = isset( $settings['catalog_min_load_index'] )
 
 // The queue answers to the guide as it is now, not as the last nightly sweep
 // left it — a tire added or renamed since then must not still be offered here
-// as something new.
-RTG_Candidates::reconcile_with_guide();
+// as something new. Re-keying reads every candidate and can write per row,
+// so it's throttled like RTG_Health::admin_probe rather than run on every
+// page view: a recent pass (here or the nightly sweep) is current enough,
+// and a tire edit flushes the throttle so its rename shows immediately.
+if ( false === get_transient( 'rtg_discovery_reconciled' ) ) {
+    RTG_Candidates::reconcile_with_guide();
+    set_transient( 'rtg_discovery_reconciled', 1, 10 * MINUTE_IN_SECONDS );
+}
+
+// The candidate listing filters, parsed before anything below reads them.
+$status_filter = isset( $_GET['candidate_status'] )
+    ? sanitize_text_field( wp_unslash( $_GET['candidate_status'] ) )
+    : RTG_Candidates::STATUS_NEW;
+$size_filter = isset( $_GET['candidate_size'] )
+    ? sanitize_text_field( wp_unslash( $_GET['candidate_size'] ) )
+    : '';
+$vehicle_filter = isset( $_GET['candidate_vehicle'] )
+    ? sanitize_text_field( wp_unslash( $_GET['candidate_vehicle'] ) )
+    : '';
+$brand_filter = isset( $_GET['candidate_brand'] )
+    ? sanitize_text_field( wp_unslash( $_GET['candidate_brand'] ) )
+    : '';
 
 // Retailer coverage: which guide tires a retailer actually carries. Tires with
 // no match are expected while affiliate links are still being filled in, so
@@ -155,25 +175,15 @@ foreach ( RTG_Catalog_Source_CJ::DEFAULT_ADVERTISERS as $adv_id => $adv_name ) {
 $stats  = RTG_Catalog_Sync::get_stats();
 $counts = RTG_Candidates::get_counts();
 
-$status_filter = isset( $_GET['candidate_status'] )
-    ? sanitize_text_field( wp_unslash( $_GET['candidate_status'] ) )
-    : RTG_Candidates::STATUS_NEW;
-$size_filter = isset( $_GET['candidate_size'] )
-    ? sanitize_text_field( wp_unslash( $_GET['candidate_size'] ) )
-    : '';
-$vehicle_filter = isset( $_GET['candidate_vehicle'] )
-    ? sanitize_text_field( wp_unslash( $_GET['candidate_vehicle'] ) )
-    : '';
-$brand_filter = isset( $_GET['candidate_brand'] )
-    ? sanitize_text_field( wp_unslash( $_GET['candidate_brand'] ) )
-    : '';
-
-$candidates = RTG_Candidates::query( array(
+$candidate_filters = array(
     'status'  => $status_filter,
     'size'    => $size_filter,
     'vehicle' => $vehicle_filter,
     'brand'   => $brand_filter,
-) );
+);
+
+$candidates      = RTG_Candidates::query( $candidate_filters );
+$candidate_total = RTG_Candidates::count_matching( $candidate_filters );
 
 // Volume in the queue clusters by brand — a page of one budget brand is one
 // decision, not sixty — so brands come with counts, and brands outside the
@@ -665,6 +675,13 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                     </p>
                 </div>
             <?php else : ?>
+                <?php if ( $candidate_total > count( $candidates ) ) : ?>
+                    <div style="padding:10px 16px;color:var(--rtg-text-muted);font-size:13px;border-bottom:1px solid var(--rtg-border);">
+                        Showing the <?php echo esc_html( count( $candidates ) ); ?> most recent of
+                        <?php echo esc_html( $candidate_total ); ?> rows in this view —
+                        narrow with the size, vehicle, or brand filters to reach the rest.
+                    </div>
+                <?php endif; ?>
                 <table class="rtg-table rtg-table-compact">
                     <thead>
                         <tr>

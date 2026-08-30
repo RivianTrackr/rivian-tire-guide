@@ -82,15 +82,26 @@ if ( $from_candidate > 0 ) {
 $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) : '';
 
 // A blocked duplicate: the save collided with a tire already in the guide.
-// The identity fields ride back on the redirect so the admin sees exactly
-// what collided instead of an empty form.
+// The whole submission was stashed on the way out, so the form comes back
+// exactly as the admin left it — price, links, specs, tags and all — not
+// just the three identity fields the redirect URL carries.
 $duplicate_of      = 'duplicate_tire' === $message ? sanitize_text_field( wp_unslash( $_GET['duplicate_of'] ?? '' ) ) : '';
 $duplicate_of_tire = '' !== $duplicate_of ? RTG_Database::get_tire( $duplicate_of ) : null;
-if ( 'duplicate_tire' === $message && ! $is_edit ) {
-    foreach ( array( 'brand', 'model', 'size' ) as $identity_field ) {
-        $returned = sanitize_text_field( wp_unslash( $_GET[ $identity_field ] ?? '' ) );
-        if ( '' !== $returned ) {
-            $v[ $identity_field ] = $returned;
+if ( in_array( $message, array( 'duplicate_tire', 'duplicate_id' ), true ) && ! $is_edit ) {
+    foreach ( RTG_Admin::take_blocked_save() as $blocked_field => $blocked_value ) {
+        if ( array_key_exists( $blocked_field, $v ) && '' !== $blocked_value && null !== $blocked_value ) {
+            $v[ $blocked_field ] = $blocked_value;
+        }
+    }
+
+    // Fallback for a redirect with no stash (an old bookmark, an expired
+    // transient): the identity fields still ride on the URL.
+    if ( 'duplicate_tire' === $message ) {
+        foreach ( array( 'brand', 'model', 'size' ) as $identity_field ) {
+            $returned = sanitize_text_field( wp_unslash( $_GET[ $identity_field ] ?? '' ) );
+            if ( '' !== $returned && '' === $v[ $identity_field ] ) {
+                $v[ $identity_field ] = $returned;
+            }
         }
     }
 }

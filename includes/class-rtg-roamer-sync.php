@@ -154,8 +154,11 @@ class RTG_Roamer_Sync {
         // 3. Map tire_id → the Roamer IDs it already carries, so newly
         //    auto-matched IDs are appended rather than replacing the list.
         $existing_ids = array(); // tire_id => [ roamer_tire_id, ... ]
+        // 4. Map tire_id → its current row, to skip writes that change nothing.
+        $tire_rows = array();
 
         foreach ( $local_tires as $tire ) {
+            $tire_rows[ $tire['tire_id'] ] = $tire;
             if ( ! empty( $tire['roamer_tire_id'] ) ) {
                 // Support comma-separated roamer_tire_ids (from multi-assign).
                 $ids = array_values( array_filter( array_map( 'trim', explode( ',', $tire['roamer_tire_id'] ) ) ) );
@@ -255,10 +258,14 @@ class RTG_Roamer_Sync {
             }
         }
 
-        // Flush one merged write per guide tire.
+        // Flush one merged write per guide tire — and only for tires whose
+        // merged data actually differs from what they carry. Every five
+        // minutes this used to rewrite every matched tire, which flushed the
+        // hour-long tire cache each run and bumped updated_at on rows nobody
+        // had touched.
+        $written = 0;
         foreach ( $pending as $tire_id => $bucket ) {
             $update = self::merge_entries( $bucket['entries'] );
-            $update['roamer_synced_at'] = $now;
 
             // Only touch the ID column when the sync discovered a new link;
             // append to whatever the tire already carried so an existing
@@ -271,10 +278,18 @@ class RTG_Roamer_Sync {
                 $update['roamer_tire_id'] = implode( ',', $ids );
             }
 
-            RTG_Database::update_tire( $tire_id, $update );
+            if ( ! self::roamer_data_changed( $tire_rows[ $tire_id ] ?? array(), $update ) ) {
+                continue;
+            }
+
+            $update['roamer_synced_at'] = $now;
+            RTG_Database::update_roamer_data( $tire_id, $update );
+            $written++;
         }
 
-        RTG_Database::flush_cache();
+        if ( $written > 0 ) {
+            RTG_Database::flush_cache();
+        }
 
         $result = array(
             'status'         => 'success',
@@ -379,6 +394,33 @@ class RTG_Roamer_Sync {
             'roamer_vehicle_count'     => $vehicles,
             'roamer_vehicle_breakdown' => $encoded_breakdown,
         );
+    }
+
+    /**
+     * Whether the merged Roamer values differ from what a tire row carries.
+     *
+     * Numeric columns compare numerically (the row holds MySQL's string
+     * form, "12345.00" vs 12345.0), strings compare exactly.
+     *
+     * @param array $current The tire's current row (associative).
+     * @param array $update  Column => value map about to be written.
+     * @return bool True when at least one value would change.
+     */
+    public static function roamer_data_changed( array $current, array $update ) {
+        $numeric = array( 'roamer_efficiency', 'roamer_total_km', 'roamer_vehicle_count' );
+
+        foreach ( $update as $col => $val ) {
+            $existing = $current[ $col ] ?? '';
+            if ( in_array( $col, $numeric, true ) ) {
+                if ( abs( floatval( $existing ) - floatval( $val ) ) > 0.0001 ) {
+                    return true;
+                }
+            } elseif ( (string) $existing !== (string) $val ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

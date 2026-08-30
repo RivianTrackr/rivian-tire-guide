@@ -208,6 +208,15 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
                 <strong>Link Health Check</strong>
                 <?php if ( $last_checked ) : ?>
                     <span style="color:var(--rtg-text-muted);margin-left:8px;">Last checked: <?php echo esc_html( date( 'M j, Y g:i A', strtotime( $last_checked ) ) ); ?></span>
+                    <?php
+                    // The weekly run rotates through the catalog in batches;
+                    // say so when the last run was one slice of it.
+                    $lc_total = intval( $link_check_results['total'] ?? 0 );
+                    $lc_all   = intval( $link_check_results['link_count'] ?? 0 );
+                    if ( $lc_all > $lc_total && $lc_total > 0 ) :
+                    ?>
+                        <span style="color:var(--rtg-text-muted);margin-left:8px;">(<?php echo esc_html( $lc_total ); ?> of <?php echo esc_html( $lc_all ); ?> links this run — the weekly check rotates through the rest)</span>
+                    <?php endif; ?>
                 <?php else : ?>
                     <span style="color:var(--rtg-text-muted);margin-left:8px;">Never checked</span>
                 <?php endif; ?>

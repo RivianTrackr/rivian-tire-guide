@@ -21,14 +21,22 @@ var RTG_SHARED = (function() {
 
   // --- URL Validation ---
 
+  // These lists are a COPY of frontend/js/modules/allowed-domains.js — the
+  // canonical source — because this file is a classic script and cannot
+  // import it. tests/test-domain-sync.mjs fails whenever the two disagree:
+  // the drift it prevents once had five retailers rendering on the guide but
+  // vanishing on the compare page. Change allowed-domains.js first, then
+  // mirror it here.
+
   var ALLOWED_IMAGE_HOSTNAMES = ['riviantrackr.com', 'cdn.riviantrackr.com'];
 
   var ALLOWED_LINK_DOMAINS = [
     'riviantrackr.com', 'tirerack.com', 'discounttire.com', 'amazon.com', 'amzn.to',
     'costco.com', 'walmart.com', 'goodyear.com', 'bridgestonetire.com', 'michelinman.com',
-    'continental-tires.com', 'pirelli.com', 'yokohamatire.com', 'coopertire.com',
-    'bfgoodrichtires.com', 'firestone.com', 'generaltire.com', 'hankooktire.com',
-    'kumhotire.com', 'toyo.com', 'falkentire.com', 'nittotire.com', 'simpletire.com',
+    'continental-tires.com', 'pirelli.com', 'sumitomotire.com', 'yokohamatire.com',
+    'coopertire.com', 'bfgoodrichtires.com', 'firestone.com', 'generaltire.com',
+    'hankooktire.com', 'kumhotire.com', 'nexentire.com', 'toyo.com', 'falkentire.com',
+    'nittotire.com', 'autozone.com', 'pepboys.com', 'ntb.com', 'simpletire.com',
     'prioritytire.com', 'evsportline.com', 'tsportline.com',
     'anrdoezrs.net', 'dpbolvw.net', 'jdoqocy.com', 'kqzyfj.com', 'tkqlhce.com',
     'commission-junction.com', 'cj.com', 'linksynergy.com', 'click.linksynergy.com',
@@ -55,7 +63,7 @@ var RTG_SHARED = (function() {
     if (!trimmed) return '';
     try {
       var u = new URL(trimmed);
-      if (!/^https?:$/.test(u.protocol)) return '';
+      if (u.protocol !== 'https:') return '';
       if (!ALLOWED_IMAGE_HOSTNAMES.includes(u.hostname)) return '';
       if (u.pathname.includes('..') || u.pathname.includes('//')) return '';
       return trimmed;

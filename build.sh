@@ -1,64 +1,29 @@
 #!/usr/bin/env bash
 #
 # Rivian Tire Guide — Build Script
-# Generates minified CSS and JS files for production.
+#
+# Thin wrapper over the one real pipeline (esbuild via npm). The script used
+# to be a second, divergent pipeline: it built only 3 of esbuild's 8 targets
+# (a checkout built with it 404'd every admin script), and its no-tooling
+# fallback stripped `//.*$` — corrupting any line carrying `https://` inside
+# a string. There is exactly one way to build now.
 #
 # Usage:  bash build.sh
 #
-# Requirements: Node.js with npx available, OR terser/csso installed globally.
-# Falls back to basic regex-based minification if no tools are found.
+# Requirements: Node.js 18+ with npm.
 
 set -euo pipefail
 
-PLUGIN_DIR="$(cd "$(dirname "$0")" && pwd)"
-CSS_SRC="$PLUGIN_DIR/frontend/css/rivian-tires.css"
-JS_SRC="$PLUGIN_DIR/frontend/js/rivian-tires.js"
-ADMIN_CSS_SRC="$PLUGIN_DIR/admin/css/admin-styles.css"
+cd "$(cd "$(dirname "$0")" && pwd)"
 
-CSS_MIN="$PLUGIN_DIR/frontend/css/rivian-tires.min.css"
-JS_MIN="$PLUGIN_DIR/frontend/js/rivian-tires.min.js"
-ADMIN_CSS_MIN="$PLUGIN_DIR/admin/css/admin-styles.min.css"
+if ! command -v npm &>/dev/null; then
+    echo "Error: npm is required — install Node.js 18+ and re-run." >&2
+    exit 1
+fi
 
-echo "Building Rivian Tire Guide assets..."
+if [ ! -d node_modules ]; then
+    echo "Installing build dependencies..."
+    npm ci
+fi
 
-# --- CSS Minification ---
-minify_css() {
-    local src="$1" dest="$2"
-    if command -v npx &>/dev/null; then
-        npx --yes csso-cli "$src" -o "$dest" 2>/dev/null && return 0
-    fi
-    # Fallback: basic CSS minification via sed.
-    sed -e 's|/\*[^*]*\*\+([^/][^*]*\*\+)*/||g' \
-        -e 's/^[[:space:]]*//g' \
-        -e 's/[[:space:]]*$//g' \
-        -e '/^$/d' \
-        "$src" | tr -d '\n' | sed 's/  */ /g' > "$dest"
-}
-
-# --- JS Minification ---
-minify_js() {
-    local src="$1" dest="$2"
-    if command -v npx &>/dev/null; then
-        npx --yes terser "$src" -o "$dest" --compress --mangle 2>/dev/null && return 0
-    fi
-    # Fallback: strip comments and blank lines.
-    sed -e 's|//.*$||g' \
-        -e '/^[[:space:]]*$/d' \
-        "$src" > "$dest"
-}
-
-# Build each asset.
-printf "  CSS: %s → %s ... " "$(basename "$CSS_SRC")" "$(basename "$CSS_MIN")"
-minify_css "$CSS_SRC" "$CSS_MIN"
-echo "done ($(wc -c < "$CSS_MIN") bytes)"
-
-printf "  CSS: %s → %s ... " "$(basename "$ADMIN_CSS_SRC")" "$(basename "$ADMIN_CSS_MIN")"
-minify_css "$ADMIN_CSS_SRC" "$ADMIN_CSS_MIN"
-echo "done ($(wc -c < "$ADMIN_CSS_MIN") bytes)"
-
-printf "   JS: %s → %s ... " "$(basename "$JS_SRC")" "$(basename "$JS_MIN")"
-minify_js "$JS_SRC" "$JS_MIN"
-echo "done ($(wc -c < "$JS_MIN") bytes)"
-
-echo ""
-echo "Build complete."
+npm run build

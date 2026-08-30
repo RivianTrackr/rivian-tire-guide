@@ -5,6 +5,7 @@
  */
 
 import { safeString } from './helpers.js';
+import { ALLOWED_LINK_DOMAINS, ALLOWED_REVIEW_DOMAINS, ALLOWED_IMAGE_HOSTNAMES } from './allowed-domains.js';
 
 /**
  * Image extensions the guide will display.
@@ -27,7 +28,7 @@ export const VALIDATION_PATTERNS = {
   tireId: /^[a-zA-Z0-9\-_]+$/,
   numeric: /^\d+(\.\d+)?$/,
   affiliateUrl: /^https:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}\/[a-zA-Z0-9\-\/_\.%&=?#:+]*$/,
-  imageUrl: new RegExp('^https://riviantrackr\\.com/.*\\.' + IMAGE_EXTENSION_GROUP + '$', 'i')
+  imageUrl: new RegExp('^https://(cdn\\.)?riviantrackr\\.com/.*\\.' + IMAGE_EXTENSION_GROUP + '$', 'i')
 };
 
 /** Looks like an image URL at all — used only to decide whether to warn. */
@@ -86,7 +87,7 @@ export function safeImageURL(url) {
     const urlObj = new URL(trimmed);
 
     if (urlObj.protocol !== 'https:') return "";
-    if (urlObj.hostname !== 'riviantrackr.com') return "";
+    if (!ALLOWED_IMAGE_HOSTNAMES.includes(urlObj.hostname)) return "";
 
     if (urlObj.pathname.includes('..') || urlObj.pathname.includes('//')) {
       return "";
@@ -119,20 +120,8 @@ export function safeLinkURL(url) {
 
     if (urlObj.protocol !== 'https:') return "";
 
-    const allowedDomains = [
-      'riviantrackr.com', 'tirerack.com', 'discounttire.com', 'amazon.com', 'amzn.to',
-      'costco.com', 'walmart.com', 'goodyear.com', 'bridgestonetire.com', 'michelinman.com',
-      'continental-tires.com', 'pirelli.com', 'sumitomotire.com', 'yokohamatire.com',
-      'coopertire.com', 'bfgoodrichtires.com', 'firestone.com', 'generaltire.com',
-      'hankooktire.com', 'kumhotire.com', 'nexentire.com', 'toyo.com', 'falkentire.com',
-      'nittotire.com', 'autozone.com', 'pepboys.com', 'ntb.com', 'simpletire.com',
-      'prioritytire.com', 'anrdoezrs.net', 'dpbolvw.net', 'jdoqocy.com', 'kqzyfj.com',
-      'tkqlhce.com', 'commission-junction.com', 'cj.com', 'linksynergy.com',
-      'click.linksynergy.com', 'shareasale.com', 'avantlink.com', 'impact.com', 'partnerize.com'
-    ];
-
     const hostname = urlObj.hostname.toLowerCase();
-    const isAllowed = allowedDomains.some(domain => {
+    const isAllowed = ALLOWED_LINK_DOMAINS.some(domain => {
       return hostname === domain || hostname.endsWith('.' + domain);
     });
 
@@ -169,15 +158,8 @@ export function safeReviewLinkURL(url) {
 
     if (urlObj.protocol !== 'https:') return "";
 
-    const allowedReviewDomains = [
-      'riviantrackr.com', 'www.riviantrackr.com',
-      'youtube.com', 'www.youtube.com', 'youtu.be',
-      'tiktok.com', 'www.tiktok.com',
-      'instagram.com', 'www.instagram.com'
-    ];
-
     const hostname = urlObj.hostname.toLowerCase();
-    const isAllowed = allowedReviewDomains.some(domain => {
+    const isAllowed = ALLOWED_REVIEW_DOMAINS.some(domain => {
       return hostname === domain || hostname.endsWith('.' + domain);
     });
 

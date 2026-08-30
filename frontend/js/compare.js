@@ -98,14 +98,14 @@ function renderTags(tagStr) {
   if (!tagStr || tagStr === "-") return "-";
   const tags = tagStr.split(/[,|]/).map(t => t.trim()).filter(Boolean);
   if (!tags.length) return "-";
-  return `<div class="cmp-tags">${tags.map(tag => {
+  return rawHTML(`<div class="cmp-tags">${tags.map(tag => {
     const lower = tag.toLowerCase();
     let cls = "cmp-tag";
     if (lower.includes("ev rated")) cls += " cmp-tag-ev";
     else if (lower.includes("3pms") || lower.includes("3-peak")) cls += " cmp-tag-3pms";
     else if (lower.includes("studded")) cls += " cmp-tag-studded";
     return `<span class="${cls}">${escapeHTML(tag)}</span>`;
-  }).join("")}</div>`;
+  }).join("")}</div>`);
 }
 
 // --- Build CTA buttons ---
@@ -141,17 +141,28 @@ function renderCTAs(tire) {
       ${label} ${rtgIcon(iconName, 14)}</a>`;
   }
   html += '</div>';
-  return html;
+  return rawHTML(html);
 }
 
 // --- Spec section builder ---
+
+// Getters that build markup wrap it in rawHTML(); everything else is escaped
+// unconditionally. The old rule — trust any string starting with "<" — let a
+// stored spec value ride into innerHTML unescaped. `value` carries the number
+// best-value highlighting compares (the markup itself doesn't parseFloat).
+function rawHTML(html, value) {
+  return { __html: html, __value: value };
+}
+
 function specSection(icon, title, rows, tires, best, colCount) {
   let body = '';
   rows.forEach(([label, getter, bestKey]) => {
     const values = tires.map(t => {
       const val = getter(t);
-      const isBest = bestKey && best[bestKey] !== undefined && parseFloat(val) === best[bestKey];
-      return `<div class="cmp-row-value${isBest ? ' is-best' : ''}">${typeof val === 'string' && val.startsWith('<') ? val : escapeHTML(val || "-")}</div>`;
+      const isRaw = !!val && typeof val === 'object' && typeof val.__html === 'string';
+      const comparable = isRaw ? parseFloat(val.__value) : parseFloat(val);
+      const isBest = bestKey && best[bestKey] !== undefined && comparable === best[bestKey];
+      return `<div class="cmp-row-value${isBest ? ' is-best' : ''}">${isRaw ? val.__html : escapeHTML(val || "-")}</div>`;
     });
     body += `<div class="cmp-row">
       <div class="cmp-row-label">${escapeHTML(label)}</div>
@@ -237,14 +248,17 @@ function renderComparison(rows, tokens) {
       const miPerKwh = v.toFixed(2);
       const mi = Math.round((parseFloat(t[COL.roamerTotalKm]) || 0) * 0.621371);
       const veh = parseInt(t[COL.roamerVehicleCount]) || 0;
-      return '<span style="display:inline-block;background:rgba(59,130,246,0.15);border-radius:6px;padding:2px 8px;font-weight:700;color:#60a5fa;">' + miPerKwh + ' mi/kWh</span>' +
-        '<br><span style="font-size:11px;color:#a19e97;">' + mi.toLocaleString() + ' mi tracked, ' + veh + ' vehicle' + (veh !== 1 ? 's' : '') + '</span>';
+      return rawHTML(
+        '<span style="display:inline-block;background:rgba(59,130,246,0.15);border-radius:6px;padding:2px 8px;font-weight:700;color:#60a5fa;">' + miPerKwh + ' mi/kWh</span>' +
+        '<br><span style="font-size:11px;color:#a19e97;">' + mi.toLocaleString() + ' mi tracked, ' + veh + ' vehicle' + (veh !== 1 ? 's' : '') + '</span>',
+        v
+      );
     }, 'roamerEfficiency'],
     ['Speed Rating', t => t[COL.speedRating] || "-"],
     ['UTQG', t => t[COL.utqg] || "None"],
     ['3PMS Rated', t => {
       const v = (t[COL.threePms] || "").toLowerCase();
-      return v === "yes" ? '<span style="color:#4ade80;font-weight:600">' + rtgIcon('check', 14) + ' Yes</span>' : 'No';
+      return v === "yes" ? rawHTML('<span style="color:#4ade80;font-weight:600">' + rtgIcon('check', 14) + ' Yes</span>') : 'No';
     }],
   ], tires, best, n);
 

@@ -31,6 +31,19 @@ class RTG_Database {
     public static function flush_cache() {
         delete_transient( self::$cache_key );
         delete_transient( self::$dashboard_cache_key );
+
+        // The REST /feed payload is built from the same tire data.
+        delete_transient( 'rtg_feed_cache' );
+
+        // The discovery queue is keyed against the guide: a guide write means
+        // the throttled reconcile pass runs fresh on the next queue view.
+        delete_transient( 'rtg_discovery_reconciled' );
+
+        // The candidate match table is computed against the guide, so a guide
+        // write invalidates its request-level memo too.
+        if ( class_exists( 'RTG_Candidates' ) ) {
+            RTG_Candidates::forget_matched_by_tire();
+        }
     }
 
     /**
@@ -496,6 +509,60 @@ class RTG_Database {
 
         self::flush_cache();
         return $result;
+    }
+
+    /**
+     * Write Roamer feed columns without touching updated_at.
+     *
+     * Feed data isn't an edit: `updated_at = updated_at` holds the column
+     * where it was (its ON UPDATE CURRENT_TIMESTAMP would otherwise fire),
+     * so "recently updated" ordering and the stale-price report keep
+     * tracking human changes instead of the five-minute sync.
+     *
+     * Does NOT flush the tire cache — a sync writing many tires flushes
+     * once at the end; a caller writing one tire flushes itself.
+     *
+     * @param string $tire_id Tire identifier.
+     * @param array  $data    Roamer columns to write (others are ignored).
+     *                        A null value writes SQL NULL.
+     * @return int|false Rows updated, or false on error.
+     */
+    public static function update_roamer_data( $tire_id, $data ) {
+        global $wpdb;
+        $table = self::tires_table();
+
+        $allowed = array(
+            'roamer_tire_id'           => '%s',
+            'roamer_efficiency'        => '%f',
+            'roamer_total_km'          => '%f',
+            'roamer_vehicle_count'     => '%d',
+            'roamer_vehicle_breakdown' => '%s',
+            'roamer_synced_at'         => '%s',
+        );
+
+        $sets   = array();
+        $values = array();
+        foreach ( $allowed as $col => $format ) {
+            if ( ! array_key_exists( $col, $data ) ) {
+                continue;
+            }
+            if ( null === $data[ $col ] ) {
+                $sets[] = "{$col} = NULL";
+            } else {
+                $sets[]   = "{$col} = {$format}";
+                $values[] = $data[ $col ];
+            }
+        }
+
+        if ( empty( $sets ) ) {
+            return 0;
+        }
+
+        $sets[]   = 'updated_at = updated_at';
+        $values[] = $tire_id;
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- column names and formats come from the $allowed whitelist above.
+        return $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET " . implode( ', ', $sets ) . ' WHERE tire_id = %s', ...$values ) );
     }
 
     /**

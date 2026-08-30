@@ -287,6 +287,45 @@ class Test_RTG_Admin extends WP_UnitTestCase {
         $this->assertSame( $before['price'], RTG_Database::get_tire( 'CSV-002' )['price'] );
     }
 
+    /**
+     * The export was advertised as a re-importable backup while silently
+     * dropping model_aliases (which drive discovery matching) and
+     * bundle_link. Both are in the CSV contract now, round-trip included.
+     */
+    public function test_csv_carries_model_aliases_and_bundle_link() {
+        $col_map = array(
+            'tire_id'       => 0,
+            'brand'         => 1,
+            'model'         => 2,
+            'model_aliases' => 3,
+            'bundle_link'   => 4,
+        );
+        $result = $this->admin->import_csv_row(
+            array( 'CSV-010', 'Michelin', 'Defender LTX', "Defender LTX MS2\nDefender MS2", 'https://example.com/bundle' ),
+            $col_map,
+            'skip'
+        );
+
+        $this->assertSame( 'imported', $result );
+        $tire = RTG_Database::get_tire( 'CSV-010' );
+        $this->assertSame( "Defender LTX MS2\nDefender MS2", $tire['model_aliases'], 'aliases keep their one-per-line shape' );
+        $this->assertSame( 'https://example.com/bundle', $tire['bundle_link'] );
+    }
+
+    /**
+     * A blocked duplicate save stashes the whole submission; the edit form
+     * takes it back exactly once.
+     */
+    public function test_blocked_save_stash_is_returned_once_then_cleared() {
+        set_transient( 'rtg_blocked_save_' . get_current_user_id(), array( 'brand' => 'Michelin', 'price' => 250.0 ), 60 );
+
+        $this->assertSame(
+            array( 'brand' => 'Michelin', 'price' => 250.0 ),
+            RTG_Admin::take_blocked_save()
+        );
+        $this->assertSame( array(), RTG_Admin::take_blocked_save(), 'the stash is one-shot' );
+    }
+
     public function test_new_csv_row_is_imported_with_a_derived_grade() {
         $col_map = array( 'tire_id' => 0, 'brand' => 1, 'model' => 2, 'size' => 3, 'weight_lb' => 4, 'category' => 5 );
         $result  = $this->admin->import_csv_row(
