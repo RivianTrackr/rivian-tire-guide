@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 22;
+    const DB_VERSION = 23;
 
     public static function activate() {
         self::create_tables();
@@ -23,9 +23,23 @@ class RTG_Activator {
      */
     public static function maybe_upgrade() {
         $installed_db = (int) get_option( 'rtg_db_version', 0 );
-        if ( $installed_db < self::DB_VERSION ) {
+        if ( $installed_db >= self::DB_VERSION ) {
+            return;
+        }
+
+        // Every request after a plugin update lands here until the version
+        // option catches up; without a lock, concurrent requests each ran
+        // the same ALTERs. Whoever holds the lock migrates; the rest skip
+        // and find the work done on their next request.
+        if ( ! RTG_Lock::acquire( 'db_upgrade', 5 * MINUTE_IN_SECONDS ) ) {
+            return;
+        }
+
+        try {
             self::create_tables();
             self::run_migrations();
+        } finally {
+            RTG_Lock::release( 'db_upgrade' );
         }
     }
 
@@ -107,7 +121,9 @@ class RTG_Activator {
             KEY idx_weight (weight_lb),
             KEY idx_efficiency (efficiency_score),
             KEY idx_roamer_tire_id (roamer_tire_id),
-            KEY idx_slug (slug)
+            KEY idx_slug (slug),
+            KEY idx_roamer_efficiency (roamer_efficiency),
+            KEY idx_created_at (created_at)
         ) $charset_collate;
 
         CREATE TABLE {$ratings_table} (
@@ -125,7 +141,8 @@ class RTG_Activator {
             PRIMARY KEY  (id),
             UNIQUE KEY user_tire (user_id, tire_id, guest_email),
             KEY idx_tire_id (tire_id),
-            KEY idx_guest_email (guest_email)
+            KEY idx_guest_email (guest_email),
+            KEY idx_review_status (review_status)
         ) $charset_collate;
 
         CREATE TABLE {$favorites_table} (
@@ -165,7 +182,8 @@ class RTG_Activator {
             PRIMARY KEY  (id),
             KEY idx_created_at (created_at),
             KEY idx_search_query (search_query(50)),
-            KEY idx_search_type (search_type)
+            KEY idx_search_type (search_type),
+            KEY idx_session_date (session_hash, created_at)
         ) $charset_collate;
 
         CREATE TABLE {$candidates_table} (
@@ -237,6 +255,7 @@ class RTG_Activator {
             20 => 'migrate_20_add_tire_price_source',
             21 => 'migrate_21_add_model_aliases',
             22 => 'migrate_22_remove_retired_features',
+            23 => 'migrate_23_add_sort_and_status_indexes',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -615,6 +634,49 @@ class RTG_Activator {
             // Demo rows are identifiable by their source, whatever status a
             // human may have set on one — they never described a real product.
             $wpdb->query( $wpdb->prepare( "DELETE FROM {$candidates} WHERE source = %s", 'fixture' ) );
+        }
+    }
+
+    /**
+     * Migration 23: Index the columns the guide actually sorts and filters on.
+     *
+     * `roamer_efficiency` is the default sort for both the AJAX and REST
+     * listings and `created_at` backs the "newest" sort, yet neither was
+     * indexed — every server-side page was a filesort. Review moderation
+     * filters on `review_status` with no index, and the search-analytics
+     * dedup probe filters on `session_hash` (the click table got that index;
+     * the search table never did).
+     *
+     * dbDelta adds these from the schema above; the explicit ALTERs are the
+     * same safety net as migration 17.
+     */
+    private static function migrate_23_add_sort_and_status_indexes() {
+        global $wpdb;
+
+        $wanted = array(
+            $wpdb->prefix . 'rtg_tires'         => array(
+                'idx_roamer_efficiency' => 'roamer_efficiency',
+                'idx_created_at'        => 'created_at',
+            ),
+            $wpdb->prefix . 'rtg_ratings'       => array(
+                'idx_review_status' => 'review_status',
+            ),
+            $wpdb->prefix . 'rtg_search_events' => array(
+                'idx_session_date' => 'session_hash, created_at',
+            ),
+        );
+
+        foreach ( $wanted as $table => $indexes ) {
+            $exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+            if ( $exists !== $table ) {
+                continue;
+            }
+            foreach ( $indexes as $name => $columns ) {
+                $present = $wpdb->get_results( $wpdb->prepare( "SHOW INDEX FROM {$table} WHERE Key_name = %s", $name ) );
+                if ( empty( $present ) ) {
+                    $wpdb->query( "ALTER TABLE {$table} ADD KEY {$name} ({$columns})" );
+                }
+            }
         }
     }
 }

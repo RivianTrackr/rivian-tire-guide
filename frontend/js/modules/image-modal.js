@@ -4,7 +4,7 @@
  * Image modal — full-screen image preview.
  */
 
-import { getDOMElement, escapeHTML, safeString } from './helpers.js';
+import { getDOMElement, safeString } from './helpers.js';
 import { safeImageURL } from './validation.js';
 
 export function openImageModal(src, altText) {
@@ -19,7 +19,8 @@ export function openImageModal(src, altText) {
   if (!modal || !img) return;
 
   img.src = safeSrc;
-  img.alt = escapeHTML(safeString(altText, 200));
+  // Property and attribute sinks take plain text (see cards.js).
+  img.alt = safeString(altText, 200);
 
   img.onerror = () => {
     const fallback = "https://riviantrackr.com/assets/tire-guide/images/image404.jpg";
@@ -36,7 +37,7 @@ export function openImageModal(src, altText) {
 
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
-  modal.setAttribute('aria-label', escapeHTML(safeString(altText, 200)) || 'Image preview');
+  modal.setAttribute('aria-label', safeString(altText, 200) || 'Image preview');
   modal.style.display = "flex";
   document.body.style.overflow = "hidden";
 

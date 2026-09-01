@@ -532,9 +532,13 @@ class RTG_Ajax {
             'oem'          => ! empty( $_POST['oem'] ),
         );
 
-        $price_max = isset( $_POST['price_max'] ) ? floatval( $_POST['price_max'] ) : 600;
-        if ( $price_max >= 0 && $price_max <= 2000 ) {
-            $filters['price_max'] = $price_max;
+        // No price parameter means no price constraint — the old default of
+        // 600 quietly capped every request that omitted it.
+        if ( isset( $_POST['price_max'] ) ) {
+            $price_max = floatval( $_POST['price_max'] );
+            if ( $price_max > 0 && $price_max <= 5000 ) {
+                $filters['price_max'] = $price_max;
+            }
         }
 
         $warranty_min = isset( $_POST['warranty_min'] ) ? intval( $_POST['warranty_min'] ) : 0;
@@ -1013,6 +1017,14 @@ class RTG_Ajax {
 
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( 'Unauthorized.' );
+        }
+
+        // Each attempt can cost up to eight outbound requests at fifteen
+        // seconds apiece. An admin session is trusted, but a runaway script
+        // or a stuck retry loop shouldn't be able to turn the site into a
+        // fetch proxy: ten attempts a minute is more than a person makes.
+        if ( RTG_Rate_Limiter::hit( 'image_fetch', RTG_Rate_Limiter::fingerprint(), 10, MINUTE_IN_SECONDS ) ) {
+            wp_send_json_error( 'Too many image fetches in the last minute. Wait a moment and try again.' );
         }
 
         $tire = array(

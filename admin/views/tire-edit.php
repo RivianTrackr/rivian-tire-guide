@@ -35,6 +35,7 @@ $defaults = array(
     'utqg'             => '',
     'tags'             => '',
     'link'             => '',
+    'bundle_link'      => '',
     'image'            => '',
     'efficiency_score' => '',
     'efficiency_grade' => '',
@@ -87,8 +88,13 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
 // just the three identity fields the redirect URL carries.
 $duplicate_of      = 'duplicate_tire' === $message ? sanitize_text_field( wp_unslash( $_GET['duplicate_of'] ?? '' ) ) : '';
 $duplicate_of_tire = '' !== $duplicate_of ? RTG_Database::get_tire( $duplicate_of ) : null;
-if ( in_array( $message, array( 'duplicate_tire', 'duplicate_id' ), true ) && ! $is_edit ) {
+// The same applies when an edit collided: the form comes back with the
+// edited values, not the stored ones the admin was trying to change.
+if ( in_array( $message, array( 'duplicate_tire', 'duplicate_id' ), true ) ) {
     foreach ( RTG_Admin::take_blocked_save() as $blocked_field => $blocked_value ) {
+        if ( 'tire_id' === $blocked_field && $is_edit ) {
+            continue; // The stored ID is read-only on the edit form.
+        }
         if ( array_key_exists( $blocked_field, $v ) && '' !== $blocked_value && null !== $blocked_value ) {
             $v[ $blocked_field ] = $blocked_value;
         }
@@ -134,7 +140,7 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                 <?php if ( $duplicate_of_tire && ! empty( $duplicate_of_tire['id'] ) ) : ?>
                     <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'rtg-tire-edit', 'id' => intval( $duplicate_of_tire['id'] ) ), admin_url( 'admin.php' ) ) ); ?>">Edit the existing tire</a> instead &mdash;
                 <?php endif; ?>
-                or, if this is deliberately a separate entry, tick &ldquo;Add anyway&rdquo; below the save button and save again.
+                or, if this is deliberately a separate entry, tick &ldquo;<?php echo $is_edit ? 'Save anyway' : 'Add anyway'; ?>&rdquo; below the save button and save again.
             </span>
         </div>
     <?php endif; ?>
@@ -390,6 +396,13 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                     </div>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">
+                            <label class="rtg-field-label" for="bundle_link">Bundle Link</label>
+                        </div>
+                        <p class="rtg-field-description">Optional link to a set-of-four or bundle offer. Shown on the Affiliate Links page alongside the purchase link.</p>
+                        <input type="url" id="bundle_link" name="bundle_link" value="<?php echo esc_attr( $v['bundle_link'] ); ?>" class="rtg-input-wide">
+                    </div>
+                    <div class="rtg-field-row">
+                        <div class="rtg-field-label-row">
                             <label class="rtg-field-label" for="review_link">Review Link</label>
                         </div>
                         <p class="rtg-field-description">Link to your article or video review (YouTube, RivianTrackr, etc.).</p>
@@ -580,10 +593,10 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
         <div class="rtg-footer-actions">
             <button type="submit" class="rtg-btn rtg-btn-primary"><?php echo $is_edit ? 'Update Tire' : 'Add Tire'; ?></button>
             <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires' ) ); ?>" class="rtg-btn rtg-btn-secondary">Cancel</a>
-            <?php if ( 'duplicate_tire' === $message && ! $is_edit ) : ?>
+            <?php if ( 'duplicate_tire' === $message ) : ?>
                 <label style="display:inline-flex;align-items:center;gap:6px;margin-left:12px;font-size:13px;color:#6e6e73;">
                     <input type="checkbox" name="allow_duplicate" value="1">
-                    Add anyway &mdash; this is deliberately a separate entry
+                    <?php echo $is_edit ? 'Save anyway' : 'Add anyway'; ?> &mdash; this is deliberately a separate entry
                 </label>
             <?php endif; ?>
         </div>

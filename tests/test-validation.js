@@ -113,33 +113,6 @@ function safeLinkURL(url) {
   }
 }
 
-function fuzzyMatch(pattern, text, threshold = 0.7) {
-  if (pattern.length === 0) return 1;
-  if (text.length === 0) return 0;
-  const patternLower = pattern.toLowerCase();
-  const textLower = text.toLowerCase();
-  if (textLower.includes(patternLower))
-    return patternLower === textLower ? 1 : 0.9;
-  const matrix = Array(pattern.length + 1)
-    .fill(null)
-    .map(() => Array(text.length + 1).fill(null));
-  for (let i = 0; i <= pattern.length; i++) matrix[i][0] = i;
-  for (let j = 0; j <= text.length; j++) matrix[0][j] = j;
-  for (let i = 1; i <= pattern.length; i++) {
-    for (let j = 1; j <= text.length; j++) {
-      const cost = patternLower[i - 1] === textLower[j - 1] ? 0 : 1;
-      matrix[i][j] = Math.min(
-        matrix[i - 1][j] + 1,
-        matrix[i][j - 1] + 1,
-        matrix[i - 1][j - 1] + cost
-      );
-    }
-  }
-  const distance = matrix[pattern.length][text.length];
-  const maxLength = Math.max(pattern.length, text.length);
-  const similarity = 1 - distance / maxLength;
-  return similarity >= threshold ? similarity : 0;
-}
 
 // ---------------------------------------------------------------------------
 // Minimal inline test runner
@@ -618,93 +591,6 @@ suite('safeLinkURL', () => {
     safeLinkURL('https://simpletire.com/products/all-terrain'),
     'https://simpletire.com/products/all-terrain',
     'valid simpletire link passes'
-  );
-});
-
-suite('fuzzyMatch', () => {
-  assertEqual(
-    fuzzyMatch('pirelli', 'pirelli'),
-    1,
-    'exact match returns 1'
-  );
-
-  assertEqual(
-    fuzzyMatch('Pirelli', 'pirelli'),
-    1,
-    'case-insensitive exact match returns 1'
-  );
-
-  assertEqual(
-    fuzzyMatch('pirelli', 'Pirelli Scorpion'),
-    0.9,
-    'substring match returns 0.9'
-  );
-
-  assertEqual(
-    fuzzyMatch('scorpion', 'Pirelli Scorpion AT Plus'),
-    0.9,
-    'substring match in longer text returns 0.9'
-  );
-
-  assertEqual(
-    fuzzyMatch('', 'anything'),
-    1,
-    'empty pattern returns 1'
-  );
-
-  assertEqual(
-    fuzzyMatch('anything', ''),
-    0,
-    'empty text returns 0'
-  );
-
-  // "pirell" vs "pirelli" — edit distance 1, max length 7, similarity ~0.857
-  const similarScore = fuzzyMatch('pirell', 'pirelli');
-  assert(
-    similarScore > 0.8 && similarScore < 1,
-    `similar word "pirell" vs "pirelli" returns high score (got ${similarScore.toFixed(3)})`
-  );
-
-  assertEqual(
-    fuzzyMatch('xyz', 'abc'),
-    0,
-    'completely different short strings return 0'
-  );
-
-  assertEqual(
-    fuzzyMatch('abcdefghij', 'zyxwvutsrq'),
-    0,
-    'completely different longer strings return 0'
-  );
-
-  // "pirel" is a substring of "pirelli", so it returns 0.9 via the
-  // substring shortcut (before Levenshtein runs). Test that behavior.
-  assertEqual(
-    fuzzyMatch('pirel', 'pirelli'),
-    0.9,
-    '"pirel" is substring of "pirelli" so returns 0.9'
-  );
-
-  // Threshold behavior with a non-substring similar word:
-  // "pirella" vs "pirelli" — distance 1, max 7, similarity ~0.857
-  const aboveThreshold = fuzzyMatch('pirella', 'pirelli', 0.7);
-  assert(
-    aboveThreshold > 0.8,
-    `"pirella" vs "pirelli" at 0.7 threshold should match (got ${aboveThreshold.toFixed(3)})`
-  );
-
-  const belowThreshold = fuzzyMatch('pirella', 'pirelli', 0.9);
-  assertEqual(
-    belowThreshold,
-    0,
-    '"pirella" vs "pirelli" at 0.9 threshold returns 0 (similarity ~0.857 < 0.9)'
-  );
-
-  // Verify case insensitivity in Levenshtein path as well
-  const caseMix = fuzzyMatch('PIRELL', 'pirelli');
-  assert(
-    caseMix > 0.8,
-    `case-insensitive near-match "PIRELL" vs "pirelli" scores high (got ${caseMix.toFixed(3)})`
   );
 });
 

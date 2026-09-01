@@ -5,7 +5,7 @@
  */
 
 import { state, ROWS_PER_PAGE } from './state.js';
-import { rtgIcon, escapeHTML, safeString, getDOMElement } from './helpers.js';
+import { rtgIcon, safeString, getDOMElement } from './helpers.js';
 import { VALIDATION_PATTERNS, NUMERIC_BOUNDS, validateNumeric, safeImageURL, safeLinkURL, safeReviewLinkURL } from './validation.js';
 import { TOOLTIP_DATA, createInfoTooltip } from './tooltips.js';
 import { createRatingHTML } from './ratings.js';
@@ -207,8 +207,6 @@ export function createSingleCard(row) {
     return null;
   }
 
-  const cacheKey = `card_${tireId}_${Date.now() % 10000}`;
-
   const ratingData = state.tireRatings[tireId] || { average: 0, count: 0 };
   const userRating = state.userRatings[tireId] || 0;
   const ratingHTML = createRatingHTML(tireId, ratingData.average, ratingData.count, userRating);
@@ -248,7 +246,9 @@ export function createSingleCard(row) {
   // Compare checkbox overlay
   const compareOverlay = document.createElement('label');
   compareOverlay.className = 'tire-card-compare-overlay';
-  compareOverlay.setAttribute('aria-label', `Compare ${escapeHTML(safeString(brand))} ${escapeHTML(safeString(model))}`);
+  // Attribute and property sinks take plain text: escapeHTML() here made a
+  // screen reader announce "AT&amp;T".
+  compareOverlay.setAttribute('aria-label', `Compare ${safeString(brand)} ${safeString(model)}`);
 
   const compareCheckbox = document.createElement('input');
   compareCheckbox.type = 'checkbox';
@@ -286,7 +286,7 @@ export function createSingleCard(row) {
   // Share button overlay
   const shareBtn = document.createElement('button');
   shareBtn.className = 'tire-card-share-btn';
-  shareBtn.setAttribute('aria-label', `Share ${escapeHTML(safeString(brand))} ${escapeHTML(safeString(model))}`);
+  shareBtn.setAttribute('aria-label', `Share ${safeString(brand)} ${safeString(model)}`);
   shareBtn.innerHTML = rtgIcon('share', 16);
   shareBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -342,7 +342,7 @@ export function createSingleCard(row) {
     imageContainer.className = 'tire-card-image';
 
     const img = document.createElement('img');
-    img.alt = `${escapeHTML(safeString(brand))} ${escapeHTML(safeString(model))}`;
+    img.alt = `${safeString(brand)} ${safeString(model)}`;
     img.decoding = 'async';
     img.className = 'rtg-lazy-img';
     if ('IntersectionObserver' in window) {
@@ -350,7 +350,7 @@ export function createSingleCard(row) {
     } else {
       img.src = safeImage;
     }
-    img.onclick = () => openImageModal(safeImage, `${escapeHTML(safeString(brand))} ${escapeHTML(safeString(model))}`);
+    img.onclick = () => openImageModal(safeImage, `${safeString(brand)} ${safeString(model)}`);
 
     imageContainer.appendChild(img);
     imageContainer.appendChild(compareOverlay);
@@ -642,17 +642,6 @@ export function createSingleCard(row) {
   }
 
   card.appendChild(actionsContainer);
-
-  // Tight LRU ceiling. Map iteration order is insertion order, so evicting
-  // the first key removes the oldest entry. Kept small (20) because cloned
-  // card nodes retain their subtree and we don't want them holding images
-  // off the GC indefinitely.
-  const CARD_CACHE_MAX = 20;
-  if (state.cardCache.size >= CARD_CACHE_MAX) {
-    const firstKey = state.cardCache.keys().next().value;
-    if (firstKey !== undefined) state.cardCache.delete(firstKey);
-  }
-  state.cardCache.set(cacheKey, card.cloneNode(true));
 
   return card;
 }

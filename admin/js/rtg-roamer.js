@@ -32,10 +32,16 @@
           ).show();
           // Reload to show updated tables.
           setTimeout(function () { location.reload(); }, 1500);
+        } else if (d.status === 'locked' || d.status === 'disabled') {
+          $status.html(
+            '<div class="notice notice-warning inline"><p>' +
+            $('<span>').text(d.message || 'Sync did not run.').html() +
+            '</p></div>'
+          ).show();
         } else {
           $status.html(
             '<div class="notice notice-error inline"><p>' +
-            'Sync failed: ' + (d.message || 'Unknown error') +
+            'Sync failed: ' + $('<span>').text(d.message || 'Unknown error').html() +
             '</p></div>'
           ).show();
         }

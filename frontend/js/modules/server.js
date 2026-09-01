@@ -39,7 +39,12 @@ export function fetchTiresFromServer(page) {
   body.append('category', getDOMElement("filterCategory")?.value || '');
   body.append('three_pms', getDOMElement("filter3pms")?.checked ? '1' : '');
   body.append('oem', getDOMElement("filterOEM")?.checked ? '1' : '');
-  body.append('price_max', getDOMElement("priceMax")?.value || '600');
+  // Sent only when the slider exists: an absent parameter means no price
+  // constraint server-side, where a made-up 600 used to cap the listing.
+  const priceMax = getDOMElement("priceMax");
+  if (priceMax && priceMax.value) {
+    body.append('price_max', priceMax.value);
+  }
 
   const warrantyMin = getDOMElement("warrantyMin");
   const warVal = warrantyMin ? parseInt(warrantyMin.value) : 0;

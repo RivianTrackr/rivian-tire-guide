@@ -4,6 +4,39 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.87.0] - 2026-09-01
+
+All twenty bugs from the v1.86.0 review (`PLUGIN-REVIEW-2026-09.md`, §1), plus the dead code that review listed, in one release.
+
+### Fixed
+- **The server-side price filter works above $600.** 1.85.0 removed the `< 600` sentinel from the client, but the SQL builder still gated on it and the AJAX handler defaulted an absent value to 600. With server-side pagination on, "under $700" applied no price constraint at all. Any positive ceiling now applies; an absent parameter means no constraint.
+- **Sliders no longer run both pipelines in server-side mode.** The slider setup bound the client filter unconditionally and the entry point bound the server one on top of it; in server mode the client pass filtered an empty array, emptied the grid, and flashed "No tires match" until the fetch landed. One mode-aware binding now.
+- **The no-results suggestions work in server-side mode.** Every suggestion action called the client pipeline directly; only "Clear all" branched on the mode. Each now re-runs whichever pipeline the page is in.
+- **The compare page links to the real guide page.** Its breadcrumb and "Browse Tires" button pointed at a hardcoded `/rivian-tire-guide/` path and broke on any site with a different slug. Both resolve the page hosting the shortcode.
+- **Price and link sync flush the cache once per run, not once per tire.** Every write flushed the tire, dashboard, feed and discovery caches, so a hundred price updates were four hundred transient deletes and a cold cache for the next visitor. `update_tire()` takes a flush flag; the syncs pass false and flush at the end.
+- **Sync jobs can't overlap themselves or each other.** A five-minute Roamer tick that outlived its interval overlapped the next; "Run Discovery Now" could start while the nightly cron was mid-sweep, double-writing candidates and advancing the sweep cursor twice; the weekly link check and its button could race. Each run now takes a lock (`RTG_Lock`, atomic on both object cache and plain MySQL) that expires on its own if a run dies, and a second caller gets a `locked` result the admin pages show as a warning rather than a failure. Migrations take the same lock, so the requests that pile up after a plugin update no longer each run the same ALTERs.
+- **The sort and moderation columns are indexed** (migration 23). `roamer_efficiency` — the default sort for both REST and AJAX — and `created_at` had no index, so every server-side page was a filesort; `review_status` and the search-analytics `session_hash` probe were unindexed too.
+- **`bundle_link` can be set from the tire form.** It was a database column, a CSV column and a documented field, but the form had no input and the save handler never read it — CSV import was the only way in.
+- **The CSV round-trip keeps `slug` and `roamer_tire_id`.** Export → re-import in update mode used to lose every stable public URL and every Roamer link. Both ride the file now; an imported slug goes through the slug setter (uniqueness, 301 from the old one), and a blank cell leaves the stored slug alone.
+- **"Recalculate Efficiency" is reachable.** The handler and its success notice existed; nothing linked to it. It is a button on the tire list.
+- **Editing a tire into a collision is caught.** The match-key duplicate check only ran on insert, so renaming one tire into an exact brand/model/size collision with another was accepted silently. The edit path now checks against every tire but itself, stashes the submission, and offers "Save anyway" the way the add form offers "Add anyway".
+- **Tire Discovery and Roamer Sync settings save through a redirect.** Both views handled their own POST mid-render, so a browser refresh re-submitted the form. They now go through the same handler-and-redirect as every other screen, and the handlers are callable without the redirect so they are tested.
+- **The bulk-delete confirmation is bound to the list form only.** A document-wide submit handler read the bulk-action select from anywhere, so submitting the search form while "Delete" happened to be selected popped the delete confirmation.
+- **Sort and pagination links drop one-shot notice parameters.** They were built from the current URL, so re-sorting re-showed "Tire deleted" and kept a page number that may not exist under the new order. Sorting now starts from page 1 with the notice stripped; review pagination strips it too.
+- **The delete confirmation says how many reviews go with the tire.** Deleting a tire deletes its ratings; "Delete this tire?" didn't say so. Single and bulk confirmations both name the count.
+- **The menu badges no longer run two aggregate queries on every admin screen.** Review status counts and discovery candidate counts are each cached for five minutes and forgotten by every write that can change them (rating writes, status changes, tire deletions; candidate upserts, status changes, re-matching, pruning).
+- **The guide's info tooltip no longer leaks a keydown listener per open** (it was removed only on the Escape path, not on "Got it" or the backdrop), traps Tab inside the dialog, returns focus to the (i) that opened it, and carries dialog semantics — the same shape the review modal already had.
+- **Brand and model names with an ampersand read correctly to screen readers.** `escapeHTML()` output was written into `alt` and `aria-label`, which take plain text, so "AT&T" was announced as "AT amp semicolon T".
+- **A hand-set URL slug survives edits to other fields.** Found by the new CSV test: `update_tire()` regenerated the slug whenever brand, model or size were *present* in the write — and every form save and CSV update carries all three — so editing a price reverted a manual slug to the generated one and recorded a redirect for it. The slug is regenerated only when one of those fields actually changes.
+- **Review dates in the JSON-LD use `gmdate()`.**
+- **The "Fetch from catalog" image action is rate-limited** (ten attempts a minute per admin). Each attempt can cost up to eight outbound requests at fifteen seconds apiece; the URLs come from the catalog table rather than the request, but nothing stopped a stuck retry loop from spending them indefinitely.
+
+### Removed
+- Dead code the review listed: the write-only card clone cache (`state.cardCache`), the search index and Levenshtein matcher nothing had read since typeahead suggestions were removed, the `hideSearchSuggestions` stub, the document-wide click handler that text-matched "Clear All", the handler for a compare modal no template renders, and an unused rating-system initializer. The JS test suite's private copy of the Levenshtein matcher went with it.
+
+### Tests
+- `RTG_Lock` (exclusivity, release, expired-lock takeover, and that the catalog, Roamer and link-check jobs report `locked` rather than running twice), the price filter above $600, the quiet `update_tire()` write, review-count cache invalidation, the new indexes and the idempotence of migration 23, the migration lock, the CSV slug/Roamer round trip, the edit-path duplicate check, and the catalog/Roamer settings handlers merging over the stored option.
+
 ## [1.86.0] - 2026-08-30
 
 All fifteen medium-priority findings from the v1.84.2 full-codebase review, in one release.

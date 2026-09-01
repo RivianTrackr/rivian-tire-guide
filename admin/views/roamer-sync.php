@@ -10,15 +10,9 @@ $settings = get_option( 'rtg_settings', array() );
 $sync_enabled = $settings['roamer_sync_enabled'] ?? true;
 $sync_url     = $settings['roamer_sync_url'] ?? RTG_Roamer_Sync::DEFAULT_URL;
 
-// Handle settings save.
-if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
-    check_admin_referer( 'rtg_roamer_settings', 'rtg_roamer_settings_nonce' );
-    $settings['roamer_sync_enabled']   = ! empty( $_POST['roamer_sync_enabled'] );
-    $settings['roamer_notify_enabled'] = ! empty( $_POST['roamer_notify_enabled'] );
-    $settings['roamer_sync_url']       = esc_url_raw( $_POST['roamer_sync_url'] ?? '' );
-    update_option( 'rtg_settings', $settings );
-    $sync_enabled = $settings['roamer_sync_enabled'];
-    $sync_url     = $settings['roamer_sync_url'];
+// Saved through RTG_Admin::handle_roamer_settings_save() (post-redirect-get),
+// so a refresh of this page can't re-submit the form.
+if ( isset( $_GET['message'] ) && 'settings_saved' === $_GET['message'] ) {
     echo '<div class="notice notice-success is-dismissible"><p>Roamer sync settings saved.</p></div>';
 }
 ?>

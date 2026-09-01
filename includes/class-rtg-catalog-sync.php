@@ -57,6 +57,16 @@ class RTG_Catalog_Sync {
      */
     const INTERACTIVE_BUDGET = 75;
 
+    /** Lock held for the duration of a run. */
+    const LOCK_NAME = 'catalog_sync';
+
+    /**
+     * Seconds after which an unreleased run lock is considered abandoned:
+     * the largest configurable budget, plus the link, price and reconcile
+     * work that follows the sweep.
+     */
+    const LOCK_TTL = 900 + 300;
+
     /**
      * Schedule the daily sync if it isn't already scheduled.
      *
@@ -129,6 +139,30 @@ class RTG_Catalog_Sync {
             );
         }
 
+        // One run at a time. "Run Discovery Now" used to be able to start
+        // while the nightly cron was mid-sweep: two writers upserting the
+        // same candidates, both advancing the sweep cursor, link and price
+        // sync each fired twice. The lock outlives the longest legal run so
+        // a run killed mid-flight can't wedge the job for good.
+        if ( ! RTG_Lock::acquire( self::LOCK_NAME, self::LOCK_TTL ) ) {
+            return RTG_Lock::busy_result( 'discovery run' );
+        }
+
+        try {
+            return self::run_locked( $settings, $budget_cap );
+        } finally {
+            RTG_Lock::release( self::LOCK_NAME );
+        }
+    }
+
+    /**
+     * The run itself, once the lock is held.
+     *
+     * @param array $settings   Plugin settings.
+     * @param int   $budget_cap See run().
+     * @return array Statistics for the run.
+     */
+    private static function run_locked( $settings, $budget_cap ) {
         $sizes       = RTG_Admin::get_dropdown_options( 'sizes' );
         $context     = RTG_Tire_Qualifier::default_context();
         $guide_tires = RTG_Database::get_all_tires();

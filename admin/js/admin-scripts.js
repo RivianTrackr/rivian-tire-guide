@@ -44,16 +44,27 @@
             $('input[name="tire_ids[]"]').prop('checked', this.checked);
         });
 
-        // Confirm bulk delete.
-        $('form').on('submit', function() {
-            var action = $('select[name="rtg_bulk_action"]').val();
+        // Confirm bulk delete. Bound to the list form only — a document-wide
+        // handler used to read the bulk-action select from anywhere, so
+        // submitting the search form with "Delete" selected popped the
+        // delete confirmation.
+        $('select[name="rtg_bulk_action"]').closest('form').on('submit', function() {
+            var action = $(this).find('select[name="rtg_bulk_action"]').val();
             if (action === 'delete') {
-                var checked = $('input[name="tire_ids[]"]:checked').length;
-                if (checked === 0) {
+                var $checked = $(this).find('input[name="tire_ids[]"]:checked');
+                if ($checked.length === 0) {
                     alert('No tires selected.');
                     return false;
                 }
-                return confirm('Delete ' + checked + ' tire(s)? This cannot be undone.');
+                var reviews = 0;
+                $checked.each(function () {
+                    reviews += parseInt($(this).data('review-count'), 10) || 0;
+                });
+                var message = 'Delete ' + $checked.length + ' tire(s)';
+                if (reviews > 0) {
+                    message += ' and ' + reviews + ' review' + (reviews === 1 ? '' : 's');
+                }
+                return confirm(message + '? This cannot be undone.');
             }
         });
 

@@ -339,4 +339,98 @@ class Test_RTG_Admin extends WP_UnitTestCase {
         $this->assertSame( 'Goodyear', $tire['brand'] );
         $this->assertContains( $tire['efficiency_grade'], array( 'A', 'B', 'C', 'D', 'F' ) );
     }
+
+
+    /**
+     * A backup that drops the public URL and the Roamer link is not a
+     * backup: slug and roamer_tire_id ride the CSV both ways.
+     */
+    public function test_csv_carries_slug_and_roamer_tire_id() {
+        $col_map = array( 'tire_id' => 0, 'brand' => 1, 'model' => 2, 'size' => 3, 'slug' => 4, 'roamer_tire_id' => 5 );
+
+        $result = $this->admin->import_csv_row(
+            array( 'CSV-020', 'Pirelli', 'Scorpion AT Plus', '275/65R20', 'my-custom-slug', 'roamer-abc' ),
+            $col_map,
+            'skip'
+        );
+        $this->assertSame( 'imported', $result );
+
+        $tire = RTG_Database::get_tire( 'CSV-020' );
+        $this->assertSame( 'my-custom-slug', $tire['slug'], 'an imported slug is applied through the slug setter' );
+        $this->assertSame( 'roamer-abc', $tire['roamer_tire_id'] );
+
+        // Update mode with a blank slug cell leaves the stored slug alone.
+        $result = $this->admin->import_csv_row(
+            array( 'CSV-020', 'Pirelli', 'Scorpion AT Plus', '275/65R20', '', 'roamer-xyz' ),
+            $col_map,
+            'update'
+        );
+        $this->assertSame( 'updated', $result );
+        $tire = RTG_Database::get_tire( 'CSV-020' );
+        $this->assertSame( 'my-custom-slug', $tire['slug'] );
+        $this->assertSame( 'roamer-xyz', $tire['roamer_tire_id'] );
+
+        // And a new slug in update mode is applied.
+        $this->admin->import_csv_row(
+            array( 'CSV-020', 'Pirelli', 'Scorpion AT Plus', '275/65R20', 'renamed-slug', 'roamer-xyz' ),
+            $col_map,
+            'update'
+        );
+        $this->assertSame( 'renamed-slug', RTG_Database::get_tire( 'CSV-020' )['slug'] );
+        $this->assertSame( 'CSV-020', RTG_Database::lookup_slug_redirect( 'my-custom-slug' ), 'the old slug redirects' );
+    }
+
+    /**
+     * Editing a tire into a collision with another row is caught, and the
+     * tire never collides with itself.
+     */
+    public function test_duplicate_check_on_edit_ignores_the_tire_itself() {
+        RTG_Database::insert_tire( array( 'tire_id' => 'DUP-A', 'brand' => 'Michelin', 'model' => 'Defender LTX', 'size' => '275/65R20' ) );
+        RTG_Database::insert_tire( array( 'tire_id' => 'DUP-B', 'brand' => 'Michelin', 'model' => 'CrossClimate 2', 'size' => '275/65R20' ) );
+
+        $unchanged = array( 'brand' => 'Michelin', 'model' => 'Defender LTX', 'size' => '275/65R20' );
+        $this->assertSame( '', RTG_Admin::find_duplicate_excluding( $unchanged, 'DUP-A' ), 'a tire is not its own duplicate' );
+
+        $collides = array( 'brand' => 'Michelin', 'model' => 'CrossClimate 2', 'size' => '275/65R20' );
+        $this->assertSame( 'DUP-B', RTG_Admin::find_duplicate_excluding( $collides, 'DUP-A' ), 'renaming A into B is a collision' );
+    }
+
+    /**
+     * The Tire Discovery and Roamer Sync settings handlers merge over the
+     * stored option, the same contract the main Settings page keeps.
+     */
+    public function test_catalog_and_roamer_settings_saves_merge_over_the_stored_option() {
+        update_option( 'rtg_settings', array(
+            'rows_per_page'   => 24,
+            'cj_pat'          => 'secret-token',
+            'roamer_sync_url' => 'https://example.com/feed.json',
+        ) );
+
+        $_POST = array(
+            'catalog_sync_enabled'   => '1',
+            'cj_company_id'          => '12-34',
+            'catalog_min_load_index' => '999',
+            'cj_pat'                 => '',
+            'catalog_brand_policy'   => 'bogus',
+        );
+        $this->admin->save_catalog_settings_from_post();
+
+        $saved = get_option( 'rtg_settings' );
+        $this->assertSame( 24, $saved['rows_per_page'], 'keys owned by other pages survive' );
+        $this->assertSame( 'secret-token', $saved['cj_pat'], 'an empty token field leaves the credential alone' );
+        $this->assertSame( '1234', $saved['cj_company_id'] );
+        $this->assertSame( 126, $saved['catalog_min_load_index'], 'clamped to the load index table' );
+        $this->assertSame( RTG_Tire_Qualifier::DEFAULT_BRAND_POLICY, $saved['catalog_brand_policy'] );
+        $this->assertSame( 'https://example.com/feed.json', $saved['roamer_sync_url'] );
+
+        $_POST = array( 'roamer_sync_enabled' => '1', 'roamer_sync_url' => 'https://example.org/other.json' );
+        $this->admin->save_roamer_settings_from_post();
+
+        $saved = get_option( 'rtg_settings' );
+        $this->assertTrue( $saved['roamer_sync_enabled'] );
+        $this->assertFalse( $saved['roamer_notify_enabled'] );
+        $this->assertSame( 'https://example.org/other.json', $saved['roamer_sync_url'] );
+        $this->assertSame( 'secret-token', $saved['cj_pat'] );
+        $this->assertSame( '1234', $saved['cj_company_id'] );
+    }
 }

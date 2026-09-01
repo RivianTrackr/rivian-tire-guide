@@ -161,6 +161,8 @@ $skipped  = isset( $_GET['skipped'] ) ? intval( $_GET['skipped'] ) : 0;
                         <tr><td><code>image</code></td><td>No</td><td>URL</td><td>https://example.com/tire.jpg</td></tr>
                         <tr><td><code>review_link</code></td><td>No</td><td>URL</td><td>https://youtube.com/watch?v=…</td></tr>
                         <tr><td><code>sort_order</code></td><td>No</td><td>Integer</td><td>0</td></tr>
+                        <tr><td><code>slug</code></td><td>No (auto-generated)</td><td>Text</td><td>michelin-defender-ltx-ms-2-275-65r20</td></tr>
+                        <tr><td><code>roamer_tire_id</code></td><td>No</td><td>Text</td><td>Rivian Roamer tire identifier, as assigned on the Roamer Sync page</td></tr>
                     </tbody>
                 </table>
             </div>

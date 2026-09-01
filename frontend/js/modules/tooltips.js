@@ -249,13 +249,45 @@ export function showTooltipModal(tooltipKey, triggerEl) {
     if (e.target === overlay) closeModal();
   });
 
-  const handleEscape = (e) => {
+  // Escape closes; Tab is trapped inside the dialog (wraps at both ends),
+  // the same shape as the review modal. The one listener is removed by
+  // closeTooltipModal on every close path — the old Escape-only handler
+  // was removed only when Escape itself closed the modal, so "Got it" and
+  // the backdrop each leaked a document listener.
+  const modalKeydown = (e) => {
     if (e.key === 'Escape') {
       closeModal();
-      document.removeEventListener('keydown', handleEscape);
+      return;
+    }
+    if (e.key !== 'Tab') return;
+
+    const focusables = overlay.querySelectorAll(
+      'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+    );
+    if (!focusables.length) return;
+
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
     }
   };
-  document.addEventListener('keydown', handleEscape);
+  document.addEventListener('keydown', modalKeydown);
+  overlay._rtgKeydown = modalKeydown;
+
+  // Remember the opener so keyboard focus returns there on close.
+  overlay._rtgReturnFocus = triggerEl && typeof triggerEl.focus === 'function'
+    ? triggerEl
+    : document.activeElement;
+
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-label', tooltipData.title);
+  closeButton.setAttribute('aria-label', 'Close');
 
   modal.appendChild(title);
   modal.appendChild(content);
@@ -272,14 +304,28 @@ export function showTooltipModal(tooltipKey, triggerEl) {
 }
 
 export function closeTooltipModal() {
-  if (state.activeTooltip) {
-    state.activeTooltip.style.animation = 'fadeOut 0.2s ease';
-    setTimeout(() => {
-      if (state.activeTooltip && state.activeTooltip.parentNode) {
-        state.activeTooltip.parentNode.removeChild(state.activeTooltip);
-      }
-      state.activeTooltip = null;
-      document.body.style.overflow = '';
-    }, 200);
+  const overlay = state.activeTooltip;
+  if (!overlay) return;
+
+  // Detach now, not after the fade: a second open inside the 200 ms window
+  // must not find the old overlay still registered as active.
+  state.activeTooltip = null;
+  if (overlay._rtgKeydown) {
+    document.removeEventListener('keydown', overlay._rtgKeydown);
+    overlay._rtgKeydown = null;
+  }
+
+  overlay.style.animation = 'fadeOut 0.2s ease';
+  setTimeout(() => {
+    if (overlay.parentNode) {
+      overlay.parentNode.removeChild(overlay);
+    }
+    document.body.style.overflow = '';
+  }, 200);
+
+  const returnFocusTo = overlay._rtgReturnFocus;
+  overlay._rtgReturnFocus = null;
+  if (returnFocusTo && typeof returnFocusTo.focus === 'function' && document.contains(returnFocusTo)) {
+    returnFocusTo.focus({ preventScroll: true });
   }
 }

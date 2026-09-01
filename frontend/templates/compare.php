@@ -10,6 +10,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 $rtg_settings = get_option( 'rtg_settings', array() );
   $rtg_theme    = $rtg_settings['theme_colors'] ?? array();
+  // The page hosting the guide shortcode, wherever the site put it — the
+  // old hardcoded /rivian-tire-guide/ path broke on any other slug.
+  $rtg_guide_url = RTG_Tire_Page::guide_url();
   $rtg_var_map  = array(
       'accent'       => '--rtg-accent',
       'accent_hover' => '--rtg-accent-hover',
@@ -417,7 +420,7 @@ $rtg_settings = get_option( 'rtg_settings', array() );
       <nav class="cmp-breadcrumb" aria-label="Breadcrumb">
         <a href="<?php echo esc_url( home_url( '/' ) ); ?>">Home</a>
         <span aria-hidden="true">&rsaquo;</span>
-        <a href="<?php echo esc_url( home_url( '/rivian-tire-guide/' ) ); ?>">Tire Guide</a>
+        <a href="<?php echo esc_url( $rtg_guide_url ); ?>">Tire Guide</a>
         <span aria-hidden="true">&rsaquo;</span>
         <span aria-current="page">Compare</span>
       </nav>
@@ -438,7 +441,7 @@ $rtg_settings = get_option( 'rtg_settings', array() );
         <div class="cmp-empty-icon"><i class="fa-solid fa-scale-balanced" style="font-size:48px" aria-hidden="true"></i></div>
         <div class="cmp-empty-title">No tires selected</div>
         <div class="cmp-empty-text">Head back to the tire guide and select tires to compare.</div>
-        <a href="<?php echo esc_url( home_url( '/rivian-tire-guide/' ) ); ?>" class="cmp-btn cmp-btn-primary">
+        <a href="<?php echo esc_url( $rtg_guide_url ); ?>" class="cmp-btn cmp-btn-primary">
           <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Browse Tires
         </a>
       </div>

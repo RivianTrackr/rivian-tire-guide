@@ -28,6 +28,15 @@
           return;
         }
 
+        if (d.status === 'locked') {
+          $status.html(
+            '<div class="notice notice-warning inline"><p>' +
+            $('<span>').text(d.message || 'Another discovery run is already in progress.').html() +
+            '</p></div>'
+          ).show();
+          return;
+        }
+
         if (d.status === 'error') {
           $status.html(
             '<div class="notice notice-error inline"><p>' +

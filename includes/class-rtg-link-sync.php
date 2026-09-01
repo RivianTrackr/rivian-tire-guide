@@ -317,7 +317,8 @@ class RTG_Link_Sync {
             }
 
             if ( $decision['update'] ) {
-                RTG_Database::update_tire( $tire_id, array( 'link' => $decision['link'] ) );
+                // Flushed once after the loop, not per tire (see RTG_Price_Sync).
+                RTG_Database::update_tire( $tire_id, array( 'link' => $decision['link'] ), false );
 
                 if ( 'link_set' === $decision['code'] ) {
                     $results['set']++;
@@ -338,6 +339,10 @@ class RTG_Link_Sync {
                 'code'     => $decision['code'],
                 'label'    => $decision['label'],
             );
+        }
+
+        if ( $results['set'] + $results['upgraded'] + $results['replaced'] > 0 ) {
+            RTG_Database::flush_cache();
         }
 
         update_option( self::RESULTS_OPTION, $results, false );

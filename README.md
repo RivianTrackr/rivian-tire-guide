@@ -232,7 +232,7 @@ The plugin creates 6 tables (all prefixed with `wp_rtg_`):
 | `rtg_click_events` | Affiliate link click tracking |
 | `rtg_search_events` | Search and filter analytics |
 
-Schema changes are managed via a numbered migration system (`rtg_db_version` option, currently v14).
+Schema changes are managed via a numbered migration system (`rtg_db_version` option, currently v23).
 
 ## Efficiency Score
 

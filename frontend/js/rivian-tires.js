@@ -219,12 +219,7 @@ function initializeUI() {
   initializeSmartSearch();
 
   if (ssMode) {
-    const sliderIds = ["priceMax", "warrantyMin"];
-    sliderIds.forEach(id => {
-      const input = getDOMElement(id);
-      if (input) input.addEventListener("input", debounce(serverSideFilterAndRender, 500));
-    });
-
+    // Slider handlers are bound once, mode-aware, in setupSliderHandlers().
     fetchDropdownOptions().then(() => {
       fetchTiresFromServer(state.currentPage);
     });
@@ -310,16 +305,6 @@ if (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.serve
 } else {
   console.error('Tire guide data not available. Ensure the [rivian_tire_guide] shortcode is used.');
 }
-
-// --- Compare modal close on backdrop click ---
-document.addEventListener("click", (e) => {
-  const modal = getDOMElement("compareModal");
-  const content = modal?.querySelector("div");
-  if (modal?.style.display === "flex" && modal.contains(e.target) && !content?.contains(e.target)) {
-    modal.style.display = "none";
-    document.body.style.overflow = "";
-  }
-});
 
 // --- DOMContentLoaded: tooltip setup, sort, mobile filter toggle ---
 document.addEventListener("DOMContentLoaded", () => {

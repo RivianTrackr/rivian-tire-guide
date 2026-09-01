@@ -5,72 +5,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $settings = get_option( 'rtg_settings', array() );
 
-// Handle settings save.
-if ( isset( $_POST['rtg_catalog_settings_save'] ) ) {
-    check_admin_referer( 'rtg_catalog_settings', 'rtg_catalog_settings_nonce' );
-
-    $settings['catalog_sync_enabled']   = ! empty( $_POST['catalog_sync_enabled'] );
-    $settings['catalog_notify_enabled'] = ! empty( $_POST['catalog_notify_enabled'] );
-    $settings['health_alerts_enabled']  = ! empty( $_POST['health_alerts_enabled'] );
-    $settings['stale_price_report_enabled'] = ! empty( $_POST['stale_price_report_enabled'] );
-
-    // --- CJ credentials and query ---
-    $settings['cj_enabled']     = ! empty( $_POST['cj_enabled'] );
-    $settings['cj_company_id']  = preg_replace( '/[^0-9]/', '', wp_unslash( $_POST['cj_company_id'] ?? '' ) );
-    $settings['cj_advertisers'] = sanitize_textarea_field( wp_unslash( $_POST['cj_advertisers'] ?? '' ) );
-    $settings['cj_website_id']  = preg_replace( '/[^0-9]/', '', wp_unslash( $_POST['cj_website_id'] ?? '' ) );
-    $settings['cj_limit']        = max( 1, min( 1000, intval( $_POST['cj_limit'] ?? RTG_Catalog_Source_CJ::DEFAULT_LIMIT ) ) );
-    $settings['cj_sweep_budget'] = max( 15, min( 600, intval( $_POST['cj_sweep_budget'] ?? RTG_Catalog_Source_CJ::SWEEP_BUDGET ) ) );
-    $settings['cj_max_pages']    = max( 1, min( 50, intval( $_POST['cj_max_pages'] ?? RTG_Catalog_Source_CJ::DEFAULT_MAX_PAGES ) ) );
-    $settings['catalog_run_budget']  = max( 30, min( 900, intval( $_POST['catalog_run_budget'] ?? RTG_Catalog_Sync::RUN_BUDGET ) ) );
-
-    // The query document is GraphQL, so it must not be run through a sanitizer
-    // that mangles braces or quotes; it is never output unescaped.
-    $settings['cj_query'] = trim( (string) wp_unslash( $_POST['cj_query'] ?? '' ) );
-
-    // The token field renders empty, so an empty submission means "leave it
-    // alone" rather than "clear it" — otherwise every unrelated settings save
-    // would wipe the credential. Clearing is explicit, via the checkbox.
-    $posted_pat = trim( (string) wp_unslash( $_POST['cj_pat'] ?? '' ) );
-    if ( ! empty( $_POST['cj_pat_clear'] ) ) {
-        $settings['cj_pat'] = '';
-    } elseif ( '' !== $posted_pat ) {
-        $settings['cj_pat'] = $posted_pat;
-    }
-
-    // Clamp to the range the load index table actually covers, so a typo can't
-    // silently disqualify every tire or admit every tire.
-    $posted_index = intval( $_POST['catalog_min_load_index'] ?? RTG_Tire_Qualifier::DEFAULT_MIN_LOAD_INDEX );
-    $settings['catalog_min_load_index'] = max( 100, min( 126, $posted_index ) );
-
-    // Per-vehicle load index floors. A blank field means "use the built-in
-    // figure for this platform" rather than "no minimum", so it is dropped
-    // instead of being stored as zero.
-    $posted_minimums = isset( $_POST['catalog_vehicle_min_load_index'] ) && is_array( $_POST['catalog_vehicle_min_load_index'] )
-        ? wp_unslash( $_POST['catalog_vehicle_min_load_index'] )
-        : array();
-
-    $vehicle_minimums = array();
-    foreach ( $posted_minimums as $vehicle => $value ) {
-        $value = intval( $value );
-        if ( $value > 0 ) {
-            $vehicle_minimums[ sanitize_text_field( $vehicle ) ] = max( 100, min( 126, $value ) );
-        }
-    }
-    $settings['catalog_vehicle_min_load_index'] = $vehicle_minimums;
-
-    $settings['price_sync_enabled']    = ! empty( $_POST['price_sync_enabled'] );
-    $settings['link_sync_enabled']     = ! empty( $_POST['link_sync_enabled'] );
-    $settings['price_sync_max_change'] = max( 1, min( 100, intval( $_POST['price_sync_max_change'] ?? 50 ) ) );
-
-    $posted_policy = sanitize_text_field( wp_unslash( $_POST['catalog_brand_policy'] ?? '' ) );
-    $settings['catalog_brand_policy'] = in_array( $posted_policy, array(
-        RTG_Tire_Qualifier::BRAND_POLICY_OFF,
-        RTG_Tire_Qualifier::BRAND_POLICY_WARN,
-        RTG_Tire_Qualifier::BRAND_POLICY_REJECT,
-    ), true ) ? $posted_policy : RTG_Tire_Qualifier::DEFAULT_BRAND_POLICY;
-
-    update_option( 'rtg_settings', $settings );
+// Saved through RTG_Admin::handle_catalog_settings_save() (post-redirect-get),
+// so a refresh of this page can't re-submit the form.
+if ( isset( $_GET['message'] ) && 'settings_saved' === $_GET['message'] ) {
     echo '<div class="notice notice-success is-dismissible"><p>Tire Discovery settings saved.</p></div>';
 }
 
