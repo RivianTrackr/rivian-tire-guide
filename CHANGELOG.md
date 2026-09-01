@@ -4,6 +4,12 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.88.1] - 2026-09-01
+
+### Changed
+- **The efficiency box on the card carries its sample.** 1.88.0 gave the price box two extra lines (the set price and "as of"), which left the efficiency box beside it mostly empty around one number. The miles tracked and vehicle count that only the tooltip showed are now meta lines under the figure, so the two boxes read as a pair again.
+- **"Add another tire" sits at the top of the compare page**, under the subtitle and above the tire headers, instead of below six sections of specs where nobody scrolled to find it.
+
 ## [1.88.0] - 2026-09-01
 
 The advisor release and the tire page as a landing page: eight roadmap features (F1, F3, F4, F6, F7, F8, F12, F13) that turn data the plugin already stores into a decision on the card, and give the page a search visitor lands on somewhere to go next.
