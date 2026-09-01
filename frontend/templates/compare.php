@@ -202,6 +202,122 @@ $rtg_settings = get_option( 'rtg_settings', array() );
       color: var(--rtg-text-heading);
     }
 
+    .cmp-tire-header { position: relative; }
+    .cmp-tire-model-link { color: var(--rtg-text-heading); text-decoration: none; }
+    .cmp-tire-model-link:hover { color: var(--rtg-accent); text-decoration: none; }
+    .cmp-tire-img-wrap a { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+    .cmp-tire-meta-sub {
+      font-size: 11px;
+      color: var(--rtg-text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .cmp-tire-page-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--rtg-accent);
+      text-decoration: none;
+    }
+    .cmp-tire-page-link:hover { color: var(--rtg-accent-hover); text-decoration: none; }
+    .cmp-tire-remove {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--rtg-border);
+      background: var(--rtg-bg-deep);
+      color: var(--rtg-text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .15s;
+    }
+    .cmp-tire-remove:hover { color: #fff; background: #ee383a; border-color: #ee383a; }
+    .cmp-tire-remove:focus-visible { outline: 2px solid var(--rtg-accent); outline-offset: 2px; }
+
+    /* --- Value notes: set price, freshness, fitment --- */
+    .cmp-price-unit { font-size: 11px; color: var(--rtg-text-muted); font-weight: 600; }
+    .cmp-meta { font-size: 11px; color: var(--rtg-text-muted); font-family: inherit; font-weight: 500; }
+    .cmp-price-asof.is-stale { color: #f0b429; }
+    .cmp-fitment-warn {
+      display: inline-flex;
+      align-items: flex-start;
+      gap: 5px;
+      margin-top: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.35;
+      color: #f87171;
+      font-family: inherit;
+    }
+    .cmp-fitment-warn i { margin-top: 2px; }
+
+    /* --- Add another tire --- */
+    .cmp-add {
+      background: var(--rtg-bg-card);
+      border: 1px dashed var(--rtg-border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin: 0 0 16px;
+      position: relative;
+    }
+    .cmp-add-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+    .cmp-add-title { font-size: 15px; font-weight: 600; color: var(--rtg-text-heading); display: inline-flex; align-items: center; gap: 8px; }
+    .cmp-add-title i { color: var(--rtg-accent); }
+    .cmp-add-hint { font-size: 12px; color: var(--rtg-text-muted); }
+    .cmp-add-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .cmp-add-input {
+      flex: 1 1 260px;
+      min-height: 40px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--rtg-border);
+      background: var(--rtg-bg-input);
+      color: var(--rtg-text-primary);
+      font-size: 14px;
+      font-family: inherit;
+    }
+    .cmp-add-input::placeholder { color: #a6a39c; }
+    .cmp-add-input:focus { outline: none; border-color: var(--rtg-accent); box-shadow: 0 0 0 2px var(--rtg-accent); }
+    .cmp-add-results {
+      list-style: none;
+      margin: 8px 0 0;
+      padding: 4px;
+      border: 1px solid var(--rtg-border);
+      border-radius: 10px;
+      background: var(--rtg-bg-deep);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    .cmp-add-results[hidden] { display: none; }
+    .cmp-add-result {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      width: 100%;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--rtg-text-primary);
+      text-align: left;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .cmp-add-result:hover, .cmp-add-result:focus-visible { background: color-mix(in srgb, var(--rtg-accent) 12%, var(--rtg-bg-deep)); outline: none; }
+    .cmp-add-result-name { font-size: 14px; font-weight: 600; }
+    .cmp-add-result-meta { font-size: 12px; color: var(--rtg-text-muted); }
+    .cmp-add-empty { padding: 10px 12px; font-size: 13px; color: var(--rtg-text-muted); }
+    .cmp-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
     /* --- Spec sections --- */
     .cmp-section {
       background: var(--rtg-bg-card);
@@ -320,6 +436,12 @@ $rtg_settings = get_option( 'rtg_settings', array() );
       color: #fff;
     }
     .cmp-cta-review:hover { background: #6d28d9; color: #fff; text-decoration: none; }
+    .cmp-cta-secondary {
+      background: transparent;
+      color: var(--rtg-text-primary);
+      border: 1px solid var(--rtg-border);
+    }
+    .cmp-cta-secondary:hover { color: var(--rtg-accent); border-color: var(--rtg-accent); text-decoration: none; }
 
     /* --- Empty state --- */
     .cmp-empty {
@@ -409,6 +531,7 @@ $rtg_settings = get_option( 'rtg_settings', array() );
       .cmp-tire-size, .cmp-tire-meta-label, .cmp-row-label { color: #666; }
       .cmp-cta-wrap { display: none; }
       .cmp-btn { display: none !important; }
+      .cmp-tire-remove, .cmp-add { display: none !important; }
     }
   </style>
 

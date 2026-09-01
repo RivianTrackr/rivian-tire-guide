@@ -61,8 +61,17 @@ class RTG_Compare {
             RTG_VERSION,
             true
         );
+        $settings = get_option( 'rtg_settings', array() );
         wp_localize_script( 'rtg-compare', 'rtgData', array(
-            'tires' => RTG_Database::get_tires_as_array(),
+            'tires'    => RTG_Database::get_tires_as_array(),
+            'settings' => array(
+                'tirePageUrl'     => home_url( '/' . RTG_Tire_Page::slug_base() . '/' ),
+                'guideUrl'        => RTG_Tire_Page::guide_url(),
+                'compareUrl'      => home_url( '/' . sanitize_title( $settings['compare_slug'] ?? 'tire-compare' ) . '/' ),
+                'vehicleSizeMap'  => RTG_Database::get_vehicle_size_map(),
+                'loadIndexFloors' => RTG_Fitment::floors(),
+                'stalePriceDays'  => RTG_Stale_Prices::stale_days(),
+            ),
         ) );
     }
 

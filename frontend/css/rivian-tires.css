@@ -974,6 +974,69 @@
   line-height: 1.66;
   color: var(--rtg-text-muted);
 }
+/* Second and third lines under a stat: the set price, and "price as of". */
+.tire-card-stat-meta {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--rtg-text-muted);
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.tire-card-price-set {
+  color: var(--rtg-text-primary);
+  font-weight: 600;
+}
+.tire-card-price-asof {
+  margin-top: 1px;
+}
+.tire-card-price-asof.is-stale {
+  color: #f0b429;
+}
+
+/* Load-index fitment warning — the tire won't safely carry the vehicle. */
+.tire-card-fitment-slot[hidden] {
+  display: none;
+}
+.tire-card-fitment {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 8px 0 2px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, #ef4444 10%, var(--rtg-bg-deep));
+  border: 1px solid color-mix(in srgb, #ef4444 40%, transparent);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--rtg-text-primary);
+}
+.tire-card-fitment-icon {
+  color: #ef4444;
+  display: inline-flex;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+.tire-card-fitment-text {
+  flex: 1;
+  min-width: 0;
+}
+.tire-card-fitment .info-tooltip-trigger {
+  background: none;
+  border: none;
+  padding: 2px;
+  margin: -2px 0 0;
+  color: var(--rtg-text-muted);
+  cursor: pointer;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.tire-card-fitment .info-tooltip-trigger:hover {
+  color: var(--rtg-accent);
+}
 
 /* Spec rows */
 .tire-card-specs {
@@ -1317,6 +1380,29 @@
 .no-results-riviantrackr a:hover {
   color: var(--rtg-accent-hover);
   text-decoration: none;
+}
+
+/* The honest empty state: the size (or vehicle) has nothing in it yet. */
+#noResults.no-results-honest .no-results-icon {
+  color: var(--rtg-accent);
+  opacity: 0.8;
+}
+
+/* === Filter side-effect notice (e.g. size cleared by a vehicle change) === */
+.rtg-filter-notice {
+  display: none;
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--rtg-text-primary);
+  background: color-mix(in srgb, var(--rtg-accent) 10%, var(--rtg-bg-deep));
+  border: 1px solid color-mix(in srgb, var(--rtg-accent) 35%, transparent);
+}
+.rtg-filter-notice.is-visible {
+  display: block;
+  animation: fadeIn 0.2s ease;
 }
 
 /* === Pagination === */

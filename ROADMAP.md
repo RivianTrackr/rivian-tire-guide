@@ -1,6 +1,6 @@
 # Rivian Tire Guide — Roadmap
 
-**Current release:** 1.87.0 (DB schema v23)
+**Current release:** 1.88.0 (DB schema v23)
 **Updated:** 2026-09-01
 
 This is the one place open work is tracked. It replaces the four planning
@@ -50,9 +50,8 @@ Small, contained fixes. Each was verified still present at 1.87.0.
 | A11Y3 | Mobile filter drawer: no Escape-to-close and no focus return to the toggle button. | `frontend/js/rivian-tires.js` (drawer setup) |
 | A11Y4 | Toasts in the ratings module and on the tire-review page lack `role="status"` (the favorites toast does it right). | `frontend/js/modules/ratings.js`, `frontend/js/tire-review.js` |
 | A11Y5 | Tire-review page search dropdown lacks combobox semantics. | `frontend/js/tire-review.js` |
-| A11Y6 | Per-review stars on tire pages are `aria-hidden` with no text alternative. | `frontend/templates/tire-page-content.php` |
 | A11Y7 | The guest-review privacy note is not associated with the email field via `aria-describedby`. | `frontend/js/modules/ratings.js` (guest fields), `frontend/templates/tire-review.php` |
-| A11Y8 | Silent side effects: the vehicle→size cascade clears the size with no announcement, and the four-tire compare cap silently un-checks the fifth box. (Pairs with F12.) | `frontend/js/modules/filters.js`, `frontend/js/modules/compare.js` |
+| A11Y8 | Silent side effect: the four-tire compare cap silently un-checks the fifth box. (The vehicle→size cascade half shipped in 1.88.0 with F12.) | `frontend/js/modules/compare.js` |
 | A11Y9 | `filterResultCount` and `tireCount` are two live regions announcing the same number. | `frontend/templates/tire-guide.php` |
 
 ## 3. Shopper-facing features
@@ -60,23 +59,16 @@ Small, contained fixes. Each was verified still present at 1.87.0.
 These turn data the plugin already stores into a decision on the card. They
 are what moves the guide from "a catalog you browse" to "an advisor that
 guides you", the through-line of the 2.0 plan. Each is small because the
-inputs already exist in the 29-column row.
+inputs already exist in the 31-column row. 1.88.0 shipped F1, F3, F4, F6,
+F7, F8, F12 and F13; what is left is below.
 
 | ID | Feature | Why it matters | Where it plugs in |
 |----|---------|----------------|-------------------|
-| F1 | **Load-index fitment warning.** With a vehicle selected (or on the tire page), flag any tire whose load index is under the floor (R1 ≥ 116, R2 ≥ 112). The tooltip explains the rule; nothing enforces it. Persist the vehicle choice (F12) so it works on first paint. | The most important safety signal a Rivian owner needs, and the guide already knows the answer. Floors already live in the discovery settings (`catalog_vehicle_min_load_index`). | `frontend/js/modules/cards.js`, `frontend/templates/tire-page-content.php`, compare rows |
-| F2 | **Efficiency delta vs stock.** Show "+0.18 mi/kWh vs OEM ≈ +14 mi range" instead of a bare mi/kWh pill. Inputs: `roamer_efficiency`, the OEM tag, the vehicle size map, pack kWh per model. | Translates the Roamer number into the thing owners care about: range. | `cards.js` (Roamer pill), `compare.js` Performance section, tire page |
-| F3 | **Set-of-four pricing.** "$289 ea · $1,156 / set" on card, tire page and compare. | Nobody buys one tire. | `cards.js`, `tire-page-content.php` |
-| F4 | **Price freshness.** Render `price_synced_at` / `updated_at` as "price as of Aug 28"; hint when past the `rtg_stale_price_days` threshold. | Shoppers can't tell a fresh CJ price from a year-old manual one. | same as F3; threshold in `class-rtg-stale-prices.php` |
+| F2 | **Efficiency delta vs stock.** Show "+0.18 mi/kWh vs OEM ≈ +14 mi range" instead of a bare mi/kWh pill. Inputs: `roamer_efficiency`, the OEM tag, the vehicle size map, pack kWh per model. The remembered vehicle (1.88.0) gives it a vehicle on first paint. | Translates the Roamer number into the thing owners care about: range. | `cards.js` (Roamer pill), `compare.js` Performance section, tire page |
 | F5 | **Price history, price-drop badge, price-drop alerts.** New `rtg_price_history` (tire_id, price, retailer, observed_at) written by `update_tire()` on a price change. Unlocks a sparkline on the tire page, "lowest in 90 days", a "price dropped" card badge, and a subscribe-to-drop email via `RTG_Mailer`. Depends on P1 hooks. | Price sync overwrites history in place today; every past price is destroyed. | `class-rtg-price-sync.php`, `class-rtg-database.php`, migration 24 |
-| F6 | **Tire page: compare, favorite, share, and show-more reviews.** The page a Google visitor lands on has three CTAs and caps reviews at 10 with no way to see the rest. | Pillar 2 brought the traffic; the page can't convert it into a comparison or a saved tire. | `tire-page-content.php`, `tire-page.js` |
-| F7 | **Tire page internal linking.** "Other sizes of this model" and "Similar tires in this size" blocks (same category + size, by efficiency). | Improves crawl depth and gives the visitor a next step. | `tire-page-content.php`, via `build_filter_where_clause` |
-| F8 | **Compare page: link headers to tire pages, per-column remove, "add another tire".** The `COL` map stops at 27 so it can't see `slug`. | Compare is a dead end today. | `frontend/js/compare.js` |
 | F9 | **Review sorting and filtering** on the tire page: recent / highest / lowest / by vehicle. `get_tire_reviews` is hardcoded `ORDER BY updated_at DESC`. | The reviews drawer was removed and nothing replaced its browsing affordances. | `class-rtg-database.php`, `tire-page-content.php` |
 | F10 | **Guest favorites.** localStorage shortlist for logged-out visitors, merged into `rtg_favorites` on login. | The heart is hidden for guests and clicking redirects to login, dropping anonymous shoppers. | `tire-guide.php`, `favorites.js` |
 | F11 | **Live search on the guide.** Port the working typeahead from the tire-review page. | The review page already has it (`tire-review.js`); the guide is button/Enter-only. | `frontend/js/modules/search.js` |
-| F12 | **Vehicle memory and cascade feedback.** Persist the vehicle toggle (localStorage or user meta) and announce when a vehicle change clears the size select. | Closes A11Y8's first half and makes F1/F2 work on first paint. | `filters.js` |
-| F13 | **Distinct empty states.** "No tires in this size yet" vs "No tires match your filters" (currently always the latter). | The first is an honest answer; the second is an invitation to relax filters. | `filters.js` (`renderSmartNoResults`) |
 | F14 | **Adaptive UX leftovers from the 2.0 plan.** Live search preview (F11), saved and shareable searches, seasonal callouts using the existing category field. | — | — |
 
 ## 4. Reviews → trust and community
@@ -123,7 +115,7 @@ The 2.0 plan's Pillar 3, still entirely open. Listed in the order they compound.
 | ID | Item | Status / rationale |
 |----|------|--------------------|
 | P1 | **Lifecycle hooks.** Zero `do_action()` in the plugin. Add `rtg_tire_created/updated/deleted`, `rtg_review_submitted/approved`, `rtg_price_changed`, `rtg_sync_complete`. Prerequisite for ADM2, F5 alerts, webhooks (B10), external logging. | Open since v1.51 |
-| P2 | **Keyed row objects.** Still 29-element positional arrays; `compare.js`'s `COL` map already stopped at 27 and lost `slug`. Emit `{tire_id, brand, ...}` from `to_frontend_row()` and migrate `cards.js`, `filters.js`, `compare.js`, `ratings.js`. REST `/tires` leaks the array while `/tires/{id}` returns an object. | The single highest-leverage refactor; every new card feature above pays its tax |
+| P2 | **Keyed row objects.** Still positional arrays — 31 elements as of 1.88.0, which had to append two timestamp columns and teach three destructurings about them. Emit `{tire_id, brand, ...}` from `to_frontend_row()` and migrate `cards.js`, `filters.js`, `compare.js`, `ratings.js`. REST `/tires` leaks the array while `/tires/{id}` returns an object. | The single highest-leverage refactor; every new card feature above pays its tax |
 | P3 | **Sitemap for core / Yoast / Rank Math.** Only the AIOSEO filter is hooked; add `wp_sitemaps_add_provider` as the primary plus the Yoast and Rank Math filters. | `class-rtg-tire-page.php` |
 | P4 | **REST parity and new endpoints.** `/tires` supports 4 filters vs 9 on AJAX (same `build_filter_where_clause`). Add `search`, `vehicle`, `oem`, `price_max`, `warranty_min`; new `/suggest?q=`, `/compare?ids=`, `/sizes`, `/brands`, authenticated `/favorites` and `POST /reviews`. | `class-rtg-rest-api.php` |
 | P5 | **AI Tire Advisor: build it or remove the panel.** No Claude/Anthropic code exists; `search_type='ai'` is queried but never written; the Analytics page still shows "AI Queries" and "Search vs AI Usage"; `uninstall.php` sweeps legacy `rtg_ai_*` options. Either ship it (`POST /rtg/v1/recommend`, structured picks grounded in the live catalog with a filter-engine fallback, `search_type='ai'` events, key via a `wp-config.php` constant, the existing rate limiter and transient cache) or drop the dead panels. | Decide before the next roadmap cycle |
@@ -169,8 +161,8 @@ feed is the sanctioned path). Real, but none load-bearing.
 
 ## Suggested order of attack
 
-1. **The advisor release:** F1, F2, F3, F4, F12 together. Every one is a render change over data already in the row, and together they change what the guide is.
-2. **Tire page as landing page:** F6, F7, F8, F9, and P3 so non-AIOSEO sites get indexed.
+1. **Finish the advisor release:** F2 (F1, F3, F4 and F12 shipped in 1.88.0). A render change over data already in the row, with the vehicle now known on first paint.
+2. **Finish the tire page as landing page:** F9 review sorting, and P3 so non-AIOSEO sites get indexed (F6, F7 and F8 shipped in 1.88.0).
 3. **Hooks, then price history:** P1 first, F5 on top of it, ADM2 riding the same events.
 4. **Hygiene sweep:** §1 and §2 in one release, the way 1.85–1.87 cleared the earlier reviews.
 5. **Admin safety net:** ADM1 trash, ADM3 dry-run, ADM4 bulk moderation.
@@ -197,6 +189,11 @@ For the record, so nothing here is re-proposed. Details are in `CHANGELOG.md`.
   adaptive price-slider ceiling, compare keyed on tire IDs and shareable.
 - From the v1.48 list: share buttons on cards (native share with copy
   fallback), bulk edit as a two-step form, tire-page JSON-LD.
+- **1.88.0, the advisor release and the tire page as landing page:** the
+  load-index fitment warning, set-of-four pricing, price freshness, vehicle
+  memory with cascade feedback, distinct empty states; tire-page compare /
+  save / share / show-more-reviews, other-sizes and similar-tires links; the
+  compare page's tire-page links, per-column remove and add-another-tire.
 - Tire Discovery (CJ catalog monitoring, qualification, review queue, link and
   price sync, coverage, health alerts, stale-price report, image import), the
   unified rate limiter, the cached `/feed`, the rotating link checker.

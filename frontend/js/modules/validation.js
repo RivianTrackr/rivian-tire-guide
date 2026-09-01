@@ -218,6 +218,8 @@ export function validateAndSanitizeCSVRow(row) {
       //     safeReviewLinkURL) before use, so <>"' can't slip through.
       //   27 vehicle_breakdown — JSON, needs its quotes.
       //   28 slug — identifier, url-encoded at use.
+      // 29 price_synced_at and 30 updated_at are MySQL datetimes (digits,
+      // dashes, colons, a space): the strip below can't touch them.
       if (i === 18 || i === 19 || i === 22 || i === 27 || i === 28) {
         sanitized[i] = cell;
       } else {

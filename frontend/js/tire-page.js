@@ -149,3 +149,196 @@ var RTG_TP_TOOLTIPS = {
     }
   });
 })();
+
+/**
+ * Compare, save, share, and "Show more reviews".
+ *
+ * The page a search visitor lands on used to have three outbound CTAs and
+ * nothing that kept them: no way to shortlist the tire, compare it, or read
+ * past the first ten reviews. Everything here degrades to what the server
+ * rendered — the compare link is a plain link, the guest "Save" is a login
+ * link, and the reviews button simply isn't there when there are no more.
+ */
+(function () {
+  var cfg = window.rtgTirePage || {};
+
+  // --- Favorite -----------------------------------------------------------
+  var favBtn = document.getElementById('rtgTpFav');
+  if (favBtn && favBtn.tagName === 'BUTTON' && cfg.ajaxurl && cfg.ratingNonce && cfg.tireId) {
+    var busy = false;
+
+    function paintFav(isFav) {
+      favBtn.classList.toggle('is-favorite', isFav);
+      favBtn.setAttribute('aria-pressed', isFav ? 'true' : 'false');
+      var icon = favBtn.querySelector('i');
+      var label = favBtn.querySelector('span');
+      if (icon) icon.className = (isFav ? 'fa-solid' : 'fa-regular') + ' fa-heart';
+      if (label) label.textContent = isFav ? 'Saved' : 'Save';
+    }
+
+    favBtn.addEventListener('click', function () {
+      if (busy) return;
+      if (!cfg.isLoggedIn) {
+        if (cfg.loginUrl) window.location.href = cfg.loginUrl;
+        return;
+      }
+      var wasFav = favBtn.classList.contains('is-favorite');
+      busy = true;
+      paintFav(!wasFav); // optimistic
+
+      var data = new FormData();
+      data.append('action', wasFav ? 'rtg_remove_favorite' : 'rtg_add_favorite');
+      data.append('tire_id', cfg.tireId);
+      data.append('nonce', cfg.ratingNonce);
+
+      fetch(cfg.ajaxurl, { method: 'POST', body: data, credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (json) {
+          if (!json || !json.success) paintFav(wasFav);
+        })
+        .catch(function () { paintFav(wasFav); })
+        .then(function () { busy = false; });
+    });
+  }
+
+  // --- Share ----------------------------------------------------------------
+  var shareBtn = document.getElementById('rtgTpShare');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', function () {
+      var url = cfg.shareUrl || window.location.href;
+      var title = cfg.shareTitle || document.title;
+
+      function showCopied() {
+        var icon = shareBtn.querySelector('i');
+        var label = shareBtn.querySelector('span');
+        shareBtn.classList.add('copied');
+        if (icon) icon.className = 'fa-solid fa-check';
+        if (label) label.textContent = 'Copied!';
+        setTimeout(function () {
+          shareBtn.classList.remove('copied');
+          if (icon) icon.className = 'fa-solid fa-share-nodes';
+          if (label) label.textContent = 'Share';
+        }, 2000);
+      }
+
+      if (navigator.share) {
+        navigator.share({ title: title, url: url }).catch(function () {});
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(showCopied).catch(function () {});
+      }
+    });
+  }
+
+  // --- Show more reviews ----------------------------------------------------
+  var moreBtn = document.getElementById('rtgTpMoreReviews');
+  var list = document.getElementById('rtgTpReviewList');
+  if (moreBtn && list && cfg.ajaxurl && cfg.tireId) {
+    var perPage = parseInt(cfg.reviewsPerPage, 10) || 10;
+
+    // Same markup rtg_tire_page_stars() renders server-side.
+    function renderStars(rating) {
+      var wrap = document.createElement('span');
+      wrap.className = 'rtg-tp-review-stars';
+      var visual = document.createElement('span');
+      visual.setAttribute('aria-hidden', 'true');
+      for (var i = 1; i <= 5; i++) {
+        var fill = rating >= i ? 'full' : (rating >= i - 0.5 ? 'half' : 'empty');
+        var star = document.createElement('span');
+        star.className = 'rtg-tp-star rtg-tp-star-' + fill;
+        star.textContent = '★';
+        visual.appendChild(star);
+      }
+      var sr = document.createElement('span');
+      sr.className = 'rtg-tp-sr-only';
+      sr.textContent = 'Rated ' + String(Math.round(rating * 10) / 10) + ' out of 5';
+      wrap.appendChild(visual);
+      wrap.appendChild(sr);
+      return wrap;
+    }
+
+    function renderReview(review) {
+      var item = document.createElement('div');
+      item.className = 'rtg-tp-review';
+
+      var head = document.createElement('div');
+      head.className = 'rtg-tp-review-head';
+      var author = document.createElement('span');
+      author.className = 'rtg-tp-review-author';
+      author.textContent = review.display_name || 'Guest';
+      head.appendChild(author);
+      head.appendChild(renderStars(parseFloat(review.rating) || 0));
+      item.appendChild(head);
+
+      if (review.review_title) {
+        var title = document.createElement('div');
+        title.className = 'rtg-tp-review-title';
+        title.textContent = review.review_title;
+        item.appendChild(title);
+      }
+      if (review.review_text) {
+        var body = document.createElement('div');
+        body.className = 'rtg-tp-review-body';
+        body.textContent = review.review_text;
+        item.appendChild(body);
+      }
+      return item;
+    }
+
+    function updateButton(loaded, total) {
+      var remaining = total - loaded;
+      if (remaining <= 0) {
+        moreBtn.parentNode.removeChild(moreBtn);
+        return;
+      }
+      moreBtn.textContent = 'Show more reviews (' + remaining + ' more)';
+      moreBtn.disabled = false;
+    }
+
+    moreBtn.addEventListener('click', function () {
+      if (moreBtn.disabled) return;
+      var page = (parseInt(moreBtn.dataset.page, 10) || 1) + 1;
+      var loaded = parseInt(moreBtn.dataset.loaded, 10) || 0;
+      var total = parseInt(moreBtn.dataset.total, 10) || 0;
+
+      moreBtn.disabled = true;
+      moreBtn.textContent = 'Loading…';
+
+      var data = new FormData();
+      data.append('action', 'get_tire_reviews');
+      data.append('tire_id', cfg.tireId);
+      data.append('page', String(page));
+      if (cfg.ratingNonce) data.append('nonce', cfg.ratingNonce);
+
+      fetch(cfg.ajaxurl, { method: 'POST', body: data, credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (json) {
+          if (!json || !json.success || !json.data || !Array.isArray(json.data.reviews)) {
+            throw new Error('bad response');
+          }
+          var frag = document.createDocumentFragment();
+          json.data.reviews.forEach(function (review) {
+            frag.appendChild(renderReview(review));
+          });
+          var first = frag.firstChild;
+          list.appendChild(frag);
+          if (first && typeof first.focus === 'function') {
+            first.setAttribute('tabindex', '-1');
+            first.focus({ preventScroll: true });
+          }
+
+          loaded += json.data.reviews.length;
+          total = parseInt(json.data.total, 10) || total;
+          moreBtn.dataset.page = String(page);
+          moreBtn.dataset.loaded = String(loaded);
+          moreBtn.dataset.total = String(total);
+          // The server said there are no more: stop even if the count is off.
+          if (json.data.reviews.length < perPage) loaded = total;
+          updateButton(loaded, total);
+        })
+        .catch(function () {
+          moreBtn.disabled = false;
+          moreBtn.textContent = 'Couldn’t load more reviews. Try again';
+        });
+    });
+  }
+})();

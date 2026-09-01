@@ -30,11 +30,14 @@ const builds = [
     minify: true,
     drop: ['console', 'debugger'],
   },
-  // --- Frontend JS (compare page) ---
+  // --- Frontend JS (compare page) — bundled so it can share the guide's
+  // fitment / pricing / vehicle-memory modules instead of copying them ---
   {
     ...jsDefaults,
+    bundle: true,
     entryPoints: ['frontend/js/compare.js'],
     outfile: 'frontend/js/compare.min.js',
+    format: 'iife',
     minify: true,
     drop: ['console', 'debugger'],
   },
