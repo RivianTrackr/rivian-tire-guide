@@ -882,6 +882,19 @@ export function populateSizeDropdownGrouped(id, sizesOrRows) {
   });
 }
 
+/**
+ * Re-run the listing through whichever pipeline the page is in. Server-side
+ * mode has no local rows: calling the client pipeline there filters an empty
+ * array, empties the grid, and flashes "No tires match" until the fetch lands.
+ */
+function rerender() {
+  if (isServerSide()) {
+    serverSideFilterAndRender();
+  } else {
+    filterAndRender();
+  }
+}
+
 export function setupSliderHandlers() {
   const sliders = [
     { id: "priceMax", label: "priceVal", format: val => `\u2264 $${val}`, bounds: NUMERIC_BOUNDS.price },
@@ -899,7 +912,10 @@ export function setupSliderHandlers() {
         updateSliderBackground(input);
       });
 
-      input.addEventListener("input", debounce(filterAndRender, 400));
+      // One binding, mode-aware. The entry point used to add a second,
+      // server-side listener on top of this one in server mode, so every
+      // drag ran both pipelines.
+      input.addEventListener("input", debounce(rerender, 400));
 
       const initialValue = validateNumeric(input.value, bounds, bounds.max);
       output.textContent = format(initialValue);
@@ -1114,56 +1130,56 @@ export function renderSmartNoResults() {
   if (getDOMElement("filterFavorites")?.checked) {
     suggestions.push({
       label: rtgIcon('heart-outline', 14) + ' Show all tires (not just favorites)',
-      action: () => { getDOMElement("filterFavorites").checked = false; state.lastFilterState = null; filterAndRender(); }
+      action: () => { getDOMElement("filterFavorites").checked = false; state.lastFilterState = null; rerender(); }
     });
   }
 
   if (noResultsVehicle) {
     suggestions.push({
       label: rtgIcon('car', 14) + ` Remove ${escapeHTML(noResultsVehicle)} filter`,
-      action: () => { setActiveVehicle(''); cascadeVehicleToSizes('', state.VALID_SIZES); state.lastFilterState = null; filterAndRender(); }
+      action: () => { setActiveVehicle(''); cascadeVehicleToSizes('', state.VALID_SIZES); state.lastFilterState = null; rerender(); }
     });
   }
 
   if (sizeEl?.value) {
     suggestions.push({
       label: rtgIcon('ruler', 14) + ` Remove size filter (${escapeHTML(sizeEl.value)})`,
-      action: () => { sizeEl.value = ""; state.lastFilterState = null; filterAndRender(); }
+      action: () => { sizeEl.value = ""; state.lastFilterState = null; rerender(); }
     });
   }
 
   if (brandEl?.value) {
     suggestions.push({
       label: rtgIcon('building', 14) + ' Show all brands',
-      action: () => { brandEl.value = ""; state.lastFilterState = null; filterAndRender(); }
+      action: () => { brandEl.value = ""; state.lastFilterState = null; rerender(); }
     });
   }
 
   if (categoryEl?.value) {
     suggestions.push({
       label: rtgIcon('tags', 14) + ' Show all categories',
-      action: () => { categoryEl.value = ""; state.lastFilterState = null; filterAndRender(); }
+      action: () => { categoryEl.value = ""; state.lastFilterState = null; rerender(); }
     });
   }
 
   if (priceEl && parseInt(priceEl.value) < (Number(priceEl.max) || 600)) {
     suggestions.push({
       label: rtgIcon('dollar-sign', 14) + ' Increase price limit to max',
-      action: () => { const ceil = Number(priceEl.max) || 600; priceEl.value = ceil; getDOMElement("priceVal").textContent = "\u2264 $" + ceil; updateSliderBackground(priceEl); state.lastFilterState = null; filterAndRender(); }
+      action: () => { const ceil = Number(priceEl.max) || 600; priceEl.value = ceil; getDOMElement("priceVal").textContent = "\u2264 $" + ceil; updateSliderBackground(priceEl); state.lastFilterState = null; rerender(); }
     });
   }
 
   if (getDOMElement("filter3pms")?.checked) {
     suggestions.push({
       label: rtgIcon('snowflake', 14) + ' Remove 3PMS filter',
-      action: () => { getDOMElement("filter3pms").checked = false; state.lastFilterState = null; filterAndRender(); }
+      action: () => { getDOMElement("filter3pms").checked = false; state.lastFilterState = null; rerender(); }
     });
   }
 
   if (searchEl?.value?.trim()) {
     suggestions.push({
       label: rtgIcon('magnifying-glass', 14) + ` Clear search "${escapeHTML(safeString(searchEl.value.trim(), 30))}"`,
-      action: () => { searchEl.value = ""; delete state.domCache["searchInput"]; state.lastFilterState = null; filterAndRender(); }
+      action: () => { searchEl.value = ""; delete state.domCache["searchInput"]; state.lastFilterState = null; rerender(); }
     });
   }
 

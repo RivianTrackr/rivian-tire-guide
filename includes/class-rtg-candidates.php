@@ -314,6 +314,13 @@ class RTG_Candidates {
         global $wpdb;
         $table = self::table();
 
+        // Read on every admin screen for the menu badge, so it is cached and
+        // forgotten by every candidate write (see forget_matched_by_tire).
+        $cached = get_transient( self::COUNTS_CACHE );
+        if ( is_array( $cached ) ) {
+            return $cached;
+        }
+
         $counts = array(
             self::STATUS_NEW       => 0,
             self::STATUS_REJECTED  => 0,
@@ -327,6 +334,8 @@ class RTG_Candidates {
         foreach ( $rows ?: array() as $row ) {
             $counts[ $row['status'] ] = intval( $row['total'] );
         }
+
+        set_transient( self::COUNTS_CACHE, $counts, 5 * MINUTE_IN_SECONDS );
 
         return $counts;
     }
@@ -499,12 +508,17 @@ class RTG_Candidates {
     /** Request-level memo for get_matched_by_tire(); null = not computed. */
     private static $matched_by_tire_memo = null;
 
+    /** Transient holding get_counts(), read on every admin screen for the menu badge. */
+    const COUNTS_CACHE = 'rtg_candidate_status_counts';
+
     /**
-     * Forget the memoized match table. Called by every method that writes
-     * candidate rows; guide-tire writes reach it via RTG_Database::flush_cache().
+     * Forget the memoized match table and the cached status counts. Called by
+     * every method that writes candidate rows; guide-tire writes reach it via
+     * RTG_Database::flush_cache().
      */
     public static function forget_matched_by_tire() {
         self::$matched_by_tire_memo = null;
+        delete_transient( self::COUNTS_CACHE );
     }
 
     /**

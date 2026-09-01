@@ -25,6 +25,9 @@ class RTG_Database {
     private static $cache_key = 'rtg_all_tires';
     private static $dashboard_cache_key = 'rtg_dashboard_stats';
 
+    /** Transient holding get_review_status_counts(), read on every admin screen. */
+    const REVIEW_COUNTS_CACHE = 'rtg_review_status_counts';
+
     /**
      * Flush the tire data cache.
      */
@@ -469,14 +472,38 @@ class RTG_Database {
      *
      * @param string $tire_id Tire identifier.
      * @param array  $data    Associative array of columns to update.
+     * @param bool   $flush   Flush the tire cache afterwards. A sync writing
+     *                        many tires passes false and flushes once at the
+     *                        end — per-tire flushing left the next visitor
+     *                        with a cold cache after every price run.
      * @return int|false Number of rows updated, or false on error.
      */
-    public static function update_tire( $tire_id, $data ) {
+    public static function update_tire( $tire_id, $data, $flush = true ) {
         global $wpdb;
         $table = self::tires_table();
 
         // Remove fields that shouldn't be updated directly.
         unset( $data['id'], $data['created_at'], $data['updated_at'] );
+
+        // The slug is regenerated only when an identifying field actually
+        // changes. Re-syncing whenever one was merely *present* meant every
+        // form save and every CSV update (both always carry brand, model
+        // and size) silently replaced a hand-set slug with the generated
+        // one and recorded a redirect for it.
+        $resync_slug = false;
+        if ( isset( $data['brand'] ) || isset( $data['model'] ) || isset( $data['size'] ) ) {
+            $before = self::get_tire( $tire_id );
+            if ( ! $before || '' === (string) ( $before['slug'] ?? '' ) ) {
+                $resync_slug = true;
+            } else {
+                foreach ( array( 'brand', 'model', 'size' ) as $identity ) {
+                    if ( isset( $data[ $identity ] ) && (string) $data[ $identity ] !== (string) $before[ $identity ] ) {
+                        $resync_slug = true;
+                        break;
+                    }
+                }
+            }
+        }
 
         $formats = array();
         foreach ( $data as $key => $value ) {
@@ -503,11 +530,13 @@ class RTG_Database {
         $result = $wpdb->update( $table, $data, array( 'tire_id' => $tire_id ), $formats, array( '%s' ) );
 
         // Keep the URL slug in sync when identifying fields change.
-        if ( isset( $data['brand'] ) || isset( $data['model'] ) || isset( $data['size'] ) ) {
+        if ( $resync_slug ) {
             self::sync_tire_slug( $tire_id );
         }
 
-        self::flush_cache();
+        if ( $flush ) {
+            self::flush_cache();
+        }
         return $result;
     }
 
@@ -581,6 +610,7 @@ class RTG_Database {
 
         $result = $wpdb->delete( $table, array( 'tire_id' => $tire_id ), array( '%s' ) );
         self::flush_cache();
+        self::flush_review_counts();
         return $result;
     }
 
@@ -610,6 +640,7 @@ class RTG_Database {
             $wpdb->prepare( "DELETE FROM {$table} WHERE tire_id IN ({$placeholders})", ...$tire_ids )
         );
         self::flush_cache();
+        self::flush_review_counts();
         return $result;
     }
 
@@ -844,7 +875,11 @@ class RTG_Database {
             $where[] = "LOWER(tags) LIKE '%oem%'";
         }
 
-        if ( isset( $filters['price_max'] ) && $filters['price_max'] < 600 ) {
+        // Any positive ceiling applies. The old `< 600` sentinel dated from
+        // a fixed slider: once the slider learned to raise its ceiling to
+        // cover the priciest tire, "under $700" arrived here and applied
+        // nothing. A ceiling at or above every price is simply a no-op.
+        if ( isset( $filters['price_max'] ) && floatval( $filters['price_max'] ) > 0 ) {
             $where[]  = 'price <= %f';
             $values[] = floatval( $filters['price_max'] );
         }
@@ -1347,7 +1382,9 @@ class RTG_Database {
     public static function delete_rating( $id ) {
         global $wpdb;
         $table = self::ratings_table();
-        return $wpdb->delete( $table, array( 'id' => $id ), array( '%d' ) );
+        $result = $wpdb->delete( $table, array( 'id' => $id ), array( '%d' ) );
+        self::flush_review_counts();
+        return $result;
     }
 
     /**
@@ -1362,11 +1399,13 @@ class RTG_Database {
     public static function delete_user_rating( $tire_id, $user_id ) {
         global $wpdb;
         $table = self::ratings_table();
-        return $wpdb->delete(
+        $result = $wpdb->delete(
             $table,
             array( 'tire_id' => $tire_id, 'user_id' => $user_id ),
             array( '%s', '%d' )
         );
+        self::flush_review_counts();
+        return $result;
     }
 
     // --- Wheels (Stock Wheel Guide) ---
@@ -1559,16 +1598,18 @@ class RTG_Database {
                 $update_formats[]             = '%s';
             }
 
-            return $wpdb->update(
+            $result = $wpdb->update(
                 $table,
                 $update_data,
                 array( 'tire_id' => $tire_id, 'user_id' => $user_id ),
                 $update_formats,
                 array( '%s', '%d' )
             );
+            self::flush_review_counts();
+            return $result;
         }
 
-        return $wpdb->insert(
+        $result = $wpdb->insert(
             $table,
             array(
                 'tire_id'       => $tire_id,
@@ -1580,6 +1621,8 @@ class RTG_Database {
             ),
             array( '%s', '%d', '%d', '%s', '%s', '%s' )
         );
+        self::flush_review_counts();
+        return $result;
     }
 
     /**
@@ -1597,7 +1640,7 @@ class RTG_Database {
         global $wpdb;
         $table = self::ratings_table();
 
-        return $wpdb->insert(
+        $result = $wpdb->insert(
             $table,
             array(
                 'tire_id'       => $tire_id,
@@ -1611,6 +1654,8 @@ class RTG_Database {
             ),
             array( '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s' )
         );
+        self::flush_review_counts();
+        return $result;
     }
 
     /**
@@ -1841,6 +1886,13 @@ class RTG_Database {
         global $wpdb;
         $table = self::ratings_table();
 
+        // Read on every admin screen for the menu badge, so it is cached and
+        // forgotten by every review write (see flush_review_counts).
+        $cached = get_transient( self::REVIEW_COUNTS_CACHE );
+        if ( is_array( $cached ) ) {
+            return $cached;
+        }
+
         $rows = $wpdb->get_results(
             "SELECT review_status, COUNT(*) as cnt FROM {$table} GROUP BY review_status",
             ARRAY_A
@@ -1855,7 +1907,17 @@ class RTG_Database {
             $counts['all'] += (int) $row['cnt'];
         }
 
+        set_transient( self::REVIEW_COUNTS_CACHE, $counts, 5 * MINUTE_IN_SECONDS );
+
         return $counts;
+    }
+
+    /**
+     * Forget the cached review status counts. Called by every path that
+     * inserts, deletes, or re-statuses a rating.
+     */
+    public static function flush_review_counts() {
+        delete_transient( self::REVIEW_COUNTS_CACHE );
     }
 
     /**
@@ -1874,13 +1936,15 @@ class RTG_Database {
             return false;
         }
 
-        return $wpdb->update(
+        $result = $wpdb->update(
             $table,
             array( 'review_status' => $status ),
             array( 'id' => $rating_id ),
             array( '%s' ),
             array( '%d' )
         );
+        self::flush_review_counts();
+        return $result;
     }
 
     /**

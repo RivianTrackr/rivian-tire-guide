@@ -5,6 +5,8 @@
 **Scope:** consumer frontend, admin, backend/data/integrations, tests & CI.
 **Method:** every item was verified against the current code with file:line references. Items fixed in 1.85.0 / 1.86.0 are not re-listed; open items from `PLUGIN-REVIEW-2026-08.md` and `PLUGIN-REVIEW.md` are summarized in §5 rather than repeated.
 
+> **Status:** B1–B20 and the dead code listed under §1 were fixed in **1.87.0** (see `CHANGELOG.md`). Line references in §1 describe the 1.86.0 code. Sections 2–5 remain open.
+
 ---
 
 ## Overall assessment

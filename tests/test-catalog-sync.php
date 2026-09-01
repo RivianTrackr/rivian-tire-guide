@@ -1008,4 +1008,21 @@ class Test_RTG_Catalog_Sync extends WP_UnitTestCase {
         $this->assertCount( 2, $rows, 'the listing respects its limit' );
         $this->assertGreaterThan( count( $rows ), $all, 'while the count sees past it' );
     }
+
+    /**
+     * The candidate status counts feed the menu badge on every admin screen,
+     * so they are cached — and every candidate write forgets the cache.
+     */
+    public function test_candidate_counts_are_cached_and_invalidated_by_writes() {
+        $before = RTG_Candidates::get_counts();
+        $this->assertNotFalse( get_transient( RTG_Candidates::COUNTS_CACHE ), 'a read fills the cache' );
+
+        $row = RTG_Candidates::upsert( $this->candidate() );
+        $this->assertFalse( get_transient( RTG_Candidates::COUNTS_CACHE ), 'an upsert forgets the cache' );
+        $this->assertSame( $before[ RTG_Candidates::STATUS_NEW ] + 1, RTG_Candidates::get_counts()[ RTG_Candidates::STATUS_NEW ] );
+
+        RTG_Candidates::set_status( $row['id'], RTG_Candidates::STATUS_DISMISSED );
+        $this->assertFalse( get_transient( RTG_Candidates::COUNTS_CACHE ), 'a status change forgets the cache' );
+        $this->assertSame( $before[ RTG_Candidates::STATUS_DISMISSED ] + 1, RTG_Candidates::get_counts()[ RTG_Candidates::STATUS_DISMISSED ] );
+    }
 }

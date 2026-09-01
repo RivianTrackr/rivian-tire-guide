@@ -156,12 +156,13 @@ $status_badge = function ( $status ) {
                 <span class="rtg-pagination-count"><?php echo esc_html( $total ); ?> review<?php echo $total !== 1 ? 's' : ''; ?></span>
                 <?php if ( $total_pages > 1 ) : ?>
                     <span class="rtg-pagination-links">
+                        <?php $rtg_page_base = remove_query_arg( 'message' ); ?>
                         <?php if ( $paged > 1 ) : ?>
-                            <a href="<?php echo esc_url( add_query_arg( 'paged', $paged - 1 ) ); ?>">&lsaquo;</a>
+                            <a href="<?php echo esc_url( add_query_arg( 'paged', $paged - 1, $rtg_page_base ) ); ?>">&lsaquo;</a>
                         <?php endif; ?>
                         <span class="current-page"><?php echo esc_html( $paged ); ?> of <?php echo esc_html( $total_pages ); ?></span>
                         <?php if ( $paged < $total_pages ) : ?>
-                            <a href="<?php echo esc_url( add_query_arg( 'paged', $paged + 1 ) ); ?>">&rsaquo;</a>
+                            <a href="<?php echo esc_url( add_query_arg( 'paged', $paged + 1, $rtg_page_base ) ); ?>">&rsaquo;</a>
                         <?php endif; ?>
                     </span>
                 <?php endif; ?>

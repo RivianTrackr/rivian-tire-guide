@@ -38,7 +38,6 @@ export const state = {
   domCache: {},
 
   // Card rendering
-  cardCache: new Map(),
   cardContainer: null,
 
   // Performance flags

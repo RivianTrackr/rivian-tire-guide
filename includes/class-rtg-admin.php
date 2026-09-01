@@ -522,6 +522,17 @@ class RTG_Admin {
             $this->handle_settings_save();
         }
 
+        // Tire Discovery and Roamer Sync settings. These used to be saved
+        // inside their views with no redirect, so a refresh re-submitted
+        // the form; they now follow the same post-redirect-get as the rest.
+        if ( isset( $_POST['rtg_catalog_settings_save'] ) ) {
+            $this->handle_catalog_settings_save();
+        }
+
+        if ( isset( $_POST['rtg_roamer_settings_save'] ) ) {
+            $this->handle_roamer_settings_save();
+        }
+
         // Handle CSV import.
         if ( isset( $_POST['rtg_csv_import'] ) ) {
             $this->handle_csv_import();
@@ -817,6 +828,7 @@ class RTG_Admin {
             'utqg'             => sanitize_text_field( $post['utqg'] ?? '' ),
             'tags'             => sanitize_text_field( $post['tags'] ?? '' ),
             'link'             => esc_url_raw( $post['link'] ?? '' ),
+            'bundle_link'      => esc_url_raw( $post['bundle_link'] ?? '' ),
             'image'            => $this->build_image_url( $post['image'] ?? '' ),
             'review_link'      => esc_url_raw( $post['review_link'] ?? '' ),
             'roamer_tire_id'   => sanitize_text_field( $post['roamer_tire_id'] ?? '' ),
@@ -867,6 +879,28 @@ class RTG_Admin {
                 wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=error' ) );
                 exit;
             }
+
+            // Editing a tire into an exact collision with another row used
+            // to be accepted silently — the match-key check only ran on
+            // insert. The tire is compared against everything but itself.
+            if ( empty( $post['allow_duplicate'] ) ) {
+                $duplicate_of = self::find_duplicate_excluding( $data, $existing['tire_id'] );
+                if ( '' !== $duplicate_of ) {
+                    // The slug is not part of $data (it has its own setter
+                    // below) but the form should come back with it too.
+                    self::stash_blocked_save( array_merge( $data, array(
+                        'slug' => sanitize_title( wp_unslash( $post['slug'] ?? '' ) ),
+                    ) ) );
+                    wp_redirect( add_query_arg( array(
+                        'page'         => 'rtg-tire-edit',
+                        'id'           => $editing_id,
+                        'message'      => 'duplicate_tire',
+                        'duplicate_of' => $duplicate_of,
+                    ), admin_url( 'admin.php' ) ) );
+                    exit;
+                }
+            }
+
             RTG_Database::update_tire( $existing['tire_id'], $data );
 
             // Manual slug override — applied only when the admin actually
@@ -929,6 +963,22 @@ class RTG_Admin {
             wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=added' . ( $image_fallback ? '&image_fallback=1' : '' ) ) );
         }
         exit;
+    }
+
+    /**
+     * The tire_id of a guide entry the given data collides with, ignoring
+     * one tire (the one being edited).
+     *
+     * @param array  $data    Tire data as posted.
+     * @param string $self_id tire_id to leave out of the comparison.
+     * @return string Colliding tire_id, or '' when there is none.
+     */
+    public static function find_duplicate_excluding( $data, $self_id ) {
+        $others = array_values( array_filter( RTG_Database::get_all_tires(), function ( $tire ) use ( $self_id ) {
+            return (string) ( $tire['tire_id'] ?? '' ) !== (string) $self_id;
+        } ) );
+
+        return RTG_Catalog_Sync::find_guide_match( $data, $others );
     }
 
     /**
@@ -1096,6 +1146,122 @@ class RTG_Admin {
 
         wp_redirect( admin_url( 'admin.php?page=rtg-settings&message=saved' ) );
         exit;
+    }
+
+    private function handle_catalog_settings_save() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Unauthorized' );
+        }
+
+        check_admin_referer( 'rtg_catalog_settings', 'rtg_catalog_settings_nonce' );
+
+        $this->save_catalog_settings_from_post();
+
+        wp_redirect( admin_url( 'admin.php?page=rtg-tire-discovery&message=settings_saved' ) );
+        exit;
+    }
+
+    /**
+     * Persist the Tire Discovery settings form from $_POST. Capability and
+     * nonce are the caller's responsibility — handle_catalog_settings_save()
+     * checks both.
+     *
+     * Merges over the stored option: this page owns a subset of the keys
+     * and must leave the others alone.
+     */
+    public function save_catalog_settings_from_post() {
+        $settings = get_option( 'rtg_settings', array() );
+
+        $settings['catalog_sync_enabled']       = ! empty( $_POST['catalog_sync_enabled'] );
+        $settings['catalog_notify_enabled']     = ! empty( $_POST['catalog_notify_enabled'] );
+        $settings['health_alerts_enabled']      = ! empty( $_POST['health_alerts_enabled'] );
+        $settings['stale_price_report_enabled'] = ! empty( $_POST['stale_price_report_enabled'] );
+
+        // --- CJ credentials and query ---
+        $settings['cj_enabled']      = ! empty( $_POST['cj_enabled'] );
+        $settings['cj_company_id']   = preg_replace( '/[^0-9]/', '', wp_unslash( $_POST['cj_company_id'] ?? '' ) );
+        $settings['cj_advertisers']  = sanitize_textarea_field( wp_unslash( $_POST['cj_advertisers'] ?? '' ) );
+        $settings['cj_website_id']   = preg_replace( '/[^0-9]/', '', wp_unslash( $_POST['cj_website_id'] ?? '' ) );
+        $settings['cj_limit']        = max( 1, min( 1000, intval( $_POST['cj_limit'] ?? RTG_Catalog_Source_CJ::DEFAULT_LIMIT ) ) );
+        $settings['cj_sweep_budget'] = max( 15, min( 600, intval( $_POST['cj_sweep_budget'] ?? RTG_Catalog_Source_CJ::SWEEP_BUDGET ) ) );
+        $settings['cj_max_pages']    = max( 1, min( 50, intval( $_POST['cj_max_pages'] ?? RTG_Catalog_Source_CJ::DEFAULT_MAX_PAGES ) ) );
+        $settings['catalog_run_budget'] = max( 30, min( 900, intval( $_POST['catalog_run_budget'] ?? RTG_Catalog_Sync::RUN_BUDGET ) ) );
+
+        // The query document is GraphQL, so it must not be run through a sanitizer
+        // that mangles braces or quotes; it is never output unescaped.
+        $settings['cj_query'] = trim( (string) wp_unslash( $_POST['cj_query'] ?? '' ) );
+
+        // The token field renders empty, so an empty submission means "leave it
+        // alone" rather than "clear it" — otherwise every unrelated settings save
+        // would wipe the credential. Clearing is explicit, via the checkbox.
+        $posted_pat = trim( (string) wp_unslash( $_POST['cj_pat'] ?? '' ) );
+        if ( ! empty( $_POST['cj_pat_clear'] ) ) {
+            $settings['cj_pat'] = '';
+        } elseif ( '' !== $posted_pat ) {
+            $settings['cj_pat'] = $posted_pat;
+        }
+
+        // Clamp to the range the load index table actually covers, so a typo can't
+        // silently disqualify every tire or admit every tire.
+        $posted_index = intval( $_POST['catalog_min_load_index'] ?? RTG_Tire_Qualifier::DEFAULT_MIN_LOAD_INDEX );
+        $settings['catalog_min_load_index'] = max( 100, min( 126, $posted_index ) );
+
+        // Per-vehicle load index floors. A blank field means "use the built-in
+        // figure for this platform" rather than "no minimum", so it is dropped
+        // instead of being stored as zero.
+        $posted_minimums = isset( $_POST['catalog_vehicle_min_load_index'] ) && is_array( $_POST['catalog_vehicle_min_load_index'] )
+            ? wp_unslash( $_POST['catalog_vehicle_min_load_index'] )
+            : array();
+
+        $vehicle_minimums = array();
+        foreach ( $posted_minimums as $vehicle => $value ) {
+            $value = intval( $value );
+            if ( $value > 0 ) {
+                $vehicle_minimums[ sanitize_text_field( $vehicle ) ] = max( 100, min( 126, $value ) );
+            }
+        }
+        $settings['catalog_vehicle_min_load_index'] = $vehicle_minimums;
+
+        $settings['price_sync_enabled']    = ! empty( $_POST['price_sync_enabled'] );
+        $settings['link_sync_enabled']     = ! empty( $_POST['link_sync_enabled'] );
+        $settings['price_sync_max_change'] = max( 1, min( 100, intval( $_POST['price_sync_max_change'] ?? 50 ) ) );
+
+        $posted_policy = sanitize_text_field( wp_unslash( $_POST['catalog_brand_policy'] ?? '' ) );
+        $settings['catalog_brand_policy'] = in_array( $posted_policy, array(
+            RTG_Tire_Qualifier::BRAND_POLICY_OFF,
+            RTG_Tire_Qualifier::BRAND_POLICY_WARN,
+            RTG_Tire_Qualifier::BRAND_POLICY_REJECT,
+        ), true ) ? $posted_policy : RTG_Tire_Qualifier::DEFAULT_BRAND_POLICY;
+
+        update_option( 'rtg_settings', $settings );
+    }
+
+    private function handle_roamer_settings_save() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Unauthorized' );
+        }
+
+        check_admin_referer( 'rtg_roamer_settings', 'rtg_roamer_settings_nonce' );
+
+        $this->save_roamer_settings_from_post();
+
+        wp_redirect( admin_url( 'admin.php?page=rtg-roamer-sync&message=settings_saved' ) );
+        exit;
+    }
+
+    /**
+     * Persist the Roamer Sync settings form from $_POST. Capability and nonce
+     * are the caller's responsibility — handle_roamer_settings_save() checks
+     * both.
+     */
+    public function save_roamer_settings_from_post() {
+        $settings = get_option( 'rtg_settings', array() );
+
+        $settings['roamer_sync_enabled']   = ! empty( $_POST['roamer_sync_enabled'] );
+        $settings['roamer_notify_enabled'] = ! empty( $_POST['roamer_notify_enabled'] );
+        $settings['roamer_sync_url']       = esc_url_raw( wp_unslash( $_POST['roamer_sync_url'] ?? '' ) );
+
+        update_option( 'rtg_settings', $settings );
     }
 
     /**
@@ -1392,6 +1558,7 @@ class RTG_Admin {
         'price', 'mileage_warranty', 'weight_lb', 'three_pms', 'tread',
         'load_index', 'max_load_lb', 'load_range', 'speed_rating', 'psi',
         'utqg', 'tags', 'link', 'bundle_link', 'image', 'review_link', 'sort_order',
+        'slug', 'roamer_tire_id',
     );
 
     private function handle_csv_export() {
@@ -1574,6 +1741,12 @@ class RTG_Admin {
             $partial = array_intersect_key( $data, $col_map );
             unset( $partial['tire_id'] );
 
+            // The slug is applied through its own setter, which keeps it
+            // unique and records the 301 from the old one; a blank cell
+            // leaves the stored slug alone.
+            $slug = (string) ( $partial['slug'] ?? '' );
+            unset( $partial['slug'] );
+
             $existing = RTG_Database::get_tire( $data['tire_id'] );
             $merged   = array_merge( is_array( $existing ) ? $existing : array(), $partial );
 
@@ -1582,6 +1755,9 @@ class RTG_Admin {
             $partial['efficiency_grade'] = $efficiency['efficiency_grade'];
 
             RTG_Database::update_tire( $data['tire_id'], $partial );
+            if ( '' !== $slug ) {
+                RTG_Database::set_tire_slug( $data['tire_id'], $slug );
+            }
             return 'updated';
         }
 
@@ -1589,7 +1765,13 @@ class RTG_Admin {
         $data['efficiency_score'] = $efficiency['efficiency_score'];
         $data['efficiency_grade'] = $efficiency['efficiency_grade'];
 
+        $slug = (string) ( $data['slug'] ?? '' );
+        unset( $data['slug'] );
+
         RTG_Database::insert_tire( $data );
+        if ( '' !== $slug ) {
+            RTG_Database::set_tire_slug( $data['tire_id'], $slug );
+        }
         return 'imported';
     }
 
@@ -1597,7 +1779,7 @@ class RTG_Admin {
         $text_fields = array(
             'tire_id', 'size', 'diameter', 'brand', 'model', 'category',
             'three_pms', 'tread', 'load_index', 'load_range', 'speed_rating',
-            'psi', 'utqg', 'tags',
+            'psi', 'utqg', 'tags', 'roamer_tire_id',
         );
         foreach ( $text_fields as $field ) {
             $data[ $field ] = sanitize_text_field( $data[ $field ] ?? '' );
@@ -1617,6 +1799,7 @@ class RTG_Admin {
             preg_split( '/[\r\n]+/', (string) ( $data['model_aliases'] ?? '' ) )
         ) ) );
 
+        $data['slug']        = sanitize_title( $data['slug'] ?? '' );
         $data['link']        = esc_url_raw( $data['link'] ?? '' );
         $data['bundle_link'] = esc_url_raw( $data['bundle_link'] ?? '' );
         $data['image']       = esc_url_raw( $data['image'] ?? '' );

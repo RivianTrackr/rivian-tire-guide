@@ -48,6 +48,11 @@ $admin_filters = array(
 $tires = RTG_Database::search_tires( $search, $per_page, $paged, $orderby, $order, $admin_filters );
 $total = RTG_Database::get_tire_count( $search, $admin_filters );
 
+// Deleting a tire deletes its reviews with it; the confirm says how many.
+$review_counts = ! empty( $tires )
+    ? RTG_Database::get_tire_ratings( wp_list_pluck( $tires, 'tire_id' ) )
+    : array();
+
 // Get distinct values for filter dropdowns.
 $filter_brands     = RTG_Database::get_distinct_values( 'brand' );
 $filter_sizes      = RTG_Database::get_distinct_values( 'size' );
@@ -67,10 +72,15 @@ if ( ! empty( $rtg_pages ) ) {
     $rtg_guide_url = get_permalink( $rtg_pages[0] );
 }
 
+// Links built from the current URL drop the one-shot notice parameters,
+// so re-sorting doesn't re-show "Tire deleted", and a sort starts from
+// page 1 rather than a page that may no longer exist under the new order.
+$rtg_list_base = remove_query_arg( array( 'message', 'count', 'image_fallback' ) );
+
 // Sortable column helper.
-$sort_url = function ( $col ) use ( $orderby, $order ) {
+$sort_url = function ( $col ) use ( $orderby, $order, $rtg_list_base ) {
     $new_order = ( $orderby === $col && $order === 'ASC' ) ? 'DESC' : 'ASC';
-    return add_query_arg( array( 'orderby' => $col, 'order' => $new_order ) );
+    return add_query_arg( array( 'orderby' => $col, 'order' => $new_order, 'paged' => false ), $rtg_list_base );
 };
 $sort_indicator = function ( $col ) use ( $orderby, $order ) {
     if ( $orderby !== $col ) return '';
@@ -90,6 +100,9 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
     <div class="rtg-page-header">
         <h1 class="rtg-page-title">Tire Guide</h1>
         <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit' ) ); ?>" class="rtg-page-title-action">Add New</a>
+        <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=rtg-tires&action=recalculate_efficiency' ), 'rtg_recalculate_efficiency' ) ); ?>"
+           class="rtg-page-title-action"
+           onclick="return confirm('Recalculate the efficiency score and grade for every tire from its stored specs?');">Recalculate Efficiency</a>
     </div>
 
     <!-- Search & Filters -->
@@ -143,11 +156,11 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
                     <?php if ( $total_pages > 1 ) : ?>
                         <span class="rtg-pagination-links">
                             <?php if ( $paged > 1 ) : ?>
-                                <a href="<?php echo esc_url( add_query_arg( 'paged', $paged - 1 ) ); ?>">&lsaquo;</a>
+                                <a href="<?php echo esc_url( add_query_arg( 'paged', $paged - 1, $rtg_list_base ) ); ?>">&lsaquo;</a>
                             <?php endif; ?>
                             <span class="current-page"><?php echo esc_html( $paged ); ?> of <?php echo esc_html( $total_pages ); ?></span>
                             <?php if ( $paged < $total_pages ) : ?>
-                                <a href="<?php echo esc_url( add_query_arg( 'paged', $paged + 1 ) ); ?>">&rsaquo;</a>
+                                <a href="<?php echo esc_url( add_query_arg( 'paged', $paged + 1, $rtg_list_base ) ); ?>">&rsaquo;</a>
                             <?php endif; ?>
                         </span>
                     <?php endif; ?>
@@ -201,8 +214,9 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
                         <?php else : ?>
                             <?php foreach ( $tires as $tire ) : ?>
                                 <tr>
+                                    <?php $tire_review_count = intval( $review_counts[ $tire['tire_id'] ]['count'] ?? 0 ); ?>
                                     <td class="column-cb">
-                                        <input type="checkbox" name="tire_ids[]" value="<?php echo esc_attr( $tire['tire_id'] ); ?>">
+                                        <input type="checkbox" name="tire_ids[]" value="<?php echo esc_attr( $tire['tire_id'] ); ?>" data-review-count="<?php echo esc_attr( $tire_review_count ); ?>">
                                     </td>
                                     <td class="column-image">
                                         <?php if ( ! empty( $tire['image'] ) ) : ?>
@@ -234,7 +248,9 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
                                             </span>
                                             <?php endif; ?>
                                             <span class="delete">
-                                                <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=rtg-tires&action=delete&tire_id=' . $tire['tire_id'] ), 'rtg_delete_' . $tire['tire_id'] ) ); ?>" class="submitdelete" onclick="return confirm('Delete this tire?');">Delete</a>
+                                                <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=rtg-tires&action=delete&tire_id=' . $tire['tire_id'] ), 'rtg_delete_' . $tire['tire_id'] ) ); ?>" class="submitdelete" onclick="return confirm('<?php echo esc_js( $tire_review_count > 0
+                                                    ? sprintf( 'Delete this tire and its %d review%s? This cannot be undone.', $tire_review_count, 1 === $tire_review_count ? '' : 's' )
+                                                    : 'Delete this tire? This cannot be undone.' ); ?>');">Delete</a>
                                             </span>
                                         </div>
                                     </td>

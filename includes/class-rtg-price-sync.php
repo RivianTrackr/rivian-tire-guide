@@ -366,11 +366,15 @@ class RTG_Price_Sync {
             $decision = self::decide( $tire, $candidates, $max_change );
 
             if ( $decision['update'] ) {
+                // No per-tire flush: one flush after the loop. Flushing on
+                // every write left the tire, dashboard and feed caches cold
+                // for the next visitor after each sync — a hundred updates
+                // was four hundred transient deletes.
                 RTG_Database::update_tire( $tire_id, array(
                     'price'           => $decision['price'],
                     'price_source'    => $decision['retailer'],
                     'price_synced_at' => current_time( 'mysql' ),
-                ) );
+                ), false );
                 $results['updated']++;
             } else {
                 $results['skipped']++;
@@ -386,6 +390,10 @@ class RTG_Price_Sync {
                 'code'     => $decision['code'],
                 'label'    => $decision['label'],
             );
+        }
+
+        if ( $results['updated'] > 0 ) {
+            RTG_Database::flush_cache();
         }
 
         update_option( self::RESULTS_OPTION, $results, false );

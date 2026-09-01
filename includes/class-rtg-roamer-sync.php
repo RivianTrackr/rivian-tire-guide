@@ -33,6 +33,12 @@ class RTG_Roamer_Sync {
     /** HTTP request timeout in seconds. */
     const REQUEST_TIMEOUT = 15;
 
+    /** Lock held for the duration of a run. */
+    const LOCK_NAME = 'roamer_sync';
+
+    /** Seconds after which an unreleased run lock is considered abandoned. */
+    const LOCK_TTL = 4 * MINUTE_IN_SECONDS;
+
     /**
      * Schedule the sync on the five-minute recurrence.
      *
@@ -78,6 +84,27 @@ class RTG_Roamer_Sync {
             );
         }
 
+        // A five-minute tick that outlives its interval (a slow feed, a
+        // large catalog) must not overlap the next one, and a manual run
+        // must not overlap either.
+        if ( ! RTG_Lock::acquire( self::LOCK_NAME, self::LOCK_TTL ) ) {
+            return RTG_Lock::busy_result( 'Roamer sync' );
+        }
+
+        try {
+            return self::run_locked( $settings );
+        } finally {
+            RTG_Lock::release( self::LOCK_NAME );
+        }
+    }
+
+    /**
+     * The sync itself, once the lock is held.
+     *
+     * @param array $settings Plugin settings.
+     * @return array Sync results.
+     */
+    private static function run_locked( $settings ) {
         $url = ! empty( $settings['roamer_sync_url'] ) ? $settings['roamer_sync_url'] : self::DEFAULT_URL;
 
         // Only notify on failures when running unattended (cron). Manual

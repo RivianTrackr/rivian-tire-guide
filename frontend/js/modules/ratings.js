@@ -8,12 +8,6 @@ import { state } from './state.js';
 import { rtgColor, starSVGMarkup, getDOMElement } from './helpers.js';
 import { VALIDATION_PATTERNS, NUMERIC_BOUNDS, validateNumeric } from './validation.js';
 
-export function initializeRatingSystem() {
-  if (typeof tireRatingAjax !== 'undefined') {
-    state.isLoggedIn = tireRatingAjax.is_logged_in === true || tireRatingAjax.is_logged_in === '1' || tireRatingAjax.is_logged_in === 1;
-  }
-}
-
 // Resolvers for every loadTireRatings() call awaiting the current debounced
 // flush — settled together when it completes (or fails, or can't run).
 const pendingRatingResolvers = [];

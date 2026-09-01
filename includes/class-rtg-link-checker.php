@@ -37,6 +37,12 @@ class RTG_Link_Checker {
     /** HTTP request timeout in seconds per link. */
     const REQUEST_TIMEOUT = 15;
 
+    /** Lock held for the duration of a run. */
+    const LOCK_NAME = 'link_check';
+
+    /** Seconds after which an unreleased run lock is considered abandoned: a full slice at the request timeout. */
+    const LOCK_TTL = self::BATCH_SIZE * ( self::REQUEST_TIMEOUT + 2 );
+
     /**
      * Schedule the weekly cron event if not already scheduled.
      */
@@ -67,6 +73,26 @@ class RTG_Link_Checker {
      * @return array The full results array that was saved.
      */
     public static function run() {
+        // The weekly cron and the "Check all links" button must not run at
+        // once: both would advance the rotation cursor and the second
+        // writer's verdicts would replace the first's.
+        if ( ! RTG_Lock::acquire( self::LOCK_NAME, self::LOCK_TTL ) ) {
+            return RTG_Lock::busy_result( 'link check' );
+        }
+
+        try {
+            return self::run_locked();
+        } finally {
+            RTG_Lock::release( self::LOCK_NAME );
+        }
+    }
+
+    /**
+     * The check itself, once the lock is held.
+     *
+     * @return array The full results array that was saved.
+     */
+    private static function run_locked() {
         $linkable = self::get_linkable_tires();
         $count    = count( $linkable );
 

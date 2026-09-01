@@ -4,6 +4,16 @@
  */
 class Test_RTG_Activator extends WP_UnitTestCase {
 
+    public function tearDown(): void {
+        parent::tearDown();
+
+        // dbDelta's DDL commits the test transaction mid-test, so the
+        // upgrade lock taken before it survives the rollback that would
+        // otherwise remove it. Release it for real for the next test.
+        RTG_Lock::release( 'db_upgrade' );
+        $GLOBALS['wpdb']->query( 'COMMIT' );
+    }
+
     public function test_activate_creates_tables() {
         RTG_Activator::activate();
 
@@ -78,5 +88,66 @@ class Test_RTG_Activator extends WP_UnitTestCase {
         $indexes = $wpdb->get_results( "SHOW INDEX FROM {$table} WHERE Key_name = 'user_tire'" );
 
         $this->assertNotEmpty( $indexes, 'user_tire unique index should exist' );
+    }
+
+
+    /**
+     * Migration 23: the columns the guide sorts and moderates on are indexed.
+     */
+    public function test_sort_and_status_columns_are_indexed() {
+        RTG_Activator::activate();
+
+        global $wpdb;
+        $expected = array(
+            $wpdb->prefix . 'rtg_tires'         => array( 'idx_roamer_efficiency', 'idx_created_at' ),
+            $wpdb->prefix . 'rtg_ratings'       => array( 'idx_review_status' ),
+            $wpdb->prefix . 'rtg_search_events' => array( 'idx_session_date' ),
+        );
+
+        foreach ( $expected as $table => $indexes ) {
+            foreach ( $indexes as $name ) {
+                $rows = $wpdb->get_results( $wpdb->prepare( "SHOW INDEX FROM {$table} WHERE Key_name = %s", $name ) );
+                $this->assertNotEmpty( $rows, "{$table} should carry {$name}" );
+            }
+        }
+
+        $this->assertSame( 23, (int) get_option( 'rtg_db_version' ) );
+    }
+
+    /**
+     * The migration is idempotent: running it against a schema that already
+     * has the indexes adds nothing and fails nothing.
+     */
+    public function test_index_migration_is_idempotent() {
+        RTG_Activator::activate();
+        update_option( 'rtg_db_version', 22 );
+
+        RTG_Activator::maybe_upgrade();
+
+        global $wpdb;
+        $rows = $wpdb->get_results( "SHOW INDEX FROM {$wpdb->prefix}rtg_tires WHERE Key_name = 'idx_created_at'" );
+        $this->assertCount( 1, $rows, 'exactly one idx_created_at, not a duplicate' );
+        $this->assertSame( 23, (int) get_option( 'rtg_db_version' ) );
+    }
+
+    /**
+     * Concurrent requests after an update all reach maybe_upgrade(); only
+     * the one holding the lock migrates, the rest return without touching
+     * the schema.
+     */
+    public function test_maybe_upgrade_yields_while_another_request_holds_the_lock() {
+        RTG_Activator::activate();
+        update_option( 'rtg_db_version', 22 );
+
+        RTG_Lock::acquire( 'db_upgrade', 60 );
+        try {
+            RTG_Activator::maybe_upgrade();
+            $this->assertSame( 22, (int) get_option( 'rtg_db_version' ), 'the locked-out request must not migrate' );
+        } finally {
+            RTG_Lock::release( 'db_upgrade' );
+        }
+
+        RTG_Activator::maybe_upgrade();
+        $this->assertSame( 23, (int) get_option( 'rtg_db_version' ) );
     }
 }

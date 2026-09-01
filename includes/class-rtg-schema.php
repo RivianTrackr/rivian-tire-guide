@@ -179,7 +179,7 @@ class RTG_Schema {
                                 '@type' => 'Person',
                                 'name'  => $review['display_name'],
                             ),
-                            'datePublished' => date( 'Y-m-d', strtotime( $review['updated_at'] ?? $review['created_at'] ) ),
+                            'datePublished' => gmdate( 'Y-m-d', strtotime( $review['updated_at'] ?? $review['created_at'] ) ),
                             'reviewRating'  => array(
                                 '@type'      => 'Rating',
                                 'ratingValue' => (int) $review['rating'],

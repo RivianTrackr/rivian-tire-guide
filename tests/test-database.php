@@ -273,4 +273,94 @@ class Test_RTG_Database extends WP_UnitTestCase {
             $this->assertSame( $expected_slug, $row[28], "$name slug at index 28" );
         }
     }
+
+
+    /**
+     * The server-side price filter applies whatever ceiling it is given. It
+     * used to gate on `< 600` — a sentinel from the fixed slider — so once
+     * the slider learned to raise its ceiling, "under $700" applied nothing.
+     */
+    public function test_price_filter_applies_above_the_old_600_sentinel() {
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => 'price-650', 'brand' => 'PriceBrand', 'price' => 650 ) ) );
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => 'price-750', 'brand' => 'PriceBrand', 'price' => 750 ) ) );
+
+        $under_700 = RTG_Database::get_filtered_tires( array( 'brand' => 'PriceBrand', 'price_max' => 700 ) );
+        $this->assertSame( 1, $under_700['total'], 'a $700 ceiling must exclude the $750 tire' );
+        $this->assertSame( 'price-650', $under_700['rows'][0][0] );
+
+        $under_800 = RTG_Database::get_filtered_tires( array( 'brand' => 'PriceBrand', 'price_max' => 800 ) );
+        $this->assertSame( 2, $under_800['total'], 'a ceiling above every price is a no-op' );
+
+        $no_ceiling = RTG_Database::get_filtered_tires( array( 'brand' => 'PriceBrand', 'price_max' => 0 ) );
+        $this->assertSame( 2, $no_ceiling['total'], 'zero means no price constraint' );
+    }
+
+    /**
+     * A sync writing many tires flushes once at the end; the per-tire write
+     * must leave the cache alone when asked to.
+     */
+    public function test_update_tire_can_skip_the_cache_flush() {
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => 'flush-001' ) ) );
+
+        RTG_Database::get_all_tires(); // warm
+        $this->assertNotFalse( get_transient( 'rtg_all_tires' ) );
+
+        RTG_Database::update_tire( 'flush-001', array( 'price' => 123.45 ), false );
+        $this->assertNotFalse( get_transient( 'rtg_all_tires' ), 'a quiet write keeps the cache warm' );
+
+        RTG_Database::update_tire( 'flush-001', array( 'price' => 234.56 ) );
+        $this->assertFalse( get_transient( 'rtg_all_tires' ), 'the default write flushes as before' );
+
+        $this->assertSame( 234.56, (float) RTG_Database::get_tire( 'flush-001' )['price'] );
+    }
+
+    /**
+     * The review status counts feed the menu badge on every admin screen,
+     * so they are cached — and every write that changes them forgets the
+     * cache, so the badge never shows a stale number.
+     */
+    public function test_review_status_counts_are_cached_and_invalidated_by_writes() {
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => 'counts-001' ) ) );
+        $user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+        $before = RTG_Database::get_review_status_counts();
+        $this->assertNotFalse( get_transient( RTG_Database::REVIEW_COUNTS_CACHE ), 'a read fills the cache' );
+
+        RTG_Database::set_rating( 'counts-001', $user_id, 4, 'Title', 'A review body.' );
+        $this->assertFalse( get_transient( RTG_Database::REVIEW_COUNTS_CACHE ), 'a rating write forgets the cache' );
+
+        $after = RTG_Database::get_review_status_counts();
+        $this->assertSame( $before['all'] + 1, $after['all'] );
+
+        $rating_id = (int) $GLOBALS['wpdb']->get_var( $GLOBALS['wpdb']->prepare(
+            "SELECT id FROM {$GLOBALS['wpdb']->prefix}rtg_ratings WHERE tire_id = %s AND user_id = %d",
+            'counts-001',
+            $user_id
+        ) );
+        RTG_Database::update_review_status( $rating_id, 'approved' );
+        $this->assertFalse( get_transient( RTG_Database::REVIEW_COUNTS_CACHE ), 'a status change forgets the cache' );
+        $this->assertSame( $before['approved'] + 1, RTG_Database::get_review_status_counts()['approved'] );
+
+        RTG_Database::delete_tire( 'counts-001' );
+        $this->assertFalse( get_transient( RTG_Database::REVIEW_COUNTS_CACHE ), 'deleting a tire deletes its ratings and forgets the cache' );
+        $this->assertSame( $before['all'], RTG_Database::get_review_status_counts()['all'] );
+    }
+
+    /**
+     * A hand-set slug survives edits that don't change the tire's identity.
+     * update_tire() used to regenerate the slug whenever brand, model or
+     * size were present in the write — which every form save and CSV
+     * update is — so any edit at all reverted a manual slug.
+     */
+    public function test_a_manual_slug_survives_edits_to_other_fields() {
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => 'slug-keep', 'brand' => 'Nokian', 'model' => 'Outpost' ) ) );
+        RTG_Database::set_tire_slug( 'slug-keep', 'best-winter-pick' );
+
+        RTG_Database::update_tire( 'slug-keep', array( 'brand' => 'Nokian', 'model' => 'Outpost', 'size' => '275/65R20', 'price' => 199 ) );
+        $this->assertSame( 'best-winter-pick', RTG_Database::get_tire( 'slug-keep' )['slug'], 'unchanged identity keeps the manual slug' );
+
+        RTG_Database::update_tire( 'slug-keep', array( 'brand' => 'Nokian', 'model' => 'Outpost nAT', 'size' => '275/65R20' ) );
+        $this->assertSame( 'nokian-outpost-nat-275-65r20', RTG_Database::get_tire( 'slug-keep' )['slug'], 'a changed model regenerates it' );
+        $this->assertSame( 'slug-keep', RTG_Database::lookup_slug_redirect( 'best-winter-pick' ), 'and the manual slug redirects' );
+    }
 }
