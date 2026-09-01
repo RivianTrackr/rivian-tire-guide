@@ -624,6 +624,18 @@ export function createSingleCard(row) {
     roamerStatValue.appendChild(roamerInfoBtn);
     roamerStat.appendChild(roamerStatLabel);
     roamerStat.appendChild(roamerStatValue);
+
+    // The sample behind the number, as meta lines — the price box grew two
+    // of them (set price, "as of"), and a bare figure beside three lines
+    // left the efficiency box mostly empty. The same facts still ride the
+    // tooltip for anyone who opens it.
+    extraParts.forEach(part => {
+      const line = document.createElement('div');
+      line.className = 'tire-card-stat-meta';
+      line.textContent = part;
+      roamerStat.appendChild(line);
+    });
+
     statsRow.appendChild(roamerStat);
   }
 

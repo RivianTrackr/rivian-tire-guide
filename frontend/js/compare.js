@@ -267,7 +267,7 @@ function specSection(icon, title, rows, tires, best, colCount) {
  * selection, so picking there continues this comparison rather than
  * starting over.
  */
-function renderAddPanel(container, rows, tokens) {
+function renderAddPanel(container, rows, tokens, placement = 'top') {
   const panel = document.createElement('div');
   panel.className = 'cmp-add';
   panel.id = 'cmpAddPanel';
@@ -299,7 +299,14 @@ function renderAddPanel(container, rows, tokens) {
     </div>
     <ul id="cmpAddResults" class="cmp-add-results" role="listbox" hidden></ul>`;
 
-  container.appendChild(panel);
+  // Above the comparison, right under the subtitle: at the bottom of four
+  // sections of specs nobody scrolled down to find it.
+  if (placement === 'top') {
+    const subtitle = container.querySelector('.cmp-subtitle');
+    container.insertBefore(panel, subtitle ? subtitle.nextSibling : container.firstChild);
+  } else {
+    container.appendChild(panel);
+  }
 
   const input = panel.querySelector('#cmpAddSearch');
   const list = panel.querySelector('#cmpAddResults');
@@ -594,7 +601,7 @@ function renderEmptyState(message) {
     (guideUrl ? `<a href="${escapeHTML(guideUrl)}" class="cmp-btn cmp-btn-primary">${rtgIcon('arrow-left', 13)} Browse Tires</a>` : '') +
     '</div>';
   if (typeof rtgData !== 'undefined' && Array.isArray(rtgData.tires)) {
-    renderAddPanel(container, rtgData.tires, []);
+    renderAddPanel(container, rtgData.tires, [], 'bottom');
   }
 }
 
