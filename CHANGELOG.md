@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [1.87.0] - 2026-09-01
 
-All twenty bugs from the v1.86.0 review (`PLUGIN-REVIEW-2026-09.md`, §1), plus the dead code that review listed, in one release.
+All twenty bugs from the v1.86.0 review (since folded into `ROADMAP.md`), plus the dead code that review listed, in one release.
 
 ### Fixed
 - **The server-side price filter works above $600.** 1.85.0 removed the `< 600` sentinel from the client, but the SQL builder still gated on it and the AJAX handler defaulted an absent value to 600. With server-side pagination on, "under $700" applied no price constraint at all. Any positive ceiling now applies; an absent parameter means no constraint.
