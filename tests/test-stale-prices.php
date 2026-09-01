@@ -80,4 +80,50 @@ class Test_RTG_Stale_Prices extends WP_UnitTestCase {
 
         $this->assertSame( 'oldest', $stale[0]['tire_id'] );
     }
+
+    // --- The shopper-facing "price as of" hint ---
+
+    public function test_freshness_labels_the_latest_touch() {
+        $fresh = RTG_Stale_Prices::freshness(
+            $this->tire( array( 'updated_at' => $this->ago( 200 ), 'price_synced_at' => $this->ago( 3 ) ) ),
+            $this->now
+        );
+
+        $this->assertSame( strtotime( $this->ago( 3 ) ), $fresh['touched'] );
+        $this->assertSame( 'as of ' . date_i18n( 'M j', strtotime( $this->ago( 3 ) ) ), $fresh['label'] );
+        $this->assertFalse( $fresh['stale'] );
+    }
+
+    public function test_freshness_marks_a_price_past_the_threshold() {
+        $fresh = RTG_Stale_Prices::freshness( $this->tire( array( 'updated_at' => $this->ago( 120 ) ) ), $this->now, 90 );
+
+        $this->assertTrue( $fresh['stale'] );
+        $this->assertStringStartsWith( 'as of ', $fresh['label'] );
+    }
+
+    public function test_freshness_adds_the_year_when_it_is_not_this_year() {
+        $touched = strtotime( '2025-05-12 09:00:00' );
+        $fresh   = RTG_Stale_Prices::freshness( $this->tire( array( 'updated_at' => gmdate( 'Y-m-d H:i:s', $touched ) ) ), $this->now );
+
+        $this->assertSame( 'as of ' . date_i18n( 'M j, Y', $touched ), $fresh['label'] );
+    }
+
+    public function test_freshness_says_nothing_when_nothing_is_known() {
+        $this->assertSame(
+            array( 'touched' => 0, 'label' => '', 'stale' => false ),
+            RTG_Stale_Prices::freshness( $this->tire(), $this->now )
+        );
+    }
+
+    public function test_stale_days_is_the_filtered_threshold_with_a_sane_fallback() {
+        $this->assertSame( RTG_Stale_Prices::DEFAULT_STALE_DAYS, RTG_Stale_Prices::stale_days() );
+
+        add_filter( 'rtg_stale_price_days', function () { return 30; } );
+        $this->assertSame( 30, RTG_Stale_Prices::stale_days() );
+        remove_all_filters( 'rtg_stale_price_days' );
+
+        add_filter( 'rtg_stale_price_days', function () { return 0; } );
+        $this->assertSame( RTG_Stale_Prices::DEFAULT_STALE_DAYS, RTG_Stale_Prices::stale_days(), 'a zero threshold falls back' );
+        remove_all_filters( 'rtg_stale_price_days' );
+    }
 }

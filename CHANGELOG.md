@@ -4,6 +4,29 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.88.0] - 2026-09-01
+
+The advisor release and the tire page as a landing page: eight roadmap features (F1, F3, F4, F6, F7, F8, F12, F13) that turn data the plugin already stores into a decision on the card, and give the page a search visitor lands on somewhere to go next.
+
+### Added
+- **Load-index fitment warning (F1).** A tire whose load index is under the vehicle's floor (R1 116, R2 112 — the same floors Tire Discovery gates on) now says so on the card, the tire page and the compare page, instead of leaving the reader to find the rule in a tooltip. With a vehicle pressed, the card is judged against that vehicle; with none, against every vehicle whose stock or alternate sizes include the tire's size, so a 110 in an R1 size is flagged whichever toggle is pressed. The tire page lists every fitting vehicle pass or fail ("R1: load index 118 meets the 116 minimum · R2: …"), because a visitor from a search has pressed nothing. New `RTG_Fitment` and `frontend/js/modules/fitment.js` hold the one rule; the floors ride the localized settings.
+- **Set-of-four pricing (F3).** "$289 ea · $1,156 / set of 4" on the card, in the tire page hero and in the compare page's price row and header cards. Nobody buys one tire.
+- **Price freshness (F4).** "price as of Aug 28" under every price, from `price_synced_at` or, for a manually priced tire, `updated_at` — the same "last touch" rule the monthly stale-price report uses. Past the report's threshold (`rtg_stale_price_days`, 90 by default) it reads "may be outdated" with a hint to check the retailer. `RTG_Stale_Prices::stale_days()` and `::freshness()` give the report and the shopper one definition of old; the frontend row carries the two timestamps at indexes 29 and 30.
+- **Tire page: compare, save, share, and show more reviews (F6).** A Compare link opens the compare page with this tire, Save toggles the favorite in place (a login link for guests), Share uses the native sheet or copies the canonical URL, and a reviews section past ten now has "Show more reviews (N more)" that pages through the existing reviews endpoint without a reload.
+- **Tire page internal linking (F7).** "Other sizes of the {model}" (same brand and model, any other size, smallest rim first) and "Similar tires in {size}" (same category when there are at least three, otherwise the whole size, best real-world efficiency first) as link cards between the specs and the reviews. New `RTG_Database::get_other_sizes()` and `::get_similar_tires()`.
+- **Compare page: tire-page links, per-column remove, add another tire (F8).** Each header's model name and image link to the tire page, an × on each column drops it from the URL and re-renders, and while fewer than four tires are selected an "Add another tire" search over the catalog appends one — or "Pick from the guide" carries the current selection back to the guide's checkboxes. The column map finally sees `slug`. A single-tire link renders as "One tire so far" with the add panel, rather than "Comparing 1 tires side by side".
+- **Vehicle memory and cascade feedback (F12).** The vehicle toggle is remembered in `localStorage` and pressed again on the next visit when the URL doesn't name one (a shortcode's `vehicle=""` and browser back/forward are never overridden). When a vehicle change clears the size select, a polite live-region notice under the filters says which size went and why, instead of the filter vanishing silently. This closes the first half of A11Y8.
+- **Distinct empty states (F13).** "No tires in 275/65R20 yet" — an honest answer, with "Browse all sizes" as the only way out — when the catalog has nothing in the size (or the vehicle's sizes), versus "No tires match your filters" with the relaxing suggestions when it does. Client mode decides from the size index; server mode gives the honest answer when nothing but vehicle and size are narrowing.
+
+### Accessibility
+- Per-review stars on tire pages carry a "Rated 4 out of 5" text alternative (A11Y6), and the stars loaded by "Show more" build the same markup.
+
+### Changed
+- `compare.js` is bundled by esbuild (it was the one frontend script served as a classic file) so it can import the fitment, pricing and vehicle-memory modules rather than carry copies of them.
+
+### Tests
+- `RTG_Fitment` (parsing every stored load-index form, named-vehicle vs fitting-vehicle judgement, shared sizes failing for both, verdicts, wording), the freshness label and stale threshold, the other-sizes and similar-tires queries (case-insensitive model match, category preference and widening, ordering, limits), and the 31-column frontend row. Node twins for the fitment and pricing modules (`tests/test-fitment.mjs`, `tests/test-pricing.mjs`) run under `npm test`.
+
 ## [1.87.0] - 2026-09-01
 
 All twenty bugs from the v1.86.0 review (since folded into `ROADMAP.md`), plus the dead code that review listed, in one release.

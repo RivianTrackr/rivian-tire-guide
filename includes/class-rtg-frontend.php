@@ -180,6 +180,11 @@ class RTG_Frontend {
                 // nothing to render rather than a control it must remember to
                 // hide. Who may edit is decided here, in PHP, once.
                 'tireEditUrl'     => RTG_Admin::can_edit_tires() ? RTG_Admin::tire_edit_url_base() : '',
+                // The load-index floor per vehicle (Tire Discovery settings)
+                // and the stale-price threshold: what the card's fitment
+                // warning and "price as of" hint are judged against.
+                'loadIndexFloors' => RTG_Fitment::floors(),
+                'stalePriceDays'  => RTG_Stale_Prices::stale_days(),
             ),
         );
 

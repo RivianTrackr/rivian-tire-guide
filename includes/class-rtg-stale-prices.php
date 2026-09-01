@@ -59,6 +59,45 @@ class RTG_Stale_Prices {
     }
 
     /**
+     * Days without a price touch before a price counts as stale.
+     *
+     * One number for the monthly report and for the "price as of" hint the
+     * shopper sees, so the two never disagree about what "old" means.
+     *
+     * @return int
+     */
+    public static function stale_days() {
+        $days = (int) apply_filters( 'rtg_stale_price_days', self::DEFAULT_STALE_DAYS );
+        return $days > 0 ? $days : self::DEFAULT_STALE_DAYS;
+    }
+
+    /**
+     * How the shopper should read this tire's price: when it was last
+     * touched, and whether that is long enough ago to say so.
+     *
+     * @param array $tire       Guide tire row.
+     * @param int   $now        Unix time.
+     * @param int   $stale_days Days without a touch before the price is stale.
+     * @return array ['touched' => int, 'label' => string, 'stale' => bool]
+     *               The label is "as of Aug 28" (with the year when it isn't
+     *               this one) or '' when nothing is known.
+     */
+    public static function freshness( $tire, $now, $stale_days = self::DEFAULT_STALE_DAYS ) {
+        $touched = self::last_price_touch( $tire );
+        if ( $touched <= 0 ) {
+            return array( 'touched' => 0, 'label' => '', 'stale' => false );
+        }
+
+        $format = gmdate( 'Y', $touched ) === gmdate( 'Y', $now ) ? 'M j' : 'M j, Y';
+
+        return array(
+            'touched' => $touched,
+            'label'   => 'as of ' . date_i18n( $format, $touched ),
+            'stale'   => $stale_days > 0 && $touched < ( $now - ( $stale_days * DAY_IN_SECONDS ) ),
+        );
+    }
+
+    /**
      * The tires whose price is stale, oldest first.
      *
      * Pure of the clock and the database: rows and "now" come in, the list
@@ -109,7 +148,7 @@ class RTG_Stale_Prices {
         $stale = self::find_stale(
             RTG_Database::get_all_tires(),
             current_time( 'timestamp' ),
-            (int) apply_filters( 'rtg_stale_price_days', self::DEFAULT_STALE_DAYS )
+            self::stale_days()
         );
 
         if ( ! empty( $stale ) ) {

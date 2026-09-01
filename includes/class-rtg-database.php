@@ -285,10 +285,13 @@ class RTG_Database {
      * Convert one tire row (associative) into the numerically-indexed frontend
      * row format. Single source of truth: every producer of frontend rows must
      * use this so the column layout can't drift between code paths — the JS
-     * reads fixed indexes up to row[28] (slug).
+     * reads fixed indexes up to row[30] (updated_at).
+     *
+     * Indexes 29 and 30 (price_synced_at, updated_at) feed the "price as of"
+     * hint; the later of the two is when the price was last touched.
      *
      * @param array $tire Tire row as associative array.
-     * @return array Numerically-indexed frontend row (29 elements).
+     * @return array Numerically-indexed frontend row (31 elements).
      */
     public static function to_frontend_row( $tire ) {
         return array(
@@ -321,6 +324,8 @@ class RTG_Database {
             (string) $tire['roamer_vehicle_count'],
             (string) ( $tire['roamer_vehicle_breakdown'] ?? '' ),
             (string) ( $tire['slug'] ?? '' ),
+            (string) ( $tire['price_synced_at'] ?? '' ),
+            (string) ( $tire['updated_at'] ?? '' ),
         );
     }
 
@@ -369,6 +374,99 @@ class RTG_Database {
         $rows = $wpdb->get_results( $sql, ARRAY_A );
 
         return array_map( array( __CLASS__, 'to_frontend_row' ), $rows );
+    }
+
+    /**
+     * The other sizes this model comes in.
+     *
+     * Same brand and model (case-insensitive), any other size, smallest rim
+     * first. A visitor who landed on the 20" page from a search may drive
+     * the 22" wheel.
+     *
+     * @param array $tire  The tire whose siblings are wanted.
+     * @param int   $limit Cap on rows.
+     * @return array[] Tire rows (associative), never including $tire itself.
+     */
+    public static function get_other_sizes( $tire, $limit = 8 ) {
+        global $wpdb;
+        $table = self::tires_table();
+
+        $brand = trim( (string) ( $tire['brand'] ?? '' ) );
+        $model = trim( (string) ( $tire['model'] ?? '' ) );
+        if ( '' === $brand || '' === $model ) {
+            return array();
+        }
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$table}
+                 WHERE LOWER(brand) = LOWER(%s) AND LOWER(model) = LOWER(%s) AND tire_id != %s
+                 ORDER BY diameter ASC, size ASC
+                 LIMIT %d",
+                $brand,
+                $model,
+                (string) ( $tire['tire_id'] ?? '' ),
+                max( 1, (int) $limit )
+            ),
+            ARRAY_A
+        );
+
+        return is_array( $rows ) ? $rows : array();
+    }
+
+    /**
+     * Other tires in this size, best real-world efficiency first.
+     *
+     * Same category when enough of them exist — an all-terrain shopper wants
+     * all-terrains — otherwise anything in the size, so the block never
+     * stands empty on a page whose size has neighbours.
+     *
+     * @param array $tire  The tire being viewed.
+     * @param int   $limit Cap on rows.
+     * @return array[] Tire rows (associative), never including $tire itself.
+     */
+    public static function get_similar_tires( $tire, $limit = 6 ) {
+        global $wpdb;
+        $table = self::tires_table();
+
+        $size = trim( (string) ( $tire['size'] ?? '' ) );
+        if ( '' === $size ) {
+            return array();
+        }
+
+        $tire_id  = (string) ( $tire['tire_id'] ?? '' );
+        $category = trim( (string) ( $tire['category'] ?? '' ) );
+        $limit    = max( 1, (int) $limit );
+        $order    = 'ORDER BY (roamer_efficiency > 0) DESC, roamer_efficiency DESC, (price > 0) DESC, price ASC, id ASC';
+
+        $rows = array();
+        if ( '' !== $category ) {
+            $rows = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT * FROM {$table} WHERE size = %s AND category = %s AND tire_id != %s {$order} LIMIT %d",
+                    $size,
+                    $category,
+                    $tire_id,
+                    $limit
+                ),
+                ARRAY_A
+            );
+        }
+
+        // Fewer than three of its own kind: widen to the whole size.
+        if ( count( (array) $rows ) < 3 ) {
+            $rows = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT * FROM {$table} WHERE size = %s AND tire_id != %s {$order} LIMIT %d",
+                    $size,
+                    $tire_id,
+                    $limit
+                ),
+                ARRAY_A
+            );
+        }
+
+        return is_array( $rows ) ? $rows : array();
     }
 
     /**

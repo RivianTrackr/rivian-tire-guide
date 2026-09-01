@@ -16,6 +16,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class RTG_Tire_Page {
 
+    /**
+     * Reviews rendered into the page, and fetched per "Show more" click.
+     * The AJAX feed (RTG_Ajax::get_tire_reviews) pages by the same number.
+     */
+    const REVIEWS_PER_PAGE = 10;
+
     public function __construct() {
         add_action( 'init', array( $this, 'register_rewrite' ) );
         add_filter( 'query_vars', array( $this, 'add_query_vars' ) );
@@ -123,10 +129,30 @@ class RTG_Tire_Page {
             RTG_VERSION,
             true
         );
+        $settings     = get_option( 'rtg_settings', array() );
+        $review_count = RTG_Database::get_tire_review_count( $tire['tire_id'] );
+        $is_favorite  = is_user_logged_in()
+            && in_array( $tire['tire_id'], (array) RTG_Database::get_user_favorites( get_current_user_id() ), true );
+
         wp_localize_script( 'rtg-tire-page', 'rtgTirePage', array(
-            'ajaxurl' => admin_url( 'admin-ajax.php' ),
-            'nonce'   => wp_create_nonce( 'rtg_analytics_nonce' ),
-            'tireId'  => $tire['tire_id'],
+            'ajaxurl'        => admin_url( 'admin-ajax.php' ),
+            'nonce'          => wp_create_nonce( 'rtg_analytics_nonce' ),
+            'tireId'         => $tire['tire_id'],
+            // Favorites and the reviews feed share the rating nonce the
+            // guide uses for the same endpoints.
+            'ratingNonce'    => wp_create_nonce( 'tire_rating_nonce' ),
+            'isLoggedIn'     => is_user_logged_in(),
+            'loginUrl'       => wp_login_url( $canonical ),
+            'isFavorite'     => $is_favorite,
+            'shareUrl'       => $canonical,
+            'shareTitle'     => $heading,
+            'reviewTotal'    => $review_count,
+            'reviewsPerPage' => self::REVIEWS_PER_PAGE,
+            'compareUrl'     => add_query_arg(
+                'compare',
+                rawurlencode( $tire['tire_id'] ),
+                home_url( '/' . sanitize_title( $settings['compare_slug'] ?? 'tire-compare' ) . '/' )
+            ),
         ) );
 
         // Make the resolved tire available to the content partial + head callback.

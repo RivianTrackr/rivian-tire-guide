@@ -12,6 +12,8 @@ import { createRatingHTML } from './ratings.js';
 import { toggleFavorite } from './favorites.js';
 import { setupCompareCheckboxes } from './compare.js';
 import { openImageModal } from './image-modal.js';
+import { fitmentShortfalls, describeShortfalls } from './fitment.js';
+import { formatSetPrice, priceFreshness, SET_QUANTITY } from './pricing.js';
 
 // IntersectionObserver for enhanced lazy loading with fade-in
 let imageObserver = null;
@@ -190,8 +192,90 @@ export function renderCards(rows) {
 
   setupCompareCheckboxes();
 
+  // Cards that survive a re-render keep their DOM, so the fitment warning
+  // is re-judged for every card here rather than only when one is built:
+  // the vehicle toggle is the input that changes most.
+  refreshFitmentWarnings(state.cardContainer);
+
   // Trigger IntersectionObserver for lazy-loaded images
   if (state.cardContainer) observeCardImages(state.cardContainer);
+}
+
+// --- Load-index fitment warning ---
+
+/** The vehicle toggle, read from the DOM to keep this module out of filters.js's import cycle. */
+function activeVehicle() {
+  const btn = document.querySelector('.rtg-vehicle-btn.active');
+  return btn ? (btn.dataset.vehicle || '') : '';
+}
+
+function fitmentSettings() {
+  const settings = (typeof rtgData !== 'undefined' && rtgData.settings) ? rtgData.settings : {};
+  const map = (state.vehicleSizeMap && Object.keys(state.vehicleSizeMap).length)
+    ? state.vehicleSizeMap
+    : (settings.vehicleSizeMap || {});
+  return { map, floors: settings.loadIndexFloors || {} };
+}
+
+/**
+ * Fill or clear one card's fitment slot.
+ *
+ * With a vehicle pressed, the card is judged against that vehicle's floor.
+ * With none, against every vehicle whose size list includes this tire — a
+ * 110 in an R1 size is a problem whichever toggle is pressed.
+ */
+export function applyFitmentWarning(card, vehicle = activeVehicle()) {
+  const slot = card.querySelector('.tire-card-fitment-slot');
+  if (!slot) return;
+
+  const { map, floors } = fitmentSettings();
+  const tire = { loadIndex: card.dataset.loadIndex, size: card.dataset.size };
+  const text = describeShortfalls(tire.loadIndex, fitmentShortfalls(tire, map, floors, vehicle));
+
+  if (!text) {
+    slot.innerHTML = '';
+    slot.hidden = true;
+    delete slot.dataset.text;
+    card.classList.remove('has-fitment-warning');
+    return;
+  }
+
+  // Same text: leave the node alone so a re-render doesn't flicker it.
+  if (slot.dataset.text === text) return;
+  slot.dataset.text = text;
+  slot.innerHTML = '';
+
+  const warning = document.createElement('div');
+  warning.className = 'tire-card-fitment';
+  warning.setAttribute('role', 'note');
+
+  const icon = document.createElement('span');
+  icon.className = 'tire-card-fitment-icon';
+  icon.innerHTML = rtgIcon('triangle-exclamation', 13);
+
+  const label = document.createElement('span');
+  label.className = 'tire-card-fitment-text';
+  label.textContent = text;
+
+  const infoBtn = document.createElement('button');
+  infoBtn.type = 'button';
+  infoBtn.className = 'info-tooltip-trigger';
+  infoBtn.dataset.tooltipKey = 'Load Index';
+  infoBtn.setAttribute('aria-label', 'More info about Load Index');
+  infoBtn.innerHTML = rtgIcon('circle-info', 12);
+
+  warning.appendChild(icon);
+  warning.appendChild(label);
+  warning.appendChild(infoBtn);
+  slot.appendChild(warning);
+  slot.hidden = false;
+  card.classList.add('has-fitment-warning');
+}
+
+export function refreshFitmentWarnings(container) {
+  if (!container) return;
+  const vehicle = activeVehicle();
+  container.querySelectorAll('.tire-card').forEach(card => applyFitmentWarning(card, vehicle));
 }
 
 export function createSingleCard(row) {
@@ -199,7 +283,8 @@ export function createSingleCard(row) {
     tireId, size, diameter, brand, model, category, price, warranty, weight, tpms,
     tread, loadIndex, maxLoad, loadRange, speed, psi, utqg, tags, link, image,
     /* efficiencyScore */ , /* efficiencyGrade */ , reviewLink, /* createdAt */ ,
-    roamerEfficiency, roamerTotalKm, roamerVehicleCount, roamerVehicleBreakdown, slug
+    roamerEfficiency, roamerTotalKm, roamerVehicleCount, roamerVehicleBreakdown, slug,
+    priceSyncedAt, updatedAt
   ] = row;
 
   if (!VALIDATION_PATTERNS.tireId.test(tireId)) {
@@ -225,6 +310,10 @@ export function createSingleCard(row) {
   const card = document.createElement("div");
   card.className = "tire-card";
   card.dataset.tireId = tireId;
+  // What the fitment warning is judged from, kept on the card so it can be
+  // re-judged when the vehicle toggle changes without rebuilding the card.
+  card.dataset.loadIndex = safeString(loadIndex, 20);
+  card.dataset.size = safeString(size, 30);
 
   if (safeString(tags).toLowerCase().includes("oem")) {
     const oemBadge = document.createElement('div');
@@ -391,6 +480,13 @@ export function createSingleCard(row) {
   ratingDiv.innerHTML = ratingHTML;
   bodyEl.appendChild(ratingDiv);
 
+  // Load-index fitment warning — filled by applyFitmentWarning() once the
+  // card is in the DOM, and again whenever the vehicle toggle changes.
+  const fitmentSlot = document.createElement('div');
+  fitmentSlot.className = 'tire-card-fitment-slot';
+  fitmentSlot.hidden = true;
+  bodyEl.appendChild(fitmentSlot);
+
   // Key stats row — Average Price + Real-World Efficiency, elevated above
   // the spec rows (they're the top decision drivers; efficiency is also the
   // default sort). Both blocks always render so the two-up grid stays
@@ -414,10 +510,43 @@ export function createSingleCard(row) {
 
     const priceValue = document.createElement('div');
     priceValue.className = 'tire-card-stat-value' + (priceNum > 0 ? '' : ' tire-card-stat-value-na');
-    priceValue.textContent = priceNum > 0 ? `$${priceNum}` : 'No data yet';
 
     priceStat.appendChild(priceLabel);
     priceStat.appendChild(priceValue);
+
+    if (priceNum > 0) {
+      const priceNumEl = document.createElement('span');
+      priceNumEl.textContent = `$${priceNum}`;
+      const priceUnit = document.createElement('span');
+      priceUnit.className = 'tire-card-stat-unit';
+      priceUnit.textContent = 'ea';
+      priceValue.appendChild(priceNumEl);
+      priceValue.appendChild(priceUnit);
+
+      // Nobody buys one tire: the set price is the number the shopper is
+      // actually comparing against a budget.
+      const setLine = document.createElement('div');
+      setLine.className = 'tire-card-stat-meta tire-card-price-set';
+      setLine.textContent = `${formatSetPrice(priceNum)} / set of ${SET_QUANTITY}`;
+      priceStat.appendChild(setLine);
+
+      // When the price was last touched, and a nudge when that was long
+      // enough ago that it may no longer be what the retailer charges.
+      const staleDays = (typeof rtgData !== 'undefined' && rtgData.settings) ? rtgData.settings.stalePriceDays : 0;
+      const fresh = priceFreshness({ priceSyncedAt, updatedAt }, staleDays);
+      if (fresh.label) {
+        const asOf = document.createElement('div');
+        asOf.className = 'tire-card-stat-meta tire-card-price-asof' + (fresh.stale ? ' is-stale' : '');
+        asOf.textContent = fresh.stale ? `${fresh.label} · may be outdated` : fresh.label;
+        if (fresh.stale) {
+          asOf.title = `This price hasn't been updated in over ${staleDays} days. Check the retailer for the current price.`;
+        }
+        priceStat.appendChild(asOf);
+      }
+    } else {
+      priceValue.textContent = 'No data yet';
+    }
+
     statsRow.appendChild(priceStat);
   }
 

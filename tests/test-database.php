@@ -240,12 +240,12 @@ class Test_RTG_Database extends WP_UnitTestCase {
     // --- Frontend row format ---
 
     /**
-     * The JS reads fixed indexes up to row[28] (slug), so every producer of
-     * frontend rows must emit the same 29 columns. get_filtered_tires() once
-     * lagged at 28, which silently dropped the tire-page links whenever
-     * server-side pagination was on.
+     * The JS reads fixed indexes up to row[30] (updated_at), so every
+     * producer of frontend rows must emit the same 31 columns.
+     * get_filtered_tires() once lagged at 28, which silently dropped the
+     * tire-page links whenever server-side pagination was on.
      */
-    public function test_every_frontend_row_producer_emits_the_same_29_columns() {
+    public function test_every_frontend_row_producer_emits_the_same_31_columns() {
         RTG_Database::insert_tire( $this->sample_tire( array(
             'tire_id' => 'row-format-001',
             'brand'   => 'RowBrand',
@@ -269,8 +269,10 @@ class Test_RTG_Database extends WP_UnitTestCase {
                 }
             }
             $this->assertNotNull( $row, "$name should return the inserted tire" );
-            $this->assertCount( 29, $row, "$name row width" );
+            $this->assertCount( 31, $row, "$name row width" );
             $this->assertSame( $expected_slug, $row[28], "$name slug at index 28" );
+            $this->assertSame( '', $row[29], "$name price_synced_at at index 29 (never synced)" );
+            $this->assertMatchesRegularExpression( '/^\d{4}-\d{2}-\d{2} /', $row[30], "$name updated_at at index 30" );
         }
     }
 
@@ -362,5 +364,50 @@ class Test_RTG_Database extends WP_UnitTestCase {
         RTG_Database::update_tire( 'slug-keep', array( 'brand' => 'Nokian', 'model' => 'Outpost nAT', 'size' => '275/65R20' ) );
         $this->assertSame( 'nokian-outpost-nat-275-65r20', RTG_Database::get_tire( 'slug-keep' )['slug'], 'a changed model regenerates it' );
         $this->assertSame( 'slug-keep', RTG_Database::lookup_slug_redirect( 'best-winter-pick' ), 'and the manual slug redirects' );
+    }
+
+    // --- Tire page internal linking ---
+
+    public function test_other_sizes_are_the_same_model_in_any_other_size() {
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => 'os-20', 'brand' => 'Nokian', 'model' => 'One HT', 'size' => '275/65R20', 'diameter' => '20"' ) ) );
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => 'os-22', 'brand' => 'nokian', 'model' => 'one ht', 'size' => '275/50R22', 'diameter' => '22"' ) ) );
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => 'os-18', 'brand' => 'Nokian', 'model' => 'One HT', 'size' => '275/65R18', 'diameter' => '18"' ) ) );
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => 'os-other', 'brand' => 'Nokian', 'model' => 'Outpost AT', 'size' => '275/50R22' ) ) );
+
+        $ids = array_column( RTG_Database::get_other_sizes( RTG_Database::get_tire( 'os-20' ) ), 'tire_id' );
+
+        $this->assertSame( array( 'os-18', 'os-22' ), $ids, 'same model, other sizes, smallest rim first, case-insensitive, never itself' );
+    }
+
+    public function test_similar_tires_prefer_the_category_and_widen_when_it_is_thin() {
+        $size = '255/50R20';
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => 'sim-self', 'size' => $size, 'category' => 'All-Terrain', 'roamer_efficiency' => 2.0 ) ) );
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => 'sim-at-1', 'size' => $size, 'category' => 'All-Terrain', 'roamer_efficiency' => 2.1 ) ) );
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => 'sim-at-2', 'size' => $size, 'category' => 'All-Terrain', 'roamer_efficiency' => 2.4 ) ) );
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => 'sim-at-3', 'size' => $size, 'category' => 'All-Terrain', 'roamer_efficiency' => 0 ) ) );
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => 'sim-as-1', 'size' => $size, 'category' => 'All-Season', 'roamer_efficiency' => 2.6 ) ) );
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => 'sim-elsewhere', 'size' => '275/65R20', 'category' => 'All-Terrain', 'roamer_efficiency' => 3.0 ) ) );
+
+        $ids = array_column( RTG_Database::get_similar_tires( RTG_Database::get_tire( 'sim-self' ) ), 'tire_id' );
+
+        $this->assertSame( array( 'sim-at-2', 'sim-at-1', 'sim-at-3' ), $ids, 'same size and category, best efficiency first, unknown efficiency last, never itself' );
+
+        // Only one other all-terrain: widen to the whole size.
+        RTG_Database::delete_tire( 'sim-at-2' );
+        RTG_Database::delete_tire( 'sim-at-3' );
+        $ids = array_column( RTG_Database::get_similar_tires( RTG_Database::get_tire( 'sim-self' ) ), 'tire_id' );
+
+        $this->assertSame( array( 'sim-as-1', 'sim-at-1' ), $ids );
+    }
+
+    public function test_similar_tires_respect_the_limit_and_need_a_size() {
+        for ( $i = 0; $i < 8; $i++ ) {
+            RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => "lim-$i", 'size' => '275/55R21' ) ) );
+        }
+
+        $this->assertCount( 6, RTG_Database::get_similar_tires( RTG_Database::get_tire( 'lim-0' ) ) );
+        $this->assertCount( 3, RTG_Database::get_similar_tires( RTG_Database::get_tire( 'lim-0' ), 3 ) );
+        $this->assertSame( array(), RTG_Database::get_similar_tires( array( 'tire_id' => 'x', 'size' => '' ) ) );
+        $this->assertSame( array(), RTG_Database::get_other_sizes( array( 'tire_id' => 'x', 'brand' => '', 'model' => 'M' ) ) );
     }
 }

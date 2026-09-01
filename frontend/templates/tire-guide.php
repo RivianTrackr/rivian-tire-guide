@@ -115,6 +115,7 @@ if ( ! defined( 'ABSPATH' ) ) {
       </div>
     </div>
     <div id="filterResultCount" class="filter-result-count" aria-live="polite"></div>
+    <div id="rtgFilterNotice" class="rtg-filter-notice" role="status" aria-live="polite"></div>
   </div>
 </div>
 <?php

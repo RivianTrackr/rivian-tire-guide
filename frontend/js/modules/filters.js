@@ -12,6 +12,7 @@ import { renderCards, preloadNextPageImages } from './cards.js';
 import { loadTireRatings, updateRatingDisplay } from './ratings.js';
 import { isPreciseMatch } from './search.js';
 import { isServerSide, serverSideFilterAndRender } from './server.js';
+import { rememberVehicle, rememberedVehicle } from './vehicle-memory.js';
 
 export function getSelectedVehicle() {
   const active = document.querySelector('.rtg-vehicle-btn.active');
@@ -37,15 +38,54 @@ export function populateVehicleToggle(vehicleSizeMap) {
   });
 }
 
-export function setActiveVehicle(vehicle) {
+/**
+ * Press one vehicle button (or "All" for '').
+ *
+ * The choice is remembered for the next visit unless `persist` is false —
+ * a shortcode's vehicle="R2" is the page's choice, not the visitor's.
+ */
+export function setActiveVehicle(vehicle, persist = true) {
   document.querySelectorAll('.rtg-vehicle-btn').forEach(btn => {
     const isActive = (btn.dataset.vehicle || '') === vehicle;
     btn.classList.toggle('active', isActive);
     btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
   });
+  if (persist) rememberVehicle(vehicle);
 }
 
+let filterNoticeTimer = null;
+
+/**
+ * Say something about a filter side effect, to everyone.
+ *
+ * The notice is a polite live region under the filters, so a screen reader
+ * hears it and a sighted visitor sees it; it clears itself so it never
+ * reads as a permanent state.
+ */
+export function announceFilterNotice(message, duration = 6000) {
+  const el = getDOMElement("rtgFilterNotice");
+  if (!el) return;
+  clearTimeout(filterNoticeTimer);
+  el.textContent = message || '';
+  el.classList.toggle('is-visible', !!message);
+  if (message && duration > 0) {
+    filterNoticeTimer = setTimeout(() => {
+      el.textContent = '';
+      el.classList.remove('is-visible');
+    }, duration);
+  }
+}
+
+/**
+ * Narrow the size list to the vehicle's fitments.
+ *
+ * @return {string} The size that was cleared because the vehicle doesn't
+ *                  take it, or '' when the selection survived.
+ */
 export function cascadeVehicleToSizes(vehicle, allSizes) {
+  const sizeEl = getDOMElement("filterSize");
+  const previousSize = sizeEl ? sizeEl.value : '';
+
   if (vehicle && state.vehicleSizeMap[vehicle]) {
     const vehicleSizes = state.vehicleSizeMap[vehicle];
     populateSizeDropdownGrouped("filterSize", vehicleSizes);
@@ -53,12 +93,20 @@ export function cascadeVehicleToSizes(vehicle, allSizes) {
     populateSizeDropdownGrouped("filterSize", allSizes);
   }
 
-  // Clear size selection if it's no longer valid in the narrowed list.
-  const sizeEl = getDOMElement("filterSize");
-  if (sizeEl && sizeEl.value) {
-    const option = sizeEl.querySelector(`option[value="${CSS.escape(sizeEl.value)}"]`);
-    if (!option) sizeEl.value = '';
+  // Clear size selection if it's no longer valid in the narrowed list —
+  // and say so: a filter that vanishes silently reads as a bug.
+  let cleared = '';
+  if (sizeEl && previousSize) {
+    const option = sizeEl.querySelector(`option[value="${CSS.escape(previousSize)}"]`);
+    if (option) {
+      sizeEl.value = previousSize;
+    } else {
+      sizeEl.value = '';
+      cleared = previousSize;
+      announceFilterNotice(`Size filter cleared: ${previousSize} isn't a ${vehicle} size.`);
+    }
   }
+  return cleared;
 }
 
 export function buildFilterIndexes() {
@@ -1120,8 +1168,36 @@ export function renderSmartNoResults() {
   if (getDOMElement("filterFavorites")?.checked) activeFilterNames.push("Favorites");
   if (searchEl?.value?.trim()) activeFilterNames.push("Search");
 
-  if (activeFilterNames.length > 1) {
+  // Two different answers. "No tires in this size yet" is honest: the
+  // catalog has nothing there, and no amount of relaxing the other filters
+  // will change it. "No tires match your filters" is an invitation to relax
+  // them. Client mode can tell precisely (the size index holds the whole
+  // catalog); server mode only knows what it asked for, so there the honest
+  // answer is given when nothing but vehicle and size are narrowing.
+  const sizeVal = sizeEl?.value || '';
+  const otherFilters = activeFilterNames.filter(name => name !== 'Vehicle' && name !== 'Size');
+  const onlyFitment = otherFilters.length === 0;
+  const sizeEmptyInCatalog = !!sizeVal && !isServerSide()
+    && (filterIndexes.sizeIndex.get(sizeVal.toLowerCase()) || []).length === 0;
+  const vehicleEmptyInCatalog = !!noResultsVehicle && !isServerSide()
+    && (filterIndexes.vehicleIndex.get(noResultsVehicle) || []).length === 0;
+
+  let honest = null;
+  if (sizeVal && (sizeEmptyInCatalog || (onlyFitment && isServerSide()))) {
+    honest = {
+      title: `No tires in ${sizeVal} yet`,
+      description: `The guide doesn't have any ${sizeVal} tires yet. New tires are added as owners review them, so check back soon or browse another size.`
+    };
+  } else if (noResultsVehicle && !sizeVal && (vehicleEmptyInCatalog || (onlyFitment && isServerSide()))) {
+    honest = {
+      title: `No ${noResultsVehicle} tires yet`,
+      description: `The guide doesn't have any tires in ${noResultsVehicle} sizes yet. Check back soon, or browse every size.`
+    };
+  }
+
+  if (!honest && activeFilterNames.length > 1) {
     suggestions.push({
+      key: 'clear-all',
       label: rtgIcon('rotate-left', 14) + ' Clear all filters',
       action: () => resetFilters()
     });
@@ -1129,6 +1205,7 @@ export function renderSmartNoResults() {
 
   if (getDOMElement("filterFavorites")?.checked) {
     suggestions.push({
+      key: 'favorites',
       label: rtgIcon('heart-outline', 14) + ' Show all tires (not just favorites)',
       action: () => { getDOMElement("filterFavorites").checked = false; state.lastFilterState = null; rerender(); }
     });
@@ -1136,6 +1213,7 @@ export function renderSmartNoResults() {
 
   if (noResultsVehicle) {
     suggestions.push({
+      key: 'vehicle',
       label: rtgIcon('car', 14) + ` Remove ${escapeHTML(noResultsVehicle)} filter`,
       action: () => { setActiveVehicle(''); cascadeVehicleToSizes('', state.VALID_SIZES); state.lastFilterState = null; rerender(); }
     });
@@ -1143,13 +1221,15 @@ export function renderSmartNoResults() {
 
   if (sizeEl?.value) {
     suggestions.push({
-      label: rtgIcon('ruler', 14) + ` Remove size filter (${escapeHTML(sizeEl.value)})`,
+      key: 'size',
+      label: rtgIcon('ruler', 14) + (honest ? ' Browse all sizes' : ` Remove size filter (${escapeHTML(sizeEl.value)})`),
       action: () => { sizeEl.value = ""; state.lastFilterState = null; rerender(); }
     });
   }
 
   if (brandEl?.value) {
     suggestions.push({
+      key: 'brand',
       label: rtgIcon('building', 14) + ' Show all brands',
       action: () => { brandEl.value = ""; state.lastFilterState = null; rerender(); }
     });
@@ -1157,6 +1237,7 @@ export function renderSmartNoResults() {
 
   if (categoryEl?.value) {
     suggestions.push({
+      key: 'category',
       label: rtgIcon('tags', 14) + ' Show all categories',
       action: () => { categoryEl.value = ""; state.lastFilterState = null; rerender(); }
     });
@@ -1164,6 +1245,7 @@ export function renderSmartNoResults() {
 
   if (priceEl && parseInt(priceEl.value) < (Number(priceEl.max) || 600)) {
     suggestions.push({
+      key: 'price',
       label: rtgIcon('dollar-sign', 14) + ' Increase price limit to max',
       action: () => { const ceil = Number(priceEl.max) || 600; priceEl.value = ceil; getDOMElement("priceVal").textContent = "\u2264 $" + ceil; updateSliderBackground(priceEl); state.lastFilterState = null; rerender(); }
     });
@@ -1171,6 +1253,7 @@ export function renderSmartNoResults() {
 
   if (getDOMElement("filter3pms")?.checked) {
     suggestions.push({
+      key: '3pms',
       label: rtgIcon('snowflake', 14) + ' Remove 3PMS filter',
       action: () => { getDOMElement("filter3pms").checked = false; state.lastFilterState = null; rerender(); }
     });
@@ -1178,28 +1261,36 @@ export function renderSmartNoResults() {
 
   if (searchEl?.value?.trim()) {
     suggestions.push({
+      key: 'search',
       label: rtgIcon('magnifying-glass', 14) + ` Clear search "${escapeHTML(safeString(searchEl.value.trim(), 30))}"`,
       action: () => { searchEl.value = ""; delete state.domCache["searchInput"]; state.lastFilterState = null; rerender(); }
     });
   }
 
-  const displaySuggestions = suggestions.slice(0, 4);
+  // The honest state offers only the way out of the size or vehicle: the
+  // other suggestions would promise results that aren't there.
+  const displaySuggestions = honest
+    ? suggestions.filter(s => s.key === 'size' || s.key === 'vehicle').slice(0, 2)
+    : suggestions.slice(0, 4);
 
   container.innerHTML = '';
+  container.classList.toggle('no-results-honest', !!honest);
 
   const icon = document.createElement('div');
   icon.className = 'no-results-icon';
-  icon.innerHTML = rtgIcon('magnifying-glass', 24);
+  icon.innerHTML = rtgIcon(honest ? 'ruler' : 'magnifying-glass', 24);
   container.appendChild(icon);
 
   const title = document.createElement('div');
   title.className = 'no-results-title';
-  title.textContent = 'No tires match your filters';
+  title.textContent = honest ? honest.title : 'No tires match your filters';
   container.appendChild(title);
 
   const desc = document.createElement('div');
   desc.className = 'no-results-description';
-  if (activeFilterNames.length > 0) {
+  if (honest) {
+    desc.textContent = honest.description;
+  } else if (activeFilterNames.length > 0) {
     desc.textContent = `You have ${activeFilterNames.length} active filter${activeFilterNames.length > 1 ? 's' : ''}: ${activeFilterNames.join(', ')}. Try adjusting your filters to see more options.`;
   } else {
     desc.textContent = 'Try adjusting the filters or search to see more options.';
@@ -1341,9 +1432,21 @@ export function applyFiltersFromURL() {
 
   // Vehicle must be applied before size so the cascade narrows the size dropdown first.
   const vehicleParam = sanitizeInput(params.get("vehicle"));
-  const vehicle = vehicleParam && state.VALID_VEHICLES.includes(vehicleParam) ? vehicleParam : '';
+  let vehicle = vehicleParam && state.VALID_VEHICLES.includes(vehicleParam) ? vehicleParam : '';
+
+  // No vehicle in the URL on a fresh load: the one remembered from the last
+  // visit, unless a shortcode prefilter already pressed one. Browser
+  // navigation (restoring) trusts the URL alone, so back never re-presses a
+  // vehicle the visitor had cleared.
+  if (!vehicle && !restoring && params.get("vehicle") === null && !getSelectedVehicle()) {
+    const remembered = rememberedVehicle();
+    if (remembered && state.VALID_VEHICLES.includes(remembered)) {
+      vehicle = remembered;
+    }
+  }
+
   if (vehicle || restoring) {
-    setActiveVehicle(vehicle);
+    setActiveVehicle(vehicle, !restoring);
     cascadeVehicleToSizes(vehicle, state.VALID_SIZES);
   }
 
@@ -1477,7 +1580,7 @@ export function applyShortcodePrefilters() {
   const pf = rtgData.settings.prefilters;
   // Vehicle must be applied before size so the cascade narrows the size dropdown first.
   if (pf.vehicle && state.VALID_VEHICLES.includes(pf.vehicle)) {
-    setActiveVehicle(pf.vehicle);
+    setActiveVehicle(pf.vehicle, false);
     cascadeVehicleToSizes(pf.vehicle, state.VALID_SIZES);
   }
   if (pf.size) {
