@@ -135,18 +135,21 @@ $rtg_settings = get_option( 'rtg_settings', array() );
       gap: 16px;
       margin-bottom: 24px;
     }
+    /* Image above the details: side by side, four columns squeezed the
+       name into a strip beside a thumbnail. */
     .cmp-tire-header {
       background: var(--rtg-bg-card);
       border: 1px solid var(--rtg-border);
       border-radius: 12px;
-      padding: 20px;
+      padding: 16px;
       display: flex;
-      align-items: center;
-      gap: 20px;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 14px;
     }
     .cmp-tire-img-wrap {
-      width: 120px;
-      height: 120px;
+      width: 100%;
+      height: 150px;
       flex-shrink: 0;
       background: #fff;
       border-radius: 10px;
@@ -154,6 +157,7 @@ $rtg_settings = get_option( 'rtg_settings', array() );
       align-items: center;
       justify-content: center;
       overflow: hidden;
+      padding: 10px;
     }
     .cmp-tire-img-wrap img {
       max-width: 100%;
@@ -467,7 +471,7 @@ $rtg_settings = get_option( 'rtg_settings', array() );
 
     /* --- Responsive: desktop grid sizing --- */
     @media (min-width: 769px) {
-      .cmp-tire-headers { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+      .cmp-tire-headers { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
       .cmp-row {
         grid-template-columns: 180px 1fr;
       }
@@ -483,11 +487,10 @@ $rtg_settings = get_option( 'rtg_settings', array() );
       .cmp-subtitle { margin-bottom: 16px; }
 
       .cmp-tire-header {
-        flex-direction: column;
         text-align: center;
         padding: 16px;
       }
-      .cmp-tire-img-wrap { width: 100px; height: 100px; }
+      .cmp-tire-img-wrap { height: 130px; }
       .cmp-tire-meta { justify-content: center; }
 
       .cmp-row {

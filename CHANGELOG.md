@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.88.2] - 2026-09-01
+
+### Changed
+- **Compare page header cards stack the image above the details.** Side by side, four columns squeezed each tire's name into a narrow strip beside a thumbnail. The image now sits on top at full card width with the brand, model, size and price below it.
+
 ## [1.88.1] - 2026-09-01
 
 ### Changed
