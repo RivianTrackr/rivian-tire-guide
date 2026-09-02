@@ -146,8 +146,10 @@ if ( $size ) {
 }
 foreach ( $rtg_tp_verdicts as $rtg_tp_v ) {
     $rtg_tp_chips[] = array(
+        // A pass is two words — the load index tile carries the numbers. A
+        // failure keeps them, because there the detail is the warning.
         'text'  => $rtg_tp_v['ok']
-            ? 'Fits ' . $rtg_tp_v['vehicle'] . ' · load index ' . (int) $rtg_tp_load_index . ' meets the ' . (int) $rtg_tp_v['floor'] . ' minimum'
+            ? 'Fits ' . $rtg_tp_v['vehicle']
             : $rtg_tp_v['vehicle'] . ' · load index ' . (int) $rtg_tp_load_index . ' is below the ' . (int) $rtg_tp_v['floor'] . ' minimum',
         'class' => $rtg_tp_v['ok'] ? 'rtg-tp-chip-fit' : 'rtg-tp-chip-fit-bad',
         'icon'  => $rtg_tp_v['ok'] ? 'fa-check' : 'fa-triangle-exclamation',
@@ -403,14 +405,15 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
   .rtg-tp .rtg-tp-hero { display: flex; gap: 32px; flex-wrap: wrap; align-items: stretch; margin: 0 0 32px; }
   .rtg-tp .rtg-tp-img {
     flex: 0 0 380px; max-width: 100%; min-height: 320px; align-self: stretch;
+    position: relative;
     background: #fff; border: 1px solid var(--rtg-tp-border);
     border-radius: 12px; overflow: hidden;
-    display: flex; align-items: center; justify-content: center;
-    padding: 20px;
     transition: border-color 0.15s ease;
   }
   .rtg-tp .rtg-tp-img:hover { border-color: color-mix(in srgb, var(--rtg-tp-accent) 35%, var(--rtg-tp-border)); }
-  .rtg-tp .rtg-tp-img img { width: 100%; height: 100%; object-fit: contain; margin: 0; display: block; }
+  /* Absolutely positioned so the photo's own height never sets the row:
+     the box is as tall as the info column, and the photo fits inside it. */
+  .rtg-tp .rtg-tp-img img { position: absolute; inset: 20px; width: calc(100% - 40px); height: calc(100% - 40px); object-fit: contain; margin: 0; display: block; }
   .rtg-tp .rtg-tp-info { flex: 1 1 420px; min-width: 280px; display: flex; flex-direction: column; gap: 12px; }
   .rtg-tp .rtg-tp-brand { font-size: 13px; font-weight: 700; color: var(--rtg-tp-accent); text-transform: uppercase; letter-spacing: .8px; margin: 0; }
   .rtg-tp h1.rtg-tp-title { font-size: 34px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.15; color: var(--rtg-tp-heading); margin: -6px 0 0; padding: 0; }
