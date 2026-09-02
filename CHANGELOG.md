@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.89.1] - 2026-09-02
+
+### Changed
+- **"Limited data" shares the last sample line** ("1 vehicle · Limited data") instead of taking a third line of its own, which made that efficiency box taller than the price box beside it.
+
 ## [1.89.0] - 2026-09-02
 
 A pass over what the guide card says, from a look at three of them side by side.

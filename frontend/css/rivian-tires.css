@@ -994,6 +994,7 @@
 .tire-card-stat-limited {
   color: #f0b429;
   font-weight: 600;
+  white-space: nowrap;
 }
 .tire-card-stat-empty .tire-card-stat-value {
   color: var(--rtg-text-muted);
