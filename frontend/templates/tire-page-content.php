@@ -397,11 +397,14 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
   .rtg-tp .rtg-tp-breadcrumb span[aria-current] { color: var(--rtg-tp-text); }
 
   /* --- Hero --- */
-  .rtg-tp .rtg-tp-hero { display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-start; margin: 0 0 32px; }
+  /* The photo box stretches to the info column's height, so the two sides
+     of the hero always share one bottom edge; the photo sits centered in
+     whatever that height is. */
+  .rtg-tp .rtg-tp-hero { display: flex; gap: 32px; flex-wrap: wrap; align-items: stretch; margin: 0 0 32px; }
   .rtg-tp .rtg-tp-img {
-    flex: 0 0 360px; max-width: 100%;
+    flex: 0 0 380px; max-width: 100%; min-height: 320px; align-self: stretch;
     background: #fff; border: 1px solid var(--rtg-tp-border);
-    border-radius: 12px; overflow: hidden; aspect-ratio: 1 / 1;
+    border-radius: 12px; overflow: hidden;
     display: flex; align-items: center; justify-content: center;
     padding: 20px;
     transition: border-color 0.15s ease;
@@ -427,14 +430,14 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
   .rtg-tp .rtg-tp-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
   .rtg-tp .rtg-tp-chip {
     display: inline-flex; align-items: center; gap: 6px;
-    font-size: 12px; font-weight: 600; line-height: 1;
-    padding: 7px 12px; border-radius: 20px;
+    height: 30px; font-size: 12px; font-weight: 600; line-height: 1;
+    padding: 0 12px; border-radius: 20px; white-space: nowrap;
     color: var(--rtg-tp-text);
     background: color-mix(in srgb, var(--rtg-tp-accent) 12%, var(--rtg-tp-deep));
     border: 1px solid color-mix(in srgb, var(--rtg-tp-accent) 25%, transparent);
   }
-  .rtg-tp .rtg-tp-chip i { font-size: 11px; color: var(--rtg-tp-accent); }
-  .rtg-tp .rtg-tp-chip-size { background: var(--rtg-tp-deep); border-color: var(--rtg-tp-border); color: var(--rtg-tp-heading); font-family: var(--rtg-tp-mono); font-size: 13px; }
+  .rtg-tp .rtg-tp-chip i { font-size: 11px; line-height: 1; color: var(--rtg-tp-accent); }
+  .rtg-tp .rtg-tp-chip-size { background: var(--rtg-tp-deep); border-color: var(--rtg-tp-border); color: var(--rtg-tp-heading); font-family: var(--rtg-tp-mono); }
   .rtg-tp .rtg-tp-chip-fit { background: color-mix(in srgb, #4ade80 12%, var(--rtg-tp-deep)); border-color: color-mix(in srgb, #4ade80 35%, transparent); }
   .rtg-tp .rtg-tp-chip-fit i { color: #4ade80; }
   .rtg-tp .rtg-tp-chip-fit-bad { background: color-mix(in srgb, #ef4444 12%, var(--rtg-tp-deep)); border-color: color-mix(in srgb, #ef4444 40%, transparent); }
@@ -442,7 +445,6 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
   .rtg-tp .rtg-tp-chip-3pms { background: color-mix(in srgb, #60a5fa 14%, var(--rtg-tp-deep)); border-color: color-mix(in srgb, #60a5fa 40%, transparent); }
   .rtg-tp .rtg-tp-chip-3pms i { color: #60a5fa; }
   .rtg-tp .rtg-tp-chip-vehicle { background: color-mix(in srgb, var(--rtg-tp-accent) 22%, var(--rtg-tp-deep)); border-color: color-mix(in srgb, var(--rtg-tp-accent) 55%, transparent); color: var(--rtg-tp-heading); }
-  .rtg-tp .rtg-tp-chip-vehicle i { font-size: 10px; }
 
   .rtg-tp .rtg-tp-fitment-warning {
     display: flex; align-items: flex-start; gap: 10px;
@@ -472,7 +474,7 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
   .rtg-tp .rtg-tp-stat-note.is-stale { color: #f0b429; font-weight: 600; }
   .rtg-tp .rtg-tp-stat-roamer .rtg-tp-stat-value { color: #60a5fa; }
   .rtg-tp .rtg-tp-stat-roamer.is-limited .rtg-tp-stat-value { color: color-mix(in srgb, #60a5fa 55%, var(--rtg-tp-muted)); }
-  .rtg-tp .rtg-tp-stat.is-empty .rtg-tp-stat-value { color: var(--rtg-tp-muted); font-size: 16px; font-weight: 500; font-style: italic; line-height: 1.5; }
+  .rtg-tp .rtg-tp-stat.is-empty .rtg-tp-stat-value { color: var(--rtg-tp-muted); }
   .rtg-tp .rtg-tp-stat.is-warning { border-color: color-mix(in srgb, #ef4444 45%, transparent); }
   .rtg-tp .rtg-tp-stat.is-warning .rtg-tp-stat-value { color: #f87171; }
 
@@ -563,7 +565,7 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
   }
   @media (max-width: 700px) {
     .rtg-tp .rtg-tp-hero { gap: 16px; margin-bottom: 24px; }
-    .rtg-tp .rtg-tp-img { flex-basis: 100%; aspect-ratio: auto; height: 220px; }
+    .rtg-tp .rtg-tp-img { flex-basis: 100%; min-height: 0; height: 220px; align-self: auto; }
     .rtg-tp h1.rtg-tp-title { font-size: 26px; }
     .rtg-tp .rtg-tp-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
     .rtg-tp .rtg-tp-stat { padding: 10px 12px; }

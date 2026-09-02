@@ -4,6 +4,12 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.91.1] - 2026-09-02
+
+### Changed
+- **The tire page hero shares one bottom edge.** The photo box now stretches to the info column's height instead of a fixed square, with the photo centered in it.
+- **One size for every chip and tile value.** Chips are 30px tall with 12px text and 11px icons, the size chip included (it was 13px); a missing tile value reads in the same 20px as the others, muted rather than smaller and italic.
+
 ## [1.91.0] - 2026-09-02
 
 The tire page as a product page.
