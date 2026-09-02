@@ -1,6 +1,6 @@
 # Rivian Tire Guide — Roadmap
 
-**Current release:** 1.90.0 (DB schema v23)
+**Current release:** 1.90.1 (DB schema v23)
 **Updated:** 2026-09-01
 
 This is the one place open work is tracked. It replaces the four planning

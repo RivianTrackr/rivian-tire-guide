@@ -42,11 +42,18 @@ export function openComparison() {
   }
 }
 
+/** Keep the compare button's tooltip in step with its checkbox. */
+function syncCompareTitle(cb) {
+  const tool = cb.closest('.tire-card-tool-compare');
+  if (tool) tool.title = cb.checked ? 'Remove from comparison' : 'Add to comparison';
+}
+
 export function clearCompare() {
   state.compareList = [];
   document.querySelectorAll(".compare-checkbox").forEach(cb => {
     cb.checked = false;
     cb.disabled = false;
+    syncCompareTitle(cb);
   });
   updateCompareBar();
 }
@@ -68,6 +75,7 @@ export function setupCompareCheckboxes() {
       } else {
         state.compareList = state.compareList.filter(id => id !== tireId);
       }
+      syncCompareTitle(cb);
       updateCompareBar();
       document.querySelectorAll(".compare-checkbox").forEach(box => {
         if (!box.checked) box.disabled = state.compareList.length >= 4;
