@@ -1087,6 +1087,16 @@
 .compare-checkbox:checked + .tire-card-tool-icon {
   color: #15130e;
 }
+/* Plus when out of the comparison, check when in it. */
+.tire-card-tool-check {
+  display: none;
+}
+.compare-checkbox:checked + .tire-card-tool-icon .tire-card-tool-plus {
+  display: none;
+}
+.compare-checkbox:checked + .tire-card-tool-icon .tire-card-tool-check {
+  display: inline;
+}
 .tire-card-tool-compare:has(.compare-checkbox:checked) {
   background: var(--rtg-accent);
   border-color: var(--rtg-accent);

@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.90.1] - 2026-09-02
+
+### Changed
+- **The compare button is a plus that becomes a check.** The scale icon read as "justice" before "compare". The button now says what the click does: a plus to add the tire to the comparison, a check once it's in, with the tooltip switching between "Add to comparison" and "Remove from comparison". The tire page's Compare link uses the same plus.
+
 ## [1.90.0] - 2026-09-02
 
 ### Changed

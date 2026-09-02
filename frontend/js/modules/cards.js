@@ -355,10 +355,13 @@ export function createSingleCard(row) {
   compareCheckbox.checked = state.compareList.includes(tireId);
   compareCheckbox.disabled = !compareCheckbox.checked && state.compareList.length >= 4;
 
+  // A plus that becomes a check once the tire is in the comparison: the
+  // button says what the click does. Both glyphs are rendered and CSS
+  // shows the one that matches the checkbox, so no re-render on toggle.
   const compareIcon = document.createElement('span');
   compareIcon.className = 'tire-card-tool-icon';
-  compareIcon.innerHTML = rtgIcon('scale-balanced', 14);
-  compareOverlay.title = 'Add to comparison';
+  compareIcon.innerHTML = rtgIcon('plus', 14, 'tire-card-tool-plus') + rtgIcon('check', 14, 'tire-card-tool-check');
+  compareOverlay.title = compareCheckbox.checked ? 'Remove from comparison' : 'Add to comparison';
 
   compareOverlay.appendChild(compareCheckbox);
   compareOverlay.appendChild(compareIcon);

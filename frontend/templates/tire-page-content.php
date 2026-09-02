@@ -572,7 +572,7 @@ $spec_groups = array(
 
       <div class="rtg-tp-tools">
         <a class="rtg-tp-tool" id="rtgTpCompare" href="<?php echo esc_url( $compare_url ); ?>">
-          <i class="fa-solid fa-scale-balanced" aria-hidden="true"></i>Compare
+          <i class="fa-solid fa-plus" aria-hidden="true"></i>Compare
         </a>
         <button type="button" class="rtg-tp-tool" id="rtgTpShare">
           <i class="fa-solid fa-share-nodes" aria-hidden="true"></i><span>Share</span>
