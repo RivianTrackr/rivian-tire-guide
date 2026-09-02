@@ -16,7 +16,6 @@ import { showTooltipModal, createFilterTooltip } from './modules/tooltips.js';
 import { initializeSmartSearch } from './modules/search.js';
 import { openReviewModal, loadTireRatings } from './modules/ratings.js';
 import { renderCards } from './modules/cards.js';
-import { loadFavorites } from './modules/favorites.js';
 import { updateCompareBar, openComparison, clearCompare, setupCompareCheckboxes } from './modules/compare.js';
 import {
   buildFilterIndexes, filterAndRender, setupSliderHandlers, resetFilters,
@@ -201,7 +200,6 @@ function initializeUI() {
     { id: "filterCategory", listener: filterFn },
     { id: "filter3pms", listener: filterFn },
     { id: "filterOEM", listener: filterFn },
-    { id: "filterFavorites", listener: filterFn },
   ];
 
   inputsToWatch.forEach(({ id, listener }) => {
@@ -234,9 +232,6 @@ function initializeUI() {
       countDisplay.textContent = `Showing ${state.filteredRows.length} tire${state.filteredRows.length !== 1 ? "s" : ""}`;
     }
   }
-
-  // Load favorites after UI is ready (non-blocking)
-  loadFavorites();
 }
 
 // --- Popstate handler for browser back/forward ---

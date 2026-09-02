@@ -151,55 +151,16 @@ var RTG_TP_TOOLTIPS = {
 })();
 
 /**
- * Compare, save, share, and "Show more reviews".
+ * Share and "Show more reviews".
  *
  * The page a search visitor lands on used to have three outbound CTAs and
- * nothing that kept them: no way to shortlist the tire, compare it, or read
- * past the first ten reviews. Everything here degrades to what the server
- * rendered — the compare link is a plain link, the guest "Save" is a login
- * link, and the reviews button simply isn't there when there are no more.
+ * nothing that kept them: no way to compare the tire or read past the first
+ * ten reviews. Everything here degrades to what the server rendered — the
+ * compare link is a plain link, and the reviews button simply isn't there
+ * when there are no more.
  */
 (function () {
   var cfg = window.rtgTirePage || {};
-
-  // --- Favorite -----------------------------------------------------------
-  var favBtn = document.getElementById('rtgTpFav');
-  if (favBtn && favBtn.tagName === 'BUTTON' && cfg.ajaxurl && cfg.ratingNonce && cfg.tireId) {
-    var busy = false;
-
-    function paintFav(isFav) {
-      favBtn.classList.toggle('is-favorite', isFav);
-      favBtn.setAttribute('aria-pressed', isFav ? 'true' : 'false');
-      var icon = favBtn.querySelector('i');
-      var label = favBtn.querySelector('span');
-      if (icon) icon.className = (isFav ? 'fa-solid' : 'fa-regular') + ' fa-heart';
-      if (label) label.textContent = isFav ? 'Saved' : 'Save';
-    }
-
-    favBtn.addEventListener('click', function () {
-      if (busy) return;
-      if (!cfg.isLoggedIn) {
-        if (cfg.loginUrl) window.location.href = cfg.loginUrl;
-        return;
-      }
-      var wasFav = favBtn.classList.contains('is-favorite');
-      busy = true;
-      paintFav(!wasFav); // optimistic
-
-      var data = new FormData();
-      data.append('action', wasFav ? 'rtg_remove_favorite' : 'rtg_add_favorite');
-      data.append('tire_id', cfg.tireId);
-      data.append('nonce', cfg.ratingNonce);
-
-      fetch(cfg.ajaxurl, { method: 'POST', body: data, credentials: 'same-origin' })
-        .then(function (r) { return r.json(); })
-        .then(function (json) {
-          if (!json || !json.success) paintFav(wasFav);
-        })
-        .catch(function () { paintFav(wasFav); })
-        .then(function () { busy = false; });
-    });
-  }
 
   // --- Share ----------------------------------------------------------------
   var shareBtn = document.getElementById('rtgTpShare');

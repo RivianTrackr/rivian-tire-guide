@@ -176,10 +176,6 @@ class RTG_Frontend {
                 'analyticsNonce'  => wp_create_nonce( 'rtg_analytics_nonce' ),
                 'adminSizes'      => array_values( RTG_Admin::get_dropdown_options( 'sizes' ) ),
                 'vehicleSizeMap'  => RTG_Database::get_vehicle_size_map(),
-                // Empty for everyone who can't edit, so the card script has
-                // nothing to render rather than a control it must remember to
-                // hide. Who may edit is decided here, in PHP, once.
-                'tireEditUrl'     => RTG_Admin::can_edit_tires() ? RTG_Admin::tire_edit_url_base() : '',
                 // The load-index floor per vehicle (Tire Discovery settings)
                 // and the stale-price threshold: what the card's fitment
                 // warning and "price as of" hint are judged against.

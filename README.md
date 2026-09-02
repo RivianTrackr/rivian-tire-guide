@@ -49,9 +49,6 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Admin Dashboard** — Period selector (7/30/90 days), summary cards, Chart.js line charts for clicks and search volume, ranked tables for most clicked tires, top queries, zero-result searches, and most used filters.
 - **Data Retention** — Configurable retention period (7-365 days) with daily WP-Cron cleanup.
 
-### Favorites
-- **Wishlist System** — Logged-in users save tires to a personal favorites list via heart icon. "My Favorites" filter toggle with badge count. Optimistic UI updates.
-
 ### Admin
 - **Dashboard** — Overview cards (total tires, average price, efficiency, ratings), breakdowns by category/brand/size/grade, Rivian Roamer real-world efficiency overview and top 5 rankings, content health indicators (pending reviews, missing images/links). A quick-stats dashboard widget (with Roamer coverage) also appears on the main WordPress dashboard.
 - **Tire Management** — Full CRUD with search, filters, bulk actions, tire duplication, and tag suggestions.
@@ -174,7 +171,7 @@ rivian-tire-guide/
 │   ├── class-rtg-database.php       # All database operations & caching
 │   ├── class-rtg-admin.php          # Admin UI, CSV import/export, settings
 │   ├── class-rtg-frontend.php       # Shortcode rendering & asset enqueue
-│   ├── class-rtg-ajax.php           # AJAX endpoints (ratings, reviews, favorites, analytics)
+│   ├── class-rtg-ajax.php           # AJAX endpoints (ratings, reviews, analytics)
 │   ├── class-rtg-compare.php        # Comparison page routing & CSP headers
 │   ├── class-rtg-schema.php         # Schema.org JSON-LD structured data
 │   ├── class-rtg-meta.php           # Open Graph & Twitter Card meta tags
@@ -200,7 +197,6 @@ rivian-tire-guide/
 │           ├── analytics.js         # Click & search tracking
 │           ├── cards.js             # Tire card rendering
 │           ├── compare.js           # Compare checkbox & bar
-│           ├── favorites.js         # Wishlist AJAX & UI
 │           ├── filters.js           # Filter UI, sorting, URL state
 │           ├── ratings.js           # Review modal & drawer
 │           ├── search.js            # Smart search autocomplete
@@ -228,7 +224,6 @@ The plugin creates 6 tables (all prefixed with `wp_rtg_`):
 | `rtg_tires` | Main tire catalog (31 columns) |
 | `rtg_ratings` | User and guest reviews with moderation |
 | `rtg_wheels` | Stock wheel guide data |
-| `rtg_favorites` | User tire wishlist |
 | `rtg_click_events` | Affiliate link click tracking |
 | `rtg_search_events` | Search and filter analytics |
 

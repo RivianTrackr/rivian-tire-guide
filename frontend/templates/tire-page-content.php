@@ -74,9 +74,6 @@ $review_slug = sanitize_title( $rtg_set['tire_review_slug'] ?? 'tire-review' );
 $review_url  = add_query_arg( 'tire', rawurlencode( $tire_id ), home_url( '/' . $review_slug . '/' ) );
 $rtg_tp_retailer = RTG_Retailer::label( $tire );
 $compare_url = add_query_arg( 'compare', rawurlencode( $tire_id ), home_url( '/' . sanitize_title( $rtg_set['compare_slug'] ?? 'tire-compare' ) . '/' ) );
-$rtg_tp_is_favorite = is_user_logged_in()
-    && in_array( $tire_id, (array) RTG_Database::get_user_favorites( get_current_user_id() ), true );
-$rtg_tp_login_url   = wp_login_url( RTG_Tire_Page::tire_url( $tire['slug'] ?? $tire_id ) );
 
 // Admin theme-color overrides (same mechanism as the compare/review templates).
 $rtg_tp_theme   = $rtg_set['theme_colors'] ?? array();
@@ -394,7 +391,7 @@ $spec_groups = array(
   }
   .rtg-tp .rtg-tp-fitment-warning i { color: #ef4444; margin-top: 3px; }
 
-  /* --- Secondary tools (compare / save / share) --- */
+  /* --- Secondary tools (compare / share) --- */
   .rtg-tp .rtg-tp-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
   .rtg-tp .rtg-tp-tool {
     display: inline-flex; align-items: center; gap: 7px;
@@ -408,8 +405,6 @@ $spec_groups = array(
   .rtg-tp .rtg-tp-tool:focus-visible { outline: 2px solid var(--rtg-tp-accent); outline-offset: 2px; }
   .rtg-tp .rtg-tp-tool:active { transform: scale(0.97); }
   .rtg-tp .rtg-tp-tool i { font-size: 13px; }
-  .rtg-tp .rtg-tp-tool.is-favorite { color: #ef4444; border-color: color-mix(in srgb, #ef4444 45%, var(--rtg-tp-border)); }
-  .rtg-tp .rtg-tp-tool.is-favorite i { color: #ef4444; }
   .rtg-tp .rtg-tp-tool.copied { color: #4ade80; border-color: color-mix(in srgb, #4ade80 45%, var(--rtg-tp-border)); }
 
   /* --- Related tires (other sizes / similar in this size) --- */
@@ -579,15 +574,6 @@ $spec_groups = array(
         <a class="rtg-tp-tool" id="rtgTpCompare" href="<?php echo esc_url( $compare_url ); ?>">
           <i class="fa-solid fa-scale-balanced" aria-hidden="true"></i>Compare
         </a>
-        <?php if ( is_user_logged_in() ) : ?>
-        <button type="button" class="rtg-tp-tool<?php echo $rtg_tp_is_favorite ? ' is-favorite' : ''; ?>" id="rtgTpFav" aria-pressed="<?php echo $rtg_tp_is_favorite ? 'true' : 'false'; ?>">
-          <i class="<?php echo $rtg_tp_is_favorite ? 'fa-solid' : 'fa-regular'; ?> fa-heart" aria-hidden="true"></i><span><?php echo $rtg_tp_is_favorite ? 'Saved' : 'Save'; ?></span>
-        </button>
-        <?php else : ?>
-        <a class="rtg-tp-tool" id="rtgTpFav" href="<?php echo esc_url( $rtg_tp_login_url ); ?>" title="Log in to save tires">
-          <i class="fa-regular fa-heart" aria-hidden="true"></i><span>Save</span>
-        </a>
-        <?php endif; ?>
         <button type="button" class="rtg-tp-tool" id="rtgTpShare">
           <i class="fa-solid fa-share-nodes" aria-hidden="true"></i><span>Share</span>
         </button>

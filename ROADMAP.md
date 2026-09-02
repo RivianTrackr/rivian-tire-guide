@@ -1,6 +1,6 @@
 # Rivian Tire Guide — Roadmap
 
-**Current release:** 1.89.1 (DB schema v23)
+**Current release:** 1.90.0 (DB schema v23)
 **Updated:** 2026-09-01
 
 This is the one place open work is tracked. It replaces the four planning
@@ -48,7 +48,7 @@ Small, contained fixes. Each was verified still present at 1.87.0.
 | A11Y1 | Vehicle toggle is `role="radiogroup"` containing plain buttons with `aria-pressed`; should be `role="radio"` / `aria-checked` with arrow-key movement. | `frontend/templates/tire-guide.php`, `frontend/js/modules/filters.js` (`setActiveVehicle`) |
 | A11Y2 | Compare page section headers are click-only `<div>`s with an inline `onclick`: no button, no `tabindex`, no `aria-expanded`, and the inline handler breaks under a strict CSP. | `frontend/js/compare.js` (section header render) |
 | A11Y3 | Mobile filter drawer: no Escape-to-close and no focus return to the toggle button. | `frontend/js/rivian-tires.js` (drawer setup) |
-| A11Y4 | Toasts in the ratings module and on the tire-review page lack `role="status"` (the favorites toast does it right). | `frontend/js/modules/ratings.js`, `frontend/js/tire-review.js` |
+| A11Y4 | Toasts in the ratings module and on the tire-review page lack `role="status"` (the guide's other toasts don't either). | `frontend/js/modules/ratings.js`, `frontend/js/tire-review.js` |
 | A11Y5 | Tire-review page search dropdown lacks combobox semantics. | `frontend/js/tire-review.js` |
 | A11Y7 | The guest-review privacy note is not associated with the email field via `aria-describedby`. | `frontend/js/modules/ratings.js` (guest fields), `frontend/templates/tire-review.php` |
 | A11Y8 | Silent side effect: the four-tire compare cap silently un-checks the fifth box. (The vehicle→size cascade half shipped in 1.88.0 with F12.) | `frontend/js/modules/compare.js` |
@@ -67,7 +67,6 @@ F7, F8, F12 and F13; what is left is below.
 | F2 | **Efficiency delta vs stock.** Show "+0.18 mi/kWh vs OEM ≈ +14 mi range" instead of a bare mi/kWh pill. Inputs: `roamer_efficiency`, the OEM tag, the vehicle size map, pack kWh per model. The remembered vehicle (1.88.0) gives it a vehicle on first paint. | Translates the Roamer number into the thing owners care about: range. | `cards.js` (Roamer pill), `compare.js` Performance section, tire page |
 | F5 | **Price history, price-drop badge, price-drop alerts.** New `rtg_price_history` (tire_id, price, retailer, observed_at) written by `update_tire()` on a price change. Unlocks a sparkline on the tire page, "lowest in 90 days", a "price dropped" card badge, and a subscribe-to-drop email via `RTG_Mailer`. Depends on P1 hooks. | Price sync overwrites history in place today; every past price is destroyed. | `class-rtg-price-sync.php`, `class-rtg-database.php`, migration 24 |
 | F9 | **Review sorting and filtering** on the tire page: recent / highest / lowest / by vehicle. `get_tire_reviews` is hardcoded `ORDER BY updated_at DESC`. | The reviews drawer was removed and nothing replaced its browsing affordances. | `class-rtg-database.php`, `tire-page-content.php` |
-| F10 | **Guest favorites.** localStorage shortlist for logged-out visitors, merged into `rtg_favorites` on login. | The heart is hidden for guests and clicking redirects to login, dropping anonymous shoppers. | `tire-guide.php`, `favorites.js` |
 | F11 | **Live search on the guide.** Port the working typeahead from the tire-review page. | The review page already has it (`tire-review.js`); the guide is button/Enter-only. | `frontend/js/modules/search.js` |
 | F14 | **Adaptive UX leftovers from the 2.0 plan.** Live search preview (F11), saved and shareable searches, seasonal callouts using the existing category field. | — | — |
 
@@ -83,7 +82,7 @@ The 2.0 plan's Pillar 3, still entirely open. Listed in the order they compound.
 | R4 | **Review photos.** Moderated upload through the media library, thumbnail on the review, lightbox via `image-modal.js`. Video links (YouTube/Vimeo via `wp_oembed_get()`) fit the same column family. |
 | R5 | **Tire wear / mileage logging** for owned tires (depends on R1): periodic tread-depth entries, a wear chart, projected life vs the mileage warranty, anonymous aggregate "average owner gets X miles". |
 | R6 | **Community Q&A** on tire pages: questions, answers, upvotes, accepted answers, a moderation tab, email on new answers. |
-| R7 | **Public profile page** (`[rtg_user_profile]`): reviews, favorites, owned tires; link from review attribution. |
+| R7 | **Public profile page** (`[rtg_user_profile]`): reviews, owned tires; link from review attribution. |
 | R8 | **AI-assisted moderation** of the pending queue (spam/duplicate/toxicity scoring). Depends on P5. |
 
 ## 5. Admin and operator
@@ -117,12 +116,12 @@ The 2.0 plan's Pillar 3, still entirely open. Listed in the order they compound.
 | P1 | **Lifecycle hooks.** Zero `do_action()` in the plugin. Add `rtg_tire_created/updated/deleted`, `rtg_review_submitted/approved`, `rtg_price_changed`, `rtg_sync_complete`. Prerequisite for ADM2, F5 alerts, webhooks (B10), external logging. | Open since v1.51 |
 | P2 | **Keyed row objects.** Still positional arrays — 32 elements as of 1.89.0, which had to append three columns and teach three destructurings about them. Emit `{tire_id, brand, ...}` from `to_frontend_row()` and migrate `cards.js`, `filters.js`, `compare.js`, `ratings.js`. REST `/tires` leaks the array while `/tires/{id}` returns an object. | The single highest-leverage refactor; every new card feature above pays its tax |
 | P3 | **Sitemap for core / Yoast / Rank Math.** Only the AIOSEO filter is hooked; add `wp_sitemaps_add_provider` as the primary plus the Yoast and Rank Math filters. | `class-rtg-tire-page.php` |
-| P4 | **REST parity and new endpoints.** `/tires` supports 4 filters vs 9 on AJAX (same `build_filter_where_clause`). Add `search`, `vehicle`, `oem`, `price_max`, `warranty_min`; new `/suggest?q=`, `/compare?ids=`, `/sizes`, `/brands`, authenticated `/favorites` and `POST /reviews`. | `class-rtg-rest-api.php` |
+| P4 | **REST parity and new endpoints.** `/tires` supports 4 filters vs 9 on AJAX (same `build_filter_where_clause`). Add `search`, `vehicle`, `oem`, `price_max`, `warranty_min`; new `/suggest?q=`, `/compare?ids=`, `/sizes`, `/brands`, authenticated `POST /reviews`. | `class-rtg-rest-api.php` |
 | P5 | **AI Tire Advisor: build it or remove the panel.** No Claude/Anthropic code exists; `search_type='ai'` is queried but never written; the Analytics page still shows "AI Queries" and "Search vs AI Usage"; `uninstall.php` sweeps legacy `rtg_ai_*` options. Either ship it (`POST /rtg/v1/recommend`, structured picks grounded in the live catalog with a filter-engine fallback, `search_type='ai'` events, key via a `wp-config.php` constant, the existing rate limiter and transient cache) or drop the dead panels. | Decide before the next roadmap cycle |
 | P6 | **i18n.** Zero `__()` calls and no `load_plugin_textdomain()` despite the text-domain header. Large but mechanical; do it before more UI lands. | all PHP, `frontend/js` strings via `wp_localize_script` |
 | P7 | **Cache the uncached hot paths.** `get_filter_options` (4 DISTINCT + MAX per call), the `[rivian_tire_guide]` page lookup on every tire-page, guide, compare and admin-list render, the full-table load for the sitemap filter. A thin `RTG_Cache` wrapper with versioned keys makes these one-liners and gives an object-cache story. | `class-rtg-ajax.php`, `class-rtg-tire-page.php` (`guide_url`), `class-rtg-frontend.php` |
 | P8 | **Sync-job base class.** Six jobs hand-roll the same skeleton (enabled check, lock, stats option, cron-vs-manual notify, mailer). An `RTG_Sync_Job` base gives time budget, stats, and retry/backoff on CJ 429/5xx once; H3 and H5 fall out of it. | sync classes, `class-rtg-catalog-source-cj.php` |
-| P9 | **`RTG_Database` split.** ~2,500 lines, ~80 static methods; stopped growing but never split. Tires / slugs / ratings / wheels / analytics / favorites / efficiency are natural seams. | `class-rtg-database.php` |
+| P9 | **`RTG_Database` split.** ~2,500 lines, ~80 static methods; stopped growing but never split. Tires / slugs / ratings / wheels / analytics / efficiency are natural seams. | `class-rtg-database.php` |
 | P10 | **Observability.** One `error_log` line in the plugin. Add `do_action('rtg_log', $level, $msg, $ctx)` and a structured sync-run table (feeds ADM10). | `class-rtg-ajax.php` |
 | P11 | **Test coverage gaps.** No PHPUnit coverage for `RTG_REST_API`, `RTG_Candidates` (900+ lines), `RTG_Link_Checker`, `RTG_Mailer`, `RTG_Schema`, `RTG_Meta`, `RTG_Tire_Page` routing and 301s, `RTG_Compare`, `RTG_Health`; the admin AJAX endpoints (`candidate_bulk`, `roamer_assign`) and their capability/nonce rejection paths. | `tests/` |
 | P12 | **Down-migrations.** Forward-only; the m15→m16 episode was handled with a compensating forward migration. | `class-rtg-activator.php` |

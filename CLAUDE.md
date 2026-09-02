@@ -18,7 +18,7 @@ no component library. Icons via Font Awesome 6. Modern CSS features assumed
 | Border          | `#3a3e45` | Dividers, card edges           |
 | Accent          | `#fba919` | CTAs, links, focus rings, stars|
 | Secondary CTA   | `#7c3aed` | Alternate action (hover: `#6d28d9`) |
-| Destructive     | `#ef4444` | Delete, favorite active, error |
+| Destructive     | `#ef4444` | Delete, fitment warning, error |
 | Positive        | `#4ade80` | User-contributed highlights    |
 | Star empty      | `#2c2f34` | Unfilled rating slots          |
 | Placeholder     | `#a6a39c` | Input placeholder text         |

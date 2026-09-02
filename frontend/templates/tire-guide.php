@@ -17,14 +17,6 @@ if ( ! defined( 'ABSPATH' ) ) {
       <button class="rtg-clear-filters-btn" onclick="resetFilters()" type="button" aria-label="Clear all filters">
         <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Clear All
       </button>
-      <?php if ( is_user_logged_in() ) : ?>
-      <input type="checkbox" id="filterFavorites" class="rtg-fav-heart-input" aria-label="Filter to my favorites"/>
-      <label for="filterFavorites" class="rtg-fav-heart-btn" role="button" aria-label="Toggle favorites filter" title="Show only my favorites">
-        <i class="fa-regular fa-heart rtg-fav-heart-outline" aria-hidden="true"></i>
-        <i class="fa-solid fa-heart rtg-fav-heart-filled" aria-hidden="true"></i>
-        <span id="favoritesCount" class="rtg-fav-heart-badge" style="display: none;"></span>
-      </label>
-      <?php endif; ?>
     </div>
   </div>
   <div class="filter-body">

@@ -131,19 +131,13 @@ class RTG_Tire_Page {
         );
         $settings     = get_option( 'rtg_settings', array() );
         $review_count = RTG_Database::get_tire_review_count( $tire['tire_id'] );
-        $is_favorite  = is_user_logged_in()
-            && in_array( $tire['tire_id'], (array) RTG_Database::get_user_favorites( get_current_user_id() ), true );
 
         wp_localize_script( 'rtg-tire-page', 'rtgTirePage', array(
             'ajaxurl'        => admin_url( 'admin-ajax.php' ),
             'nonce'          => wp_create_nonce( 'rtg_analytics_nonce' ),
             'tireId'         => $tire['tire_id'],
-            // Favorites and the reviews feed share the rating nonce the
-            // guide uses for the same endpoints.
+            // The reviews feed checks the same rating nonce the guide uses.
             'ratingNonce'    => wp_create_nonce( 'tire_rating_nonce' ),
-            'isLoggedIn'     => is_user_logged_in(),
-            'loginUrl'       => wp_login_url( $canonical ),
-            'isFavorite'     => $is_favorite,
             'shareUrl'       => $canonical,
             'shareTitle'     => $heading,
             'reviewTotal'    => $review_count,

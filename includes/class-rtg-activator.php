@@ -53,7 +53,6 @@ class RTG_Activator {
         $tires_table         = $wpdb->prefix . 'rtg_tires';
         $ratings_table       = $wpdb->prefix . 'rtg_ratings';
         $wheels_table        = $wpdb->prefix . 'rtg_wheels';
-        $favorites_table     = $wpdb->prefix . 'rtg_favorites';
         $click_events_table  = $wpdb->prefix . 'rtg_click_events';
         $search_events_table = $wpdb->prefix . 'rtg_search_events';
         $candidates_table    = $wpdb->prefix . 'rtg_tire_candidates';
@@ -143,17 +142,6 @@ class RTG_Activator {
             KEY idx_tire_id (tire_id),
             KEY idx_guest_email (guest_email),
             KEY idx_review_status (review_status)
-        ) $charset_collate;
-
-        CREATE TABLE {$favorites_table} (
-            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            tire_id VARCHAR(50) NOT NULL,
-            user_id BIGINT(20) UNSIGNED NOT NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY  (id),
-            UNIQUE KEY user_tire_fav (user_id, tire_id),
-            KEY idx_user_id (user_id),
-            KEY idx_tire_id (tire_id)
         ) $charset_collate;
 
         CREATE TABLE {$click_events_table} (
@@ -324,11 +312,13 @@ class RTG_Activator {
     }
 
     /**
-     * Migration 7: Create favorites table for user tire wishlists.
-     * Table creation handled by dbDelta above; this marks the migration.
+     * Migration 7: once created the favorites table for user wishlists.
+     * The feature was removed in 1.90.0 and the table is no longer created;
+     * uninstall.php drops it on sites that still carry it. The slot stays so
+     * the numbered sequence is unbroken.
      */
     private static function migrate_7_create_favorites_table() {
-        // Table created by dbDelta above.
+        // No-op since 1.90.0.
     }
 
     /**

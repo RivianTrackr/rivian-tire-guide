@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.90.0] - 2026-09-02
+
+### Changed
+- **Compare and Share moved off the photo, into the title row.** Four translucent buttons in two corners of a dark tread photo were 55% black on black, and the OEM badge in the opposite corner split attention. The two actions most visitors see now sit right of the brand and model on card color, 32px on desktop and 40px on phones, and the photo carries only the OEM badge. The admin edit shortcut is gone from the card; the tire page keeps its edit bar.
+
+### Removed
+- **Favorites.** The heart on the card, the "my favorites" filter and its badge, the tire page's Save button, the three AJAX endpoints, the database helpers, and the `rtg_favorites` table creation. The feature wasn't used enough to earn its place on every card. Sites that already have the table keep it until uninstall, which drops it; migration 7 stays as a no-op so the numbered sequence is unbroken. Roadmap item F10 (guest favorites) goes with it.
+
 ## [1.89.1] - 2026-09-02
 
 ### Changed
