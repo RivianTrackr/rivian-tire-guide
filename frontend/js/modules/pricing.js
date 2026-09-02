@@ -14,6 +14,23 @@
 export const SET_QUANTITY = 4;
 
 /**
+ * Days before "as of" is worth saying. Every card carrying the same
+ * recent date was noise; the date earns its line once it's old enough
+ * to matter to the shopper.
+ */
+export const AS_OF_MIN_DAYS = 30;
+
+/**
+ * "$275" — a per-tire price to the dollar. The guide calls it an average,
+ * so cents were false precision, and "$442.4" was worse than either.
+ */
+export function formatWholePrice(price) {
+  const p = parseFloat(price);
+  if (!Number.isFinite(p) || p <= 0) return '';
+  return '$' + Math.round(p).toLocaleString('en-US');
+}
+
+/**
  * The price of a set, rounded to the dollar.
  *
  * @param {*} price Per-tire price.
@@ -79,7 +96,8 @@ export function formatAsOf(date, now = new Date()) {
  * @param {Object} tire       { priceSyncedAt, updatedAt } as MySQL strings.
  * @param {number} staleDays  Days without a touch before the price is stale.
  * @param {Date}   [now]
- * @return {{date: Date|null, label: string, stale: boolean}}
+ * @return {{date: Date|null, label: string, stale: boolean, ageDays: number, show: boolean}}
+ *         `show` is whether the label has earned its line (AS_OF_MIN_DAYS).
  */
 export function priceFreshness(tire, staleDays, now = new Date()) {
   const synced = parseMysqlDate(tire && tire.priceSyncedAt);
@@ -89,11 +107,18 @@ export function priceFreshness(tire, staleDays, now = new Date()) {
   if (synced && edited) date = synced >= edited ? synced : edited;
   else date = synced || edited;
 
-  if (!date) return { date: null, label: '', stale: false };
+  if (!date) return { date: null, label: '', stale: false, ageDays: 0, show: false };
 
   const days = parseInt(staleDays, 10);
   const ageMs = now.getTime() - date.getTime();
+  const ageDays = Math.floor(ageMs / 86400000);
   const stale = Number.isFinite(days) && days > 0 && ageMs > days * 86400000;
 
-  return { date, label: 'as of ' + formatAsOf(date, now), stale };
+  return {
+    date,
+    label: 'as of ' + formatAsOf(date, now),
+    stale,
+    ageDays,
+    show: stale || ageDays >= AS_OF_MIN_DAYS,
+  };
 }

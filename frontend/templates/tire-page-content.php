@@ -72,6 +72,7 @@ $guide_url   = RTG_Tire_Page::guide_url();
 $rtg_set     = get_option( 'rtg_settings', array() );
 $review_slug = sanitize_title( $rtg_set['tire_review_slug'] ?? 'tire-review' );
 $review_url  = add_query_arg( 'tire', rawurlencode( $tire_id ), home_url( '/' . $review_slug . '/' ) );
+$rtg_tp_retailer = RTG_Retailer::label( $tire );
 $compare_url = add_query_arg( 'compare', rawurlencode( $tire_id ), home_url( '/' . sanitize_title( $rtg_set['compare_slug'] ?? 'tire-compare' ) . '/' ) );
 $rtg_tp_is_favorite = is_user_logged_in()
     && in_array( $tire_id, (array) RTG_Database::get_user_favorites( get_current_user_id() ), true );
@@ -163,7 +164,7 @@ if ( $roamer_eff > 0 ) {
 }
 if ( $tire['price'] > 0 ) {
     $rtg_tp_price_note = '';
-    if ( ! empty( $rtg_tp_freshness['label'] ) ) {
+    if ( ! empty( $rtg_tp_freshness['show'] ) ) {
         $rtg_tp_price_note = $rtg_tp_freshness['label'] . ( $rtg_tp_freshness['stale'] ? ' · may be outdated' : '' );
     }
     $hero_stats[] = array(
@@ -564,7 +565,7 @@ $spec_groups = array(
 
       <div class="rtg-tp-ctas">
         <?php if ( $link ) : ?>
-        <a class="rtg-tp-cta rtg-tp-cta-primary" href="<?php echo esc_url( $link ); ?>" target="_blank" rel="nofollow sponsored noopener">View Tire&nbsp;<i class="fa-solid fa-up-right-from-square" aria-hidden="true" style="font-size:13px"></i></a>
+        <a class="rtg-tp-cta rtg-tp-cta-primary" href="<?php echo esc_url( $link ); ?>" target="_blank" rel="nofollow sponsored noopener"><?php echo $rtg_tp_retailer ? 'View at ' . esc_html( $rtg_tp_retailer ) : 'View Tire'; ?>&nbsp;<i class="fa-solid fa-up-right-from-square" aria-hidden="true" style="font-size:13px"></i></a>
         <?php endif; ?>
         <?php if ( $review_link_url ) : ?>
         <a class="rtg-tp-cta rtg-tp-cta-secondary rtg-tp-review-link" href="<?php echo esc_url( $review_link_url ); ?>" target="_blank" rel="noopener noreferrer">
