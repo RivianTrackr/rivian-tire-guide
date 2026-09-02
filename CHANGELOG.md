@@ -4,6 +4,19 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.91.0] - 2026-09-02
+
+The tire page as a product page.
+
+### Changed
+- **The model is the H1.** The brand stays in the eyebrow and the size becomes a chip beside the fitment pill, so "BFGoodrich" is no longer said twice and the title no longer reads like a database key. The page title, breadcrumb and JSON-LD keep the full "Brand Model (Size)".
+- **One "at a glance" sentence under the title**, generated from the row: "An all-terrain tire that fits the R2, around $275 per tire ($1,100 a set), returning 2.81 mi/kWh across 65 owner vehicles on Rivian Roamer." It is the line a search snippet or an AI answer quotes, and it saves reading four tiles.
+- **Four key-stat tiles, always four**: real-world efficiency (with the sample and the limited-data note), average price with the set, mileage warranty, and load index with the vehicle minimum. Weight moved down to the specs. A missing value is a muted "Not listed" rather than a missing tile.
+- **One CTA row**: View at the retailer, the official review when there is one, Compare (+), Share. Write a Review lives with the reviews, where it already was.
+- **A two-column body**: the specifications in one card with values in a fixed, left-aligned column (a label used to sit 600px from its value), and the related tires on the right as rows that carry efficiency and a "Fits R1/R2" chip, with a caption saying the similar list is sorted by efficiency.
+- **Reviews show their month.** The reviewer's vehicle and a sort control wait on F9.
+- **A buy bar on phones**: price and "View at …" pin to the bottom once the hero's CTA row scrolls away; hidden until then, and never above phone widths.
+
 ## [1.90.1] - 2026-09-02
 
 ### Changed
