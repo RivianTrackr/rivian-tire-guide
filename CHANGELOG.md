@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.91.2] - 2026-09-02
+
+### Fixed
+- **The tire page photo box now matches the info column's height.** 1.91.1 stretched the box, but the photo's own height was setting the row, so the box ran taller than the text and left dead space under the CTAs. The photo is positioned inside the box, so the info column alone decides the height.
+
+### Changed
+- **The passing fitment chip reads "Fits R2".** The load index tile already says "113, R2 minimum is 112"; the chip no longer repeats it. A failing fitment keeps the numbers, since there they are the warning.
+
 ## [1.91.1] - 2026-09-02
 
 ### Changed
