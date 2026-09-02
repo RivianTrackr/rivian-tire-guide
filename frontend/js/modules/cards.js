@@ -638,23 +638,31 @@ export function createSingleCard(row) {
     // of them (set price, "as of"), and a bare figure beside three lines
     // left the efficiency box mostly empty. The same facts still ride the
     // tooltip for anyone who opens it.
+    let lastMetaLine = null;
     extraParts.forEach(part => {
       const line = document.createElement('div');
       line.className = 'tire-card-stat-meta';
       line.textContent = part;
       roamerStat.appendChild(line);
+      lastMetaLine = line;
     });
 
     // A figure from one vehicle over a few hundred miles reads with the
     // same confidence as one from sixty over sixty thousand. Mute it and
-    // say so when the sample is thin.
+    // say so when the sample is thin — on the last sample line, so the box
+    // stays two lines tall like the price box beside it.
     if (isLimitedSample(roamerTotalKm ? parseFloat(roamerTotalKm) * 0.621371 : 0, veh)) {
       roamerStat.classList.add('is-limited');
-      const note = document.createElement('div');
-      note.className = 'tire-card-stat-meta tire-card-stat-limited';
-      note.textContent = 'Limited data';
+      if (!lastMetaLine) {
+        lastMetaLine = document.createElement('div');
+        lastMetaLine.className = 'tire-card-stat-meta';
+        roamerStat.appendChild(lastMetaLine);
+      }
+      const note = document.createElement('span');
+      note.className = 'tire-card-stat-limited';
+      note.textContent = (lastMetaLine.textContent ? ' · ' : '') + 'Limited data';
       note.title = 'Too few vehicles or miles behind this figure to rely on it yet.';
-      roamerStat.appendChild(note);
+      lastMetaLine.appendChild(note);
       roamerInfoBtn.dataset.tooltipExtra = (roamerInfoBtn.dataset.tooltipExtra ? roamerInfoBtn.dataset.tooltipExtra + ' · ' : '') + 'limited data so far';
     }
 
