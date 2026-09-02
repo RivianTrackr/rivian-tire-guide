@@ -92,12 +92,23 @@ class Test_RTG_Stale_Prices extends WP_UnitTestCase {
         $this->assertSame( strtotime( $this->ago( 3 ) ), $fresh['touched'] );
         $this->assertSame( 'as of ' . date_i18n( 'M j', strtotime( $this->ago( 3 ) ) ), $fresh['label'] );
         $this->assertFalse( $fresh['stale'] );
+        $this->assertSame( 3, $fresh['age_days'] );
+        $this->assertFalse( $fresh['show'], 'three days old has not earned its line' );
+    }
+
+    public function test_freshness_shows_the_date_once_it_is_old_enough() {
+        $fresh = RTG_Stale_Prices::freshness( $this->tire( array( 'updated_at' => $this->ago( 45 ) ) ), $this->now, 90 );
+
+        $this->assertTrue( $fresh['show'] );
+        $this->assertFalse( $fresh['stale'] );
+        $this->assertSame( 45, $fresh['age_days'] );
     }
 
     public function test_freshness_marks_a_price_past_the_threshold() {
         $fresh = RTG_Stale_Prices::freshness( $this->tire( array( 'updated_at' => $this->ago( 120 ) ) ), $this->now, 90 );
 
         $this->assertTrue( $fresh['stale'] );
+        $this->assertTrue( $fresh['show'] );
         $this->assertStringStartsWith( 'as of ', $fresh['label'] );
     }
 
@@ -110,7 +121,7 @@ class Test_RTG_Stale_Prices extends WP_UnitTestCase {
 
     public function test_freshness_says_nothing_when_nothing_is_known() {
         $this->assertSame(
-            array( 'touched' => 0, 'label' => '', 'stale' => false ),
+            array( 'touched' => 0, 'label' => '', 'stale' => false, 'age_days' => 0, 'show' => false ),
             RTG_Stale_Prices::freshness( $this->tire(), $this->now )
         );
     }

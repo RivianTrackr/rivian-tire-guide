@@ -26,6 +26,14 @@ class RTG_Stale_Prices {
     const DEFAULT_STALE_DAYS = 90;
 
     /**
+     * Days before the shopper-facing "as of" date is worth showing. Every
+     * card carrying the same recent date was noise; the date earns its
+     * line once it's old enough to matter. Mirrors AS_OF_MIN_DAYS in
+     * frontend/js/modules/pricing.js.
+     */
+    const AS_OF_MIN_DAYS = 30;
+
+    /**
      * Schedule the monthly report if it isn't already scheduled.
      */
     public static function schedule() {
@@ -78,22 +86,28 @@ class RTG_Stale_Prices {
      * @param array $tire       Guide tire row.
      * @param int   $now        Unix time.
      * @param int   $stale_days Days without a touch before the price is stale.
-     * @return array ['touched' => int, 'label' => string, 'stale' => bool]
-     *               The label is "as of Aug 28" (with the year when it isn't
-     *               this one) or '' when nothing is known.
+     * @return array ['touched' => int, 'label' => string, 'stale' => bool,
+     *               'age_days' => int, 'show' => bool]. The label is "as of
+     *               Aug 28" (with the year when it isn't this one) or ''
+     *               when nothing is known; 'show' is whether it has earned
+     *               its line (AS_OF_MIN_DAYS, or stale).
      */
     public static function freshness( $tire, $now, $stale_days = self::DEFAULT_STALE_DAYS ) {
         $touched = self::last_price_touch( $tire );
         if ( $touched <= 0 ) {
-            return array( 'touched' => 0, 'label' => '', 'stale' => false );
+            return array( 'touched' => 0, 'label' => '', 'stale' => false, 'age_days' => 0, 'show' => false );
         }
 
-        $format = gmdate( 'Y', $touched ) === gmdate( 'Y', $now ) ? 'M j' : 'M j, Y';
+        $format   = gmdate( 'Y', $touched ) === gmdate( 'Y', $now ) ? 'M j' : 'M j, Y';
+        $age_days = (int) floor( max( 0, $now - $touched ) / DAY_IN_SECONDS );
+        $stale    = $stale_days > 0 && $touched < ( $now - ( $stale_days * DAY_IN_SECONDS ) );
 
         return array(
-            'touched' => $touched,
-            'label'   => 'as of ' . date_i18n( $format, $touched ),
-            'stale'   => $stale_days > 0 && $touched < ( $now - ( $stale_days * DAY_IN_SECONDS ) ),
+            'touched'  => $touched,
+            'label'    => 'as of ' . date_i18n( $format, $touched ),
+            'stale'    => $stale,
+            'age_days' => $age_days,
+            'show'     => $stale || $age_days >= self::AS_OF_MIN_DAYS,
         );
     }
 

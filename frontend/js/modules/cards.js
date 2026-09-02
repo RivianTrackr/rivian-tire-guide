@@ -13,7 +13,14 @@ import { toggleFavorite } from './favorites.js';
 import { setupCompareCheckboxes } from './compare.js';
 import { openImageModal } from './image-modal.js';
 import { fitmentShortfalls, describeShortfalls } from './fitment.js';
-import { formatSetPrice, priceFreshness, SET_QUANTITY } from './pricing.js';
+import { formatSetPrice, formatWholePrice, priceFreshness, SET_QUANTITY } from './pricing.js';
+import { isLimitedSample } from './efficiency.js';
+
+/**
+ * Stored tags that mean nothing to a shopper and never render as chips.
+ * "oem" is the corner badge; "riv" is an internal marker.
+ */
+const HIDDEN_TAGS = new Set(['oem', 'riv']);
 
 // IntersectionObserver for enhanced lazy loading with fade-in
 let imageObserver = null;
@@ -284,7 +291,7 @@ export function createSingleCard(row) {
     tread, loadIndex, maxLoad, loadRange, speed, psi, utqg, tags, link, image,
     /* efficiencyScore */ , /* efficiencyGrade */ , reviewLink, /* createdAt */ ,
     roamerEfficiency, roamerTotalKm, roamerVehicleCount, roamerVehicleBreakdown, slug,
-    priceSyncedAt, updatedAt
+    priceSyncedAt, updatedAt, retailer
   ] = row;
 
   if (!VALIDATION_PATTERNS.tireId.test(tireId)) {
@@ -350,6 +357,8 @@ export function createSingleCard(row) {
 
   const compareIcon = document.createElement('span');
   compareIcon.className = 'compare-overlay-icon';
+  compareIcon.innerHTML = rtgIcon('scale-balanced', 13);
+  compareOverlay.title = 'Add to comparison';
 
   compareOverlay.appendChild(compareCheckbox);
   compareOverlay.appendChild(compareIcon);
@@ -516,7 +525,7 @@ export function createSingleCard(row) {
 
     if (priceNum > 0) {
       const priceNumEl = document.createElement('span');
-      priceNumEl.textContent = `$${priceNum}`;
+      priceNumEl.textContent = formatWholePrice(priceNum);
       const priceUnit = document.createElement('span');
       priceUnit.className = 'tire-card-stat-unit';
       priceUnit.textContent = 'ea';
@@ -534,7 +543,7 @@ export function createSingleCard(row) {
       // enough ago that it may no longer be what the retailer charges.
       const staleDays = (typeof rtgData !== 'undefined' && rtgData.settings) ? rtgData.settings.stalePriceDays : 0;
       const fresh = priceFreshness({ priceSyncedAt, updatedAt }, staleDays);
-      if (fresh.label) {
+      if (fresh.show) {
         const asOf = document.createElement('div');
         asOf.className = 'tire-card-stat-meta tire-card-price-asof' + (fresh.stale ? ' is-stale' : '');
         asOf.textContent = fresh.stale ? `${fresh.label} · may be outdated` : fresh.label;
@@ -636,6 +645,19 @@ export function createSingleCard(row) {
       roamerStat.appendChild(line);
     });
 
+    // A figure from one vehicle over a few hundred miles reads with the
+    // same confidence as one from sixty over sixty thousand. Mute it and
+    // say so when the sample is thin.
+    if (isLimitedSample(roamerTotalKm ? parseFloat(roamerTotalKm) * 0.621371 : 0, veh)) {
+      roamerStat.classList.add('is-limited');
+      const note = document.createElement('div');
+      note.className = 'tire-card-stat-meta tire-card-stat-limited';
+      note.textContent = 'Limited data';
+      note.title = 'Too few vehicles or miles behind this figure to rely on it yet.';
+      roamerStat.appendChild(note);
+      roamerInfoBtn.dataset.tooltipExtra = (roamerInfoBtn.dataset.tooltipExtra ? roamerInfoBtn.dataset.tooltipExtra + ' · ' : '') + 'limited data so far';
+    }
+
     statsRow.appendChild(roamerStat);
   }
 
@@ -664,11 +686,12 @@ export function createSingleCard(row) {
   // number instead, or missing data renders as "0 miles" / "0 lb".
   const warrantyNum = Number(validateNumeric(warranty, NUMERIC_BOUNDS.warranty, 0));
   const weightNum = Number(validateNumeric(weight, NUMERIC_BOUNDS.weight, 0));
+  // 3PMS left the rows for the chips: a boolean that mostly read "No" was
+  // spending a full row, and the tire page already shows it as a chip.
   const specs = [
     ['Size', `${safeString(size)} (${safeString(diameter)}${safeString(diameter) && !safeString(diameter).includes('"') ? '"' : ''})`],
-    ['Mileage Warranty', warrantyNum > 0 ? `${warrantyNum.toLocaleString()} miles` : '-'],
-    ['Weight', weightNum > 0 ? `${weightNum} lb` : '-'],
-    ['3PMS Rated', safeString(tpms)]
+    ['Mileage Warranty', warrantyNum > 0 ? `${warrantyNum.toLocaleString()} miles` : 'Not listed'],
+    ['Weight', weightNum > 0 ? `${weightNum} lb` : 'Not listed']
   ];
 
   specs.forEach(([label, value]) => {
@@ -697,24 +720,46 @@ export function createSingleCard(row) {
 
   bodyEl.appendChild(specsContainer);
 
-  // Chips — category + tags (matches the tire page's chip treatment).
-  // 'OEM' is excluded: the corner badge already covers it.
-  const chipValues = [];
+  // Chips — which Rivian it fits, category, 3PMS, tags (matches the tire
+  // page's chip treatment). Each chip is { text, cls, icon }.
+  const chips = [];
+
+  // Which Rivian takes this size: in the "All" view nothing else says so.
+  const sizeKey = safeString(size).trim().toLowerCase();
+  const sizeMap = (state.vehicleSizeMap && Object.keys(state.vehicleSizeMap).length)
+    ? state.vehicleSizeMap
+    : ((typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.vehicleSizeMap) || {});
+  Object.keys(sizeMap).sort().forEach(vehicle => {
+    const sizes = Array.isArray(sizeMap[vehicle]) ? sizeMap[vehicle] : [];
+    if (sizes.some(v => String(v).trim().toLowerCase() === sizeKey)) {
+      chips.push({ text: `Fits ${vehicle}`, cls: 'tire-card-chip-vehicle', icon: 'car' });
+    }
+  });
+
   if (safeString(category).trim()) {
-    chipValues.push(safeString(category).trim());
+    chips.push({ text: safeString(category).trim(), cls: '' });
+  }
+  if (safeString(tpms).toLowerCase().includes('yes')) {
+    chips.push({ text: '3PMS Rated', cls: 'tire-card-chip-3pms', icon: 'snowflake' });
   }
   if (tags && safeString(tags).trim()) {
     safeString(tags).split(/[,|]/).map(tag => tag.trim())
-      .filter(tag => tag && tag.toLowerCase() !== 'oem')
-      .forEach(tag => chipValues.push(safeString(tag, 30)));
+      .filter(tag => tag && !HIDDEN_TAGS.has(tag.toLowerCase()))
+      .forEach(tag => chips.push({ text: safeString(tag, 30), cls: '' }));
   }
-  if (chipValues.length > 0) {
+  if (chips.length > 0) {
     const chipsRow = document.createElement('div');
     chipsRow.className = 'tire-card-chips';
-    chipValues.forEach(value => {
+    chips.forEach(chip => {
       const chipEl = document.createElement('span');
-      chipEl.className = 'tire-card-chip';
-      chipEl.textContent = value;
+      chipEl.className = 'tire-card-chip' + (chip.cls ? ' ' + chip.cls : '');
+      if (chip.icon) {
+        const iconEl = document.createElement('span');
+        iconEl.className = 'tire-card-chip-icon';
+        iconEl.innerHTML = rtgIcon(chip.icon, 10);
+        chipEl.appendChild(iconEl);
+      }
+      chipEl.appendChild(document.createTextNode(chip.text));
       chipsRow.appendChild(chipEl);
     });
     bodyEl.appendChild(chipsRow);
@@ -731,7 +776,11 @@ export function createSingleCard(row) {
     viewButton.target = '_blank';
     viewButton.rel = 'noopener noreferrer';
     viewButton.className = 'tire-card-cta tire-card-cta-primary';
-    viewButton.innerHTML = 'View Tire&nbsp;' + rtgIcon('arrow-up-right', 14);
+    // "View at Tire Rack": say where the click goes. The label is resolved
+    // server-side (RTG_Retailer) and rides the row at index 31.
+    const retailerName = safeString(retailer, 40);
+    viewButton.textContent = retailerName ? `View at ${retailerName}` : 'View Tire';
+    viewButton.insertAdjacentHTML('beforeend', '&nbsp;' + rtgIcon('arrow-up-right', 14));
     actionsContainer.appendChild(viewButton);
   } else {
     const comingSoon = document.createElement('span');

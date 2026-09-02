@@ -4,6 +4,28 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.89.0] - 2026-09-02
+
+A pass over what the guide card says, from a look at three of them side by side.
+
+### Added
+- **Which Rivian it fits.** "Fits R1" / "Fits R2" chips lead the chip row, derived from the stock-wheel size map already on the page, so the "All" view says which vehicle a card is for.
+- **The retailer on the button.** "View at Tire Rack" instead of "View Tire". A synced price names its advertiser; a manual link names its host, following one hop into an affiliate tracking link for the destination. New `RTG_Retailer`, resolved server-side and carried at index 31 of the frontend row, so the card, the compare page and the tire page share one hostname map.
+- **A small-sample hint on efficiency.** Under three vehicles or 2,000 tracked miles the mi/kWh figure is muted and a "Limited data" line sits under it; the tooltip says so too. A number from one vehicle over 756 miles no longer reads with the confidence of one from 64 vehicles over 68,000.
+- **A scale icon on the compare box.** It was a bare grey square next to the heart with no hint of what it did.
+
+### Changed
+- **Prices are whole dollars on the card and the compare page.** The card printed the raw value, so one tire read "$442.4" beside two with cents. The guide calls the figure an average, so "$442" is the honest precision, matching the tire page hero.
+- **"as of" only when it matters.** Every card carried the same recent date after a bulk edit, which was noise. The date now appears once the price is 30 days old (or stale), while the "may be outdated" warning still fires at the 90-day threshold.
+- **3PMS moved from a spec row to a chip.** A boolean that mostly read "No" was spending a full row; it's now a snowflake chip that appears only when the tire is rated, as on the tire page.
+- **Mileage Warranty reads "Not listed" when empty** instead of a dash that could mean "none".
+
+### Removed
+- **The "RIV" chip.** An internal tag that meant nothing to a shopper, hidden on the card and the compare page.
+
+### Tests
+- `RTG_Retailer` (advertiser name, host and subdomain match, the affiliate one-hop, unknown hosts), the "as of" gating in `freshness()`, the 32-column row with its retailer label, whole-dollar formatting and the `show` flag in the pricing module, and the sample-size judgement (`tests/test-efficiency.mjs`).
+
 ## [1.88.2] - 2026-09-01
 
 ### Changed

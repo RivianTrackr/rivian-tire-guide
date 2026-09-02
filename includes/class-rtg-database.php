@@ -285,13 +285,15 @@ class RTG_Database {
      * Convert one tire row (associative) into the numerically-indexed frontend
      * row format. Single source of truth: every producer of frontend rows must
      * use this so the column layout can't drift between code paths — the JS
-     * reads fixed indexes up to row[30] (updated_at).
+     * reads fixed indexes up to row[31] (retailer label).
      *
      * Indexes 29 and 30 (price_synced_at, updated_at) feed the "price as of"
-     * hint; the later of the two is when the price was last touched.
+     * hint; the later of the two is when the price was last touched. Index
+     * 31 is the retailer's display name for the "View at …" button, resolved
+     * here so the one hostname map lives in PHP.
      *
      * @param array $tire Tire row as associative array.
-     * @return array Numerically-indexed frontend row (31 elements).
+     * @return array Numerically-indexed frontend row (32 elements).
      */
     public static function to_frontend_row( $tire ) {
         return array(
@@ -326,6 +328,7 @@ class RTG_Database {
             (string) ( $tire['slug'] ?? '' ),
             (string) ( $tire['price_synced_at'] ?? '' ),
             (string) ( $tire['updated_at'] ?? '' ),
+            RTG_Retailer::label( $tire ),
         );
     }
 

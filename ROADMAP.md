@@ -1,6 +1,6 @@
 # Rivian Tire Guide — Roadmap
 
-**Current release:** 1.88.2 (DB schema v23)
+**Current release:** 1.89.0 (DB schema v23)
 **Updated:** 2026-09-01
 
 This is the one place open work is tracked. It replaces the four planning
@@ -59,7 +59,7 @@ Small, contained fixes. Each was verified still present at 1.87.0.
 These turn data the plugin already stores into a decision on the card. They
 are what moves the guide from "a catalog you browse" to "an advisor that
 guides you", the through-line of the 2.0 plan. Each is small because the
-inputs already exist in the 31-column row. 1.88.0 shipped F1, F3, F4, F6,
+inputs already exist in the 32-column row. 1.88.0 shipped F1, F3, F4, F6,
 F7, F8, F12 and F13; what is left is below.
 
 | ID | Feature | Why it matters | Where it plugs in |
@@ -115,7 +115,7 @@ The 2.0 plan's Pillar 3, still entirely open. Listed in the order they compound.
 | ID | Item | Status / rationale |
 |----|------|--------------------|
 | P1 | **Lifecycle hooks.** Zero `do_action()` in the plugin. Add `rtg_tire_created/updated/deleted`, `rtg_review_submitted/approved`, `rtg_price_changed`, `rtg_sync_complete`. Prerequisite for ADM2, F5 alerts, webhooks (B10), external logging. | Open since v1.51 |
-| P2 | **Keyed row objects.** Still positional arrays — 31 elements as of 1.88.0, which had to append two timestamp columns and teach three destructurings about them. Emit `{tire_id, brand, ...}` from `to_frontend_row()` and migrate `cards.js`, `filters.js`, `compare.js`, `ratings.js`. REST `/tires` leaks the array while `/tires/{id}` returns an object. | The single highest-leverage refactor; every new card feature above pays its tax |
+| P2 | **Keyed row objects.** Still positional arrays — 32 elements as of 1.89.0, which had to append three columns and teach three destructurings about them. Emit `{tire_id, brand, ...}` from `to_frontend_row()` and migrate `cards.js`, `filters.js`, `compare.js`, `ratings.js`. REST `/tires` leaks the array while `/tires/{id}` returns an object. | The single highest-leverage refactor; every new card feature above pays its tax |
 | P3 | **Sitemap for core / Yoast / Rank Math.** Only the AIOSEO filter is hooked; add `wp_sitemaps_add_provider` as the primary plus the Yoast and Rank Math filters. | `class-rtg-tire-page.php` |
 | P4 | **REST parity and new endpoints.** `/tires` supports 4 filters vs 9 on AJAX (same `build_filter_where_clause`). Add `search`, `vehicle`, `oem`, `price_max`, `warranty_min`; new `/suggest?q=`, `/compare?ids=`, `/sizes`, `/brands`, authenticated `/favorites` and `POST /reviews`. | `class-rtg-rest-api.php` |
 | P5 | **AI Tire Advisor: build it or remove the panel.** No Claude/Anthropic code exists; `search_type='ai'` is queried but never written; the Analytics page still shows "AI Queries" and "Search vs AI Usage"; `uninstall.php` sweeps legacy `rtg_ai_*` options. Either ship it (`POST /rtg/v1/recommend`, structured picks grounded in the live catalog with a filter-engine fallback, `search_type='ai'` events, key via a `wp-config.php` constant, the existing rate limiter and transient cache) or drop the dead panels. | Decide before the next roadmap cycle |

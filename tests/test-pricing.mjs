@@ -5,7 +5,7 @@
  * Run with:  node tests/test-pricing.mjs
  */
 import assert from 'node:assert/strict';
-import { setPrice, formatSetPrice, parseMysqlDate, formatAsOf, priceFreshness, SET_QUANTITY } from '../frontend/js/modules/pricing.js';
+import { setPrice, formatSetPrice, formatWholePrice, parseMysqlDate, formatAsOf, priceFreshness, SET_QUANTITY, AS_OF_MIN_DAYS } from '../frontend/js/modules/pricing.js';
 
 let failures = 0;
 function test(name, fn) {
@@ -32,6 +32,17 @@ test('no price, no set', () => {
   assert.equal(formatSetPrice('abc'), '');
 });
 test('formats with thousands separators', () => assert.equal(formatSetPrice('289'), '$1,156'));
+
+console.log('formatWholePrice');
+test('rounds to the dollar', () => {
+  assert.equal(formatWholePrice('442.4'), '$442');
+  assert.equal(formatWholePrice(274.99), '$275');
+  assert.equal(formatWholePrice('1234.5'), '$1,235');
+});
+test('no price, no text', () => {
+  assert.equal(formatWholePrice(''), '');
+  assert.equal(formatWholePrice(0), '');
+});
 
 console.log('parseMysqlDate');
 test('reads the calendar date of a MySQL datetime', () => {
@@ -62,6 +73,14 @@ test('a synced price is fresh within the threshold', () => {
   const f = priceFreshness({ priceSyncedAt: '2026-08-28 03:00:00', updatedAt: '2026-06-01 00:00:00' }, 90, now);
   assert.equal(f.label, 'as of Aug 28');
   assert.equal(f.stale, false);
+  assert.equal(f.ageDays, 4);
+  assert.equal(f.show, false, 'four days old has not earned its line');
+});
+test('the date shows once it is old enough, before it is stale', () => {
+  assert.equal(AS_OF_MIN_DAYS, 30);
+  const f = priceFreshness({ updatedAt: '2026-07-15 00:00:00' }, 90, now);
+  assert.equal(f.show, true);
+  assert.equal(f.stale, false);
 });
 test('a manual tire falls back to updated_at', () => {
   const f = priceFreshness({ priceSyncedAt: '', updatedAt: '2026-07-04 10:00:00' }, 90, now);
@@ -75,6 +94,7 @@ test('the later of the two timestamps wins', () => {
 test('older than the threshold is stale', () => {
   const f = priceFreshness({ priceSyncedAt: '', updatedAt: '2026-05-12 00:00:00' }, 90, now);
   assert.equal(f.stale, true);
+  assert.equal(f.show, true);
   assert.equal(f.label, 'as of May 12');
 });
 test('a threshold of zero never marks stale', () => {
@@ -84,6 +104,7 @@ test('nothing known, nothing said', () => {
   const f = priceFreshness({ priceSyncedAt: '', updatedAt: '' }, 90, now);
   assert.equal(f.label, '');
   assert.equal(f.stale, false);
+  assert.equal(f.show, false);
   assert.equal(f.date, null);
 });
 test('tolerates a missing tire', () => assert.equal(priceFreshness(null, 90, now).label, ''));

@@ -911,6 +911,7 @@
 .tire-card-chip {
   display: inline-flex;
   align-items: center;
+  gap: 5px;
   font-size: 11px;
   font-weight: 600;
   line-height: 1;
@@ -920,6 +921,28 @@
   background: color-mix(in srgb, var(--rtg-accent) 12%, var(--rtg-bg-deep));
   border: 1px solid color-mix(in srgb, var(--rtg-accent) 25%, transparent);
   white-space: nowrap;
+}
+
+.tire-card-chip-icon {
+  display: inline-flex;
+  line-height: 1;
+}
+/* Which Rivian it fits: the first chip, and the one that reads first. */
+.tire-card-chip-vehicle {
+  background: color-mix(in srgb, var(--rtg-accent) 22%, var(--rtg-bg-deep));
+  border-color: color-mix(in srgb, var(--rtg-accent) 55%, transparent);
+  color: var(--rtg-text-heading);
+}
+.tire-card-chip-vehicle .tire-card-chip-icon {
+  color: var(--rtg-accent);
+}
+/* 3PMS: snow service, in the winter blue the info tone already uses. */
+.tire-card-chip-3pms {
+  background: color-mix(in srgb, #60a5fa 14%, var(--rtg-bg-deep));
+  border-color: color-mix(in srgb, #60a5fa 40%, transparent);
+}
+.tire-card-chip-3pms .tire-card-chip-icon {
+  color: #60a5fa;
 }
 
 /* Key stats row — price + real-world efficiency (matches tire-page hero stats) */
@@ -963,6 +986,14 @@
 }
 .tire-card-stat-roamer .tire-card-stat-value {
   color: #60a5fa;
+}
+/* A thin sample: the figure steps back, and a line says why. */
+.tire-card-stat-roamer.is-limited .tire-card-stat-value {
+  color: color-mix(in srgb, #60a5fa 55%, var(--rtg-text-muted));
+}
+.tire-card-stat-limited {
+  color: #f0b429;
+  font-weight: 600;
 }
 .tire-card-stat-empty .tire-card-stat-value {
   color: var(--rtg-text-muted);
@@ -1187,18 +1218,17 @@
   border-color: var(--rtg-accent);
   background: rgba(13, 15, 19, 0.75);
 }
-/* Checkmark when selected */
+/* A scale icon says what the box does; a bare square said nothing. */
+.compare-overlay-icon {
+  color: #fff;
+}
+.compare-overlay-icon i {
+  line-height: 1;
+}
 .compare-checkbox:checked + .compare-overlay-icon {
   background: var(--rtg-accent);
   border-color: var(--rtg-accent);
-}
-.compare-checkbox:checked + .compare-overlay-icon::after {
-  content: '';
-  width: 6px;
-  height: 12px;
-  border: solid #15130e;
-  border-width: 0 2.5px 2.5px 0;
-  transform: rotate(45deg) translate(-1px, -1px);
+  color: #15130e;
 }
 /* When card has no image, position relative to card */
 .tire-card > .tire-card-compare-overlay {

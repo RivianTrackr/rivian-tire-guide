@@ -8,7 +8,7 @@
    ===================================================================== */
 
 import { fitmentShortfalls, describeShortfalls, parseLoadIndex } from './modules/fitment.js';
-import { formatSetPrice, priceFreshness, SET_QUANTITY } from './modules/pricing.js';
+import { formatSetPrice, formatWholePrice, priceFreshness, SET_QUANTITY } from './modules/pricing.js';
 import { rememberedVehicle } from './modules/vehicle-memory.js';
 
 const MAX_COMPARE = 4;
@@ -70,8 +70,7 @@ function setCompareTokens(tokens) {
 }
 
 function fmtPrice(v) {
-  const n = parseFloat(v);
-  return isNaN(n) ? "-" : "$" + n.toFixed(2);
+  return formatWholePrice(v) || "-";
 }
 
 function fmtWeight(v) {
@@ -97,8 +96,11 @@ const COL = {
   psi: 15, utqg: 16, tags: 17, link: 18, image: 19,
   effScore: 20, effGrade: 21, reviewLink: 22, createdAt: 23,
   roamerEfficiency: 24, roamerTotalKm: 25, roamerVehicleCount: 26, roamerVehicleBreakdown: 27,
-  slug: 28, priceSyncedAt: 29, updatedAt: 30
+  slug: 28, priceSyncedAt: 29, updatedAt: 30, retailer: 31
 };
+
+/** Stored tags that mean nothing to a shopper. */
+const HIDDEN_TAGS = new Set(['riv']);
 
 /** Canonical tire page URL for a row, or '' when the slug or base is missing. */
 function tirePageUrl(tire) {
@@ -130,7 +132,7 @@ function findBestValues(tires) {
 // --- Build tag HTML ---
 function renderTags(tagStr) {
   if (!tagStr || tagStr === "-") return "-";
-  const tags = tagStr.split(/[,|]/).map(t => t.trim()).filter(Boolean);
+  const tags = tagStr.split(/[,|]/).map(t => t.trim()).filter(t => t && !HIDDEN_TAGS.has(t.toLowerCase()));
   if (!tags.length) return "-";
   return rawHTML(`<div class="cmp-tags">${tags.map(tag => {
     const lower = tag.toLowerCase();
@@ -150,8 +152,9 @@ function renderCTAs(tire) {
   if (!link && !review && !page) return "-";
   let html = '<div class="cmp-cta-wrap">';
   if (link) {
+    const retailer = typeof tire[COL.retailer] === 'string' ? tire[COL.retailer].trim() : '';
     html += `<a href="${escapeHTML(link)}" target="_blank" rel="noopener noreferrer" class="cmp-cta cmp-cta-primary">
-      View Tire ${rtgIcon('arrow-up-right', 14)}</a>`;
+      ${retailer ? 'View at ' + escapeHTML(retailer) : 'View Tire'} ${rtgIcon('arrow-up-right', 14)}</a>`;
   }
   if (review) {
     let isVideo = false;
@@ -195,7 +198,7 @@ function renderPrice(tire) {
 
   let html = escapeHTML(fmtPrice(n)) + ' <span class="cmp-price-unit">ea</span>';
   html += `<br><span class="cmp-meta">${escapeHTML(formatSetPrice(n))} / set of ${SET_QUANTITY}</span>`;
-  if (fresh.label) {
+  if (fresh.show) {
     html += `<br><span class="cmp-meta cmp-price-asof${fresh.stale ? ' is-stale' : ''}">${escapeHTML(fresh.label)}${fresh.stale ? ' · may be outdated' : ''}</span>`;
   }
   return rawHTML(html, n);
