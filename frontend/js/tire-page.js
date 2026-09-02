@@ -162,6 +162,27 @@ var RTG_TP_TOOLTIPS = {
 (function () {
   var cfg = window.rtgTirePage || {};
 
+  // --- Phone buy bar --------------------------------------------------------
+  // Pinned to the bottom once the hero's CTA row has scrolled out of view,
+  // so the price and the retailer link are one thumb away anywhere on the
+  // page. CSS keeps it hidden above phone widths regardless.
+  var buyBar = document.getElementById('rtgTpBuyBar');
+  var ctaRow = document.querySelector('.rtg-tp-ctas');
+  if (buyBar && ctaRow && 'IntersectionObserver' in window) {
+    var buyLink = buyBar.querySelector('a');
+    var setBar = function (show) {
+      buyBar.classList.toggle('is-visible', show);
+      buyBar.setAttribute('aria-hidden', show ? 'false' : 'true');
+      if (buyLink) buyLink.setAttribute('tabindex', show ? '0' : '-1');
+    };
+    new IntersectionObserver(function (entries) {
+      var entry = entries[0];
+      // Show only once the CTA row is above the viewport, not while the
+      // visitor is still above it (the breadcrumb, the photo).
+      setBar(!entry.isIntersecting && entry.boundingClientRect.top < 0);
+    }, { threshold: 0 }).observe(ctaRow);
+  }
+
   // --- Share ----------------------------------------------------------------
   var shareBtn = document.getElementById('rtgTpShare');
   if (shareBtn) {
