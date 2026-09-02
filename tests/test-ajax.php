@@ -8,7 +8,6 @@
  * - delete_tire_rating: own rating deletion, no rating to delete
  * - get_tire_reviews: pagination, invalid tire ID
  * - get_tires: server-side filtered listing
- * - favorites: add, get, remove cycle
  */
 class Test_RTG_Ajax extends WP_Ajax_UnitTestCase {
 
@@ -336,63 +335,6 @@ class Test_RTG_Ajax extends WP_Ajax_UnitTestCase {
     }
 
     // -------------------------------------------------------
-    // Favorites: add, get, remove cycle
-    // -------------------------------------------------------
-
-    public function test_favorites_add_get_remove_cycle() {
-        $user_id = $this->factory()->user->create( array( 'role' => 'subscriber' ) );
-        wp_set_current_user( $user_id );
-
-        $tire_id = 'fav-ajax-001';
-        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => $tire_id ) ) );
-
-        // Add favorite.
-        $_POST['nonce']   = wp_create_nonce( 'tire_rating_nonce' );
-        $_POST['tire_id'] = $tire_id;
-
-        try {
-            $this->_handleAjax( 'rtg_add_favorite' );
-        } catch ( WPAjaxDieContinueException $e ) {
-            // Expected.
-        }
-
-        $response = json_decode( $this->_last_response, true );
-        $this->assertTrue( $response['success'] );
-
-        // Get favorites.
-        $this->_last_response = '';
-        $_POST['nonce'] = wp_create_nonce( 'tire_rating_nonce' );
-
-        try {
-            $this->_handleAjax( 'rtg_get_favorites' );
-        } catch ( WPAjaxDieContinueException $e ) {
-            // Expected.
-        }
-
-        $response = json_decode( $this->_last_response, true );
-        $this->assertTrue( $response['success'] );
-        $this->assertContains( $tire_id, $response['data']['favorites'] );
-
-        // Remove favorite.
-        $this->_last_response = '';
-        $_POST['nonce']   = wp_create_nonce( 'tire_rating_nonce' );
-        $_POST['tire_id'] = $tire_id;
-
-        try {
-            $this->_handleAjax( 'rtg_remove_favorite' );
-        } catch ( WPAjaxDieContinueException $e ) {
-            // Expected.
-        }
-
-        $response = json_decode( $this->_last_response, true );
-        $this->assertTrue( $response['success'] );
-
-        // Verify removed.
-        $favorites = RTG_Database::get_user_favorites( $user_id );
-        $this->assertNotContains( $tire_id, $favorites );
-    }
-
-    // -------------------------------------------------------
     // Rate limiting
     // -------------------------------------------------------
 
@@ -443,23 +385,5 @@ class Test_RTG_Ajax extends WP_Ajax_UnitTestCase {
 
         $this->assertGreaterThanOrEqual( 1, $blocked, 'Rate limit should block at least one overflow request.' );
         $this->assertLessThanOrEqual( $max, $submitted, 'Submissions within window should not exceed the configured max.' );
-    }
-
-    public function test_add_favorite_rejects_nonexistent_tire() {
-        $user_id = $this->factory()->user->create( array( 'role' => 'subscriber' ) );
-        wp_set_current_user( $user_id );
-
-        $_POST['nonce']   = wp_create_nonce( 'tire_rating_nonce' );
-        $_POST['tire_id'] = 'ghost-fav-999';
-
-        try {
-            $this->_handleAjax( 'rtg_add_favorite' );
-        } catch ( WPAjaxDieContinueException $e ) {
-            // Expected.
-        }
-
-        $response = json_decode( $this->_last_response, true );
-        $this->assertFalse( $response['success'] );
-        $this->assertStringContainsString( 'Tire not found', $response['data'] );
     }
 }

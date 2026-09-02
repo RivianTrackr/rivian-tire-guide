@@ -9,7 +9,6 @@ import { rtgIcon, safeString, getDOMElement } from './helpers.js';
 import { VALIDATION_PATTERNS, NUMERIC_BOUNDS, validateNumeric, safeImageURL, safeLinkURL, safeReviewLinkURL } from './validation.js';
 import { TOOLTIP_DATA, createInfoTooltip } from './tooltips.js';
 import { createRatingHTML } from './ratings.js';
-import { toggleFavorite } from './favorites.js';
 import { setupCompareCheckboxes } from './compare.js';
 import { openImageModal } from './image-modal.js';
 import { fitmentShortfalls, describeShortfalls } from './fitment.js';
@@ -339,9 +338,10 @@ export function createSingleCard(row) {
     card.appendChild(oemBadge);
   }
 
-  // Compare checkbox overlay
+  // Compare toggle — lives in the title row beside Share, on card color,
+  // where it reads; overlaid on the tread it was a 55% black box on black.
   const compareOverlay = document.createElement('label');
-  compareOverlay.className = 'tire-card-compare-overlay';
+  compareOverlay.className = 'tire-card-tool tire-card-tool-compare';
   // Attribute and property sinks take plain text: escapeHTML() here made a
   // screen reader announce "AT&amp;T".
   compareOverlay.setAttribute('aria-label', `Compare ${safeString(brand)} ${safeString(model)}`);
@@ -356,34 +356,18 @@ export function createSingleCard(row) {
   compareCheckbox.disabled = !compareCheckbox.checked && state.compareList.length >= 4;
 
   const compareIcon = document.createElement('span');
-  compareIcon.className = 'compare-overlay-icon';
-  compareIcon.innerHTML = rtgIcon('scale-balanced', 13);
+  compareIcon.className = 'tire-card-tool-icon';
+  compareIcon.innerHTML = rtgIcon('scale-balanced', 14);
   compareOverlay.title = 'Add to comparison';
 
   compareOverlay.appendChild(compareCheckbox);
   compareOverlay.appendChild(compareIcon);
 
-  // Favorite button overlay (logged-in users only)
-  let favBtn = null;
-  if (state.isLoggedIn) {
-    favBtn = document.createElement('button');
-    favBtn.className = 'tire-card-fav-btn';
-    favBtn.dataset.tireId = tireId;
-    const isFav = state.userFavorites.has(tireId);
-    favBtn.classList.toggle('is-favorite', isFav);
-    favBtn.setAttribute('aria-label', isFav ? 'Remove from favorites' : 'Add to favorites');
-    favBtn.innerHTML = isFav
-      ? rtgIcon('heart', 16)
-      : rtgIcon('heart-outline', 16);
-    favBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleFavorite(tireId);
-    });
-  }
-
-  // Share button overlay
+  // Share button
   const shareBtn = document.createElement('button');
-  shareBtn.className = 'tire-card-share-btn';
+  shareBtn.type = 'button';
+  shareBtn.className = 'tire-card-tool tire-card-tool-share';
+  shareBtn.title = 'Share';
   shareBtn.setAttribute('aria-label', `Share ${safeString(brand)} ${safeString(model)}`);
   shareBtn.innerHTML = rtgIcon('share', 16);
   shareBtn.addEventListener('click', (e) => {
@@ -414,27 +398,6 @@ export function createSingleCard(row) {
     }
   });
 
-  // Admin-only edit shortcut. Whether anyone may edit is decided in PHP —
-  // an empty base means this viewer can't, so there is nothing to render
-  // rather than a control the script has to remember to hide.
-  const tireEditBase = (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.tireEditUrl) ? rtgData.settings.tireEditUrl : '';
-  let editBtn = null;
-  if (tireEditBase) {
-    editBtn = document.createElement('a');
-    editBtn.className = 'tire-card-edit-btn';
-    editBtn.href = tireEditBase + encodeURIComponent(tireId);
-    // A new tab: editing from the guide shouldn't cost you your scroll
-    // position and filters on the way back.
-    editBtn.target = '_blank';
-    editBtn.rel = 'noopener noreferrer';
-    editBtn.title = 'Edit this tire (only admins see this)';
-    editBtn.setAttribute('aria-label', `Edit ${safeString(brand)} ${safeString(model)} in the admin`);
-    editBtn.innerHTML = rtgIcon('pen-to-square', 14);
-    editBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-    });
-  }
-
   if (safeImage) {
     const imageContainer = document.createElement('div');
     imageContainer.className = 'tire-card-image';
@@ -451,25 +414,23 @@ export function createSingleCard(row) {
     img.onclick = () => openImageModal(safeImage, `${safeString(brand)} ${safeString(model)}`);
 
     imageContainer.appendChild(img);
-    imageContainer.appendChild(compareOverlay);
-    if (favBtn) imageContainer.appendChild(favBtn);
-    imageContainer.appendChild(shareBtn);
-    if (editBtn) imageContainer.appendChild(editBtn);
     card.appendChild(imageContainer);
-  } else {
-    card.appendChild(compareOverlay);
-    if (favBtn) card.appendChild(favBtn);
-    card.appendChild(shareBtn);
-    if (editBtn) card.appendChild(editBtn);
   }
 
   const bodyEl = document.createElement('div');
   bodyEl.className = 'tire-card-body';
 
+  // Title row: brand + model on the left, Compare and Share on the right.
+  const titleRow = document.createElement('div');
+  titleRow.className = 'tire-card-title-row';
+
+  const titleEl = document.createElement('div');
+  titleEl.className = 'tire-card-title';
+
   const brandEl = document.createElement('div');
   brandEl.className = 'tire-card-brand';
   brandEl.textContent = safeString(brand);
-  bodyEl.appendChild(brandEl);
+  titleEl.appendChild(brandEl);
 
   const modelEl = document.createElement('div');
   modelEl.className = 'tire-card-model';
@@ -483,7 +444,16 @@ export function createSingleCard(row) {
   } else {
     modelEl.textContent = safeString(model);
   }
-  bodyEl.appendChild(modelEl);
+  titleEl.appendChild(modelEl);
+
+  const toolsEl = document.createElement('div');
+  toolsEl.className = 'tire-card-tools';
+  toolsEl.appendChild(compareOverlay);
+  toolsEl.appendChild(shareBtn);
+
+  titleRow.appendChild(titleEl);
+  titleRow.appendChild(toolsEl);
+  bodyEl.appendChild(titleRow);
 
   const ratingDiv = document.createElement('div');
   ratingDiv.innerHTML = ratingHTML;

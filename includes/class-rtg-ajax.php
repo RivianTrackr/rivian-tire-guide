@@ -107,11 +107,6 @@ class RTG_Ajax {
         add_action( 'wp_ajax_rtg_get_filter_options', array( $this, 'get_filter_options' ) );
         add_action( 'wp_ajax_nopriv_rtg_get_filter_options', array( $this, 'get_filter_options' ) );
 
-        // Favorites — logged-in users only.
-        add_action( 'wp_ajax_rtg_get_favorites', array( $this, 'get_favorites' ) );
-        add_action( 'wp_ajax_rtg_add_favorite', array( $this, 'add_favorite' ) );
-        add_action( 'wp_ajax_rtg_remove_favorite', array( $this, 'remove_favorite' ) );
-
         // Admin: update tire links (affiliate link management).
         add_action( 'wp_ajax_rtg_update_tire_links', array( $this, 'update_tire_links' ) );
 
@@ -594,85 +589,6 @@ class RTG_Ajax {
             'vehicleSizeMap' => RTG_Database::get_vehicle_size_map(),
             'maxPrice'       => (float) $wpdb->get_var( "SELECT MAX(price) FROM {$table}" ),
         ) );
-    }
-
-    /**
-     * Get the current user's favorite tire IDs.
-     */
-    public function get_favorites() {
-        if ( ! check_ajax_referer( 'tire_rating_nonce', 'nonce', false ) ) {
-            wp_send_json_error( 'Security check failed.' );
-        }
-
-        if ( ! is_user_logged_in() ) {
-            wp_send_json_error( 'You must be logged in.' );
-        }
-
-        $favorites = RTG_Database::get_user_favorites( get_current_user_id() );
-
-        wp_send_json_success( array(
-            'favorites' => $favorites,
-        ) );
-    }
-
-    /**
-     * Add a tire to the current user's favorites.
-     */
-    public function add_favorite() {
-        if ( ! check_ajax_referer( 'tire_rating_nonce', 'nonce', false ) ) {
-            wp_send_json_error( 'Security check failed.' );
-        }
-
-        if ( ! is_user_logged_in() ) {
-            wp_send_json_error( 'You must be logged in.' );
-        }
-
-        $tire_id = sanitize_text_field( $_POST['tire_id'] ?? '' );
-
-        if ( ! RTG_Database::validate_tire_id( $tire_id ) ) {
-            wp_send_json_error( 'Invalid tire ID.' );
-        }
-
-        // Verify the tire exists.
-        $tire = RTG_Database::get_tire( $tire_id );
-        if ( ! $tire ) {
-            wp_send_json_error( 'Tire not found.' );
-        }
-
-        $result = RTG_Database::add_favorite( $tire_id, get_current_user_id() );
-
-        if ( $result ) {
-            wp_send_json_success( array( 'tire_id' => $tire_id ) );
-        } else {
-            wp_send_json_error( 'Failed to add favorite.' );
-        }
-    }
-
-    /**
-     * Remove a tire from the current user's favorites.
-     */
-    public function remove_favorite() {
-        if ( ! check_ajax_referer( 'tire_rating_nonce', 'nonce', false ) ) {
-            wp_send_json_error( 'Security check failed.' );
-        }
-
-        if ( ! is_user_logged_in() ) {
-            wp_send_json_error( 'You must be logged in.' );
-        }
-
-        $tire_id = sanitize_text_field( $_POST['tire_id'] ?? '' );
-
-        if ( ! RTG_Database::validate_tire_id( $tire_id ) ) {
-            wp_send_json_error( 'Invalid tire ID.' );
-        }
-
-        $result = RTG_Database::remove_favorite( $tire_id, get_current_user_id() );
-
-        if ( $result ) {
-            wp_send_json_success( array( 'tire_id' => $tire_id ) );
-        } else {
-            wp_send_json_error( 'Failed to remove favorite.' );
-        }
     }
 
     /**

@@ -137,18 +137,20 @@ class Test_RTG_Admin extends WP_UnitTestCase {
     }
 
     /**
-     * The guide's cards are built in JavaScript from localized settings, so
-     * the edit link only reaches a browser whose user may actually use it —
-     * a visitor is never sent the control at all.
+     * The card carried an admin-only edit shortcut until 1.90.0, and this
+     * test guarded that its URL never reached a visitor's browser. The
+     * shortcut is gone (the tire page keeps its edit bar), so the guard is
+     * now stronger: the guide localizes no edit URL for anyone, editor
+     * included — the surest way it never reaches a visitor.
      */
-    public function test_the_guide_only_localizes_the_edit_url_for_editors() {
+    public function test_the_guide_localizes_no_edit_url_for_anyone() {
         $frontend = new RTG_Frontend();
 
         $frontend->render_shortcode( array() );
-        $this->assertStringContainsString(
-            'rtg-tire-edit',
-            (string) wp_scripts()->get_data( 'rtg-tire-guide', 'data' )
-        );
+        $editor_data = (string) wp_scripts()->get_data( 'rtg-tire-guide', 'data' );
+        $this->assertNotSame( '', $editor_data, 'the editor should still be given the guide data' );
+        $this->assertStringNotContainsString( 'rtg-tire-edit', $editor_data );
+        $this->assertStringNotContainsString( 'tireEditUrl', $editor_data );
 
         // A fresh registry, so the second render localizes from scratch.
         $GLOBALS['wp_scripts'] = null;
@@ -160,6 +162,7 @@ class Test_RTG_Admin extends WP_UnitTestCase {
         $visitor_data = (string) wp_scripts()->get_data( 'rtg-tire-guide', 'data' );
         $this->assertNotSame( '', $visitor_data, 'the visitor should still be given the guide data' );
         $this->assertStringNotContainsString( 'rtg-tire-edit', $visitor_data );
+        $this->assertStringNotContainsString( 'tireEditUrl', $visitor_data );
     }
 
     // --- Settings save ---

@@ -252,7 +252,6 @@ function getFilteredIndexes(filters) {
 
     if (filters["3PMS"] && !safeString(row[9]).toLowerCase().includes("yes")) return false;
     if (filters["OEM"] && !safeString(row[17]).toLowerCase().includes("oem")) return false;
-    if (filters["Favorites"] && !state.userFavorites.has(row[0])) return false;
 
     return true;
   });
@@ -397,7 +396,6 @@ export function filterAndRender() {
   const warrantyMin = getDOMElement("warrantyMin");
   const filter3pms = getDOMElement("filter3pms");
   const filterOEM = getDOMElement("filterOEM");
-  const filterFavorites = getDOMElement("filterFavorites");
   const filterSize = getDOMElement("filterSize");
   const filterBrand = getDOMElement("filterBrand");
   const filterCategory = getDOMElement("filterCategory");
@@ -416,7 +414,6 @@ export function filterAndRender() {
     WarrantyMin: warrantyVal,
     "3PMS": filter3pms?.checked || false,
     "OEM": filterOEM?.checked || false,
-    "Favorites": filterFavorites?.checked || false,
     Vehicle: vehicleVal && state.VALID_VEHICLES.includes(vehicleVal) ? vehicleVal : "",
     Size: filterSize?.value && state.VALID_SIZES.includes(filterSize.value) ? filterSize.value : "",
     Brand: filterBrand?.value && state.VALID_BRANDS.includes(filterBrand.value) ? filterBrand.value : "",
@@ -584,7 +581,6 @@ function getActiveFilterCount() {
   if (warrantyEl && parseInt(warrantyEl.value) > 0) count++;
   if (getDOMElement("filter3pms")?.checked) count++;
   if (getDOMElement("filterOEM")?.checked) count++;
-  if (getDOMElement("filterFavorites")?.checked) count++;
   return count;
 }
 
@@ -619,7 +615,6 @@ function getCurrentFilters() {
   const warrantyMin = getDOMElement("warrantyMin");
   const filter3pms = getDOMElement("filter3pms");
   const filterOEM = getDOMElement("filterOEM");
-  const filterFavorites = getDOMElement("filterFavorites");
   const filterSize = getDOMElement("filterSize");
   const filterBrand = getDOMElement("filterBrand");
   const filterCategory = getDOMElement("filterCategory");
@@ -632,7 +627,6 @@ function getCurrentFilters() {
     WarrantyMin: warrantyMin ? validateNumeric(warrantyMin.value, NUMERIC_BOUNDS.warranty, 0) : 0,
     "3PMS": filter3pms?.checked || false,
     "OEM": filterOEM?.checked || false,
-    "Favorites": filterFavorites?.checked || false,
     Vehicle: getSelectedVehicle() && state.VALID_VEHICLES.includes(getSelectedVehicle()) ? getSelectedVehicle() : "",
     Size: filterSize?.value && state.VALID_SIZES.includes(filterSize.value) ? filterSize.value : "",
     Brand: filterBrand?.value && state.VALID_BRANDS.includes(filterBrand.value) ? filterBrand.value : "",
@@ -1016,7 +1010,7 @@ export function resetFilters() {
     if (el) el.value = value;
   });
 
-  const checkboxes = ["filter3pms", "filterOEM", "filterFavorites"];
+  const checkboxes = ["filter3pms", "filterOEM"];
   checkboxes.forEach(id => {
     const el = getDOMElement(id);
     if (el) el.checked = false;
@@ -1104,9 +1098,6 @@ export function renderActiveFilterChips() {
   if (getDOMElement("filterOEM")?.checked) {
     chips.push({ label: "OEM", value: "Yes", clear: () => { getDOMElement("filterOEM").checked = false; } });
   }
-  if (getDOMElement("filterFavorites")?.checked) {
-    chips.push({ label: "Favorites", value: "Yes", clear: () => { getDOMElement("filterFavorites").checked = false; } });
-  }
 
   container.innerHTML = "";
 
@@ -1165,7 +1156,6 @@ export function renderSmartNoResults() {
   if (warrantyEl && parseInt(warrantyEl.value) > 0) activeFilterNames.push("Warranty");
   if (getDOMElement("filter3pms")?.checked) activeFilterNames.push("3PMS");
   if (getDOMElement("filterOEM")?.checked) activeFilterNames.push("OEM");
-  if (getDOMElement("filterFavorites")?.checked) activeFilterNames.push("Favorites");
   if (searchEl?.value?.trim()) activeFilterNames.push("Search");
 
   // Two different answers. "No tires in this size yet" is honest: the
@@ -1200,14 +1190,6 @@ export function renderSmartNoResults() {
       key: 'clear-all',
       label: rtgIcon('rotate-left', 14) + ' Clear all filters',
       action: () => resetFilters()
-    });
-  }
-
-  if (getDOMElement("filterFavorites")?.checked) {
-    suggestions.push({
-      key: 'favorites',
-      label: rtgIcon('heart-outline', 14) + ' Show all tires (not just favorites)',
-      action: () => { getDOMElement("filterFavorites").checked = false; state.lastFilterState = null; rerender(); }
     });
   }
 
@@ -1385,10 +1367,6 @@ export function updateURLFromFilters() {
     params.set("warranty", warrantyVal);
   }
 
-  if (getDOMElement("filterFavorites")?.checked) {
-    params.set("favorites", "1");
-  }
-
   const newURL = params.toString()
     ? `${location.pathname}?${params.toString()}`
     : `${location.pathname}`;
@@ -1464,7 +1442,6 @@ export function applyFiltersFromURL() {
 
   setChecked("filter3pms", params.get("3pms"));
   setChecked("filterOEM", params.get("oem"));
-  setChecked("filterFavorites", params.get("favorites"));
 
   const sort = params.get("sort");
   if (sort && ALLOWED_SORT_OPTIONS.includes(sort)) setVal("sortBy", sort);

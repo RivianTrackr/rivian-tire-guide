@@ -21,9 +21,6 @@ export const state = {
   userReviews: {},
   isLoggedIn: false,
 
-  // Favorites
-  userFavorites: new Set(),
-
   // Guest pending reviews (session-only, cleared on reload)
   guestPendingReviews: new Set(),
 

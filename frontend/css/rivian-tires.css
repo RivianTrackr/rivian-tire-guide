@@ -525,86 +525,11 @@
   }
 }
 
-/* === Favorites heart button (filter header) ===
-   Replaces the old Favorites toggle pill. A hollow heart icon that fills
-   and turns accent-colored when Favorites filtering is active. Drives the
-   same hidden `#filterFavorites` checkbox so all existing JS keeps working.
-   Positioned next to Clear All in the filter header where it reads as a
-   "my stuff" control rather than a tire attribute. */
+/* === Filter header actions (Clear All) === */
 .filter-header-actions {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-.rtg-fav-heart-input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  border: 0;
-}
-.rtg-fav-heart-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  border: 1px solid var(--rtg-border);
-  background: var(--rtg-bg-deep);
-  color: var(--rtg-text-muted);
-  cursor: pointer;
-  transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
-  margin: 0;
-}
-.rtg-fav-heart-btn i {
-  font-size: 14px;
-  line-height: 1;
-}
-.rtg-fav-heart-btn .rtg-fav-heart-filled {
-  display: none;
-}
-.rtg-fav-heart-btn:hover {
-  border-color: var(--rtg-accent);
-  color: var(--rtg-accent);
-}
-.rtg-fav-heart-btn:active {
-  transform: scale(0.93);
-}
-.rtg-fav-heart-input:focus-visible + .rtg-fav-heart-btn {
-  outline: 2px solid var(--rtg-accent);
-  outline-offset: 2px;
-}
-/* Active state — accent tint + filled heart. */
-.rtg-fav-heart-input:checked + .rtg-fav-heart-btn {
-  background: color-mix(in srgb, var(--rtg-accent) 15%, var(--rtg-bg-deep));
-  border-color: var(--rtg-accent);
-  color: var(--rtg-accent);
-}
-.rtg-fav-heart-input:checked + .rtg-fav-heart-btn .rtg-fav-heart-outline {
-  display: none;
-}
-.rtg-fav-heart-input:checked + .rtg-fav-heart-btn .rtg-fav-heart-filled {
-  display: inline;
-}
-.rtg-fav-heart-badge {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  border-radius: 8px;
-  background: #ef4444;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 16px;
-  text-align: center;
 }
 
 /* === Info Tooltip Trigger === */
@@ -1101,6 +1026,88 @@
   font-family: monospace;
 }
 
+/* Title row — brand + model, with Compare and Share beside them. On the
+   photo they were 55% black on a dark tread; here they sit on card color.
+   Only two icons for most visitors, so the model name keeps its room. */
+.tire-card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.tire-card-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.tire-card-title .tire-card-brand {
+  margin-bottom: 0;
+}
+.tire-card-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.tire-card-tool {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--rtg-border);
+  background: var(--rtg-bg-deep);
+  color: var(--rtg-text-primary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  position: relative;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+.tire-card-tool:hover {
+  border-color: var(--rtg-accent);
+  color: var(--rtg-accent);
+}
+.tire-card-tool:active {
+  transform: scale(0.93);
+}
+.tire-card-tool .compare-checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.tire-card-tool-icon {
+  display: inline-flex;
+  line-height: 1;
+}
+.compare-checkbox:checked + .tire-card-tool-icon {
+  color: #15130e;
+}
+.tire-card-tool-compare:has(.compare-checkbox:checked) {
+  background: var(--rtg-accent);
+  border-color: var(--rtg-accent);
+  color: #15130e;
+}
+.tire-card-tool-compare:has(.compare-checkbox:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.tire-card-tool-share.copied {
+  background: var(--rtg-accent);
+  border-color: var(--rtg-accent);
+  color: #15130e;
+}
+@media screen and (max-width: 600px) {
+  .tire-card-tool {
+    width: 40px;
+    height: 40px;
+  }
+}
+
 /* Card actions */
 .tire-card-actions {
   margin-top: auto;
@@ -1185,122 +1192,6 @@
   border: 1px solid var(--rtg-border);
 }
 
-/* Compare checkbox overlay — top-right corner of card image */
-.tire-card-compare-overlay {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 10;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.tire-card-compare-overlay .compare-checkbox {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-}
-.compare-overlay-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  background: rgba(13, 15, 19, 0.55);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all .15s;
-}
-.tire-card-compare-overlay:hover .compare-overlay-icon {
-  border-color: var(--rtg-accent);
-  background: rgba(13, 15, 19, 0.75);
-}
-/* A scale icon says what the box does; a bare square said nothing. */
-.compare-overlay-icon {
-  color: #fff;
-}
-.compare-overlay-icon i {
-  line-height: 1;
-}
-.compare-checkbox:checked + .compare-overlay-icon {
-  background: var(--rtg-accent);
-  border-color: var(--rtg-accent);
-  color: #15130e;
-}
-/* When card has no image, position relative to card */
-.tire-card > .tire-card-compare-overlay {
-  position: absolute;
-}
-
-/* Share link button overlay */
-.tire-card-share-btn {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  z-index: 10;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  background: rgba(13, 15, 19, 0.55);
-  backdrop-filter: blur(4px);
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s ease;
-}
-.tire-card-share-btn:hover {
-  border-color: var(--rtg-accent);
-  background: rgba(13, 15, 19, 0.75);
-  color: var(--rtg-accent);
-}
-.tire-card-share-btn.copied {
-  background: var(--rtg-accent);
-  border-color: var(--rtg-accent);
-  color: #15130e;
-}
-/* When card has no image, position relative to card */
-.tire-card > .tire-card-share-btn {
-  position: absolute;
-}
-
-/* Admin-only edit shortcut. Sits beside Share, and is only ever rendered
-   when the server said this viewer can edit — visitors never receive it. */
-.tire-card-edit-btn {
-  position: absolute;
-  bottom: 10px;
-  right: 44px;
-  z-index: 10;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  border: 2px dashed rgba(255, 255, 255, 0.5);
-  background: rgba(13, 15, 19, 0.55);
-  backdrop-filter: blur(4px);
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  transition: all 0.15s ease;
-}
-.tire-card-edit-btn:hover {
-  border-color: var(--rtg-accent);
-  background: rgba(13, 15, 19, 0.75);
-  color: var(--rtg-accent);
-}
-.tire-card > .tire-card-edit-btn {
-  position: absolute;
-}
 
 /* Deep-link single tire view */
 .tire-deeplink-bar {
@@ -2559,7 +2450,7 @@ a.rtg-review-card-title-link:hover {
   .tire-card-model { color: #1a1a1a; }
   .tire-card-spec-label { color: #666; }
   .tire-card-spec-value { color: #1a1a1a; }
-  .tire-card-actions, .tire-card-share-btn, .tire-card-edit-btn { display: none; }
+  .tire-card-actions, .tire-card-tools { display: none; }
   .tire-card-image { background: #f5f5f5; }
 }
 
@@ -2713,48 +2604,6 @@ a.rtg-user-review-tire-link:hover {
   justify-content: flex-end;
 }
 
-/* === Favorite Button Overlay === */
-.tire-card-fav-btn {
-  position: absolute;
-  top: 10px;
-  right: 44px;
-  z-index: 10;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  background: rgba(13, 15, 19, 0.55);
-  backdrop-filter: blur(4px);
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 13px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s ease;
-  padding: 0;
-}
-.tire-card-fav-btn:hover {
-  border-color: #ef4444;
-  background: rgba(13, 15, 19, 0.75);
-  color: #ef4444;
-}
-.tire-card-fav-btn.is-favorite {
-  background: #ef4444;
-  border-color: #ef4444;
-  color: #fff;
-}
-.tire-card-fav-btn.is-favorite:hover {
-  background: #dc2626;
-  border-color: #dc2626;
-  color: #fff;
-}
-/* When card has no image, position relative to card */
-.tire-card > .tire-card-fav-btn {
-  position: absolute;
-}
-
-
 /* === Lazy Image Loading === */
 .rtg-lazy-img {
   opacity: 0;
@@ -2907,10 +2756,9 @@ a.rtg-user-review-tire-link:hover {
 .tire-card-details-link:focus-visible,
 .tire-card-review-link:focus-visible,
 .tire-card-model-link:focus-visible,
-.tire-card-share-btn:focus-visible,
-.tire-card-fav-btn:focus-visible,
+.tire-card-tool-share:focus-visible,
 .info-tooltip-trigger:focus-visible,
-.tire-card-compare-overlay input:focus-visible + .compare-overlay-icon {
+.tire-card-tool-compare input:focus-visible + .tire-card-tool-icon {
   outline: 2px solid var(--rtg-accent);
   outline-offset: 2px;
 }
@@ -2918,8 +2766,7 @@ a.rtg-user-review-tire-link:hover {
    the tooltip modal's inline animation styles set from JS. */
 @media (prefers-reduced-motion: reduce) {
   .tire-card-cta,
-  .tire-card-share-btn,
-  .tire-card-fav-btn,
+  .tire-card-tool,
   .tire-card-details-link,
   .tire-card-review-link,
   .rating-review-count,
