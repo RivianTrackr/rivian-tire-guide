@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.5] - 2026-09-03
+
+### Fixed
+- **The picks dialog's footer on phones.** The review modal's phone rules stack its footer into a column, and the advisor's footer inherited that: "Start over" and "Done" sat one above the other in a footer roughly 200px tall. The advisor's footer is now a row on phones, the two buttons side by side at 44px and equal width, the status line above them only when it has something to say, with 12px padding plus the safe-area inset. The pick's "View tire" and "Show in guide" grow to 40px on phones. The changelog dialog's footer gets the same row treatment.
+
 ## [2.0.4] - 2026-09-03
 
 ### Fixed
