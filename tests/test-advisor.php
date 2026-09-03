@@ -201,13 +201,14 @@ class Test_RTG_Advisor extends WP_UnitTestCase {
         $this->assertSame( 404, rest_get_server()->dispatch( new WP_REST_Request( 'GET', $route ) )->get_status(), 'no key: not available' );
 
         $this->settings( array( 'ai_api_key' => 'sk-test' ) );
-        RTG_Database::set_rating( 'adv-eff', $this->factory->user->create(), 5, 'Great', 'Quiet and efficient.' );
+        // Reviews with text are pending unless the reviewer is an admin; the summary reads approved ones only.
+        RTG_Database::set_rating( 'adv-eff', $this->factory->user->create( array( 'role' => 'administrator' ) ), 5, 'Great', 'Quiet and efficient.' );
         $response = rest_get_server()->dispatch( new WP_REST_Request( 'GET', $route ) );
         $this->assertSame( 200, $response->get_status() );
         $this->assertFalse( $response->get_data()['ok'], 'one written review is not enough' );
         $this->assertSame( 0, $this->calls );
 
-        RTG_Database::set_rating( 'adv-eff', $this->factory->user->create(), 3, 'Meh', 'Range dropped a bit.' );
+        RTG_Database::set_rating( 'adv-eff', $this->factory->user->create( array( 'role' => 'administrator' ) ), 3, 'Meh', 'Range dropped a bit.' );
         $this->mock( $this->answer( array( 'summary' => 'Owners like the quiet; one saw less range.', 'pros' => array( 'Quiet' ), 'cons' => array( 'Some range loss' ) ) ) );
         $data = rest_get_server()->dispatch( new WP_REST_Request( 'GET', $route ) )->get_data();
         $this->assertTrue( $data['ok'] );
@@ -221,8 +222,8 @@ class Test_RTG_Advisor extends WP_UnitTestCase {
 
     public function test_the_review_summary_prompt_never_carries_a_reviewer_name() {
         $this->settings( array( 'ai_api_key' => 'sk-test' ) );
-        RTG_Database::set_rating( 'adv-eff', $this->factory->user->create( array( 'display_name' => 'Jose Secret' ) ), 5, 'Great', 'Quiet.' );
-        RTG_Database::set_rating( 'adv-eff', $this->factory->user->create(), 4, 'Fine', 'Fine tire.' );
+        RTG_Database::set_rating( 'adv-eff', $this->factory->user->create( array( 'role' => 'administrator', 'display_name' => 'Jose Secret' ) ), 5, 'Great', 'Quiet.' );
+        RTG_Database::set_rating( 'adv-eff', $this->factory->user->create( array( 'role' => 'administrator' ) ), 4, 'Fine', 'Fine tire.' );
         $this->mock( $this->answer( array( 'summary' => 's', 'pros' => array(), 'cons' => array() ) ) );
         rest_get_server()->dispatch( new WP_REST_Request( 'GET', '/' . RTG_REST_API::NAMESPACE . '/tires/adv-eff/review-summary' ) );
         $this->assertStringNotContainsString( 'Jose Secret', $this->last_request['messages'][0]['content'] );
