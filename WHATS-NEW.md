@@ -11,39 +11,16 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
-## 2.0.6 - 2026-09-03
-
-- **More room for your picks.** The buttons at the bottom of the picks window are gone. "Start over" now sits up top next to the title, and the X closes, so the picks fill the screen on a phone.
-
-## 2.0.5 - 2026-09-03
-
-- **A shorter footer on phones.** In the picks window, "Start over" and "Done" now sit side by side instead of stacked, so more of your picks fit on the screen.
-
-## 2.0.4 - 2026-09-03
-
-- **A wider picks window.** The four tiles on each pick have room to breathe, so nothing is cut off.
-
-## 2.0.3 - 2026-09-03
-
-- **Picks are easier to read.** Each pick now leads with why it was chosen, shows the price on its own, and lays out efficiency, load index, warranty and owner rating as four tiles, the same way the tire page does.
-
-## 2.0.2 - 2026-09-03
-
-- **A tidier picks view.** The results now end with "Start over" and "Done", and the advice talks to you rather than about itself.
-
-## 2.0.1 - 2026-09-03
-
-- **Sharing a tire page shows a proper preview image.** Links to tire pages pasted into texts and social posts now come with the RivianTrackr preview image instead of a blank card.
-
-## 2.0.0 - 2026-09-03
+## 2.0.7 - 2026-09-03
 
 The guide can now help you choose, not just browse.
 
 - **"Help me choose".** Tap the new button beside Search, answer three quick questions (your Rivian, what matters most, your budget), and get three picks with a reason and an honest trade-off for each. Every pick fits your vehicle and every number comes from the guide itself.
+- **Picks you can read at a glance.** Each pick leads with why it was chosen, shows the price on its own, and lays out efficiency, load index, warranty and owner rating as four tiles, the same way the tire page does. From any pick, "Show in guide" jumps to its card with the right vehicle and size already selected.
 - **"What owners say" on tire pages.** Once a tire has a couple of written reviews, its page opens with a short summary of what owners like and what they don't, so you don't have to read forty reviews to get the gist.
 - **A plain-words comparison.** The compare page now starts with a paragraph that says where each tire wins and what you give up, using the same numbers as the grid.
-- **"Show in guide".** From any pick, jump straight to its card in the guide with the right vehicle and size already selected.
 - **Load index on every card.** Each card now shows the tire's load index, so you can compare tires on it without opening them.
+- **Sharing a tire page shows a proper preview image.** Links to tire pages pasted into texts and social posts now come with the RivianTrackr preview image instead of a blank card.
 
 ## 1.92.1 - 2026-09-03
 

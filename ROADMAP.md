@@ -1,6 +1,6 @@
 # Rivian Tire Guide — Roadmap
 
-**Current release:** 2.0.6 (DB schema v24)
+**Current release:** 2.0.7 (DB schema v24)
 **Updated:** 2026-09-01
 
 This is the one place open work is tracked. It replaces the four planning
@@ -191,7 +191,7 @@ For the record, so nothing here is re-proposed. Details are in `CHANGELOG.md`.
   memory with cascade feedback, distinct empty states; tire-page compare /
   save / share / show-more-reviews, other-sizes and similar-tires links; the
   compare page's tire-page links, per-column remove and add-another-tire.
-- **2.0.0, the AI Tire Advisor:** Help me choose (grounded picks with a
+- **2.0.7 (2.0.0 through 2.0.6 consolidated), the AI Tire Advisor:** Help me choose (grounded picks with a
   rules fallback), What owners say on tire pages, the compare page's
   plain-words paragraph, the settings card, and the `ai` search events the
   analytics panels were waiting for (P5, decided: built).

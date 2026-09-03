@@ -4,71 +4,34 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [2.0.6] - 2026-09-03
+## [2.0.7] - 2026-09-03
 
-### Changed
-- **No footer on the picks.** "Done" is gone (the X closes) and "Start over" moves into the header beside the title, so the picks get the whole screen on a phone. The question form keeps a footer with one full-width "Find my tires" that becomes "Thinking…" with a spinner while the request runs; an error reads in red above it. The changelog dialog loses its footer the same way, with "Open as a page" at the end of the list.
-
-### Fixed
-- **2.0.5's row footer never applied.** The review modal's phone rules sit later in the stylesheet at equal specificity and re-stacked the footer, which is also why the "Thinking…" button grew tall (a `flex: 1` in a column). The advisor's footer rules now use compound selectors the shell cannot override.
-
-## [2.0.5] - 2026-09-03
-
-### Fixed
-- **The picks dialog's footer on phones.** The review modal's phone rules stack its footer into a column, and the advisor's footer inherited that: "Start over" and "Done" sat one above the other in a footer roughly 200px tall. The advisor's footer is now a row on phones, the two buttons side by side at 44px and equal width, the status line above them only when it has something to say, with 12px padding plus the safe-area inset. The pick's "View tire" and "Show in guide" grow to 40px on phones. The changelog dialog's footer gets the same row treatment.
-
-## [2.0.4] - 2026-09-03
-
-### Fixed
-- **The picks dialog is wider and the tiles no longer clip.** At 660px the four tiles had about 110px each: labels broke mid-word ("EFFICIENC Y") and values truncated ("2.81 …", "Not lis…"). The dialog is 800px wide, tile labels never wrap, values wrap instead of truncating, and the tiles fall to two columns below 820px rather than only on phones.
-
-## [2.0.3] - 2026-09-03
-
-### Changed
-- **The pick card is organized.** The headline now sits under the tire's name where the eye lands, the price stands alone on the right (per tire, with the set beneath), and the run-on stats line is four tiles like the tire page's: efficiency (with the sample or "limited data"), load index (with the vehicle's minimum beneath), warranty and owner rating, each reading "No data", "Not listed" or "No ratings" when empty. Chips, the reason and the trade-off (now with an icon) follow. Two tile columns under 640px. `hydrate_picks()` adds `load_index` and `mileage_warranty` to each pick's tire.
-
-## [2.0.2] - 2026-09-03
-
-### Fixed
-- **The picks view's footer.** "Find my tires" stayed visible on the results and "Start over" rendered as the theme's bare button: the dialog's button styles set `display`, which beats the `hidden` attribute. A `[hidden]` rule inside the dialog now wins, "Start over" is a secondary button, and a primary "Done" closes the dialog from the results.
-
-### Changed
-- **The advice reads in the second person.** The prompt says there is no "I" in this advice, asks for "minimum load index" instead of "floor" and "owner-measured" for the efficiency data, and caps the summary at two short sentences. The payload key `load_index_floor` is now `minimum_load_index`, so the model's wording follows.
-
-## [2.0.1] - 2026-09-03
-
-### Fixed
-- **Tire pages have a social preview image.** The theme-rendered pages (`RTG_Theme_Render`) never emitted `og:image`; a virtual post has no featured image, so every SEO plugin fell back to its site default or nothing. `render()` takes an `image`, handed to All in One SEO through `aioseo_facebook_tags` / `aioseo_twitter_tags`, to Yoast through `wpseo_opengraph_image` / `wpseo_twitter_image`, to Rank Math through its two image filters, and printed as `og:image` / `twitter:image` (with `og:title`, `og:description`, `og:url` and a `summary_large_image` card) when no SEO plugin is present. Tire pages and the changelog page pass `RTG_Meta::share_image()`.
+The 2.0 release, consolidated: 2.0.0 through 2.0.6 shipped over one day and are folded into this entry, which describes what is on the site now. The AI Tire Advisor, built the way the 1.18 one wasn't: grounded in the catalog, never a chat box, and useful without a key.
 
 ### Added
-- **Share Image setting** (Settings → Display), read by `RTG_Meta::share_image()`, defaulting to `RTG_Meta::DEFAULT_SHARE_IMAGE` (the site's OG image). The guide page's default social tags use it too; the `?tire=` deep link keeps the tire's own image.
-
-### Changed
-- Version 2.0.1, which also re-versions every enqueued asset so browsers fetch 2.0's files.
-
-### Tests
-- `tests/test-meta.php`: the share image default and override, the renderer's image reaching the AIOSEO tag arrays and the Yoast/Rank Math filters, and the printed `og:image` / `twitter:image` when no SEO plugin is present.
-
-## [2.0.0] - 2026-09-03
-
-The AI Tire Advisor, built the way the 1.18 one wasn't: grounded in the catalog, never a chat box, and useful without a key.
-
-### Added
-- **"Help me choose" on the guide.** A button beside Search opens a dialog with three questions (which Rivian, what matters most from seven priorities, budget) and an optional note. The server keeps only the tires that fit the vehicle (size map plus the load-index floor) and the budget, ranks them with its own rules (`RTG_Advisor::candidates()`, one normalized component per priority plus a small owner-rating boost), and hands the top twelve to Claude with the real numbers. Back come up to three picks with a headline, a reason that cites the numbers, an honest trade-off, and a one-line summary. The dialog renders them with fitment and 3PMS chips, price and set price, efficiency and sample, "View tire" and "Show in guide" (applies the vehicle, size and brand to the live filters and scrolls to the card with a highlight). Without an API key the same route answers from the rules with templated reasons and says so, so the button is never dead.
+- **"Help me choose" on the guide.** A button beside Search opens a dialog with three questions (which Rivian, what matters most from seven priorities, budget) and an optional note. The server keeps only the tires that fit the vehicle (size map plus the load-index minimum) and the budget, ranks them with its own rules (`RTG_Advisor::candidates()`, one normalized component per priority plus a small owner-rating boost), and hands the top twelve to Claude with the real numbers. Back come up to three picks with a headline, a reason that cites the numbers, an honest trade-off, and a summary of one or two sentences written in the second person (the prompt says there is no "I" in this advice and asks for "minimum load index", never "floor"). Without an API key the same route answers from the rules with templated reasons and says so, so the button is never dead.
+- **The picks dialog.** 800px wide. Each pick leads with the tire's name and the headline, the price on its own to the right (per tire, with the set beneath), then four tiles like the tire page's: efficiency (with the sample or "limited data"), load index (with the vehicle's minimum beneath), warranty and owner rating, each reading "No data", "Not listed" or "No ratings" when empty; then the fitment, size, category and 3PMS chips, the reason, the trade-off with an icon, and "View tire" and "Show in guide" (applies the vehicle, size and brand to the live filters and scrolls to the card with a highlight). The results have no footer: "Start over" sits in the header beside the title and the X closes. The question form's footer is one full-width "Find my tires" that becomes "Thinking…" with a spinner while the request runs, an error in red above it. Tiles fall to two columns below 820px; on phones the dialog is the full-screen sheet with "Start over" at the top right.
 - **"What owners say" on tire pages.** Once a tire has two written, approved reviews, its page fetches a cached summary after paint: at most sixty words, up to three strengths and three weaknesses, only claims the reviews support, and never a reviewer's name (the prompt carries ratings, titles, text and month only). Cached thirty days, keyed on the review count and the newest edit, so a new review refreshes it. Placed between the reviews heading and the list.
 - **"In plain words" on the compare page.** One paragraph of at most ninety words comparing the tires on the page, loaded after the grid so the grid never waits, cached a day per set of tires. Absent without a key.
-- **`RTG_Advisor`.** A raw-HTTP client over `wp_remote_post()` (the plugin's one convention for outbound calls) to the Messages API: structured JSON output through `output_config.format` so every answer is schema-valid, a cache breakpoint on the stable system prompt, `effort: low` on the models that take it, and the server-side refusal fallback (`fallbacks: "default"`) on Opus 5. Every failure path returns the one result shape; the last outcome is stored in `rtg_ai_state` for the settings page. Grounding is enforced after the call too: `validate_picks()` drops any pick that names a tire outside the candidate list. Answers cache in `rtg_ai_*` transients keyed on the inputs, the catalog version (count, newest `updated_at`, rating total) and the model, which `uninstall.php` already sweeps.
+- **`RTG_Advisor`.** A raw-HTTP client over `wp_remote_post()` (the plugin's one convention for outbound calls) to the Messages API: structured JSON output through `output_config.format` so every answer is schema-valid, a cache breakpoint on the stable system prompt, `effort: low` on the models that take it, and the server-side refusal fallback (`fallbacks: "default"`) on Opus 5. Every failure path returns the one result shape; the last outcome is stored in `rtg_ai_state` for the settings page. Grounding is enforced after the call too: `validate_picks()` drops any pick that names a tire outside the candidate list. Answers cache in `rtg_ai_*` transients keyed on the inputs, the catalog version (count, newest `updated_at`, rating total) and the model, which `uninstall.php` already sweeps. `hydrate_picks()` carries `load_index` and `mileage_warranty` to the dialog.
 - **Routes.** `POST /rtg/v1/advise`, `GET /rtg/v1/tires/{id}/review-summary`, `GET /rtg/v1/compare-summary?ids=`. Public, rate limited per visitor through `RTG_Rate_Limiter` (`rest_ai_*` buckets; the advise limit is a setting, default 10 a minute), the two cached routes behind `RTG_Lock` so a cold cache is written once.
 - **Settings.** An "AI Tire Advisor" card on the settings page: the toggle (on by default), the key (stored in the option, or `RTG_ANTHROPIC_API_KEY` in `wp-config.php` which wins and is never shown; the field renders empty and clearing is explicit, the CJ token's rule), the model (Opus 5 default, Sonnet 5, Haiku 4.5), the per-visitor limit, and the last call's outcome with token usage. The legacy 1.45 key names (`ai_enabled`, `ai_api_key`, `ai_model`, `ai_rate_limit`) are reused, so a site that had them set gets them back.
+- **Share Image setting** (Settings → Display), read by `RTG_Meta::share_image()`, defaulting to `RTG_Meta::DEFAULT_SHARE_IMAGE` (the site's OG image). The guide page's default social tags use it too; the `?tire=` deep link keeps the tire's own image.
 - **Analytics.** Every advise call logs a search event of type `ai` ("R2 · range, quiet · under $350", result count = picks), so the "AI Queries", "Search vs AI Usage" and "Top AI Queries" panels that survived 1.46.0 show data again. The AJAX `track_search` allowlist accepts `ai` once more.
 
 ### Changed
 - **Load index on the card.** A "Load Index" row in the card's specs, between Size and Mileage Warranty, showing the number alone, so the difference between a 113 and a 121 reads at a glance without opening the tire. "Not listed" when the catalog has none; the fitment warning above the price still flags a shortfall against the vehicle's minimum.
-- Version 2.0.0. No schema change; `search_type` has carried `ai` since migration 10.
+- **The changelog dialog has no footer.** "Open as a page" sits at the end of the list; the X closes.
+- **The advisor's footer rules use compound selectors** (`.rtg-review-modal-footer.rtg-adv-footer`), because the review modal's phone rules sit later in the stylesheet at equal specificity and re-stacked the footer in 2.0.2 and 2.0.5.
+- Version 2.0.7. No schema change; `search_type` has carried `ai` since migration 10.
+
+### Fixed
+- **Tire pages have a social preview image.** The theme-rendered pages (`RTG_Theme_Render`) never emitted `og:image`; a virtual post has no featured image, so every SEO plugin fell back to its site default or nothing. `render()` takes an `image`, handed to All in One SEO through `aioseo_facebook_tags` / `aioseo_twitter_tags`, to Yoast through `wpseo_opengraph_image` / `wpseo_twitter_image`, to Rank Math through its two image filters, and printed as `og:image` / `twitter:image` (with `og:title`, `og:description`, `og:url` and a `summary_large_image` card) when no SEO plugin is present. Tire pages and the changelog page pass `RTG_Meta::share_image()`.
 
 ### Tests
-- `tests/contract/advisor.php` (plain PHP, in the lint job): input cleaning, the candidate set (floor, size, budget, ranking by priority, the cap), the request body per model (structured output for all, effort and fallbacks only where they belong, no slugs or scores in the prompt), `validate_picks` dropping an invented tire and a duplicate, `parse_response` on 401, 429, 5xx, refusal, `max_tokens`, non-JSON text and a non-JSON body, the rules fallback's shape, the other two prompts, and the catalog version changing on any edit.
+- `tests/contract/advisor.php` (plain PHP, in the lint job): input cleaning, the candidate set (minimum, size, budget, ranking by priority, the cap), the request body per model (structured output for all, effort and fallbacks only where they belong, no slugs or scores in the prompt), `validate_picks` dropping an invented tire and a duplicate, `parse_response` on 401, 429, 5xx, refusal, `max_tokens`, non-JSON text and a non-JSON body, the rules fallback's shape, the other two prompts, and the catalog version changing on any edit.
 - `tests/test-advisor.php` (PHPUnit, HTTP stubbed through `pre_http_request`): defaults and settings, the settings form (key kept on an empty field, cleared on request), the rules answer without a key plus its `ai` search event, the model answer with a key (invented tire dropped, request shape, cache hit, state recorded), a 401 falling back to the rules, the toggle, an honest empty answer, the review summary needing a key and two written reviews and caching, no reviewer name in the prompt, the compare summary's id rules, and the localized settings. `tests/test-ajax.php` covers `track_search` keeping `ai`.
+- `tests/test-meta.php`: the share image default and override, the renderer's image reaching the AIOSEO tag arrays and the Yoast/Rank Math filters, and the printed `og:image` / `twitter:image` when no SEO plugin is present.
 
 ## [1.92.1] - 2026-09-03
 
