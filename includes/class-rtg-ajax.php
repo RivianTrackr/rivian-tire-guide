@@ -688,8 +688,8 @@ class RTG_Ajax {
         $result_count = intval( $_POST['result_count'] ?? 0 );
         $search_type  = sanitize_text_field( $_POST['search_type'] ?? 'search' );
 
-        // Only allow known search types.
-        if ( ! in_array( $search_type, array( 'search' ), true ) ) {
+        // Only allow known search types. 'ai' is the advisor's.
+        if ( ! in_array( $search_type, array( 'search', 'ai' ), true ) ) {
             $search_type = 'search';
         }
 

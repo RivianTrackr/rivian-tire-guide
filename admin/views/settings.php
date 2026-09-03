@@ -257,6 +257,83 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
             </div>
         </div>
 
+        <!-- AI Tire Advisor -->
+        <?php
+        $ai_state        = RTG_Advisor::state();
+        $ai_key_constant = RTG_Advisor::key_is_constant();
+        $ai_has_key      = RTG_Advisor::has_key();
+        ?>
+        <div class="rtg-card">
+            <div class="rtg-card-header">
+                <h2>AI Tire Advisor</h2>
+                <p>"Help me choose" on the guide, "What owners say" on tire pages, and the plain-words paragraph on the compare page. Answers are grounded in the catalog: the model only ever picks from tires that fit, and every number it cites comes from the guide. Without a key, Help me choose runs on the guide's own rules and the other two stay off.</p>
+            </div>
+            <div class="rtg-card-body">
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="ai_enabled">Advisor</label>
+                    </div>
+                    <p class="rtg-field-description">Turn off to hide the "Help me choose" button and stop every model call.</p>
+                    <label class="rtg-toggle">
+                        <input type="checkbox" id="ai_enabled" name="ai_enabled" value="1" <?php checked( RTG_Advisor::is_enabled() ); ?>>
+                        <span class="rtg-toggle-track"></span>
+                        <span class="rtg-toggle-label">Enable the advisor</span>
+                    </label>
+                </div>
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="ai_api_key">Anthropic API key</label>
+                    </div>
+                    <?php if ( $ai_key_constant ) : ?>
+                        <p class="rtg-field-description">Set by the <code>RTG_ANTHROPIC_API_KEY</code> constant in <code>wp-config.php</code>; the field below is ignored while it is defined.</p>
+                    <?php else : ?>
+                        <p class="rtg-field-description">From <a href="https://console.anthropic.com/" target="_blank" rel="noopener">console.anthropic.com</a>. Stored in this option; define <code>RTG_ANTHROPIC_API_KEY</code> in <code>wp-config.php</code> to keep it out of the database instead. <?php echo $ai_has_key ? '<strong>A key is saved.</strong> Leave the field empty to keep it.' : 'No key saved yet.'; ?></p>
+                        <input type="password" id="ai_api_key" name="ai_api_key" value="" class="rtg-input-wide" autocomplete="off" placeholder="<?php echo $ai_has_key ? '••••••••••••' : 'sk-ant-…'; ?>">
+                        <?php if ( $ai_has_key ) : ?>
+                        <label style="display:block;margin-top:8px;"><input type="checkbox" name="ai_api_key_clear" value="1"> Clear the saved key</label>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </div>
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="ai_model">Model</label>
+                    </div>
+                    <p class="rtg-field-description">Opus 5 writes the best advice. Sonnet 5 and Haiku 4.5 answer faster for less; the numbers it cites are the same either way, since they come from the catalog.</p>
+                    <select id="ai_model" name="ai_model" class="rtg-input-small" style="width:auto;min-width:260px;">
+                        <?php foreach ( RTG_Advisor::MODELS as $model_id => $model_label ) : ?>
+                        <option value="<?php echo esc_attr( $model_id ); ?>" <?php selected( RTG_Advisor::model(), $model_id ); ?>><?php echo esc_html( $model_label ); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="ai_rate_limit">Requests per visitor per minute</label>
+                    </div>
+                    <p class="rtg-field-description">A ceiling on "Help me choose" calls from one visitor, so a script cannot run up the bill. Answers to the same questions are cached for a day. Default: 10.</p>
+                    <input type="number" id="ai_rate_limit" name="ai_rate_limit" value="<?php echo esc_attr( RTG_Advisor::rate_limit() ); ?>" min="1" max="60" step="1" class="rtg-input-small">
+                </div>
+                <div class="rtg-field-row" style="border-bottom:none;">
+                    <div class="rtg-field-label-row">
+                        <span class="rtg-field-label">Last call</span>
+                    </div>
+                    <?php if ( empty( $ai_state ) ) : ?>
+                        <p class="rtg-field-description">No calls yet.</p>
+                    <?php else : ?>
+                        <p class="rtg-field-description">
+                            <strong><?php echo 'ok' === ( $ai_state['status'] ?? '' ) ? 'Succeeded' : 'Failed'; ?></strong>
+                            at <?php echo esc_html( $ai_state['time'] ?? '' ); ?>
+                            on <?php echo esc_html( $ai_state['served_by'] ?? $ai_state['model'] ?? '' ); ?>.
+                            <?php if ( 'ok' !== ( $ai_state['status'] ?? '' ) ) : ?>
+                                <?php echo esc_html( $ai_state['message'] ?? '' ); ?>
+                            <?php elseif ( ! empty( $ai_state['usage'] ) ) : ?>
+                                <?php echo (int) $ai_state['usage']['input']; ?> tokens in (<?php echo (int) $ai_state['usage']['cache_read']; ?> from cache), <?php echo (int) $ai_state['usage']['output']; ?> out.
+                            <?php endif; ?>
+                        </p>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
         <!-- Analytics Settings -->
         <div class="rtg-card">
             <div class="rtg-card-header">

@@ -27,6 +27,7 @@ import {
 } from './modules/filters.js';
 import { isServerSide, fetchTiresFromServer, fetchDropdownOptions, serverSideFilterAndRender } from './modules/server.js';
 import { initWhatsNew } from './modules/whats-new.js';
+import { initAdvisor } from './modules/advisor.js';
 
 // Wire up the compare bar function to break the circular dependency
 setUpdateCompareBar(updateCompareBar);
@@ -367,6 +368,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateFilterTooltipsDirectly();
   updateFilterTooltips();
   initWhatsNew();
+  initAdvisor();
 
   document.addEventListener('click', (e) => {
     const trigger = e.target.closest('.info-tooltip-trigger');

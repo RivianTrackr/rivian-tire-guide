@@ -324,3 +324,73 @@ var RTG_TP_TOOLTIPS = {
     });
   }
 })();
+
+/**
+ * "What owners say": a cached summary of this tire's reviews, written by
+ * the advisor from the reviews alone. Fetched after paint so the page never
+ * waits on it; the box stays hidden unless a summary comes back. The route
+ * answers "pending" while another request is writing it, so we try again.
+ */
+(function () {
+  var cfg = window.rtgTirePage || {};
+  var box = document.getElementById('rtgTpOwnersSay');
+  if (!box || !cfg.reviewSummaryRest || typeof fetch !== 'function') return;
+
+  var tries = 0;
+
+  function node(tag, className, text) {
+    var n = document.createElement(tag);
+    if (className) n.className = className;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  function list(items, cls, icon) {
+    var ul = node('ul', 'rtg-tp-owners-say-list ' + cls);
+    items.forEach(function (item) {
+      var li = node('li');
+      var i = node('i', 'fa-solid ' + icon);
+      i.setAttribute('aria-hidden', 'true');
+      li.appendChild(i);
+      li.appendChild(document.createTextNode(item));
+      ul.appendChild(li);
+    });
+    return ul;
+  }
+
+  function render(data) {
+    box.textContent = '';
+    var label = node('div', 'rtg-tp-owners-say-label');
+    var icon = node('i', 'fa-solid fa-comments');
+    icon.setAttribute('aria-hidden', 'true');
+    label.appendChild(icon);
+    label.appendChild(document.createTextNode('What owners say'));
+    box.appendChild(label);
+    box.appendChild(node('p', 'rtg-tp-owners-say-text', data.summary));
+    var pros = Array.isArray(data.pros) ? data.pros : [];
+    var cons = Array.isArray(data.cons) ? data.cons : [];
+    if (pros.length || cons.length) {
+      var lists = node('div', 'rtg-tp-owners-say-lists');
+      if (pros.length) lists.appendChild(list(pros, 'is-pro', 'fa-circle-check'));
+      if (cons.length) lists.appendChild(list(cons, 'is-con', 'fa-circle-minus'));
+      box.appendChild(lists);
+    }
+    box.appendChild(node('p', 'rtg-tp-owners-say-foot', 'Summarized from ' + data.based_on + ' written review' + (data.based_on === 1 ? '' : 's') + ' by Claude. Read them below to judge for yourself.'));
+    box.hidden = false;
+  }
+
+  function load() {
+    fetch(cfg.reviewSummaryRest, { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data && data.ok && data.summary) {
+          render(data);
+        } else if (data && data.pending && ++tries < 4) {
+          setTimeout(load, 3000);
+        }
+      })
+      .catch(function () {});
+  }
+
+  load();
+})();

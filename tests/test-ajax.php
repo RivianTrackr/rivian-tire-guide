@@ -386,4 +386,27 @@ class Test_RTG_Ajax extends WP_Ajax_UnitTestCase {
         $this->assertGreaterThanOrEqual( 1, $blocked, 'Rate limit should block at least one overflow request.' );
         $this->assertLessThanOrEqual( $max, $submitted, 'Submissions within window should not exceed the configured max.' );
     }
+    /**
+     * The advisor logs its questions as search events of type 'ai'; the
+     * analytics page counts them separately from regular searches.
+     */
+    public function test_track_search_keeps_the_ai_search_type() {
+        $_POST = array(
+            'nonce'        => wp_create_nonce( 'rtg_analytics_nonce' ),
+            'search_query' => 'R1 · range',
+            'filters_json' => '{}',
+            'sort_by'      => '',
+            'result_count' => 3,
+            'search_type'  => 'ai',
+        );
+        try {
+            $this->_handleAjax( 'rtg_track_search' );
+        } catch ( WPAjaxDieContinueException $e ) {
+            // Expected.
+        }
+        global $wpdb;
+        $type = $wpdb->get_var( "SELECT search_type FROM {$wpdb->prefix}rtg_search_events ORDER BY id DESC LIMIT 1" );
+        $this->assertSame( 'ai', $type );
+        $_POST = array();
+    }
 }

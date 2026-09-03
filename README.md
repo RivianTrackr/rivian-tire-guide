@@ -13,6 +13,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Shareable Tire Links** — Direct links to individual tires with deep-link highlighting.
 - **Active Filter Chips** — Dismissible chips show active filters at a glance.
 - **Smart No Results** — When filters produce no matches, actionable suggestions help users relax specific filters.
+- **AI Tire Advisor** — "Help me choose" asks three questions and returns three picks with reasons and trade-offs, grounded in the catalog (only tires that fit the vehicle, only numbers from the guide). "What owners say" summarizes a tire's reviews on its page; the compare page opens with a plain-words paragraph. Runs on Claude through the Anthropic API; without a key, Help me choose falls back to the guide's own ranking rules.
 - **Changelog** — A "Changelog" pill in the filter header opens plain-language release notes (from `WHATS-NEW.md`), with a dot until the newest release has been seen; the same notes live at `/tire-guide/whats-new/`.
 
 ### Ratings & Reviews
@@ -144,6 +145,10 @@ For bulk operations, use **Tire Guide > Import / Export** to import tires via CS
 
 The plugin registers a custom URL at `/tire-compare/` (configurable in settings). Users select tires from the guide and compare specs side-by-side with best-value highlighting.
 
+### AI Tire Advisor
+
+Settings → AI Tire Advisor. Add an Anthropic API key (or define `RTG_ANTHROPIC_API_KEY` in `wp-config.php`), pick a model (Claude Opus 5 by default), and set the per-visitor limit. Answers are cached (a day for picks and comparisons, thirty days for review summaries) and keyed on the catalog, so an edit to a tire or a new review refreshes them. With the advisor on and no key, "Help me choose" still works from the guide's rules; the review summaries and the compare paragraph need a key. Routes: `POST /wp-json/rtg/v1/advise`, `GET /wp-json/rtg/v1/tires/{id}/review-summary`, `GET /wp-json/rtg/v1/compare-summary?ids=a,b`.
+
 ### What's New Page
 
 The plugin registers `/tire-guide/whats-new/`, rendered inside the theme from `WHATS-NEW.md` at the plugin root. Write that file for owners, not developers: one `## version - date` heading per release, an optional intro line, then bullets that open with a bold lead sentence. Skip releases with nothing visible. It is parsed once per plugin version (or file edit) and also served at `GET /wp-json/rtg/v1/whats-new` for the guide's modal.
@@ -183,6 +188,7 @@ rivian-tire-guide/
 │   ├── class-rtg-meta.php           # Open Graph & Twitter Card meta tags
 │   ├── class-rtg-rest-api.php       # REST API endpoints
 │   ├── class-rtg-whats-new.php      # What's new: notes parser, page, REST route
+│   ├── class-rtg-advisor.php        # AI Tire Advisor: ranking, prompts, Claude client, routes
 │   ├── class-rtg-roamer-sync.php    # Rivian Roamer efficiency data sync
 │   └── class-rtg-mailer.php         # HTML email notifications
 ├── admin/
@@ -210,7 +216,8 @@ rivian-tire-guide/
 │           ├── server.js            # Server-side pagination
 │           ├── tooltips.js          # Filter help tooltips
 │           ├── image-modal.js       # Image lightbox
-│           └── whats-new.js         # What's new pill + modal
+│           ├── whats-new.js         # What's new pill + modal
+│           └── advisor.js           # Help me choose dialog
 ├── tests/
 │   ├── bootstrap.php                # PHPUnit WordPress test bootstrap
 │   ├── test-database.php            # PHP unit tests (21 tests)

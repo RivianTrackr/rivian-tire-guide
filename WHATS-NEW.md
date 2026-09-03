@@ -11,6 +11,15 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.0.0 - 2026-09-03
+
+The guide can now help you choose, not just browse.
+
+- **"Help me choose".** Tap the new button beside Search, answer three quick questions (your Rivian, what matters most, your budget), and get three picks with a reason and an honest trade-off for each. Every pick fits your vehicle and every number comes from the guide itself.
+- **"What owners say" on tire pages.** Once a tire has a couple of written reviews, its page opens with a short summary of what owners like and what they don't, so you don't have to read forty reviews to get the gist.
+- **A plain-words comparison.** The compare page now starts with a paragraph that says where each tire wins and what you give up, using the same numbers as the grid.
+- **"Show in guide".** From any pick, jump straight to its card in the guide with the right vehicle and size already selected.
+
 ## 1.92.1 - 2026-09-03
 
 - **The button is called Changelog now.** Same notes, clearer name.

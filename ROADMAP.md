@@ -1,6 +1,6 @@
 # Rivian Tire Guide — Roadmap
 
-**Current release:** 1.92.1 (DB schema v24)
+**Current release:** 2.0.0 (DB schema v24)
 **Updated:** 2026-09-01
 
 This is the one place open work is tracked. It replaces the four planning
@@ -117,7 +117,6 @@ The 2.0 plan's Pillar 3, still entirely open. Listed in the order they compound.
 | P2 | **Keyed row objects.** Still positional arrays — 32 elements as of 1.89.0, which had to append three columns and teach three destructurings about them. Emit `{tire_id, brand, ...}` from `to_frontend_row()` and migrate `cards.js`, `filters.js`, `compare.js`, `ratings.js`. REST `/tires` leaks the array while `/tires/{id}` returns an object. | The single highest-leverage refactor; every new card feature above pays its tax |
 | P3 | **Sitemap for core / Yoast / Rank Math.** Only the AIOSEO filter is hooked; add `wp_sitemaps_add_provider` as the primary plus the Yoast and Rank Math filters. | `class-rtg-tire-page.php` |
 | P4 | **REST parity and new endpoints.** `/tires` supports 4 filters vs 9 on AJAX (same `build_filter_where_clause`). Add `search`, `vehicle`, `oem`, `price_max`, `warranty_min`; new `/suggest?q=`, `/compare?ids=`, `/sizes`, `/brands`, authenticated `POST /reviews`. | `class-rtg-rest-api.php` |
-| P5 | **AI Tire Advisor: build it or remove the panel.** No Claude/Anthropic code exists; `search_type='ai'` is queried but never written; the Analytics page still shows "AI Queries" and "Search vs AI Usage"; `uninstall.php` sweeps legacy `rtg_ai_*` options. Either ship it (`POST /rtg/v1/recommend`, structured picks grounded in the live catalog with a filter-engine fallback, `search_type='ai'` events, key via a `wp-config.php` constant, the existing rate limiter and transient cache) or drop the dead panels. | Decide before the next roadmap cycle |
 | P6 | **i18n.** Zero `__()` calls and no `load_plugin_textdomain()` despite the text-domain header. Large but mechanical; do it before more UI lands. | all PHP, `frontend/js` strings via `wp_localize_script` |
 | P7 | **Cache the uncached hot paths.** `get_filter_options` (4 DISTINCT + MAX per call), the `[rivian_tire_guide]` page lookup on every tire-page, guide, compare and admin-list render, the full-table load for the sitemap filter. A thin `RTG_Cache` wrapper with versioned keys makes these one-liners and gives an object-cache story. | `class-rtg-ajax.php`, `class-rtg-tire-page.php` (`guide_url`), `class-rtg-frontend.php` |
 | P8 | **Sync-job base class.** Six jobs hand-roll the same skeleton (enabled check, lock, stats option, cron-vs-manual notify, mailer). An `RTG_Sync_Job` base gives time budget, stats, and retry/backoff on CJ 429/5xx once; H3 and H5 fall out of it. | sync classes, `class-rtg-catalog-source-cj.php` |
@@ -165,8 +164,7 @@ feed is the sanctioned path). Real, but none load-bearing.
 3. **Hooks, then price history:** P1 first, F5 on top of it, ADM2 riding the same events.
 4. **Hygiene sweep:** §1 and §2 in one release, the way 1.85–1.87 cleared the earlier reviews.
 5. **Admin safety net:** ADM1 trash, ADM3 dry-run, ADM4 bulk moderation.
-6. **Decide P5** (build the AI advisor or remove the panels).
-7. **P2 keyed rows** before any further card work, so the next feature doesn't pay the positional-array tax.
+6. **P2 keyed rows** before any further card work, so the next feature doesn't pay the positional-array tax.
 
 ---
 
@@ -193,6 +191,10 @@ For the record, so nothing here is re-proposed. Details are in `CHANGELOG.md`.
   memory with cascade feedback, distinct empty states; tire-page compare /
   save / share / show-more-reviews, other-sizes and similar-tires links; the
   compare page's tire-page links, per-column remove and add-another-tire.
+- **2.0.0, the AI Tire Advisor:** Help me choose (grounded picks with a
+  rules fallback), What owners say on tire pages, the compare page's
+  plain-words paragraph, the settings card, and the `ai` search events the
+  analytics panels were waiting for (P5, decided: built).
 - Tire Discovery (CJ catalog monitoring, qualification, review queue, link and
   price sync, coverage, health alerts, stale-price report, image import), the
   unified rate limiter, the cached `/feed`, the rotating link checker.
