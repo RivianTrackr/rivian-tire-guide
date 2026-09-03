@@ -1612,6 +1612,14 @@
   text-align: right;
   font-family: monospace;
 }
+.tire-card-spec-meta {
+  display: inline-block;
+  margin-left: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--rtg-text-muted);
+}
 
 /* Title row — brand + model, with Compare and Share beside them. On the
    photo they were 55% black on a dark tread; here they sit on card color.

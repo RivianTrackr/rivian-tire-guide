@@ -11,7 +11,7 @@ import { TOOLTIP_DATA, createInfoTooltip } from './tooltips.js';
 import { createRatingHTML } from './ratings.js';
 import { setupCompareCheckboxes } from './compare.js';
 import { openImageModal } from './image-modal.js';
-import { fitmentShortfalls, describeShortfalls } from './fitment.js';
+import { fitmentShortfalls, describeShortfalls, parseLoadIndex } from './fitment.js';
 import { formatSetPrice, formatWholePrice, priceFreshness, SET_QUANTITY } from './pricing.js';
 import { isLimitedSample } from './efficiency.js';
 
@@ -658,24 +658,39 @@ export function createSingleCard(row) {
   specsContainer.className = 'tire-card-specs';
 
   // Specs shown on the default card view — only the decision drivers.
-  // Category, Load Index, Speed Rating, UTQG, tread depth, max load, load
-  // range, and max PSI are intentionally not on the card: they're secondary
-  // or cryptic when scanning a grid, and the full spec sheet lives one click
-  // away on the individual tire page (plus the compare page, admin form, and
-  // CSV import/export). Average Price moved up into the key-stats row.
+  // Category, Speed Rating, UTQG, tread depth, max load, load range, and
+  // max PSI are intentionally not on the card: they're secondary or cryptic
+  // when scanning a grid, and the full spec sheet lives one click away on
+  // the individual tire page (plus the compare page, admin form, and CSV
+  // import/export). Average Price moved up into the key-stats row. Load
+  // Index is on the card (2.0.0): it is the one number that decides whether
+  // a tire is safe on a Rivian, and beside the vehicle's minimum the
+  // difference between a 113 and a 121 is visible without opening the tire.
   // Note: row values are strings, so "0" is truthy — compare the parsed
   // number instead, or missing data renders as "0 miles" / "0 lb".
   const warrantyNum = Number(validateNumeric(warranty, NUMERIC_BOUNDS.warranty, 0));
   const weightNum = Number(validateNumeric(weight, NUMERIC_BOUNDS.weight, 0));
   // 3PMS left the rows for the chips: a boolean that mostly read "No" was
   // spending a full row, and the tire page already shows it as a chip.
+  // Load index with the minimum for each Rivian this size fits, so the
+  // margin (or the shortfall, which the fitment slot above also flags)
+  // reads at a glance: "116 · R1 min 116".
+  const loadNum = parseLoadIndex(loadIndex);
+  const { map: fitMap, floors: fitFloors } = fitmentSettings();
+  const loadSizeKey = safeString(size).trim().toLowerCase();
+  const loadMins = Object.keys(fitMap || {}).sort()
+    .filter(v => (Array.isArray(fitMap[v]) ? fitMap[v] : []).some(s => String(s).trim().toLowerCase() === loadSizeKey))
+    .filter(v => Number(fitFloors[v]) > 0)
+    .map(v => `${v} min ${Number(fitFloors[v])}`);
+
   const specs = [
     ['Size', `${safeString(size)} (${safeString(diameter)}${safeString(diameter) && !safeString(diameter).includes('"') ? '"' : ''})`],
+    ['Load Index', loadNum > 0 ? String(loadNum) : 'Not listed', loadNum > 0 && loadMins.length ? loadMins.join(', ') : ''],
     ['Mileage Warranty', warrantyNum > 0 ? `${warrantyNum.toLocaleString()} miles` : 'Not listed'],
     ['Weight', weightNum > 0 ? `${weightNum} lb` : 'Not listed']
   ];
 
-  specs.forEach(([label, value]) => {
+  specs.forEach(([label, value, meta]) => {
     const specRow = document.createElement('div');
     specRow.className = 'tire-card-spec';
 
@@ -693,6 +708,12 @@ export function createSingleCard(row) {
     const valueEl = document.createElement('span');
     valueEl.className = 'tire-card-spec-value';
     valueEl.textContent = value || '-';
+    if (meta) {
+      const metaEl = document.createElement('span');
+      metaEl.className = 'tire-card-spec-meta';
+      metaEl.textContent = meta;
+      valueEl.appendChild(metaEl);
+    }
 
     specRow.appendChild(labelEl);
     specRow.appendChild(valueEl);
