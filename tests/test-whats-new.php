@@ -49,7 +49,7 @@ class Test_RTG_Whats_New extends WP_UnitTestCase {
         $frontend->render_shortcode( array() );
         $data = wp_scripts()->get_data( 'rtg-tire-guide', 'data' );
 
-        $this->assertStringContainsString( '"whatsNewUrl":"' . str_replace( '/', '\/', RTG_Whats_New::url() ) . '"', $data );
+        $this->assertStringContainsString( '"whatsNewUrl":"' . RTG_Whats_New::url() . '"', $data );
         $this->assertStringContainsString( '"whatsNewVersion":"' . RTG_Whats_New::latest_version() . '"', $data );
         $this->assertStringContainsString( '"whatsNewRest":', $data );
     }

@@ -9,6 +9,10 @@
  *    would silently vanish from the page, and nothing else would notice.
  * 2. The inline renderer treats the notes as text. Bold, code and links
  *    come through; a stray tag or a javascript: URL never becomes markup.
+ * 3. A release ships with its note. The newest heading in WHATS-NEW.md must
+ *    be the plugin's version, unless the CHANGELOG entry for that version
+ *    says "Nothing visible to owners" in so many words. Forgetting the
+ *    owner-facing note is a red build, not a quiet omission.
  *
  * Run with: php tests/contract/whats-new.php
  * Exits non-zero on failure, so CI gates on it.
@@ -104,6 +108,14 @@ $declared = preg_match( "/define\( 'RTG_VERSION', '([^']+)' \)/", $plugin, $m ) 
 
 check( count( $shipped ) >= 5, 'WHATS-NEW.md parses to a real list (' . count( $shipped ) . ' releases)' );
 check( '' !== $declared && version_compare( $shipped[0]['version'], $declared, '<=' ), 'the newest note (' . $shipped[0]['version'] . ') is not ahead of the plugin (' . $declared . ')' );
+
+// The release rule: the current version has a note, or the changelog says
+// out loud that owners would notice nothing. Either is a decision; silence is not.
+$changelog = (string) file_get_contents( __DIR__ . '/../../CHANGELOG.md' );
+$entry     = preg_match( '/^## \[' . preg_quote( $declared, '/' ) . '\][^\n]*\n(.*?)(?=^## \[|\z)/ms', $changelog, $m ) ? $m[1] : '';
+$opted_out = false !== stripos( $entry, 'Nothing visible to owners' );
+check( $shipped[0]['version'] === $declared || $opted_out, 'version ' . $declared . ' has a What\'s new note, or its changelog entry says "Nothing visible to owners"' );
+check( '' !== $entry, 'version ' . $declared . ' has a changelog entry' );
 
 $prev = null;
 $ordered = true;
