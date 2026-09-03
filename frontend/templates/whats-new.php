@@ -47,7 +47,7 @@ $rtg_wn_guide_url = RTG_Tire_Page::guide_url();
 <div class="rtg-wn">
   <a class="rtg-wn-crumb" href="<?php echo esc_url( $rtg_wn_guide_url ); ?>"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to the Tire Guide</a>
   <p class="rtg-wn-eyebrow">Rivian Tire Guide</p>
-  <h1>What's new</h1>
+  <h1>Changelog</h1>
   <p class="rtg-wn-lede">Every change you can see in the guide, newest first, in plain language. Bigger ideas we are still working on are on the way.</p>
   <?php echo RTG_Whats_New::render_list( $rtg_wn_view ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped while rendering ?>
   <p class="rtg-wn-foot">Spotted something off, or have an idea for the guide? Leave a review on any tire, or reach us through the site.</p>

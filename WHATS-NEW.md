@@ -11,6 +11,10 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 1.92.1 - 2026-09-03
+
+- **The button is called Changelog now.** Same notes, clearer name.
+
 ## 1.92.0 - 2026-09-03
 
 - **A "What's new" button in the guide.** It sits in the filter bar and opens these notes, with a dot when there is something you have not seen yet. The notes also live on their own page, so you can send someone the link.

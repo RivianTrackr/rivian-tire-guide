@@ -14,8 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
       Filter, Sort, and Compare
     </span>
     <div class="filter-header-actions">
-      <button id="rtgWhatsNew" class="rtg-whats-new-btn" type="button" aria-label="What's new">
-        <i class="fa-solid fa-bullhorn" aria-hidden="true"></i><span class="rtg-whats-new-label">What's new</span><span class="rtg-whats-new-dot" hidden></span>
+      <button id="rtgWhatsNew" class="rtg-whats-new-btn" type="button" aria-label="Changelog">
+        <i class="fa-solid fa-bullhorn" aria-hidden="true"></i><span class="rtg-whats-new-label">Changelog</span><span class="rtg-whats-new-dot" hidden></span>
       </button>
       <button class="rtg-clear-filters-btn" onclick="resetFilters()" type="button" aria-label="Clear all filters">
         <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Clear All
