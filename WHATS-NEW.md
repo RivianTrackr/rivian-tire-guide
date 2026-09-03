@@ -11,6 +11,10 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.0.1 - 2026-09-03
+
+- **Sharing a tire page shows a proper preview image.** Links to tire pages pasted into texts and social posts now come with the RivianTrackr preview image instead of a blank card.
+
 ## 2.0.0 - 2026-09-03
 
 The guide can now help you choose, not just browse.

@@ -4,6 +4,20 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.1] - 2026-09-03
+
+### Fixed
+- **Tire pages have a social preview image.** The theme-rendered pages (`RTG_Theme_Render`) never emitted `og:image`; a virtual post has no featured image, so every SEO plugin fell back to its site default or nothing. `render()` takes an `image`, handed to All in One SEO through `aioseo_facebook_tags` / `aioseo_twitter_tags`, to Yoast through `wpseo_opengraph_image` / `wpseo_twitter_image`, to Rank Math through its two image filters, and printed as `og:image` / `twitter:image` (with `og:title`, `og:description`, `og:url` and a `summary_large_image` card) when no SEO plugin is present. Tire pages and the changelog page pass `RTG_Meta::share_image()`.
+
+### Added
+- **Share Image setting** (Settings → Display), read by `RTG_Meta::share_image()`, defaulting to `RTG_Meta::DEFAULT_SHARE_IMAGE` (the site's OG image). The guide page's default social tags use it too; the `?tire=` deep link keeps the tire's own image.
+
+### Changed
+- Version 2.0.1, which also re-versions every enqueued asset so browsers fetch 2.0's files.
+
+### Tests
+- `tests/test-meta.php`: the share image default and override, the renderer's image reaching the AIOSEO tag arrays and the Yoast/Rank Math filters, and the printed `og:image` / `twitter:image` when no SEO plugin is present.
+
 ## [2.0.0] - 2026-09-03
 
 The AI Tire Advisor, built the way the 1.18 one wasn't: grounded in the catalog, never a chat box, and useful without a key.

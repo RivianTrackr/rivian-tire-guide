@@ -34,6 +34,7 @@ class RTG_Theme_Render {
      *   @type string   $canonical   Optional canonical URL.
      *   @type string   $description Optional meta description.
      *   @type bool     $noindex     Optional. Mark robots noindex,follow (utility pages).
+     *   @type string   $image       Optional. Social preview image URL (og:image / twitter:image).
      * }
      */
     public static function render( $args ) {
@@ -45,6 +46,7 @@ class RTG_Theme_Render {
             'canonical'   => '',
             'description' => '',
             'noindex'     => false,
+            'image'       => '',
         ) );
 
         global $wp_query;
@@ -113,6 +115,19 @@ class RTG_Theme_Render {
             add_filter( 'aioseo_robots_meta', array( __CLASS__, 'filter_aioseo_robots_noindex' ), 20 );
         }
 
+        // The social image. A virtual post has no featured image, so every
+        // SEO plugin would fall back to its site default or nothing; hand each
+        // the page's image through its own filter, and print the tags
+        // ourselves when no plugin is present.
+        if ( self::$active['image'] ) {
+            add_filter( 'aioseo_facebook_tags', array( __CLASS__, 'filter_aioseo_facebook_tags' ), 20 );
+            add_filter( 'aioseo_twitter_tags', array( __CLASS__, 'filter_aioseo_twitter_tags' ), 20 );
+            add_filter( 'wpseo_opengraph_image', array( __CLASS__, 'filter_image' ), 20 );
+            add_filter( 'wpseo_twitter_image', array( __CLASS__, 'filter_image' ), 20 );
+            add_filter( 'rank_math/opengraph/facebook/image', array( __CLASS__, 'filter_image' ), 20 );
+            add_filter( 'rank_math/opengraph/twitter/image', array( __CLASS__, 'filter_image' ), 20 );
+        }
+
         add_action( 'wp_head', array( __CLASS__, 'output_head' ), 1 );
     }
 
@@ -163,6 +178,30 @@ class RTG_Theme_Render {
         return self::$active && self::$active['canonical'] ? self::$active['canonical'] : $url;
     }
 
+    public static function filter_image( $url ) {
+        return self::$active && self::$active['image'] ? self::$active['image'] : $url;
+    }
+
+    /** AIOSEO hands over its Open Graph tags as one array keyed by property. */
+    public static function filter_aioseo_facebook_tags( $tags ) {
+        if ( ! self::$active || ! self::$active['image'] || ! is_array( $tags ) ) {
+            return $tags;
+        }
+        $tags['og:image']            = self::$active['image'];
+        $tags['og:image:secure_url'] = self::$active['image'];
+        unset( $tags['og:image:width'], $tags['og:image:height'] );
+        return $tags;
+    }
+
+    public static function filter_aioseo_twitter_tags( $tags ) {
+        if ( ! self::$active || ! self::$active['image'] || ! is_array( $tags ) ) {
+            return $tags;
+        }
+        $tags['twitter:image'] = self::$active['image'];
+        $tags['twitter:card']  = 'summary_large_image';
+        return $tags;
+    }
+
     public static function filter_robots_noindex( $robots ) {
         $robots['noindex'] = true;
         $robots['follow']  = true;
@@ -191,6 +230,18 @@ class RTG_Theme_Render {
             }
             if ( self::$active['noindex'] ) {
                 echo '<meta name="robots" content="noindex,follow" />' . "\n";
+            }
+            if ( self::$active['image'] ) {
+                echo '<meta property="og:title" content="' . esc_attr( self::$active['title'] ) . '" />' . "\n";
+                if ( self::$active['description'] ) {
+                    echo '<meta property="og:description" content="' . esc_attr( self::$active['description'] ) . '" />' . "\n";
+                }
+                if ( self::$active['canonical'] ) {
+                    echo '<meta property="og:url" content="' . esc_url( self::$active['canonical'] ) . '" />' . "\n";
+                }
+                echo '<meta property="og:image" content="' . esc_url( self::$active['image'] ) . '" />' . "\n";
+                echo '<meta name="twitter:card" content="summary_large_image" />' . "\n";
+                echo '<meta name="twitter:image" content="' . esc_url( self::$active['image'] ) . '" />' . "\n";
             }
         }
 

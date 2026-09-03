@@ -12,6 +12,21 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class RTG_Meta {
 
+    /** The site's social preview image, used when a page has no better one. */
+    const DEFAULT_SHARE_IMAGE = 'https://riviantrackr.com/wp-content/uploads/2026/07/og-image.jpg';
+
+    /**
+     * The image social cards show for the tire pages and the guide: the
+     * Share Image setting, or the default above. A tire's own product shot
+     * is a white-background cutout that previews badly, so tire pages use
+     * this rather than the tire image.
+     */
+    public static function share_image() {
+        $settings = get_option( 'rtg_settings', array() );
+        $url      = trim( (string) ( $settings['share_image'] ?? '' ) );
+        return '' !== $url ? esc_url_raw( $url ) : self::DEFAULT_SHARE_IMAGE;
+    }
+
     /**
      * Canonical tire-page URL for the current ?tire= deep link, when resolvable.
      *
@@ -116,7 +131,7 @@ class RTG_Meta {
         $description = 'Browse, compare, and filter tires compatible with Rivian vehicles. Find the right fit by size, brand, category, price, and more.';
         $url         = get_permalink();
 
-        $this->render_tags( $title, $description, $url, '' );
+        $this->render_tags( $title, $description, $url, self::share_image() );
     }
 
     /**

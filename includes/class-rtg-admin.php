@@ -1297,6 +1297,7 @@ class RTG_Admin {
         $settings = array_merge( $settings, array(
             'rows_per_page'            => $rows_per_page,
             'cdn_prefix'               => esc_url_raw( $_POST['cdn_prefix'] ?? '' ),
+            'share_image'              => esc_url_raw( wp_unslash( $_POST['share_image'] ?? '' ) ),
             'compare_slug'             => sanitize_title( $_POST['compare_slug'] ?? 'tire-compare' ),
             'user_reviews_slug'        => sanitize_title( $_POST['user_reviews_slug'] ?? 'user-reviews' ),
             'tire_review_slug'         => sanitize_title( $_POST['tire_review_slug'] ?? 'tire-review' ),

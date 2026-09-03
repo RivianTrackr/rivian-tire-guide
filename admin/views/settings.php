@@ -110,6 +110,13 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                     <p class="rtg-field-description">URL slug for the standalone tire review page. Default: <code>tire-review</code> (accessible at <code><?php echo esc_html( home_url( '/' . $tire_review_slug . '/' ) ); ?></code>)</p>
                     <input type="text" id="tire_review_slug" name="tire_review_slug" value="<?php echo esc_attr( $tire_review_slug ); ?>">
                 </div>
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="share_image">Share Image</label>
+                    </div>
+                    <p class="rtg-field-description">The preview image social cards show for tire pages and the guide (1200×630 works best). Leave empty for the default: <code><?php echo esc_html( RTG_Meta::DEFAULT_SHARE_IMAGE ); ?></code></p>
+                    <input type="url" id="share_image" name="share_image" value="<?php echo esc_attr( $settings['share_image'] ?? '' ); ?>" class="rtg-input-wide" placeholder="https://…/og-image.jpg">
+                </div>
             </div>
         </div>
 
