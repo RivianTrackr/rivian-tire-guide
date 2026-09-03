@@ -18,7 +18,7 @@ The AI Tire Advisor, built the way the 1.18 one wasn't: grounded in the catalog,
 - **Analytics.** Every advise call logs a search event of type `ai` ("R2 · range, quiet · under $350", result count = picks), so the "AI Queries", "Search vs AI Usage" and "Top AI Queries" panels that survived 1.46.0 show data again. The AJAX `track_search` allowlist accepts `ai` once more.
 
 ### Changed
-- **Load index on the card.** A "Load Index" row in the card's specs, between Size and Mileage Warranty, with the minimum for each Rivian the size fits beside it in muted text ("116 · R1 min 116"), so the margin between a 113 and a 121 reads at a glance without opening the tire. "Not listed" when the catalog has none; the fitment warning above the price still flags a shortfall. `cards.js` spec rows accept an optional third `meta` element, rendered as `.tire-card-spec-meta`.
+- **Load index on the card.** A "Load Index" row in the card's specs, between Size and Mileage Warranty, showing the number alone, so the difference between a 113 and a 121 reads at a glance without opening the tire. "Not listed" when the catalog has none; the fitment warning above the price still flags a shortfall against the vehicle's minimum.
 - Version 2.0.0. No schema change; `search_type` has carried `ai` since migration 10.
 
 ### Tests

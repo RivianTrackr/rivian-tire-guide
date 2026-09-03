@@ -19,7 +19,7 @@ The guide can now help you choose, not just browse.
 - **"What owners say" on tire pages.** Once a tire has a couple of written reviews, its page opens with a short summary of what owners like and what they don't, so you don't have to read forty reviews to get the gist.
 - **A plain-words comparison.** The compare page now starts with a paragraph that says where each tire wins and what you give up, using the same numbers as the grid.
 - **"Show in guide".** From any pick, jump straight to its card in the guide with the right vehicle and size already selected.
-- **Load index on every card.** Each card now shows the tire's load index next to the minimum your Rivian needs, so you can see the margin between tires without opening them.
+- **Load index on every card.** Each card now shows the tire's load index, so you can compare tires on it without opening them.
 
 ## 1.92.1 - 2026-09-03
 
