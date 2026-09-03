@@ -11,6 +11,10 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.0.4 - 2026-09-03
+
+- **A wider picks window.** The four tiles on each pick have room to breathe, so nothing is cut off.
+
 ## 2.0.3 - 2026-09-03
 
 - **Picks are easier to read.** Each pick now leads with why it was chosen, shows the price on its own, and lays out efficiency, load index, warranty and owner rating as four tiles, the same way the tire page does.
