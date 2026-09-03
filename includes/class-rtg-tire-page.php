@@ -142,6 +142,11 @@ class RTG_Tire_Page {
             'shareTitle'     => $heading,
             'reviewTotal'    => $review_count,
             'reviewsPerPage' => self::REVIEWS_PER_PAGE,
+            // "What owners say": fetched after paint, only when there is a key
+            // and enough reviews to say anything.
+            'reviewSummaryRest' => ( RTG_Advisor::is_live() && $review_count >= RTG_Advisor::MIN_REVIEWS_FOR_SUMMARY )
+                ? RTG_Advisor::review_summary_url( $tire['tire_id'] )
+                : '',
             'compareUrl'     => add_query_arg(
                 'compare',
                 rawurlencode( $tire['tire_id'] ),

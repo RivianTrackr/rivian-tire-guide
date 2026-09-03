@@ -187,6 +187,21 @@ class RTG_Frontend {
                 'whatsNewUrl'     => RTG_Whats_New::url(),
                 'whatsNewRest'    => RTG_Whats_New::rest_url(),
                 'whatsNewVersion' => RTG_Whats_New::latest_version(),
+                // "Help me choose": the route, and the form's choices, so the
+                // labels live in one place (PHP) and the modal only renders them.
+                'advisor'         => array(
+                    'enabled'    => RTG_Advisor::is_enabled(),
+                    'live'       => RTG_Advisor::is_live(),
+                    'url'        => RTG_Advisor::advise_url(),
+                    'priorities' => RTG_Advisor::PRIORITIES,
+                    'budgets'    => array_map(
+                        function ( $value, $label ) {
+                            return array( 'value' => (string) $value, 'label' => $label );
+                        },
+                        array_keys( RTG_Advisor::BUDGETS ),
+                        array_values( RTG_Advisor::BUDGETS )
+                    ),
+                ),
             ),
         );
 

@@ -543,6 +543,18 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
 
   /* --- Reviews --- */
   .rtg-tp .rtg-tp-reviews-list { display: flex; flex-direction: column; gap: 12px; }
+  .rtg-tp .rtg-tp-owners-say { background: var(--rtg-tp-card); border: 1px solid var(--rtg-tp-border); border-left: 3px solid var(--rtg-tp-accent); border-radius: 12px; padding: 16px 18px; margin: 0 0 12px; }
+  .rtg-tp .rtg-tp-owners-say-label { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--rtg-tp-accent); margin: 0 0 8px; }
+  .rtg-tp .rtg-tp-owners-say-label i { font-size: 12px; }
+  .rtg-tp .rtg-tp-owners-say-text { font-size: 15px; line-height: 1.55; color: var(--rtg-tp-heading); margin: 0; }
+  .rtg-tp .rtg-tp-owners-say-lists { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  .rtg-tp .rtg-tp-owners-say-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+  .rtg-tp .rtg-tp-owners-say-list li { position: relative; padding-left: 20px; font-size: 13px; color: var(--rtg-tp-text); line-height: 1.4; }
+  .rtg-tp .rtg-tp-owners-say-list li i { position: absolute; left: 0; top: 3px; font-size: 12px; }
+  .rtg-tp .rtg-tp-owners-say-list.is-pro li i { color: #4ade80; }
+  .rtg-tp .rtg-tp-owners-say-list.is-con li i { color: #f97316; }
+  .rtg-tp .rtg-tp-owners-say-foot { font-size: 12px; color: var(--rtg-tp-muted); margin: 10px 0 0; }
+  @media (max-width: 600px) { .rtg-tp .rtg-tp-owners-say-lists { grid-template-columns: 1fr; } }
   .rtg-tp .rtg-tp-review { background: var(--rtg-tp-card); border: 1px solid var(--rtg-tp-border); border-radius: 12px; padding: 16px 18px; margin: 0; }
   .rtg-tp .rtg-tp-review-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 6px; }
   .rtg-tp .rtg-tp-review-who { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -770,6 +782,7 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
   </div>
 
   <?php if ( ! empty( $reviews ) ) : ?>
+    <div class="rtg-tp-owners-say" id="rtgTpOwnersSay" hidden></div>
     <div class="rtg-tp-reviews-list" id="rtgTpReviewList">
     <?php foreach ( $reviews as $review ) : ?>
     <div class="rtg-tp-review">

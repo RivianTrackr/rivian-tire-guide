@@ -32,6 +32,11 @@ if ( ! defined( 'ABSPATH' ) ) {
         <button id="rtgSearchSubmit" class="rtg-search-btn" type="button" aria-label="Search tires">
           <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Search
         </button>
+        <?php if ( RTG_Advisor::is_enabled() ) : ?>
+        <button id="rtgAdvisorOpen" class="rtg-advisor-btn" type="button">
+          <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Help me choose
+        </button>
+        <?php endif; ?>
       </div>
     </div>
     <div id="mobileFilterContent" class="mobile-filter-content">

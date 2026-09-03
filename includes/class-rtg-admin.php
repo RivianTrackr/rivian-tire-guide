@@ -1305,6 +1305,19 @@ class RTG_Admin {
             'analytics_retention_days' => $retention_days,
         ) );
 
+        // AI Tire Advisor. The key field renders empty (same rule as the CJ
+        // token): an empty submission leaves it alone, clearing is explicit.
+        $settings['ai_enabled'] = ! empty( $_POST['ai_enabled'] );
+        $posted_key = trim( (string) wp_unslash( $_POST['ai_api_key'] ?? '' ) );
+        if ( ! empty( $_POST['ai_api_key_clear'] ) ) {
+            $settings['ai_api_key'] = '';
+        } elseif ( '' !== $posted_key ) {
+            $settings['ai_api_key'] = $posted_key;
+        }
+        $posted_model = sanitize_text_field( wp_unslash( $_POST['ai_model'] ?? '' ) );
+        $settings['ai_model'] = isset( RTG_Advisor::MODELS[ $posted_model ] ) ? $posted_model : RTG_Advisor::DEFAULT_MODEL;
+        $settings['ai_rate_limit'] = max( 1, min( 60, intval( $_POST['ai_rate_limit'] ?? RTG_Advisor::DEFAULT_RATE_LIMIT ) ) );
+
         update_option( 'rtg_settings', $settings );
 
         // Save dropdown options (one value per line in textareas).

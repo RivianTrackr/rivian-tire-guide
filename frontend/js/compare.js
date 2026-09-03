@@ -485,7 +485,7 @@ function renderComparison(rows, tokens) {
   const subtitle = n === 1
     ? 'One tire so far. Add another below to compare them side by side.'
     : `Comparing ${n} tires side by side. Best values are <span style="color:var(--rtg-accent);font-weight:600">highlighted</span>.`;
-  html = `<p class="cmp-subtitle">${subtitle}</p>` + html;
+  html = `<p class="cmp-subtitle">${subtitle}</p>` + (n >= 2 && settings().compareSummaryRest ? '<div class="cmp-ai" id="cmpAi" hidden></div>' : '') + html;
 
   // --- Spec sections ---
 
@@ -628,7 +628,47 @@ function renderPage() {
 
   if (!renderComparison(rtgData.tires, tokens)) {
     renderEmptyState('None of the tires in this link exist any more. Pick some to compare.');
+    return;
   }
+  loadCompareSummary();
+}
+
+/**
+ * "In plain words": one paragraph from the advisor comparing the tires on
+ * the page, loaded after paint so the grid never waits on it. Written by
+ * the model from the catalog's numbers; the server caches it per set of
+ * tires. Absent when the site has no API key.
+ */
+function loadCompareSummary() {
+  const slot = document.getElementById('cmpAi');
+  const base = settings().compareSummaryRest;
+  if (!slot || !base) return;
+  const ids = Array.from(document.querySelectorAll('.cmp-tire-header[data-tire-id]')).map(h => h.dataset.tireId).filter(Boolean);
+  if (ids.length < 2) return;
+
+  slot.hidden = false;
+  slot.innerHTML = '<div class="cmp-ai-label">' + rtgIcon('wand-magic-sparkles', 12) + ' In plain words</div><p class="cmp-ai-text is-loading">Reading the numbers…</p>';
+  const url = base + (base.includes('?') ? '&' : '?') + 'ids=' + encodeURIComponent(ids.join(','));
+  let tries = 0;
+
+  const load = () => fetch(url, { credentials: 'same-origin' })
+    .then(r => r.json())
+    .then(data => {
+      if (!slot.isConnected) return;
+      if (data && data.ok && data.paragraph) {
+        const p = slot.querySelector('.cmp-ai-text');
+        p.classList.remove('is-loading');
+        p.textContent = data.paragraph;
+        return;
+      }
+      if (data && data.pending && ++tries < 4) {
+        setTimeout(load, 3000);
+        return;
+      }
+      slot.hidden = true;
+    })
+    .catch(() => { slot.hidden = true; });
+  load();
 }
 
 // --- Init ---

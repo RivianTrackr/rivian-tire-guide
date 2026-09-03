@@ -521,8 +521,15 @@ $rtg_settings = get_option( 'rtg_settings', array() );
       .cmp-tire-meta-value { font-size: 15px; }
     }
 
+    /* --- In plain words (advisor) --- */
+    .cmp-ai { background: var(--rtg-bg-card, #16191e); border: 1px solid var(--rtg-border, #3a3e45); border-left: 3px solid var(--rtg-accent, #fba919); border-radius: 12px; padding: 14px 18px; margin: 0 0 20px; }
+    .cmp-ai-label { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--rtg-accent, #fba919); margin: 0 0 6px; }
+    .cmp-ai-text { margin: 0; font-size: 15px; line-height: 1.55; color: var(--rtg-text-heading, #f6f4f0); }
+    .cmp-ai-text.is-loading { color: var(--rtg-text-muted, #a19e97); font-style: italic; }
+
     /* --- Print --- */
     @media print {
+      .cmp-ai { border-color: #ddd; border-left-color: #999; }
       .cmp-root { background: #fff; color: #1a1a1a; }
       .cmp-crumb-row { display: none; }
       .cmp-section, .cmp-tire-header { border-color: #ddd; }

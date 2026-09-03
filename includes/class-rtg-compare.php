@@ -71,6 +71,8 @@ class RTG_Compare {
                 'vehicleSizeMap'  => RTG_Database::get_vehicle_size_map(),
                 'loadIndexFloors' => RTG_Fitment::floors(),
                 'stalePriceDays'  => RTG_Stale_Prices::stale_days(),
+                // The "in plain words" paragraph; empty when the advisor has no key.
+                'compareSummaryRest' => RTG_Advisor::is_live() ? RTG_Advisor::compare_summary_url() : '',
             ),
         ) );
     }
