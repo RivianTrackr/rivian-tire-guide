@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 23;
+    const DB_VERSION = 24;
 
     public static function activate() {
         self::create_tables();
@@ -244,6 +244,7 @@ class RTG_Activator {
             21 => 'migrate_21_add_model_aliases',
             22 => 'migrate_22_remove_retired_features',
             23 => 'migrate_23_add_sort_and_status_indexes',
+            24 => 'migrate_24_register_whats_new_route',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -668,5 +669,15 @@ class RTG_Activator {
                 }
             }
         }
+    }
+    /**
+     * Migration 24: Flush rewrite rules so /tire-guide/whats-new/ resolves.
+     *
+     * No schema change. The "What's new" page is a rewrite rule, and a site
+     * updated in place never re-activates the plugin, so nothing else would
+     * register it. Same one-shot flag activation sets.
+     */
+    private static function migrate_24_register_whats_new_route() {
+        update_option( 'rtg_flush_rewrite', 1 );
     }
 }

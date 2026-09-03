@@ -4,6 +4,19 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.92.0] - 2026-09-03
+
+Owner-facing release notes, in the guide and on their own page.
+
+### Added
+- **"What's new" in the guide.** A pill in the filter header, left of Clear All, opens the release notes in a dialog built on the review modal's shell (Escape closes, Tab is trapped, focus returns to the pill; a full-screen sheet on phones). The pill carries a dot until this browser has opened the newest release, remembered in `localStorage` under `rtg_seen_version` the way the vehicle toggle is. Under 480px the pill collapses to its icon.
+- **`/tire-guide/whats-new/`.** The same notes as a page inside the theme, via `RTG_Theme_Render` like the compare page, with a canonical URL so it can be shared and indexed. Migration 24 flushes rewrite rules on sites updated in place (no schema change).
+- **`WHATS-NEW.md`.** The notes' source, written for owners rather than developers: one `## version - date` heading per release, an optional intro line, then bullets that open with a bold lead. Releases with nothing an owner would notice are left out. `CHANGELOG.md` stays the developer record; the two are different documents on purpose, so the public one never has to be filtered out of this one. Backfilled from 1.85.0.
+- **`RTG_Whats_New`.** Parses the file (bracketed or plain version, indented continuation lines, preamble and sub-headings skipped) into a transient keyed on the plugin version and the file's mtime, so a release or an edit refreshes it and nothing is flushed by hand. Inline rendering escapes first and then allows bold, code and http(s) links only. One view model feeds the page (server-rendered) and the modal (client-rendered from `GET /wp-json/rtg/v1/whats-new`, which returns the same pre-rendered fields), so the two can't drift. The guide localizes `whatsNewUrl`, `whatsNewRest` and `whatsNewVersion`.
+
+### Tests
+- `tests/contract/whats-new.php` runs on plain PHP in the lint job: the parser against a sample covering every shape the format allows, the renderer against a stray tag, a `javascript:` link and a non-http link, and the shipped `WHATS-NEW.md` itself (newest first, every release dated with at least one bullet, the newest not ahead of `RTG_VERSION`, and no note naming a file, class, test or migration). `tests/test-whats-new.php` covers the cache key, a stale cache from another version, the REST route, the rewrite and query var, and the localized settings.
+
 ## [1.91.2] - 2026-09-02
 
 ### Fixed
