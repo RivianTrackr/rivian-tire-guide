@@ -678,6 +678,15 @@
   justify-content: space-between;
   gap: 12px;
 }
+.rtg-adv-footer > [hidden],
+.rtg-adv-body > [hidden] {
+  display: none !important;
+}
+.rtg-adv-again {
+  height: 40px;
+  padding: 0 16px;
+  font-size: 14px;
+}
 .rtg-adv-status {
   flex: 1;
   font-size: 13px;

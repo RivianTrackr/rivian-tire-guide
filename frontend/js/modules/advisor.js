@@ -326,16 +326,20 @@ function openAdvisor(trigger) {
 
   const footer = el('div', 'rtg-review-modal-footer rtg-adv-footer');
   const status = el('span', 'rtg-adv-status');
-  const again = el('button', 'rtg-wn-page-link rtg-adv-again', 'Start over');
+  const again = el('button', 'rtg-adv-action rtg-adv-again', 'Start over');
   again.type = 'button';
   again.hidden = true;
   const submit = el('button', 'rtg-wn-done rtg-adv-submit', 'Find my tires');
   submit.type = 'submit';
   submit.setAttribute('form', 'rtgAdvForm');
   form.id = 'rtgAdvForm';
+  const done = el('button', 'rtg-wn-done rtg-adv-done', 'Done');
+  done.type = 'button';
+  done.hidden = true;
   footer.appendChild(status);
   footer.appendChild(again);
   footer.appendChild(submit);
+  footer.appendChild(done);
 
   modal.appendChild(header);
   modal.appendChild(body);
@@ -376,6 +380,7 @@ function openAdvisor(trigger) {
   }
 
   closeBtn.addEventListener('click', closeModal);
+  done.addEventListener('click', closeModal);
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) closeModal();
   });
@@ -387,6 +392,7 @@ function openAdvisor(trigger) {
     results.hidden = true;
     form.hidden = false;
     again.hidden = true;
+    done.hidden = true;
     submit.hidden = false;
     status.textContent = '';
     title.textContent = 'Help me choose';
@@ -422,6 +428,7 @@ function openAdvisor(trigger) {
         form.hidden = true;
         submit.hidden = true;
         again.hidden = false;
+        done.hidden = false;
         results.hidden = false;
         title.textContent = 'Your picks';
         renderPicks(results, data);
