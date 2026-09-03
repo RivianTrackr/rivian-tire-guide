@@ -333,7 +333,12 @@ function openAdvisor(trigger) {
   closeBtn.type = 'button';
   closeBtn.setAttribute('aria-label', 'Close');
   closeBtn.innerHTML = '&times;';
+  // "Start over" lives in the header on the results view; the X closes.
+  const again = el('button', 'rtg-adv-again', 'Start over');
+  again.type = 'button';
+  again.hidden = true;
   header.appendChild(title);
+  header.appendChild(again);
   header.appendChild(closeBtn);
 
   const body = el('div', 'rtg-adv-body');
@@ -346,22 +351,27 @@ function openAdvisor(trigger) {
   body.appendChild(form);
   body.appendChild(results);
 
+  // The footer exists only for the question form: one button, plus an
+  // error line above it when a request fails. The results have none.
   const footer = el('div', 'rtg-review-modal-footer rtg-adv-footer');
-  const status = el('span', 'rtg-adv-status');
-  const again = el('button', 'rtg-adv-action rtg-adv-again', 'Start over');
-  again.type = 'button';
-  again.hidden = true;
-  const submit = el('button', 'rtg-wn-done rtg-adv-submit', 'Find my tires');
+  const status = el('div', 'rtg-adv-status');
+  status.setAttribute('role', 'status');
+  const submit = el('button', 'rtg-wn-done rtg-adv-submit');
   submit.type = 'submit';
   submit.setAttribute('form', 'rtgAdvForm');
   form.id = 'rtgAdvForm';
-  const done = el('button', 'rtg-wn-done rtg-adv-done', 'Done');
-  done.type = 'button';
-  done.hidden = true;
+  const submitLabel = el('span', 'rtg-adv-submit-label', 'Find my tires');
+  const spinner = el('span', 'rtg-adv-spinner');
+  spinner.setAttribute('aria-hidden', 'true');
+  submit.appendChild(spinner);
+  submit.appendChild(submitLabel);
   footer.appendChild(status);
-  footer.appendChild(again);
   footer.appendChild(submit);
-  footer.appendChild(done);
+  const setBusy = (busy) => {
+    submit.disabled = busy;
+    submit.classList.toggle('is-busy', busy);
+    submitLabel.textContent = busy ? 'Thinking…' : 'Find my tires';
+  };
 
   modal.appendChild(header);
   modal.appendChild(body);
@@ -402,7 +412,6 @@ function openAdvisor(trigger) {
   }
 
   closeBtn.addEventListener('click', closeModal);
-  done.addEventListener('click', closeModal);
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) closeModal();
   });
@@ -414,10 +423,10 @@ function openAdvisor(trigger) {
     results.hidden = true;
     form.hidden = false;
     again.hidden = true;
-    done.hidden = true;
-    submit.hidden = false;
+    footer.hidden = false;
     status.textContent = '';
     title.textContent = 'Help me choose';
+    modal.scrollTop = 0;
     const firstSegBtn = form.querySelector('.rtg-adv-seg-btn.is-active');
     if (firstSegBtn) firstSegBtn.focus();
   });
@@ -428,9 +437,8 @@ function openAdvisor(trigger) {
     const url = settings().url;
     if (!url) return;
 
-    submit.disabled = true;
-    submit.textContent = 'Thinking…';
-    status.textContent = settings().live ? 'Reading the catalog and writing your picks.' : 'Ranking the catalog.';
+    setBusy(true);
+    status.textContent = '';
 
     fetch(url, {
       method: 'POST',
@@ -440,17 +448,14 @@ function openAdvisor(trigger) {
     })
       .then(r => r.json().then(data => ({ ok: r.ok, status: r.status, data })))
       .then(({ ok, status: code, data }) => {
-        submit.disabled = false;
-        submit.textContent = 'Find my tires';
-        status.textContent = '';
+        setBusy(false);
         if (!ok || !data || data.ok === false) {
           status.textContent = (data && data.error) || (code === 429 ? 'Too many requests. Give it a minute.' : 'Something went wrong. Try again.');
           return;
         }
         form.hidden = true;
-        submit.hidden = true;
+        footer.hidden = true;
         again.hidden = false;
-        done.hidden = false;
         results.hidden = false;
         title.textContent = 'Your picks';
         renderPicks(results, data);
@@ -459,8 +464,7 @@ function openAdvisor(trigger) {
         if (firstAction) firstAction.focus({ preventScroll: true });
       })
       .catch(() => {
-        submit.disabled = false;
-        submit.textContent = 'Find my tires';
+        setBusy(false);
         status.textContent = 'Something went wrong. Try again.';
       });
   });

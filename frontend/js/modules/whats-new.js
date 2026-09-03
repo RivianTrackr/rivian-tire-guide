@@ -150,25 +150,8 @@ function openWhatsNew(trigger) {
   loading.textContent = 'Loading the latest changes…';
   body.appendChild(loading);
 
-  const footer = document.createElement('div');
-  footer.className = 'rtg-review-modal-footer rtg-wn-footer';
-  const pageUrl = settings().whatsNewUrl;
-  if (pageUrl) {
-    const link = document.createElement('a');
-    link.className = 'rtg-wn-page-link';
-    link.href = pageUrl;
-    link.textContent = 'Open as a page';
-    footer.appendChild(link);
-  }
-  const done = document.createElement('button');
-  done.type = 'button';
-  done.className = 'rtg-wn-done';
-  done.textContent = 'Got it';
-  footer.appendChild(done);
-
   modal.appendChild(header);
   modal.appendChild(body);
-  modal.appendChild(footer);
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
@@ -206,7 +189,6 @@ function openWhatsNew(trigger) {
   }
 
   closeBtn.addEventListener('click', closeModal);
-  done.addEventListener('click', closeModal);
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) closeModal();
   });
@@ -215,6 +197,17 @@ function openWhatsNew(trigger) {
   loadNotes().then(data => {
     if (!overlay.isConnected) return;
     renderReleases(body, data.releases);
+    const pageUrl = settings().whatsNewUrl;
+    if (pageUrl) {
+      const foot = document.createElement('p');
+      foot.className = 'rtg-wn-page-foot';
+      const link = document.createElement('a');
+      link.className = 'rtg-wn-page-link';
+      link.href = pageUrl;
+      link.textContent = 'Open as a page';
+      foot.appendChild(link);
+      body.appendChild(foot);
+    }
     if (data.latest) {
       writeSeenVersion(data.latest);
       updateDot();
@@ -225,6 +218,7 @@ function openWhatsNew(trigger) {
     const p = document.createElement('p');
     p.className = 'rtg-wn-empty';
     p.textContent = "The notes couldn't be loaded. ";
+    const pageUrl = settings().whatsNewUrl;
     if (pageUrl) {
       const a = document.createElement('a');
       a.href = pageUrl;
