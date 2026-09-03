@@ -162,6 +162,7 @@ class RTG_Tire_Page {
             'slug'        => $tire['slug'] ?? $tire['tire_id'],
             'canonical'   => $canonical,
             'description' => $description,
+            'image'       => RTG_Meta::share_image(),
             'content'     => function () {
                 include RTG_PLUGIN_DIR . 'frontend/templates/tire-page-content.php';
             },

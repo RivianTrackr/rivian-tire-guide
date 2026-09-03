@@ -308,6 +308,7 @@ class RTG_Whats_New {
             'slug'        => 'whats-new',
             'canonical'   => self::url(),
             'description' => 'Every change you can see in the Rivian Tire Guide, newest first, in plain language.',
+            'image'       => RTG_Meta::share_image(),
             'content'     => function () {
                 include RTG_PLUGIN_DIR . 'frontend/templates/whats-new.php';
             },
