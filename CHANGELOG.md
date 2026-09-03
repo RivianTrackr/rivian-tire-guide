@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.4] - 2026-09-03
+
+### Fixed
+- **The picks dialog is wider and the tiles no longer clip.** At 660px the four tiles had about 110px each: labels broke mid-word ("EFFICIENC Y") and values truncated ("2.81 …", "Not lis…"). The dialog is 800px wide, tile labels never wrap, values wrap instead of truncating, and the tiles fall to two columns below 820px rather than only on phones.
+
 ## [2.0.3] - 2026-09-03
 
 ### Changed
