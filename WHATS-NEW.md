@@ -11,6 +11,10 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.0.3 - 2026-09-03
+
+- **Picks are easier to read.** Each pick now leads with why it was chosen, shows the price on its own, and lays out efficiency, load index, warranty and owner rating as four tiles, the same way the tire page does.
+
 ## 2.0.2 - 2026-09-03
 
 - **A tidier picks view.** The results now end with "Start over" and "Done", and the advice talks to you rather than about itself.
