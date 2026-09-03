@@ -11,6 +11,10 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.0.6 - 2026-09-03
+
+- **More room for your picks.** The buttons at the bottom of the picks window are gone. "Start over" now sits up top next to the title, and the X closes, so the picks fill the screen on a phone.
+
 ## 2.0.5 - 2026-09-03
 
 - **A shorter footer on phones.** In the picks window, "Start over" and "Done" now sit side by side instead of stacked, so more of your picks fit on the screen.

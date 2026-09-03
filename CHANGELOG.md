@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.6] - 2026-09-03
+
+### Changed
+- **No footer on the picks.** "Done" is gone (the X closes) and "Start over" moves into the header beside the title, so the picks get the whole screen on a phone. The question form keeps a footer with one full-width "Find my tires" that becomes "Thinking…" with a spinner while the request runs; an error reads in red above it. The changelog dialog loses its footer the same way, with "Open as a page" at the end of the list.
+
+### Fixed
+- **2.0.5's row footer never applied.** The review modal's phone rules sit later in the stylesheet at equal specificity and re-stacked the footer, which is also why the "Thinking…" button grew tall (a `flex: 1` in a column). The advisor's footer rules now use compound selectors the shell cannot override.
+
 ## [2.0.5] - 2026-09-03
 
 ### Fixed
