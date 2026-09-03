@@ -134,7 +134,7 @@ function openWhatsNew(trigger) {
   header.className = 'rtg-review-modal-header';
   const title = document.createElement('h3');
   title.id = 'rtgWhatsNewTitle';
-  title.textContent = "What's new";
+  title.textContent = "Changelog";
   const closeBtn = document.createElement('button');
   closeBtn.type = 'button';
   closeBtn.className = 'rtg-review-modal-close';
@@ -242,7 +242,7 @@ function updateDot() {
   btn.classList.toggle('has-unseen', unseen);
   const dot = btn.querySelector('.rtg-whats-new-dot');
   if (dot) dot.hidden = !unseen;
-  btn.setAttribute('aria-label', unseen ? "What's new (new updates)" : "What's new");
+  btn.setAttribute('aria-label', unseen ? "Changelog (new updates)" : "Changelog");
 }
 
 /** Wire the filter-header pill. Safe to call when the pill isn't on the page. */

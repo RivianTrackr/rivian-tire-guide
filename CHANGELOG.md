@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.92.1] - 2026-09-03
+
+### Changed
+- **The pill says "Changelog".** The button label, its accessible name, the dialog title, the page heading and the document title all read "Changelog" instead of "What's new". The URL, the file and the class names are unchanged.
+
 ## [1.92.0] - 2026-09-03
 
 Owner-facing release notes, in the guide and on their own page.

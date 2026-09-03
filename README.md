@@ -13,7 +13,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Shareable Tire Links** — Direct links to individual tires with deep-link highlighting.
 - **Active Filter Chips** — Dismissible chips show active filters at a glance.
 - **Smart No Results** — When filters produce no matches, actionable suggestions help users relax specific filters.
-- **What's New** — A pill in the filter header opens plain-language release notes (from `WHATS-NEW.md`), with a dot until the newest release has been seen; the same notes live at `/tire-guide/whats-new/`.
+- **Changelog** — A "Changelog" pill in the filter header opens plain-language release notes (from `WHATS-NEW.md`), with a dot until the newest release has been seen; the same notes live at `/tire-guide/whats-new/`.
 
 ### Ratings & Reviews
 - **Star Ratings** — SVG star ratings with half-star precision. Logged-in users rate tires 1-5 stars with keyboard navigation (arrow keys, Enter/Space). Users can delete their own ratings.

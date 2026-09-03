@@ -304,7 +304,7 @@ class RTG_Whats_New {
         }
 
         RTG_Theme_Render::render( array(
-            'title'       => "What's New — Rivian Tire Guide",
+            'title'       => 'Changelog — Rivian Tire Guide',
             'slug'        => 'whats-new',
             'canonical'   => self::url(),
             'description' => 'Every change you can see in the Rivian Tire Guide, newest first, in plain language.',
