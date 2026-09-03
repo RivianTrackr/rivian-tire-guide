@@ -532,6 +532,224 @@
   gap: 8px;
 }
 
+/* === What's new pill + modal ===
+   The pill shares the Clear All button's size and sits left of it. A dot
+   means the newest release is one this browser hasn't opened; the modal
+   borrows the review modal's shell and adds the release list, which is the
+   same markup the /tire-guide/whats-new/ page renders. */
+.rtg-whats-new-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rtg-text-muted);
+  background: transparent;
+  border: 1px solid var(--rtg-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  opacity: 0.7;
+}
+.rtg-whats-new-btn:hover,
+.rtg-whats-new-btn:focus-visible,
+.rtg-whats-new-btn.has-unseen {
+  background: color-mix(in srgb, var(--rtg-accent) 10%, transparent);
+  border-color: var(--rtg-accent);
+  color: var(--rtg-accent);
+  opacity: 1;
+}
+.rtg-whats-new-btn i {
+  font-size: 12px;
+  color: inherit;
+  width: auto;
+}
+.rtg-whats-new-dot {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--rtg-accent);
+  border: 2px solid var(--rtg-bg-card);
+  animation: rtg-wn-pulse 2s ease-in-out infinite;
+}
+@keyframes rtg-wn-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rtg-accent) 45%, transparent); }
+  50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--rtg-accent) 0%, transparent); }
+}
+.rtg-wn-modal {
+  max-width: 600px;
+}
+.rtg-wn-body {
+  padding: 20px 24px;
+  display: grid;
+  gap: 12px;
+}
+.rtg-wn-loading,
+.rtg-wn-empty {
+  margin: 0;
+  font-size: 14px;
+  color: var(--rtg-text-muted);
+}
+.rtg-wn-empty a {
+  color: var(--rtg-accent);
+}
+.rtg-wn-release {
+  background: var(--rtg-bg-deep);
+  border: 1px solid var(--rtg-border);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.rtg-wn-release-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.rtg-wn-version {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  color: var(--rtg-accent);
+  background: color-mix(in srgb, var(--rtg-accent) 12%, var(--rtg-bg-deep));
+  border: 1px solid color-mix(in srgb, var(--rtg-accent) 30%, transparent);
+}
+.rtg-wn-date {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--rtg-text-muted);
+}
+.rtg-wn-latest {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #15130e;
+  background: var(--rtg-star-user);
+}
+.rtg-wn-intro {
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: var(--rtg-text-heading);
+}
+.rtg-wn-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.rtg-wn-list li {
+  position: relative;
+  padding-left: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--rtg-text-primary);
+}
+.rtg-wn-list li::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--rtg-accent);
+}
+.rtg-wn-list strong {
+  color: var(--rtg-text-heading);
+  font-weight: 600;
+}
+.rtg-wn-list code,
+.rtg-wn-intro code {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  font-size: 12px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--rtg-bg-card);
+  border: 1px solid var(--rtg-border);
+}
+.rtg-wn-list a,
+.rtg-wn-intro a {
+  color: var(--rtg-accent);
+}
+.rtg-wn-footer {
+  justify-content: space-between;
+}
+.rtg-wn-page-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--rtg-text-muted);
+  text-decoration: none;
+}
+.rtg-wn-page-link:hover {
+  color: var(--rtg-accent);
+}
+.rtg-wn-done {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #15130e;
+  background: var(--rtg-accent);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+.rtg-wn-done:hover {
+  background: var(--rtg-accent-hover);
+}
+.rtg-wn-done:active {
+  transform: scale(0.93);
+}
+@media (max-width: 640px) {
+  .rtg-wn-body {
+    padding: 16px;
+    flex: 1;
+  }
+  .rtg-wn-footer {
+    position: sticky;
+    bottom: 0;
+    background: var(--rtg-bg-card);
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+}
+@media (max-width: 480px) {
+  .rtg-whats-new-btn .rtg-whats-new-label {
+    display: none;
+  }
+  .rtg-whats-new-btn {
+    width: 34px;
+    padding: 0;
+    justify-content: center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rtg-whats-new-dot {
+    animation: none;
+  }
+}
+
 /* === Info Tooltip Trigger === */
 .info-tooltip-trigger {
   background: none;

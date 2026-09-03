@@ -111,7 +111,7 @@ class Test_RTG_Activator extends WP_UnitTestCase {
             }
         }
 
-        $this->assertSame( 23, (int) get_option( 'rtg_db_version' ) );
+        $this->assertSame( RTG_Activator::DB_VERSION, (int) get_option( 'rtg_db_version' ) );
     }
 
     /**
@@ -127,7 +127,7 @@ class Test_RTG_Activator extends WP_UnitTestCase {
         global $wpdb;
         $rows = $wpdb->get_results( "SHOW INDEX FROM {$wpdb->prefix}rtg_tires WHERE Key_name = 'idx_created_at'" );
         $this->assertCount( 1, $rows, 'exactly one idx_created_at, not a duplicate' );
-        $this->assertSame( 23, (int) get_option( 'rtg_db_version' ) );
+        $this->assertSame( RTG_Activator::DB_VERSION, (int) get_option( 'rtg_db_version' ) );
     }
 
     /**
@@ -148,6 +148,6 @@ class Test_RTG_Activator extends WP_UnitTestCase {
         }
 
         RTG_Activator::maybe_upgrade();
-        $this->assertSame( 23, (int) get_option( 'rtg_db_version' ) );
+        $this->assertSame( RTG_Activator::DB_VERSION, (int) get_option( 'rtg_db_version' ) );
     }
 }

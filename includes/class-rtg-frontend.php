@@ -181,6 +181,12 @@ class RTG_Frontend {
                 // warning and "price as of" hint are judged against.
                 'loadIndexFloors' => RTG_Fitment::floors(),
                 'stalePriceDays'  => RTG_Stale_Prices::stale_days(),
+                // The "What's new" pill: where the notes live, the JSON the
+                // modal loads, and the newest version so the pill can show
+                // a dot until this browser has opened it.
+                'whatsNewUrl'     => RTG_Whats_New::url(),
+                'whatsNewRest'    => RTG_Whats_New::rest_url(),
+                'whatsNewVersion' => RTG_Whats_New::latest_version(),
             ),
         );
 

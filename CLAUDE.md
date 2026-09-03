@@ -256,3 +256,25 @@ Track: 6px height, full-round, gradient fill. Hover: `scale(1.15)` + accent ring
 - Icons: Font Awesome 6 solid (`fa-solid` prefix)
 - No framework dependencies — all components are vanilla CSS + semantic HTML
 - Build tooling: esbuild
+
+## Release Checklist
+
+Every version that ships follows this loop, in this order. CI enforces the
+parts it can see.
+
+1. **Bump the version** in three places: the plugin header and `RTG_VERSION`
+   in `rivian-tire-guide.php`, and `package.json`.
+2. **`CHANGELOG.md`**: the developer record. Reasons, file names, tests.
+3. **`WHATS-NEW.md`**: the owner-facing note, written by the assistant as
+   part of the release, never left for later. Plain language, no file or
+   class names, no test counts: what a visitor to the guide would notice and
+   why it helps them. One `## version - date` heading, an optional intro
+   line, then bullets that open with a bold lead sentence. If the release
+   truly changes nothing an owner could see, skip the note and write the
+   phrase "Nothing visible to owners" in that version's changelog entry
+   instead. `tests/contract/whats-new.php` fails the build when neither is
+   present.
+4. **Build and test**: `npm run build` (commit the minified assets),
+   `npm test`, `php -l` on touched PHP, and `php tests/contract/*.php`.
+5. **Commit, push, PR, merge on green** with a merge commit titled
+   `"<PR title> (#NNN)"`.

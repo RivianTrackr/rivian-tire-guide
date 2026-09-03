@@ -13,6 +13,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Shareable Tire Links** — Direct links to individual tires with deep-link highlighting.
 - **Active Filter Chips** — Dismissible chips show active filters at a glance.
 - **Smart No Results** — When filters produce no matches, actionable suggestions help users relax specific filters.
+- **What's New** — A pill in the filter header opens plain-language release notes (from `WHATS-NEW.md`), with a dot until the newest release has been seen; the same notes live at `/tire-guide/whats-new/`.
 
 ### Ratings & Reviews
 - **Star Ratings** — SVG star ratings with half-star precision. Logged-in users rate tires 1-5 stars with keyboard navigation (arrow keys, Enter/Space). Users can delete their own ratings.
@@ -143,6 +144,10 @@ For bulk operations, use **Tire Guide > Import / Export** to import tires via CS
 
 The plugin registers a custom URL at `/tire-compare/` (configurable in settings). Users select tires from the guide and compare specs side-by-side with best-value highlighting.
 
+### What's New Page
+
+The plugin registers `/tire-guide/whats-new/`, rendered inside the theme from `WHATS-NEW.md` at the plugin root. Write that file for owners, not developers: one `## version - date` heading per release, an optional intro line, then bullets that open with a bold lead sentence. Skip releases with nothing visible. It is parsed once per plugin version (or file edit) and also served at `GET /wp-json/rtg/v1/whats-new` for the guide's modal.
+
 ### Settings
 
 Navigate to **Tire Guide > Settings** to configure:
@@ -162,6 +167,7 @@ Navigate to **Tire Guide > Settings** to configure:
 ```
 rivian-tire-guide/
 ├── rivian-tire-guide.php            # Main plugin entry point
+├── WHATS-NEW.md                     # Owner-facing release notes (rendered in the guide)
 ├── uninstall.php                    # Cleanup on plugin deletion
 ├── package.json                     # Build tools (esbuild)
 ├── esbuild.config.mjs              # Build configuration
@@ -176,6 +182,7 @@ rivian-tire-guide/
 │   ├── class-rtg-schema.php         # Schema.org JSON-LD structured data
 │   ├── class-rtg-meta.php           # Open Graph & Twitter Card meta tags
 │   ├── class-rtg-rest-api.php       # REST API endpoints
+│   ├── class-rtg-whats-new.php      # What's new: notes parser, page, REST route
 │   ├── class-rtg-roamer-sync.php    # Rivian Roamer efficiency data sync
 │   └── class-rtg-mailer.php         # HTML email notifications
 ├── admin/
@@ -183,7 +190,7 @@ rivian-tire-guide/
 │   ├── css/                         # Admin stylesheets
 │   └── js/                          # Admin scripts (incl. rtg-roamer.js)
 ├── frontend/
-│   ├── templates/                   # Frontend templates (tire-guide, compare, user-reviews)
+│   ├── templates/                   # Frontend templates (tire-guide, compare, user-reviews, whats-new)
 │   ├── css/                         # Frontend stylesheets
 │   └── js/
 │       ├── rivian-tires.js          # Main entry point (ES module)
@@ -202,7 +209,8 @@ rivian-tire-guide/
 │           ├── search.js            # Smart search autocomplete
 │           ├── server.js            # Server-side pagination
 │           ├── tooltips.js          # Filter help tooltips
-│           └── image-modal.js       # Image lightbox
+│           ├── image-modal.js       # Image lightbox
+│           └── whats-new.js         # What's new pill + modal
 ├── tests/
 │   ├── bootstrap.php                # PHPUnit WordPress test bootstrap
 │   ├── test-database.php            # PHP unit tests (21 tests)
