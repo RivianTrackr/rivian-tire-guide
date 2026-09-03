@@ -586,13 +586,13 @@ class RTG_Advisor {
     public static function build_advise_request( $input, $candidates, $floors, $vehicle_names ) {
         $system = "You are the Rivian Tire Guide's advisor on RivianTrackr, helping a Rivian owner choose tires. "
             . "You will receive the owner's vehicle, what matters to them, their budget, optional notes, and a list of candidate tires from the guide's catalog with real numbers: price per tire, load index, mileage warranty, 3PMS snow rating, and real-world efficiency in mi/kWh measured by Rivian owners (with how many vehicles and miles are behind the number; a limited sample is less reliable). Candidates are pre-ranked by the guide's own rules as rules_rank.\n\n"
-            . "Choose the best " . self::PICK_COUNT . " tires for this owner from the candidates only, by tire_id. Never invent a tire, a price or a number; use the values given and say the numbers. Write for an owner, not an engineer: plain, warm, direct, no jargon. Each pick gets a headline of at most seven words, a reason of one or two sentences that cites the numbers behind it, and one honest trade-off sentence (what they give up by choosing it, or an empty string when there is none worth saying). Order the picks best first. Add a one-sentence summary of how you weighed the priorities. If the candidates are thin for what the owner wants, say so in the summary rather than overselling.";
+            . "Choose the best " . self::PICK_COUNT . " tires for this owner from the candidates only, by tire_id. Never invent a tire, a price or a number; use the values given and say the numbers. Write for an owner, not an engineer: plain, warm, direct, no jargon. Address the owner as \"you\" and never refer to yourself; there is no \"I\" in this advice. Say \"minimum load index\" rather than \"floor\", and \"owner-measured\" or \"real-world\" for the efficiency data. Each pick gets a headline of at most seven words, a reason of one or two sentences that cites the numbers behind it, and one honest trade-off sentence (what they give up by choosing it, or an empty string when there is none worth saying). Order the picks best first. Add a summary of one or two short sentences saying how the priorities were weighed. If the candidates are thin for what the owner wants, say so in the summary rather than overselling.";
 
         $payload = array(
             'owner'      => array(
                 'vehicle'          => $input['vehicle'] ? $input['vehicle'] : 'unspecified',
                 'vehicle_names'    => $vehicle_names,
-                'load_index_floor' => $input['vehicle'] && isset( $floors[ $input['vehicle'] ] ) ? (int) $floors[ $input['vehicle'] ] : null,
+                'minimum_load_index' => $input['vehicle'] && isset( $floors[ $input['vehicle'] ] ) ? (int) $floors[ $input['vehicle'] ] : null,
                 'size'             => $input['size'] ? $input['size'] : 'any',
                 'priorities'       => array_map( function ( $p ) {
                     return self::PRIORITIES[ $p ];

@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.2] - 2026-09-03
+
+### Fixed
+- **The picks view's footer.** "Find my tires" stayed visible on the results and "Start over" rendered as the theme's bare button: the dialog's button styles set `display`, which beats the `hidden` attribute. A `[hidden]` rule inside the dialog now wins, "Start over" is a secondary button, and a primary "Done" closes the dialog from the results.
+
+### Changed
+- **The advice reads in the second person.** The prompt says there is no "I" in this advice, asks for "minimum load index" instead of "floor" and "owner-measured" for the efficiency data, and caps the summary at two short sentences. The payload key `load_index_floor` is now `minimum_load_index`, so the model's wording follows.
+
 ## [2.0.1] - 2026-09-03
 
 ### Fixed

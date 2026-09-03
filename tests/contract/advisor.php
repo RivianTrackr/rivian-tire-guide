@@ -109,7 +109,7 @@ check( RTG_Advisor::CANDIDATE_LIMIT === count( RTG_Advisor::candidates( $many, R
 
 $req = RTG_Advisor::build_advise_request( $input, $c, $floors, array_keys( $size_map ) );
 $user = json_decode( $req['user'], true );
-check( 116 === $user['owner']['load_index_floor'], 'the request carries the vehicle floor' );
+check( 116 === $user['owner']['minimum_load_index'], 'the request carries the vehicle minimum' );
 check( 350 === $user['owner']['budget_per_tire'], 'and the budget' );
 check( array( 'Range and efficiency', 'Price', 'Snow and winter' ) === $user['owner']['priorities'], 'priorities go over as their labels' );
 check( ! isset( $user['candidates'][0]['slug'] ) && ! isset( $user['candidates'][0]['components'] ), 'the model never sees slugs or scores' );

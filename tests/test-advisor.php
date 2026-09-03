@@ -158,7 +158,7 @@ class Test_RTG_Advisor extends WP_UnitTestCase {
         $this->assertSame( 'default', $this->last_request['fallbacks'] );
         $this->assertSame( 'sk-test', $this->last_headers['x-api-key'] );
         $payload = json_decode( $this->last_request['messages'][0]['content'], true );
-        $this->assertSame( 116, $payload['owner']['load_index_floor'] );
+        $this->assertSame( 116, $payload['owner']['minimum_load_index'] );
         $this->assertNotContains( 'adv-weak', array_column( $payload['candidates'], 'tire_id' ), 'the model never sees a tire that does not fit' );
 
         $second = $this->advise( array( 'vehicle' => 'R1', 'priorities' => array( 'price' ) ) )->get_data();
