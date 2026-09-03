@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.3] - 2026-09-03
+
+### Changed
+- **The pick card is organized.** The headline now sits under the tire's name where the eye lands, the price stands alone on the right (per tire, with the set beneath), and the run-on stats line is four tiles like the tire page's: efficiency (with the sample or "limited data"), load index (with the vehicle's minimum beneath), warranty and owner rating, each reading "No data", "Not listed" or "No ratings" when empty. Chips, the reason and the trade-off (now with an icon) follow. Two tile columns under 640px. `hydrate_picks()` adds `load_index` and `mileage_warranty` to each pick's tire.
+
 ## [2.0.2] - 2026-09-03
 
 ### Fixed

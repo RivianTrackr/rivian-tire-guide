@@ -695,6 +695,8 @@ class RTG_Advisor {
                 'efficiency_vehicles' => $c['efficiency_vehicles'],
                 'efficiency_limited'  => $c['efficiency_limited'],
                 'three_pms'  => $c['three_pms'],
+                'load_index' => $c['load_index'],
+                'mileage_warranty' => $c['mileage_warranty'],
                 'vehicles'   => $c['vehicles'],
                 'rating'     => $c['rating'],
                 'rating_count' => $c['rating_count'],

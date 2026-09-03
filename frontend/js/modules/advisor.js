@@ -190,10 +190,51 @@ function renderPicks(container, data) {
     item.appendChild(rank);
 
     const body = el('div', 'rtg-adv-pick-body');
+
+    // Header: name and headline on the left, the price on its own on the right.
+    const head = el('div', 'rtg-adv-pick-head');
     const name = el('div', 'rtg-adv-pick-name');
     name.appendChild(el('span', 'rtg-adv-pick-brand', t.brand || ''));
     name.appendChild(el('span', 'rtg-adv-pick-model', t.model || ''));
-    body.appendChild(name);
+    if (pick.headline) name.appendChild(el('span', 'rtg-adv-pick-headline', pick.headline));
+    head.appendChild(name);
+    if (t.price > 0) {
+      const price = el('div', 'rtg-adv-pick-price');
+      price.appendChild(el('span', 'rtg-adv-pick-price-value', money(t.price)));
+      price.appendChild(el('span', 'rtg-adv-pick-price-sub', `per tire · ${money(t.set_price)} set`));
+      head.appendChild(price);
+    }
+    body.appendChild(head);
+
+    // Four tiles: the numbers an owner compares, like the tire page's.
+    const floors = (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.loadIndexFloors) || {};
+    const minVehicle = (data.input && data.input.vehicle && floors[data.input.vehicle]) ? data.input.vehicle
+      : (t.vehicles || []).find(v => floors[v]);
+    const tiles = el('div', 'rtg-adv-pick-tiles');
+    const tile = (label, value, sub, cls) => {
+      const box = el('div', 'rtg-adv-pick-tile' + (cls ? ' ' + cls : ''));
+      box.appendChild(el('span', 'rtg-adv-pick-tile-label', label));
+      box.appendChild(el('span', 'rtg-adv-pick-tile-value', value));
+      if (sub) box.appendChild(el('span', 'rtg-adv-pick-tile-sub', sub));
+      tiles.appendChild(box);
+    };
+    if (t.efficiency) {
+      tile('Efficiency', `${Number(t.efficiency).toFixed(2)} mi/kWh`, t.efficiency_limited ? 'limited data' : `${t.efficiency_vehicles} vehicle${t.efficiency_vehicles === 1 ? '' : 's'}`, 'is-eff');
+    } else {
+      tile('Efficiency', 'No data', 'yet', 'is-empty');
+    }
+    if (t.load_index > 0) {
+      tile('Load index', String(t.load_index), minVehicle ? `${minVehicle} min ${floors[minVehicle]}` : '');
+    } else {
+      tile('Load index', 'Not listed', '', 'is-empty');
+    }
+    tile('Warranty', t.mileage_warranty > 0 ? `${Number(t.mileage_warranty).toLocaleString('en-US')} mi` : 'Not listed', t.mileage_warranty > 0 ? 'treadwear' : '', t.mileage_warranty > 0 ? '' : 'is-empty');
+    if (t.rating && t.rating_count > 0) {
+      tile('Owners', `${t.rating}★`, `${t.rating_count} rating${t.rating_count === 1 ? '' : 's'}`);
+    } else {
+      tile('Owners', 'No ratings', 'yet', 'is-empty');
+    }
+    body.appendChild(tiles);
 
     const chips = el('div', 'rtg-adv-pick-chips');
     (t.vehicles || []).forEach(v => chips.appendChild(el('span', 'rtg-adv-pick-chip is-fit', `Fits ${v}`)));
@@ -202,33 +243,14 @@ function renderPicks(container, data) {
     if (t.three_pms) chips.appendChild(el('span', 'rtg-adv-pick-chip', '3PMS'));
     body.appendChild(chips);
 
-    const stats = el('div', 'rtg-adv-pick-stats');
-    if (t.price > 0) {
-      const s = el('span', 'rtg-adv-pick-stat');
-      s.appendChild(el('strong', '', money(t.price)));
-      s.appendChild(document.createTextNode(` per tire · ${money(t.set_price)} a set`));
-      stats.appendChild(s);
-    }
-    if (t.efficiency) {
-      const s = el('span', 'rtg-adv-pick-stat is-eff');
-      s.appendChild(el('strong', '', `${Number(t.efficiency).toFixed(2)} mi/kWh`));
-      s.appendChild(document.createTextNode(t.efficiency_limited ? ' · limited data' : ` · ${t.efficiency_vehicles} vehicles`));
-      stats.appendChild(s);
-    }
-    if (t.rating && t.rating_count > 0) {
-      const s = el('span', 'rtg-adv-pick-stat');
-      s.appendChild(el('strong', '', `${t.rating}★`));
-      s.appendChild(document.createTextNode(` · ${t.rating_count} owner${t.rating_count === 1 ? '' : 's'}`));
-      stats.appendChild(s);
-    }
-    if (stats.childNodes.length) body.appendChild(stats);
-
-    if (pick.headline) body.appendChild(el('div', 'rtg-adv-pick-headline', pick.headline));
     if (pick.reason) body.appendChild(el('p', 'rtg-adv-pick-reason', pick.reason));
     if (pick.tradeoff) {
-      const tr = el('p', 'rtg-adv-pick-tradeoff');
-      tr.appendChild(el('strong', '', 'Trade-off: '));
-      tr.appendChild(document.createTextNode(pick.tradeoff));
+      const tr = el('div', 'rtg-adv-pick-tradeoff');
+      tr.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>';
+      const text = el('span');
+      text.appendChild(el('strong', '', 'Trade-off: '));
+      text.appendChild(document.createTextNode(pick.tradeoff));
+      tr.appendChild(text);
       body.appendChild(tr);
     }
 
