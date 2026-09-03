@@ -10,6 +10,8 @@
 class Test_RTG_Advisor extends WP_UnitTestCase {
 
     private $calls = 0;
+    private $last_request = null;
+    private $last_headers = array();
 
     public function setUp(): void {
         parent::setUp();
