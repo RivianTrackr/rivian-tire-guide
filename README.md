@@ -117,6 +117,13 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 
 ### Shortcodes
 
+`[rivian_tire_review]` renders the Write a Review page. The plugin serves it
+at `/tire-review/` (the slug is a setting) on its own, marked noindex. To
+control the page's SEO, create a WordPress page at that same slug with the
+shortcode in it: a published page at the review slug takes over from the
+built-in route, and your SEO plugin handles its title, description and
+indexing like any other page.
+
 **Tire Guide** — Place on any page to display the full catalog:
 ```
 [rivian_tire_guide]

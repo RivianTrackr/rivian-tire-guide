@@ -16,6 +16,9 @@ class RTG_Tire_Review {
         add_action( 'init', array( $this, 'register_rewrite' ) );
         add_filter( 'query_vars', array( $this, 'add_query_vars' ) );
         add_action( 'template_redirect', array( $this, 'maybe_render' ) );
+        // A real page at the review slug wins over the built-in route, so the
+        // owner can hold the page in WordPress (and give it SEO meta).
+        add_filter( 'request', array( $this, 'prefer_real_page' ) );
         add_action( 'init', array( $this, 'maybe_flush_rewrites' ), 99 );
         add_shortcode( 'rivian_tire_review', array( $this, 'shortcode' ) );
     }
@@ -109,6 +112,47 @@ class RTG_Tire_Review {
     }
 
     /**
+     * The review slug from settings.
+     */
+    public static function slug() {
+        $settings = get_option( 'rtg_settings', array() );
+        return sanitize_title( $settings['tire_review_slug'] ?? 'tire-review' );
+    }
+
+    /**
+     * A published WordPress page living at the review slug, if the owner
+     * made one (with the [rivian_tire_review] shortcode on it), or null.
+     */
+    public static function real_page() {
+        $page = get_page_by_path( self::slug(), OBJECT, 'page' );
+        return ( $page && 'publish' === $page->post_status ) ? $page : null;
+    }
+
+    /**
+     * The rewrite rule for the review slug is registered at the top of the
+     * stack, so it would shadow a real page with the same slug. When such a
+     * page exists, hand the request to it instead: WordPress then renders the
+     * page like any other, with the theme's template, the owner's title and
+     * the SEO plugin's meta. Without a page, the built-in route (noindex)
+     * serves as before.
+     *
+     * @param array $vars Parsed query vars.
+     * @return array
+     */
+    public function prefer_real_page( $vars ) {
+        if ( empty( $vars['rtg_tire_review'] ) ) {
+            return $vars;
+        }
+        $page = self::real_page();
+        if ( ! $page ) {
+            return $vars;
+        }
+        unset( $vars['rtg_tire_review'] );
+        $vars['pagename'] = self::slug();
+        return $vars;
+    }
+
+    /**
      * Render the review page inside the theme at its own URL.
      */
     public function maybe_render() {
@@ -135,6 +179,6 @@ class RTG_Tire_Review {
         self::enqueue_assets();
         ob_start();
         include RTG_PLUGIN_DIR . 'frontend/templates/tire-review.php';
-        return ob_get_clean();
+        return RTG_Theme_Render::ad_blocklist_markup() . ob_get_clean();
     }
 }
