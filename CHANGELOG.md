@@ -4,6 +4,29 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.2.0] - 2026-09-05
+
+The Review a Tire page, rebuilt around the people who actually use it: guests. Sign-up is off on the site because of spam, so nearly every review comes from someone without an account, and the page now says so up front, asks for name and email last, and remembers them. A review also knows more than one star now, which is the first half of roadmap R2 and the data R1 and F9's vehicle filter need.
+
+### Added
+- **A landing state.** Under the search box, a vehicle switch over the size map (R1, R2, R3) and the six most-reviewed tires for that vehicle, from the new `RTG_Database::get_review_counts_by_tire()`. A returning guest is greeted by the name the page remembers on their device, with "Not you? Clear". The page used to be a heading and an empty search box unless you arrived from a tire page.
+- **What a review knows beyond one star.** Migration 25 adds `vehicle`, `miles`, `is_owner` and six nullable `rating_<axis>` columns (range, noise, comfort, wet, snow, wear) to `rtg_ratings`. `RTG_Database::normalize_review_details()` whitelists all of it (vehicle in `REVIEW_VEHICLES`, miles clamped, axes 1–5 or NULL) and both `set_rating()` and `set_guest_rating()` take it as a sixth / seventh argument; the AJAX submit handlers pass `$_POST` straight through, so a malformed detail is dropped, never a rejection. `get_tire_reviews()` and `get_user_ratings()` return the columns.
+- **The form in five numbered sections.** Overall stars with a word label and arrow keys (the only required part), six optional detail rows of five small stars each (pressing the current star clears the row), your setup (R1T / R1S / R2 / R3, miles on the set, an "I own this tire" toggle), title and review, and for guests name and email last, prefilled when remembered, with a sign-in link back to this page for the few with accounts.
+- **Returning guests hear it early.** New `wp_ajax_nopriv_rtg_check_guest_review` answers whether an email already reviewed a tire with the star and the month only (what the tire page shows beside the name), rate-limited by fingerprint at 20 per window. The page asks as the email is typed and explains "one review per email per tire" instead of letting someone write everything and hit "You have already reviewed this tire." at Submit. Deliberately no guest self-update: anyone knowing an email could otherwise replace that guest's review.
+- **Signed-in users see their existing review.** A banner with the month and stars, "Load it to edit" (fills every field including the details), "Start fresh", and "Delete my review" through the existing `delete_tire_rating` action. The form used to start blank and overwrite silently.
+- **Tire page review cards show the setup.** `rtg_tire_page_review_meta()` in the template and `renderReviewMeta()` in `tire-page.js` render a verified-owner tag, the vehicle and "N mi on this set" under the reviewer's name. Nothing for older reviews.
+
+### Changed
+- **Inline validation.** Star, words, name and email errors sit on the field with `role="alert"`; the footer line is for server errors only. The first bad field gets focus.
+- **Success screen is honest about the queue.** Guests read that every review gets a quick look, which email will hear when it is live, and a recap of what was captured; the button is "See the tire page" (the review is not live yet). Admins get "Your review is live" and "See your review" straight to the reviews section. Both link through the tire slug, now localized as `tirePageBase`.
+- **Copy for guests first.** "No account needed" in the subtitle, "Goes live after a quick check, usually the same day. We email you when it is up." in the footer. The signed-in banner covers the handful of accounts and says whether their words post at once (admins) or wait.
+- **Login link lands back on the review page**, not the home page.
+- **The tire card's size and category are chips** in the tire page's chip style, with "See its page".
+
+### Tests
+- `tests/test-database.php`: details persist on both write paths and come back on the list and the user's own review; a blank edit clears them; normalization drops an unknown vehicle, clamps miles, blanks an out-of-range axis; the guest summary never carries the words; per-tire counts only count approved reviews.
+- `tests/test-ajax.php`: the guest check answers false, then true with star and month after a guest review, and refuses a malformed email; a guest submit stores the details and drops an out-of-range axis.
+
 ## [2.1.0] - 2026-09-05
 
 Roadmap F9: the tire page's owner reviews can be sorted and filtered by star. The reviews drawer left with 1.6x and nothing replaced its browsing affordances; a page with forty reviews was forty cards, newest edit first, and nothing else.

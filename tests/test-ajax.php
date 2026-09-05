@@ -383,6 +383,78 @@ class Test_RTG_Ajax extends WP_Ajax_UnitTestCase {
     // -------------------------------------------------------
 
     /**
+     * The review page's early duplicate check for returning guests: nothing
+     * for a new email, the star and month for one that already reviewed the
+     * tire, and a refusal for a malformed email.
+     */
+    public function test_check_guest_review_reports_existing_review() {
+        $tire_id = 'check-guest-001';
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => $tire_id ) ) );
+        $_SERVER['REMOTE_ADDR']     = '203.0.113.9';
+        $_SERVER['HTTP_USER_AGENT'] = 'CheckGuestTest/1.0';
+
+        $_POST = array( 'nonce' => wp_create_nonce( 'tire_rating_nonce' ), 'tire_id' => $tire_id, 'guest_email' => 'new@example.com' );
+        try { $this->_handleAjax( 'nopriv_rtg_check_guest_review' ); } catch ( WPAjaxDieContinueException $e ) { /* Expected. */ }
+        $response = json_decode( $this->_last_response, true );
+        $this->assertTrue( $response['success'] );
+        $this->assertFalse( $response['data']['exists'] );
+
+        RTG_Database::set_guest_rating( $tire_id, 'Dana', 'dana@example.com', 3, 'Title', 'Body' );
+
+        $this->_last_response = '';
+        $_POST = array( 'nonce' => wp_create_nonce( 'tire_rating_nonce' ), 'tire_id' => $tire_id, 'guest_email' => 'dana@example.com' );
+        try { $this->_handleAjax( 'nopriv_rtg_check_guest_review' ); } catch ( WPAjaxDieContinueException $e ) { /* Expected. */ }
+        $response = json_decode( $this->_last_response, true );
+        $this->assertTrue( $response['success'] );
+        $this->assertTrue( $response['data']['exists'] );
+        $this->assertSame( 3, $response['data']['rating'] );
+        $this->assertTrue( $response['data']['pending'] );
+        $this->assertMatchesRegularExpression( '/^[A-Z][a-z]{2} \\d{4}$/', $response['data']['month'] );
+        $this->assertArrayNotHasKey( 'review_text', $response['data'] );
+
+        $this->_last_response = '';
+        $_POST = array( 'nonce' => wp_create_nonce( 'tire_rating_nonce' ), 'tire_id' => $tire_id, 'guest_email' => 'not-an-email' );
+        try { $this->_handleAjax( 'nopriv_rtg_check_guest_review' ); } catch ( WPAjaxDieContinueException $e ) { /* Expected. */ }
+        $response = json_decode( $this->_last_response, true );
+        $this->assertFalse( $response['success'] );
+    }
+
+    /**
+     * A guest submit carries the optional details through to the row.
+     */
+    public function test_guest_submit_stores_review_details() {
+        $tire_id = 'guest-details-001';
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => $tire_id ) ) );
+        $_SERVER['REMOTE_ADDR']     = '203.0.113.10';
+        $_SERVER['HTTP_USER_AGENT'] = 'GuestDetailsTest/1.0';
+
+        $_POST = array(
+            'nonce'        => wp_create_nonce( 'tire_rating_nonce' ),
+            'tire_id'      => $tire_id,
+            'rating'       => 5,
+            'guest_name'   => 'Dana',
+            'guest_email'  => 'dana2@example.com',
+            'review_title' => 'Great',
+            'vehicle'      => 'R2',
+            'miles'        => '3,100',
+            'is_owner'     => '1',
+            'axis_noise'   => '4',
+            'axis_snow'    => '7',
+        );
+        try { $this->_handleAjax( 'nopriv_submit_guest_tire_rating' ); } catch ( WPAjaxDieContinueException $e ) { /* Expected. */ }
+        $response = json_decode( $this->_last_response, true );
+        $this->assertTrue( $response['success'], 'guest submit accepted' );
+
+        global $wpdb;
+        $row = $wpdb->get_row( $wpdb->prepare( 'SELECT vehicle, miles, is_owner, rating_noise, rating_snow FROM ' . RTG_Database::ratings_table() . ' WHERE tire_id = %s AND guest_email = %s', $tire_id, 'dana2@example.com' ), ARRAY_A );
+        $this->assertSame( 'R2', $row['vehicle'] );
+        $this->assertSame( 3100, (int) $row['miles'] );
+        $this->assertSame( 1, (int) $row['is_owner'] );
+        $this->assertSame( 4, (int) $row['rating_noise'] );
+        $this->assertNull( $row['rating_snow'], 'an out-of-range axis is dropped, not rejected' );
+    }
+
+    /**
      * Issue the configured max + 2 rapid guest submissions for the same tire
      * and assert the limit actually blocks the overflow. Exercises the
      * shared check_rate_limit() counter path, which is the closest proxy
