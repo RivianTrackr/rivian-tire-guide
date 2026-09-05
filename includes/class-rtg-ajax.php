@@ -449,18 +449,27 @@ class RTG_Ajax {
             wp_send_json_error( 'Invalid tire ID.' );
         }
 
-        $page    = max( 1, intval( $_POST['page'] ?? 1 ) );
+        $page     = max( 1, intval( $_POST['page'] ?? 1 ) );
         $per_page = 10;
-        $offset  = ( $page - 1 ) * $per_page;
+        $offset   = ( $page - 1 ) * $per_page;
 
-        $reviews = RTG_Database::get_tire_reviews( $tire_id, $per_page, $offset );
-        $total   = RTG_Database::get_tire_review_count( $tire_id );
+        // Sort and star filter: anything unexpected falls back to the default
+        // list, and the response echoes what was actually applied.
+        $args = RTG_Database::normalize_review_args( array(
+            'orderby' => sanitize_key( $_POST['sort'] ?? '' ),
+            'rating'  => intval( $_POST['rating'] ?? 0 ),
+        ) );
+
+        $reviews = RTG_Database::get_tire_reviews( $tire_id, $per_page, $offset, $args );
+        $total   = RTG_Database::get_tire_review_count( $tire_id, $args['rating'] );
 
         wp_send_json_success( array(
             'reviews'     => $reviews,
             'total'       => $total,
             'page'        => $page,
             'total_pages' => ceil( $total / $per_page ),
+            'sort'        => $args['orderby'],
+            'rating'      => $args['rating'],
         ) );
     }
 

@@ -1802,28 +1802,85 @@ class RTG_Database {
         );
     }
 
+    /** Review sort orders the tire page and the review endpoints accept. */
+    const REVIEW_SORTS = array( 'recent', 'highest', 'lowest' );
+
+    /**
+     * Normalize review list arguments from any caller (AJAX, REST, template).
+     *
+     * An unknown sort falls back to "recent" and a rating outside 1–5 means
+     * "all ratings", so a hand-edited request can never widen the query.
+     *
+     * @param array $args { orderby?: string, rating?: int|string }
+     * @return array { 'orderby' => string, 'rating' => int }
+     */
+    public static function normalize_review_args( $args ) {
+        $args    = is_array( $args ) ? $args : array();
+        $orderby = strtolower( trim( (string) ( $args['orderby'] ?? '' ) ) );
+        if ( ! in_array( $orderby, self::REVIEW_SORTS, true ) ) {
+            $orderby = 'recent';
+        }
+        $rating = (int) ( $args['rating'] ?? 0 );
+        if ( $rating < 1 || $rating > 5 ) {
+            $rating = 0;
+        }
+        return array( 'orderby' => $orderby, 'rating' => $rating );
+    }
+
+    /**
+     * ORDER BY clause for a normalized review sort.
+     *
+     * "Recent" orders by created_at, the date the review card shows, not
+     * updated_at: the table bumps updated_at on any edit, which used to send
+     * a typo fix on an old review to the top of the list. The id tie-break
+     * keeps the order stable for reviews written in the same second.
+     *
+     * @param string $orderby One of REVIEW_SORTS.
+     * @return string SQL fragment without the ORDER BY keyword.
+     */
+    private static function review_order_sql( $orderby ) {
+        switch ( $orderby ) {
+            case 'highest':
+                return 'rating DESC, created_at DESC, id DESC';
+            case 'lowest':
+                return 'rating ASC, created_at DESC, id DESC';
+            default:
+                return 'created_at DESC, id DESC';
+        }
+    }
+
     /**
      * Get reviews (all approved ratings) for a specific tire.
      *
      * @param string $tire_id Tire identifier.
      * @param int    $limit   Max reviews to return.
      * @param int    $offset  Offset for pagination.
+     * @param array  $args    Optional { orderby: recent|highest|lowest, rating: 1–5 or 0 for all }.
      * @return array Reviews with user display names.
      */
-    public static function get_tire_reviews( $tire_id, $limit = 20, $offset = 0 ) {
+    public static function get_tire_reviews( $tire_id, $limit = 20, $offset = 0, $args = array() ) {
         global $wpdb;
         $table = self::ratings_table();
+        $args  = self::normalize_review_args( $args );
+        $order = self::review_order_sql( $args['orderby'] );
+
+        $where  = "tire_id = %s AND review_status = 'approved'";
+        $params = array( $tire_id );
+        if ( $args['rating'] > 0 ) {
+            $where   .= ' AND rating = %d';
+            $params[] = $args['rating'];
+        }
+        $params[] = $limit;
+        $params[] = $offset;
 
         $rows = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT id, tire_id, user_id, rating, review_title, review_text, guest_name, created_at, updated_at
                  FROM {$table}
-                 WHERE tire_id = %s AND review_status = 'approved'
-                 ORDER BY updated_at DESC
+                 WHERE {$where}
+                 ORDER BY {$order}
                  LIMIT %d OFFSET %d",
-                $tire_id,
-                $limit,
-                $offset
+                $params
             ),
             ARRAY_A
         );
@@ -1855,14 +1912,59 @@ class RTG_Database {
     }
 
     /**
+     * Approved review count per star for a tire, 5 down to 1, zeros included.
+     *
+     * Feeds the star filter chips on the tire page, so a star with nothing
+     * behind it can be shown disabled instead of leading to an empty list.
+     *
+     * @param string $tire_id Tire identifier.
+     * @return array { 5 => int, 4 => int, 3 => int, 2 => int, 1 => int }
+     */
+    public static function get_tire_review_star_counts( $tire_id ) {
+        global $wpdb;
+        $table = self::ratings_table();
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT rating, COUNT(*) AS n FROM {$table}
+                 WHERE tire_id = %s AND review_status = 'approved'
+                 GROUP BY rating",
+                $tire_id
+            ),
+            ARRAY_A
+        );
+
+        $counts = array( 5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0 );
+        foreach ( (array) $rows as $row ) {
+            $star = (int) $row['rating'];
+            if ( isset( $counts[ $star ] ) ) {
+                $counts[ $star ] = (int) $row['n'];
+            }
+        }
+        return $counts;
+    }
+
+    /**
      * Count reviews (all approved ratings) for a specific tire.
      *
      * @param string $tire_id Tire identifier.
+     * @param int    $rating  Count only this star (1–5); 0 counts every approved review.
      * @return int Review count.
      */
-    public static function get_tire_review_count( $tire_id ) {
+    public static function get_tire_review_count( $tire_id, $rating = 0 ) {
         global $wpdb;
-        $table = self::ratings_table();
+        $table  = self::ratings_table();
+        $rating = (int) $rating;
+
+        if ( $rating >= 1 && $rating <= 5 ) {
+            return (int) $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT COUNT(*) FROM {$table} WHERE tire_id = %s AND review_status = 'approved' AND rating = %d",
+                    $tire_id,
+                    $rating
+                )
+            );
+        }
 
         return (int) $wpdb->get_var(
             $wpdb->prepare(

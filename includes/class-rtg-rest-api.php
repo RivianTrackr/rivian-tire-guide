@@ -105,6 +105,21 @@ class RTG_REST_API {
                         'maximum'           => 50,
                         'sanitize_callback' => 'absint',
                     ),
+                    'sort'     => array(
+                        'description'       => 'Order: recent (newest first), highest or lowest star rating.',
+                        'type'              => 'string',
+                        'default'           => 'recent',
+                        'enum'              => RTG_Database::REVIEW_SORTS,
+                        'sanitize_callback' => 'sanitize_key',
+                    ),
+                    'rating'   => array(
+                        'description'       => 'Only reviews with this star rating (1–5). 0 or omitted returns all.',
+                        'type'              => 'integer',
+                        'default'           => 0,
+                        'minimum'           => 0,
+                        'maximum'           => 5,
+                        'sanitize_callback' => 'absint',
+                    ),
                 ),
             )
         );
@@ -373,9 +388,14 @@ class RTG_REST_API {
             );
         }
 
+        $args = RTG_Database::normalize_review_args( array(
+            'orderby' => $request->get_param( 'sort' ),
+            'rating'  => $request->get_param( 'rating' ),
+        ) );
+
         $offset  = ( $page - 1 ) * $per_page;
-        $reviews = RTG_Database::get_tire_reviews( $tire_id, $per_page, $offset );
-        $total   = RTG_Database::get_tire_review_count( $tire_id );
+        $reviews = RTG_Database::get_tire_reviews( $tire_id, $per_page, $offset, $args );
+        $total   = RTG_Database::get_tire_review_count( $tire_id, $args['rating'] );
 
         $total_pages = (int) ceil( $total / $per_page );
 
@@ -386,6 +406,8 @@ class RTG_REST_API {
                 'page'        => $page,
                 'per_page'    => $per_page,
                 'total_pages' => $total_pages,
+                'sort'        => $args['orderby'],
+                'rating'      => $args['rating'],
             ),
             200
         );

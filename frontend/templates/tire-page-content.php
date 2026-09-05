@@ -58,6 +58,9 @@ $avg          = (float) ( $rating['average'] ?? 0 );
 $rating_cnt   = (int) ( $rating['count'] ?? 0 );
 $reviews      = RTG_Database::get_tire_reviews( $tire_id, RTG_Tire_Page::REVIEWS_PER_PAGE );
 $review_total = RTG_Database::get_tire_review_count( $tire_id );
+// Sort and star filter only earn their room once there is something to sort.
+$review_tools = $review_total > 1;
+$star_counts  = $review_tools ? RTG_Database::get_tire_review_star_counts( $tire_id ) : array();
 
 // Load-index fitment: every vehicle this size fits, pass or fail. A visitor
 // from a search has pressed no vehicle toggle, so the page answers for all.
@@ -563,6 +566,34 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
   .rtg-tp .rtg-tp-review-title { font-weight: 600; font-size: 14px; margin: 4px 0; }
   .rtg-tp .rtg-tp-review-body { font-size: 14px; color: var(--rtg-tp-text); margin: 0; }
   .rtg-tp .rtg-tp-reviews-more { display: flex; justify-content: center; margin: 12px 0 0; }
+  .rtg-tp .rtg-tp-reviews-more[hidden] { display: none; }
+  /* Sort control: the guide's segmented vehicle toggle, at the head's height. */
+  .rtg-tp .rtg-tp-reviews-head-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .rtg-tp .rtg-tp-sort { display: flex; gap: 0; background: var(--rtg-tp-deep); border-radius: 10px; padding: 4px; height: 40px; box-sizing: border-box; width: fit-content; }
+  .rtg-tp .rtg-tp-sort-btn { padding: 6px 20px; border: none; border-radius: 8px; background: transparent; color: var(--rtg-tp-muted); font-size: 14px; font-weight: 600; font-family: inherit; line-height: 20px; cursor: pointer; transition: background 0.2s ease, color 0.2s ease; }
+  .rtg-tp .rtg-tp-sort-btn:hover { color: var(--rtg-tp-heading); }
+  .rtg-tp .rtg-tp-sort-btn.is-active { background: var(--rtg-tp-accent); color: #15130e; }
+  .rtg-tp .rtg-tp-sort-btn.is-active:hover { background: var(--rtg-tp-accent-hover); }
+  .rtg-tp .rtg-tp-sort-btn:focus-visible { outline: 2px solid var(--rtg-tp-accent); outline-offset: 2px; }
+  /* Star filter chips: the hero's chips, pressable, with a count. */
+  .rtg-tp .rtg-tp-review-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+  .rtg-tp button.rtg-tp-chip { cursor: pointer; font-family: inherit; transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease; }
+  .rtg-tp button.rtg-tp-chip:not([disabled]):hover { border-color: color-mix(in srgb, var(--rtg-tp-accent) 55%, transparent); }
+  .rtg-tp button.rtg-tp-chip:focus-visible { outline: 2px solid var(--rtg-tp-accent); outline-offset: 2px; }
+  .rtg-tp .rtg-tp-chip.is-active { background: color-mix(in srgb, var(--rtg-tp-accent) 22%, var(--rtg-tp-deep)); border-color: color-mix(in srgb, var(--rtg-tp-accent) 55%, transparent); color: var(--rtg-tp-heading); }
+  .rtg-tp .rtg-tp-chip[disabled] { opacity: 0.5; cursor: not-allowed; background: var(--rtg-tp-deep); border-color: var(--rtg-tp-border); color: var(--rtg-tp-muted); }
+  .rtg-tp .rtg-tp-chip-count { color: var(--rtg-tp-muted); font-weight: 500; }
+  .rtg-tp .rtg-tp-chip.is-active .rtg-tp-chip-count { color: var(--rtg-tp-text); }
+  .rtg-tp .rtg-tp-reviews-caption { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--rtg-tp-muted); margin: -6px 0 12px; }
+  .rtg-tp .rtg-tp-reviews-caption[hidden] { display: none; }
+  .rtg-tp .rtg-tp-reviews-caption button { background: none; border: none; padding: 0; margin: 0; color: var(--rtg-tp-accent); font: inherit; font-weight: 600; cursor: pointer; }
+  .rtg-tp .rtg-tp-reviews-caption button:hover { color: var(--rtg-tp-accent-hover); }
+  .rtg-tp .rtg-tp-reviews-list[aria-busy="true"] { opacity: 0.6; transition: opacity 0.15s ease; }
+  @media (max-width: 600px) {
+    .rtg-tp .rtg-tp-reviews-head-tools { width: 100%; }
+    .rtg-tp .rtg-tp-sort { width: 100%; }
+    .rtg-tp .rtg-tp-sort-btn { flex: 1; text-align: center; padding-inline: 8px; }
+  }
   .rtg-tp .rtg-tp-reviews-more .rtg-tp-cta[disabled] { opacity: .5; cursor: wait; }
   .rtg-tp .rtg-tp-reviews-empty {
     text-align: center; padding: 48px 20px;
@@ -777,11 +808,30 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
   <div class="rtg-tp-section-head" id="rtg-tp-reviews">
     <h2 class="rtg-tp-section">Owner Reviews<?php echo $rating_cnt > 0 ? ' (' . (int) $rating_cnt . ')' : ''; ?></h2>
     <?php if ( ! empty( $reviews ) ) : ?>
-    <a class="rtg-tp-cta rtg-tp-cta-secondary" href="<?php echo esc_url( $review_url ); ?>">Write a Review</a>
+    <div class="rtg-tp-reviews-head-tools">
+      <?php if ( $review_tools ) : ?>
+      <div class="rtg-tp-sort" id="rtgTpReviewSort" role="radiogroup" aria-label="Sort reviews">
+        <button type="button" class="rtg-tp-sort-btn is-active" role="radio" aria-checked="true" data-sort="recent">Recent</button>
+        <button type="button" class="rtg-tp-sort-btn" role="radio" aria-checked="false" tabindex="-1" data-sort="highest">Highest</button>
+        <button type="button" class="rtg-tp-sort-btn" role="radio" aria-checked="false" tabindex="-1" data-sort="lowest">Lowest</button>
+      </div>
+      <?php endif; ?>
+      <a class="rtg-tp-cta rtg-tp-cta-secondary" href="<?php echo esc_url( $review_url ); ?>">Write a Review</a>
+    </div>
     <?php endif; ?>
   </div>
 
   <?php if ( ! empty( $reviews ) ) : ?>
+    <?php if ( $review_tools ) : ?>
+    <div class="rtg-tp-review-filters" id="rtgTpReviewFilters" role="group" aria-label="Filter reviews by rating">
+      <button type="button" class="rtg-tp-chip rtg-tp-filter-chip is-active" aria-pressed="true" data-rating="0">All <span class="rtg-tp-chip-count"><?php echo (int) $review_total; ?></span></button>
+      <?php for ( $rtg_tp_star = 5; $rtg_tp_star >= 1; $rtg_tp_star-- ) :
+          $rtg_tp_n = (int) ( $star_counts[ $rtg_tp_star ] ?? 0 ); ?>
+      <button type="button" class="rtg-tp-chip rtg-tp-filter-chip" aria-pressed="false" data-rating="<?php echo (int) $rtg_tp_star; ?>"<?php echo 0 === $rtg_tp_n ? ' disabled' : ''; ?> aria-label="<?php echo (int) $rtg_tp_star; ?> star reviews, <?php echo (int) $rtg_tp_n; ?>"><i class="fa-solid fa-star" aria-hidden="true"></i><?php echo (int) $rtg_tp_star; ?> <span class="rtg-tp-chip-count"><?php echo (int) $rtg_tp_n; ?></span></button>
+      <?php endfor; ?>
+    </div>
+    <div class="rtg-tp-reviews-caption" id="rtgTpReviewCaption" role="status" aria-live="polite" hidden></div>
+    <?php endif; ?>
     <div class="rtg-tp-owners-say" id="rtgTpOwnersSay" hidden></div>
     <div class="rtg-tp-reviews-list" id="rtgTpReviewList">
     <?php foreach ( $reviews as $review ) : ?>
@@ -804,13 +854,13 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
     </div>
     <?php endforeach; ?>
     </div>
-    <?php if ( $review_total > count( $reviews ) ) : ?>
-    <div class="rtg-tp-reviews-more">
+    <?php // The button stays in the DOM (hidden) once every review is shown, so a
+          // sort or filter change can bring it back without rebuilding it. ?>
+    <div class="rtg-tp-reviews-more"<?php echo $review_total > count( $reviews ) ? '' : ' hidden'; ?>>
       <button type="button" class="rtg-tp-cta rtg-tp-cta-secondary" id="rtgTpMoreReviews" data-page="1" data-total="<?php echo (int) $review_total; ?>" data-loaded="<?php echo (int) count( $reviews ); ?>">
-        Show more reviews (<?php echo (int) ( $review_total - count( $reviews ) ); ?> more)
+        Show more reviews (<?php echo (int) max( 0, $review_total - count( $reviews ) ); ?> more)
       </button>
     </div>
-    <?php endif; ?>
   <?php else : ?>
     <div class="rtg-tp-reviews-empty">
       <i class="fa-solid fa-comment-dots" aria-hidden="true"></i>
