@@ -20,7 +20,7 @@ no component library. Icons via Font Awesome 6. Modern CSS features assumed
 | Secondary CTA   | `#7c3aed` | Alternate action (hover: `#6d28d9`) |
 | Destructive     | `#ef4444` | Delete, fitment warning, error |
 | Positive        | `#4ade80` | User-contributed highlights    |
-| Star empty      | `#2c2f34` | Unfilled rating slots          |
+| Star empty      | `#2c2f34` | Unfilled rating slots (painted via `--rtg-star-empty-visible`, the token mixed 35/65 with muted text, outline at 0.8) |
 | Placeholder     | `#a6a39c` | Input placeholder text         |
 | Overlay dark    | `#15130e` | Text-on-accent, dark contrast  |
 

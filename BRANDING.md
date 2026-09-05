@@ -37,7 +37,7 @@ CSS custom properties prefixed with `--rtg-`. This is the user-facing theme.
 | Border / Divider     | `--rtg-border`        | `#3a3e45` | Card borders, dividers, rules  |
 | Stars (Filled)       | `--rtg-star-filled`   | `#fba919` | Filled rating stars            |
 | Stars (Your Rating)  | `--rtg-star-user`     | `#4ade80` | User's own rating stars        |
-| Stars (Empty)        | `--rtg-star-empty`    | `#2c2f34` | Empty / unfilled stars         |
+| Stars (Empty)        | `--rtg-star-empty`    | `#2c2f34` | Empty / unfilled stars; painted through `--rtg-star-empty-visible` (35% of this, 65% muted text) so they read on the card |
 
 ---
 

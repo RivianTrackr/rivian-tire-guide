@@ -450,9 +450,10 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
   .rtg-tp .rtg-tp-glance .rtg-tp-glance-eff { color: #60a5fa; font-weight: 600; }
 
   .rtg-tp .rtg-tp-rating { display: flex; align-items: center; gap: 8px; margin: 0; flex-wrap: wrap; }
-  .rtg-tp .rtg-tp-star { font-size: 17px; color: var(--rtg-tp-star-empty); }
+  /* Empty stars: the empty color lifted toward muted text, so they read on the card (same mix as the guide). */
+  .rtg-tp .rtg-tp-star { font-size: 17px; color: color-mix(in srgb, var(--rtg-tp-star-empty) 35%, var(--rtg-tp-muted)); }
   .rtg-tp .rtg-tp-star-full { color: var(--rtg-tp-accent); filter: drop-shadow(0 1px 3px color-mix(in srgb, var(--rtg-tp-accent) 35%, transparent)); }
-  .rtg-tp .rtg-tp-star-half { background: linear-gradient(90deg, var(--rtg-tp-accent) 50%, var(--rtg-tp-star-empty) 50%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .rtg-tp .rtg-tp-star-half { background: linear-gradient(90deg, var(--rtg-tp-accent) 50%, color-mix(in srgb, var(--rtg-tp-star-empty) 35%, var(--rtg-tp-muted)) 50%); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .rtg-tp .rtg-tp-rating-meta { font-size: 13px; color: var(--rtg-tp-muted); }
   .rtg-tp .rtg-tp-rating-meta a { color: var(--rtg-tp-muted); text-decoration: underline; text-underline-offset: 2px; }
   .rtg-tp .rtg-tp-rating-meta a:hover { color: var(--rtg-tp-accent); }

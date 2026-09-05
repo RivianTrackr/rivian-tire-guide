@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.3.1] - 2026-09-05
+
+### Fixed
+- **Empty stars were invisible on dark screens.** Every empty star was painted `--rtg-star-empty` (#2c2f34) at 35% outline opacity on a #16191e card: ink on ink. A reader said so. A new `--rtg-star-empty-visible` token lifts the empty color 65% toward the muted text color, and outlines draw at 80%, on every star in the plugin: the guide cards' rating row, the review modal, the user-reviews page's mini stars, the review page's overall, detail and recap stars and its tire card, and the tire page's glyph stars (empty and the half-star gradient). Done as a mix rather than a new default because the admin theme settings can store the empty color; a saved #2c2f34 still ends up readable. Nothing visible to owners beyond stars they can now see; no What's New entry, at the owner's request.
+
 ## [2.3.0] - 2026-09-05
 
 ### Added
