@@ -4,6 +4,17 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.3.0] - 2026-09-05
+
+### Added
+- **Write a Review on the guide.** A link in the filter header beside Clear All, in the Changelog button's old slot and size, with the accent on its icon and border. It goes to the review page's landing state (`tire_review_slug`, read in `tire-guide.php`), where the visitor picks a tire. The guide had no way to reach the review page; the only paths were a tire page's button and the star click on a card.
+- **A guide footer.** Under the pagination: "Tire Guide <version> · Changelog" on the left, the Rivian Roamer credit on the right. `.rtg-guide-footer` in `rivian-tires.css`.
+
+### Changed
+- **Changelog moved from the filter header to the footer.** Same `#rtgWhatsNew` element and `.rtg-whats-new-dot`, so `whats-new.js` is untouched; a new `.rtg-whats-new-link` variant renders it as a text link with the dot riding the word. Release notes are an announcement, not a filter control, and the header now holds one action out (Write a Review) and one reset (Clear All).
+- Under 480px the Write a Review button drops its label to the icon, the way Changelog did.
+- No What's New entry, at the owner's request ("Nothing visible to owners" for the release check).
+
 ## [2.2.2] - 2026-09-05
 
 ### Added

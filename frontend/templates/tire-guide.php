@@ -2,6 +2,9 @@
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
+// The review page, for the header's Write a Review button.
+$rtg_guide_settings   = get_option( 'rtg_settings', array() );
+$rtg_write_review_url = home_url( '/' . sanitize_title( $rtg_guide_settings['tire_review_slug'] ?? 'tire-review' ) . '/' );
 ?>
 <button id="toggleFilters" class="toggle-filters-btn" aria-expanded="false" aria-controls="mobileFilterContent">
   <i class="fa-solid fa-sliders" aria-hidden="true"></i>&nbsp; Show Filters
@@ -14,9 +17,9 @@ if ( ! defined( 'ABSPATH' ) ) {
       Filter, Sort, and Compare
     </span>
     <div class="filter-header-actions">
-      <button id="rtgWhatsNew" class="rtg-whats-new-btn" type="button" aria-label="Changelog">
-        <i class="fa-solid fa-bullhorn" aria-hidden="true"></i><span class="rtg-whats-new-label">Changelog</span><span class="rtg-whats-new-dot" hidden></span>
-      </button>
+      <a class="rtg-write-review-btn" href="<?php echo esc_url( $rtg_write_review_url ); ?>" aria-label="Write a review">
+        <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i><span class="rtg-write-review-label">Write a Review</span>
+      </a>
       <button class="rtg-clear-filters-btn" onclick="resetFilters()" type="button" aria-label="Clear all filters">
         <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Clear All
       </button>
@@ -207,6 +210,12 @@ if ( ! empty( $rtg_wheels ) ) :
   No tires match your current filters.<br />Try adjusting the filters to see more options.
 </div>
 <div id="paginationControls"></div>
+<div class="rtg-guide-footer">
+  <span class="rtg-guide-footer-version">Tire Guide <?php echo esc_html( RTG_VERSION ); ?> &middot;
+    <button id="rtgWhatsNew" class="rtg-whats-new-btn rtg-whats-new-link" type="button" aria-label="Changelog"><span class="rtg-whats-new-label">Changelog</span><span class="rtg-whats-new-dot" hidden></span></button>
+  </span>
+  <span class="rtg-guide-footer-credit">Real-world efficiency from <a href="https://rivianroamer.com/join?with=riviantrackr" target="_blank" rel="noopener noreferrer">Rivian Roamer</a> owners</span>
+</div>
 <div id="compareBar" class="compare-bar" role="region" aria-label="Tire comparison selection">
   <span id="compareCount" class="compare-count"></span>
   <button class="compare-bar-btn compare-bar-btn-go" onclick="openComparison()">Compare</button>
