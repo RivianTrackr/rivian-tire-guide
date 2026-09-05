@@ -11,11 +11,6 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
-## 2.3.0 - 2026-09-05
-
-- **Write a Review, right from the guide.** A new button at the top of the filter panel takes you to the review page, so you no longer have to open a tire first.
-- **The Changelog moved to the bottom of the guide.** Look for the version number under the tire cards. The dot still lights up when there is something new.
-
 ## 2.2.0 - 2026-09-05
 
 The Review a Tire page was rebuilt for the way most people use it: without an account.

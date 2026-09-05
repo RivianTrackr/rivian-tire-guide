@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - **Changelog moved from the filter header to the footer.** Same `#rtgWhatsNew` element and `.rtg-whats-new-dot`, so `whats-new.js` is untouched; a new `.rtg-whats-new-link` variant renders it as a text link with the dot riding the word. Release notes are an announcement, not a filter control, and the header now holds one action out (Write a Review) and one reset (Clear All).
 - Under 480px the Write a Review button drops its label to the icon, the way Changelog did.
+- No What's New entry, at the owner's request ("Nothing visible to owners" for the release check).
 
 ## [2.2.2] - 2026-09-05
 
