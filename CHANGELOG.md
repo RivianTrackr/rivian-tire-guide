@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.2.1] - 2026-09-05
+
+### Changed
+- **R3 dropped from the review form's vehicle picker.** `RTG_Database::REVIEW_VEHICLES` is now R1T, R1S, R2 (the JS fallback list matches); it comes back when the R3 is on the road. A stored `R3` on an older row is not in the whitelist any more, so an edit that reloads it lands on "no vehicle" rather than a button that no longer exists. Nothing visible to owners beyond one fewer button, and no What's New entry at the owner's request.
+
 ## [2.2.0] - 2026-09-05
 
 The Review a Tire page, rebuilt around the people who actually use it: guests. Sign-up is off on the site because of spam, so nearly every review comes from someone without an account, and the page now says so up front, asks for name and email last, and remembers them. A review also knows more than one star now, which is the first half of roadmap R2 and the data R1 and F9's vehicle filter need.
