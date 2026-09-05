@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [2.2.2] - 2026-09-05
 
 ### Added
-- **No ads on tire-related pages.** `RTG_Theme_Render::ad_blocklist_markup()` prints Mediavine's per-page opt-out (`<div id="mediavine-settings" data-blocklist-all="1">`) at the top of every routed page (tire pages, compare, the review page, the changelog) via `filter_the_content()`, and at the top of the guide and user-reviews shortcodes. The `rtg_block_ads` filter returns ads when set to false.
+- **No ads on tire-related pages.** `RTG_Theme_Render::ad_blocklist_markup()` prints Mediavine's per-page opt-out (`<div id="mediavine-settings" data-blocklist-all="1">`) at the top of every routed page (tire pages, compare, the review page, the changelog) via `filter_the_content()`, and at the top of the guide and user-reviews shortcodes. The `rtg_block_ads` filter returns ads when set to false. Nothing visible to owners is announced: no What's New entry, at the owner's request.
 
 ### Tests
 - `tests/test-meta.php`: the markup, a routed page leading with it, the guide shortcode leading with it, and the filter turning it off.

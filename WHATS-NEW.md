@@ -11,10 +11,6 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
-## 2.2.2 - 2026-09-05
-
-- **No ads on tire pages.** The guide, every tire page, compare, and the review page now load without ads, so the numbers and the reviews are all you see.
-
 ## 2.2.0 - 2026-09-05
 
 The Review a Tire page was rebuilt for the way most people use it: without an account.
