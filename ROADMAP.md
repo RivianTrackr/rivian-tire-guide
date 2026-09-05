@@ -60,13 +60,11 @@ These turn data the plugin already stores into a decision on the card. They
 are what moves the guide from "a catalog you browse" to "an advisor that
 guides you", the through-line of the 2.0 plan. Each is small because the
 inputs already exist in the 32-column row. 1.88.0 shipped F1, F3, F4, F6,
-F7, F8, F12 and F13; what is left is below.
+F7, F8, F12 and F13, and 2.1.0 shipped F9; what is left is below.
 
 | ID | Feature | Why it matters | Where it plugs in |
 |----|---------|----------------|-------------------|
-| F2 | **Efficiency delta vs stock.** Show "+0.18 mi/kWh vs OEM ≈ +14 mi range" instead of a bare mi/kWh pill. Inputs: `roamer_efficiency`, the OEM tag, the vehicle size map, pack kWh per model. The remembered vehicle (1.88.0) gives it a vehicle on first paint. | Translates the Roamer number into the thing owners care about: range. | `cards.js` (Roamer pill), `compare.js` Performance section, tire page |
 | F5 | **Price history, price-drop badge, price-drop alerts.** New `rtg_price_history` (tire_id, price, retailer, observed_at) written by `update_tire()` on a price change. Unlocks a sparkline on the tire page, "lowest in 90 days", a "price dropped" card badge, and a subscribe-to-drop email via `RTG_Mailer`. Depends on P1 hooks. | Price sync overwrites history in place today; every past price is destroyed. | `class-rtg-price-sync.php`, `class-rtg-database.php`, migration 24 |
-| F9 | **Review sorting and filtering** on the tire page: recent / highest / lowest / by vehicle. `get_tire_reviews` is hardcoded `ORDER BY updated_at DESC`. | The reviews drawer was removed and nothing replaced its browsing affordances. | `class-rtg-database.php`, `tire-page-content.php` |
 | F11 | **Live search on the guide.** Port the working typeahead from the tire-review page. | The review page already has it (`tire-review.js`); the guide is button/Enter-only. | `frontend/js/modules/search.js` |
 | F14 | **Adaptive UX leftovers from the 2.0 plan.** Live search preview (F11), saved and shareable searches, seasonal callouts using the existing category field. | — | — |
 
@@ -78,7 +76,7 @@ The 2.0 plan's Pillar 3, still entirely open. Listed in the order they compound.
 |----|---------|-------|
 | R1 | **Verified-owner badge.** "I own this tire" (user meta or a small `rtg_ownership` table with purchase date, price, vehicle) surfaces as a badge on the review and enables an "Owners say" filter. A guest and a three-year owner look identical today. |
 | R2 | **Multi-axis ratings.** Wet grip, snow, noise, comfort, wear. The review modal already *asks* for these in prose but stores one star value. Nullable tinyint columns on `rtg_ratings`; per-axis averages on the tire page; "quietest / best in snow" sorts. |
-| R3 | **"Was this helpful?" votes.** A sort signal for F9 and a moderation signal. |
+| R3 | **"Was this helpful?" votes.** A sort signal for the review list (2.1.0 sorts by date and stars only) and a moderation signal. |
 | R4 | **Review photos.** Moderated upload through the media library, thumbnail on the review, lightbox via `image-modal.js`. Video links (YouTube/Vimeo via `wp_oembed_get()`) fit the same column family. |
 | R5 | **Tire wear / mileage logging** for owned tires (depends on R1): periodic tread-depth entries, a wear chart, projected life vs the mileage warranty, anonymous aggregate "average owner gets X miles". |
 | R6 | **Community Q&A** on tire pages: questions, answers, upvotes, accepted answers, a moderation tab, email on new answers. |
@@ -159,12 +157,11 @@ feed is the sanctioned path). Real, but none load-bearing.
 
 ## Suggested order of attack
 
-1. **Finish the advisor release:** F2 (F1, F3, F4 and F12 shipped in 1.88.0). A render change over data already in the row, with the vehicle now known on first paint.
-2. **Finish the tire page as landing page:** F9 review sorting, and P3 so non-AIOSEO sites get indexed (F6, F7 and F8 shipped in 1.88.0).
-3. **Hooks, then price history:** P1 first, F5 on top of it, ADM2 riding the same events.
-4. **Hygiene sweep:** §1 and §2 in one release, the way 1.85–1.87 cleared the earlier reviews.
-5. **Admin safety net:** ADM1 trash, ADM3 dry-run, ADM4 bulk moderation.
-6. **P2 keyed rows** before any further card work, so the next feature doesn't pay the positional-array tax.
+1. **Finish the tire page as landing page:** P3 so non-AIOSEO sites get indexed (F6, F7 and F8 shipped in 1.88.0, F9 review sorting in 2.1.0).
+2. **Hooks, then price history:** P1 first, F5 on top of it, ADM2 riding the same events.
+3. **Hygiene sweep:** §1 and §2 in one release, the way 1.85–1.87 cleared the earlier reviews.
+4. **Admin safety net:** ADM1 trash, ADM3 dry-run, ADM4 bulk moderation.
+5. **P2 keyed rows** before any further card work, so the next feature doesn't pay the positional-array tax.
 
 ---
 

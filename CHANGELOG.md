@@ -4,6 +4,24 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.1.0] - 2026-09-05
+
+Roadmap F9: the tire page's owner reviews can be sorted and filtered by star. The reviews drawer left with 1.6x and nothing replaced its browsing affordances; a page with forty reviews was forty cards, newest edit first, and nothing else.
+
+### Added
+- **Sort control on Owner Reviews.** Recent, Highest and Lowest in the guide's segmented-toggle style, beside "Write a Review". Rendered only when a tire has more than one review. `role="radiogroup"` with real `role="radio"` / `aria-checked` buttons and arrow-key movement, which is the pattern A11Y1 asks the guide's vehicle toggle to adopt.
+- **Star filter chips with counts.** All, then 5 down to 1, each with its approved-review count from the new `RTG_Database::get_tire_review_star_counts()`. A star with no reviews renders disabled, so a chip press never lands on an empty list. A caption under the chips (`role="status"`) says what the list is showing and offers "Show all N".
+- **`sort` and `rating` on both review endpoints.** `wp_ajax_get_tire_reviews` and `GET /rtg/v1/tires/{id}/reviews` accept `sort` (recent|highest|lowest) and `rating` (1–5, 0 for all), echo what they applied, and return the filtered total so "Show more (N more)" stays right. `RTG_Database::normalize_review_args()` whitelists both; anything else falls back to the default list.
+
+### Changed
+- **"Recent" now means the date on the card.** `get_tire_reviews()` used to order by `updated_at`, which the table bumps on any edit, so a typo fix on an old review sent it to the top while its card still showed the original month. The default order is `created_at DESC, id DESC`; highest and lowest tie-break the same way. `get_tire_review_count()` takes an optional star.
+- **Reviews loaded by the page script show their month**, matching the server-rendered cards. `renderReview()` in `tire-page.js` reads the month from the datetime as text so a browser time zone cannot shift a review across a month boundary.
+- **"Show more" is hidden, not removed**, once every review is on the page, so a sort or filter change can bring it back.
+
+### Tests
+- `tests/test-database.php`: the three sorts, the star filter keeping the sort, the filtered count, the per-star counts with zeros, and argument normalization (an injection attempt and an out-of-range star both fall back).
+- `tests/test-ajax.php`: `sort=highest` orders the response, an unknown sort answers `recent`, and `rating=4` filters both the rows and the total.
+
 ## [2.0.7] - 2026-09-03
 
 The 2.0 release, consolidated: 2.0.0 through 2.0.6 shipped over one day and are folded into this entry, which describes what is on the site now. The AI Tire Advisor, built the way the 1.18 one wasn't: grounded in the catalog, never a chat box, and useful without a key.

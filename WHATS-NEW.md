@@ -11,6 +11,14 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.1.0 - 2026-09-05
+
+Owner reviews on a tire page are easier to dig through.
+
+- **Sort reviews your way.** Above the reviews, pick Recent, Highest or Lowest. Recent now goes by when a review was written, so an old review that got a small edit no longer jumps to the top.
+- **Jump straight to the star you care about.** Chips for 5 down to 1 stars show how many reviews each has. Tap one to read only those, and "Show all" brings the rest back. A star with no reviews is greyed out so you never land on an empty list.
+- **"Show more" keeps your place.** Loading more reviews respects the sort and star you picked, and the count tells you how many are left in that view.
+
 ## 2.0.7 - 2026-09-03
 
 The guide can now help you choose, not just browse.

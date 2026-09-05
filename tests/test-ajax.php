@@ -319,6 +319,50 @@ class Test_RTG_Ajax extends WP_Ajax_UnitTestCase {
         $this->assertNotEmpty( $response['data']['reviews'] );
     }
 
+    public function test_get_tire_reviews_honors_sort_and_star_filter() {
+        $tire_id = 'reviews-ajax-002';
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => $tire_id ) ) );
+
+        foreach ( array( 2, 5, 4 ) as $star ) {
+            $admin_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+            RTG_Database::set_rating( $tire_id, $admin_id, $star, 'Stars ' . $star, 'Body.' );
+        }
+
+        $_POST['tire_id'] = $tire_id;
+        $_POST['page']    = 1;
+        $_POST['sort']    = 'highest';
+        $_POST['rating']  = 0;
+
+        try {
+            $this->_handleAjax( 'get_tire_reviews' );
+        } catch ( WPAjaxDieContinueException $e ) {
+            // Expected.
+        }
+
+        $response = json_decode( $this->_last_response, true );
+        $this->assertTrue( $response['success'] );
+        $this->assertSame( 'highest', $response['data']['sort'] );
+        $this->assertSame( array( 5, 4, 2 ), array_map( 'intval', array_column( $response['data']['reviews'], 'rating' ) ) );
+
+        $this->_last_response = '';
+        $_POST['sort']        = 'bogus';
+        $_POST['rating']      = 4;
+
+        try {
+            $this->_handleAjax( 'get_tire_reviews' );
+        } catch ( WPAjaxDieContinueException $e ) {
+            // Expected.
+        }
+
+        $response = json_decode( $this->_last_response, true );
+        $this->assertTrue( $response['success'] );
+        $this->assertSame( 'recent', $response['data']['sort'], 'an unknown sort falls back to recent' );
+        $this->assertSame( 4, $response['data']['rating'] );
+        $this->assertSame( 1, $response['data']['total'], 'the total counts only the filtered star' );
+        $this->assertCount( 1, $response['data']['reviews'] );
+        $this->assertSame( 'Stars 4', $response['data']['reviews'][0]['review_title'] );
+    }
+
     public function test_get_tire_reviews_rejects_invalid_tire_id() {
         $_POST['tire_id'] = '<script>bad</script>';
         $_POST['page']    = 1;

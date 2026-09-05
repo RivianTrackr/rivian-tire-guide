@@ -319,6 +319,56 @@ class Test_RTG_Database extends WP_UnitTestCase {
     }
 
     /**
+     * Tire-page review list: three sorts, a star filter, and the counts that
+     * feed the filter chips. Ratings written in the same second fall back to
+     * insertion order (newest id first), so "recent" is still deterministic.
+     */
+    public function test_tire_reviews_sort_and_filter_by_star() {
+        $tire_id = 'reviews-sort-001';
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => $tire_id ) ) );
+
+        // Admins auto-approve, so every row below is visible.
+        $stars = array( 3, 5, 1, 3 );
+        foreach ( $stars as $i => $star ) {
+            $admin = $this->factory->user->create( array( 'role' => 'administrator' ) );
+            RTG_Database::set_rating( $tire_id, $admin, $star, 'Title ' . $i, 'Body ' . $i );
+        }
+
+        $recent = array_column( RTG_Database::get_tire_reviews( $tire_id ), 'review_title' );
+        $this->assertSame( array( 'Title 3', 'Title 2', 'Title 1', 'Title 0' ), $recent, 'default is newest first' );
+
+        $highest = array_map( 'intval', array_column( RTG_Database::get_tire_reviews( $tire_id, 20, 0, array( 'orderby' => 'highest' ) ), 'rating' ) );
+        $this->assertSame( array( 5, 3, 3, 1 ), $highest );
+
+        $lowest = array_map( 'intval', array_column( RTG_Database::get_tire_reviews( $tire_id, 20, 0, array( 'orderby' => 'lowest' ) ), 'rating' ) );
+        $this->assertSame( array( 1, 3, 3, 5 ), $lowest );
+
+        $threes = RTG_Database::get_tire_reviews( $tire_id, 20, 0, array( 'rating' => 3 ) );
+        $this->assertCount( 2, $threes );
+        $this->assertSame( array( 'Title 3', 'Title 0' ), array_column( $threes, 'review_title' ), 'a filtered list keeps the sort' );
+
+        $this->assertSame( 4, RTG_Database::get_tire_review_count( $tire_id ) );
+        $this->assertSame( 2, RTG_Database::get_tire_review_count( $tire_id, 3 ) );
+        $this->assertSame( 0, RTG_Database::get_tire_review_count( $tire_id, 2 ) );
+
+        $this->assertSame(
+            array( 5 => 1, 4 => 0, 3 => 2, 2 => 0, 1 => 1 ),
+            RTG_Database::get_tire_review_star_counts( $tire_id ),
+            'every star is present, zeros included, five first'
+        );
+
+        // Anything unexpected falls back to the default list.
+        $this->assertSame(
+            array( 'orderby' => 'recent', 'rating' => 0 ),
+            RTG_Database::normalize_review_args( array( 'orderby' => 'rating DESC; DROP', 'rating' => 9 ) )
+        );
+        $this->assertSame(
+            array( 'orderby' => 'lowest', 'rating' => 2 ),
+            RTG_Database::normalize_review_args( array( 'orderby' => 'LOWEST', 'rating' => '2' ) )
+        );
+    }
+
+    /**
      * The review status counts feed the menu badge on every admin screen,
      * so they are cached — and every write that changes them forgets the
      * cache, so the badge never shows a stale number.

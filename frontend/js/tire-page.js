@@ -211,11 +211,31 @@ var RTG_TP_TOOLTIPS = {
     });
   }
 
-  // --- Show more reviews ----------------------------------------------------
+  // --- Reviews: sort, star filter, show more --------------------------------
+  // The first page is server-rendered. Changing the sort or the star filter
+  // fetches page 1 again and replaces the list; "Show more" appends the next
+  // page under whatever sort and filter are active, and its count comes from
+  // the filtered total the server returns.
   var moreBtn = document.getElementById('rtgTpMoreReviews');
   var list = document.getElementById('rtgTpReviewList');
   if (moreBtn && list && cfg.ajaxurl && cfg.tireId) {
     var perPage = parseInt(cfg.reviewsPerPage, 10) || 10;
+    var moreWrap = moreBtn.parentNode;
+    var sortGroup = document.getElementById('rtgTpReviewSort');
+    var filterGroup = document.getElementById('rtgTpReviewFilters');
+    var caption = document.getElementById('rtgTpReviewCaption');
+    var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var SORT_LABEL = { recent: 'newest first', highest: 'highest rated first', lowest: 'lowest rated first' };
+
+    var state = {
+      sort: 'recent',
+      rating: 0,
+      page: parseInt(moreBtn.dataset.page, 10) || 1,
+      loaded: parseInt(moreBtn.dataset.loaded, 10) || 0,
+      total: parseInt(moreBtn.dataset.total, 10) || 0,
+      allTotal: parseInt(moreBtn.dataset.total, 10) || 0,
+      busy: false
+    };
 
     // Same markup rtg_tire_page_stars() renders server-side.
     function renderStars(rating) {
@@ -238,16 +258,36 @@ var RTG_TP_TOOLTIPS = {
       return wrap;
     }
 
+    // "Aug 2026" from a MySQL datetime, read as text so the browser's time
+    // zone can't shift a review across a month boundary.
+    function formatMonth(value) {
+      var m = /^(\d{4})-(\d{2})/.exec(String(value || ''));
+      if (!m) return '';
+      var month = parseInt(m[2], 10);
+      if (month < 1 || month > 12) return '';
+      return MONTHS[month - 1] + ' ' + m[1];
+    }
+
     function renderReview(review) {
       var item = document.createElement('div');
       item.className = 'rtg-tp-review';
 
       var head = document.createElement('div');
       head.className = 'rtg-tp-review-head';
+      var who = document.createElement('span');
+      who.className = 'rtg-tp-review-who';
       var author = document.createElement('span');
       author.className = 'rtg-tp-review-author';
       author.textContent = review.display_name || 'Guest';
-      head.appendChild(author);
+      who.appendChild(author);
+      var when = formatMonth(review.created_at);
+      if (when) {
+        var date = document.createElement('span');
+        date.className = 'rtg-tp-review-date';
+        date.textContent = when;
+        who.appendChild(date);
+      }
+      head.appendChild(who);
       head.appendChild(renderStars(parseFloat(review.rating) || 0));
       item.appendChild(head);
 
@@ -266,41 +306,189 @@ var RTG_TP_TOOLTIPS = {
       return item;
     }
 
-    function updateButton(loaded, total) {
-      var remaining = total - loaded;
+    function updateButton() {
+      var remaining = state.total - state.loaded;
       if (remaining <= 0) {
-        moreBtn.parentNode.removeChild(moreBtn);
+        moreWrap.hidden = true;
+        moreBtn.disabled = false;
         return;
       }
+      moreWrap.hidden = false;
       moreBtn.textContent = 'Show more reviews (' + remaining + ' more)';
       moreBtn.disabled = false;
+      moreBtn.dataset.page = String(state.page);
+      moreBtn.dataset.loaded = String(state.loaded);
+      moreBtn.dataset.total = String(state.total);
     }
 
-    moreBtn.addEventListener('click', function () {
-      if (moreBtn.disabled) return;
-      var page = (parseInt(moreBtn.dataset.page, 10) || 1) + 1;
-      var loaded = parseInt(moreBtn.dataset.loaded, 10) || 0;
-      var total = parseInt(moreBtn.dataset.total, 10) || 0;
+    // One line under the chips saying what the list is showing, with a way
+    // back. Hidden while the page is in its server-rendered default.
+    function updateCaption() {
+      if (!caption) return;
+      if (state.sort === 'recent' && state.rating === 0) {
+        caption.hidden = true;
+        caption.textContent = '';
+        return;
+      }
+      caption.textContent = '';
+      var text = document.createElement('span');
+      var n = state.total;
+      if (state.rating > 0) {
+        text.textContent = n + ' review' + (n === 1 ? '' : 's') + ' rated ' + state.rating + ' star' + (state.rating === 1 ? '' : 's') + ', ' + SORT_LABEL[state.sort];
+      } else {
+        text.textContent = n + ' review' + (n === 1 ? '' : 's') + ', ' + SORT_LABEL[state.sort];
+      }
+      caption.appendChild(text);
+      if (state.rating > 0) {
+        var sep = document.createElement('span');
+        sep.setAttribute('aria-hidden', 'true');
+        sep.textContent = '·';
+        caption.appendChild(sep);
+        var back = document.createElement('button');
+        back.type = 'button';
+        back.textContent = 'Show all ' + state.allTotal;
+        back.addEventListener('click', function () { setRating(0); });
+        caption.appendChild(back);
+      }
+      caption.hidden = false;
+    }
 
-      moreBtn.disabled = true;
-      moreBtn.textContent = 'Loading…';
-
+    function fetchPage(page) {
       var data = new FormData();
       data.append('action', 'get_tire_reviews');
       data.append('tire_id', cfg.tireId);
       data.append('page', String(page));
+      data.append('sort', state.sort);
+      data.append('rating', String(state.rating));
       if (cfg.ratingNonce) data.append('nonce', cfg.ratingNonce);
 
-      fetch(cfg.ajaxurl, { method: 'POST', body: data, credentials: 'same-origin' })
+      return fetch(cfg.ajaxurl, { method: 'POST', body: data, credentials: 'same-origin' })
         .then(function (r) { return r.json(); })
         .then(function (json) {
           if (!json || !json.success || !json.data || !Array.isArray(json.data.reviews)) {
             throw new Error('bad response');
           }
+          return json.data;
+        });
+    }
+
+    // Sort or filter changed: page 1 again, list replaced in place.
+    function reload() {
+      if (state.busy) return;
+      state.busy = true;
+      list.setAttribute('aria-busy', 'true');
+      moreBtn.disabled = true;
+
+      fetchPage(1)
+        .then(function (d) {
           var frag = document.createDocumentFragment();
-          json.data.reviews.forEach(function (review) {
-            frag.appendChild(renderReview(review));
-          });
+          d.reviews.forEach(function (review) { frag.appendChild(renderReview(review)); });
+          list.textContent = '';
+          list.appendChild(frag);
+
+          state.page = 1;
+          state.loaded = d.reviews.length;
+          state.total = parseInt(d.total, 10) || 0;
+          if (state.rating === 0) state.allTotal = state.total;
+          if (d.reviews.length < perPage) state.loaded = state.total;
+
+          // Counts moved since paint (a review approved in between): say so
+          // rather than leave an empty list with no explanation.
+          if (!d.reviews.length && caption) {
+            caption.textContent = '';
+            var none = document.createElement('span');
+            none.textContent = 'No reviews match that filter.';
+            caption.appendChild(none);
+            var back = document.createElement('button');
+            back.type = 'button';
+            back.textContent = 'Show all reviews';
+            back.addEventListener('click', function () { setRating(0); });
+            caption.appendChild(back);
+            caption.hidden = false;
+          } else {
+            updateCaption();
+          }
+          updateButton();
+        })
+        .catch(function () {
+          if (caption) {
+            caption.textContent = 'Couldn’t load reviews. Try again.';
+            caption.hidden = false;
+          }
+          moreBtn.disabled = false;
+        })
+        .then(function () {
+          state.busy = false;
+          list.removeAttribute('aria-busy');
+        });
+    }
+
+    function setSort(sort) {
+      if (!SORT_LABEL[sort] || sort === state.sort) return;
+      state.sort = sort;
+      if (sortGroup) {
+        Array.prototype.forEach.call(sortGroup.querySelectorAll('[data-sort]'), function (btn) {
+          var on = btn.dataset.sort === sort;
+          btn.classList.toggle('is-active', on);
+          btn.setAttribute('aria-checked', on ? 'true' : 'false');
+          btn.tabIndex = on ? 0 : -1;
+        });
+      }
+      reload();
+    }
+
+    function setRating(rating) {
+      rating = parseInt(rating, 10) || 0;
+      if (rating < 0 || rating > 5 || rating === state.rating) return;
+      state.rating = rating;
+      if (filterGroup) {
+        Array.prototype.forEach.call(filterGroup.querySelectorAll('[data-rating]'), function (chip) {
+          var on = parseInt(chip.dataset.rating, 10) === rating;
+          chip.classList.toggle('is-active', on);
+          chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+      }
+      reload();
+    }
+
+    if (sortGroup) {
+      sortGroup.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-sort]');
+        if (btn) setSort(btn.dataset.sort);
+      });
+      // Arrow keys move the choice, the way a radio group does.
+      sortGroup.addEventListener('keydown', function (e) {
+        var keys = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 };
+        if (!(e.key in keys)) return;
+        var btns = Array.prototype.slice.call(sortGroup.querySelectorAll('[data-sort]'));
+        var idx = btns.indexOf(document.activeElement);
+        if (idx === -1) return;
+        e.preventDefault();
+        var next = btns[(idx + keys[e.key] + btns.length) % btns.length];
+        next.focus();
+        setSort(next.dataset.sort);
+      });
+    }
+
+    if (filterGroup) {
+      filterGroup.addEventListener('click', function (e) {
+        var chip = e.target.closest('[data-rating]');
+        if (chip && !chip.disabled) setRating(chip.dataset.rating);
+      });
+    }
+
+    moreBtn.addEventListener('click', function () {
+      if (moreBtn.disabled || state.busy) return;
+      var page = state.page + 1;
+
+      state.busy = true;
+      moreBtn.disabled = true;
+      moreBtn.textContent = 'Loading…';
+
+      fetchPage(page)
+        .then(function (d) {
+          var frag = document.createDocumentFragment();
+          d.reviews.forEach(function (review) { frag.appendChild(renderReview(review)); });
           var first = frag.firstChild;
           list.appendChild(frag);
           if (first && typeof first.focus === 'function') {
@@ -308,19 +496,18 @@ var RTG_TP_TOOLTIPS = {
             first.focus({ preventScroll: true });
           }
 
-          loaded += json.data.reviews.length;
-          total = parseInt(json.data.total, 10) || total;
-          moreBtn.dataset.page = String(page);
-          moreBtn.dataset.loaded = String(loaded);
-          moreBtn.dataset.total = String(total);
+          state.page = page;
+          state.loaded += d.reviews.length;
+          state.total = parseInt(d.total, 10) || state.total;
           // The server said there are no more: stop even if the count is off.
-          if (json.data.reviews.length < perPage) loaded = total;
-          updateButton(loaded, total);
+          if (d.reviews.length < perPage) state.loaded = state.total;
+          updateButton();
         })
         .catch(function () {
           moreBtn.disabled = false;
           moreBtn.textContent = 'Couldn’t load more reviews. Try again';
-        });
+        })
+        .then(function () { state.busy = false; });
     });
   }
 })();
