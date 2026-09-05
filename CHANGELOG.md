@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.3.2] - 2026-09-05
+
+### Added
+- **The review page can live in WordPress.** `RTG_Tire_Review::prefer_real_page()` on the `request` filter: when a published page exists at the review slug (`tire_review_slug`, default `tire-review`), the request is handed to that page instead of the plugin's route, so the owner can put `[rivian_tire_review]` on a real page and give it a title, description and indexing through the SEO plugin. The route's rewrite rule sits at the top of the stack and used to shadow such a page; it also forced noindex. Without a page nothing changes. The shortcode output now carries the Mediavine blocklist like the other tire pages. README documents the setup.
+
+### Tests
+- `tests/test-meta.php`: the route keeps the request with no page or a draft, hands it to a published page at the slug, and leaves other requests alone.
+
+Nothing visible to owners until they create the page.
+
 ## [2.3.1] - 2026-09-05
 
 ### Fixed

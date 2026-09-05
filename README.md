@@ -132,6 +132,11 @@ With pre-filter attributes:
 [rivian_user_reviews]
 ```
 
+**Write a Review** — The review page. The plugin serves it at `/tire-review/` (the slug is a setting) on its own, marked noindex. To control the page's SEO, create a WordPress page at that same slug with the shortcode in it: a published page at the review slug takes over from the built-in route, and your SEO plugin handles its title, description and indexing like any other page.
+```
+[rivian_tire_review]
+```
+
 ### Adding Tires
 
 1. Go to **Tire Guide > Add New** in the WordPress admin.

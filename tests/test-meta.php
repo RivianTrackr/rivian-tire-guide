@@ -17,6 +17,25 @@ class Test_RTG_Meta extends WP_UnitTestCase {
     }
 
     /**
+     * A published page at the review slug takes over from the built-in
+     * route, so the owner can hold the review page in WordPress and give
+     * it SEO meta. No page: the route serves as before.
+     */
+    public function test_a_real_page_at_the_review_slug_wins_over_the_route() {
+        $review = new RTG_Tire_Review();
+        $vars   = array( 'rtg_tire_review' => '1' );
+
+        $this->assertSame( $vars, $review->prefer_real_page( $vars ), 'no page: the route keeps the request' );
+
+        $draft = $this->factory->post->create( array( 'post_type' => 'page', 'post_name' => 'tire-review', 'post_status' => 'draft', 'post_content' => '[rivian_tire_review]' ) );
+        $this->assertSame( $vars, $review->prefer_real_page( $vars ), 'a draft does not count' );
+        wp_update_post( array( 'ID' => $draft, 'post_status' => 'publish' ) );
+
+        $this->assertSame( array( 'pagename' => 'tire-review' ), $review->prefer_real_page( $vars ), 'a published page is served instead' );
+        $this->assertSame( array( 'p' => 5 ), $review->prefer_real_page( array( 'p' => 5 ) ), 'other requests pass through' );
+    }
+
+    /**
      * Every tire-related page opens with Mediavine's blocklist element, so
      * the ad script serves nothing there; the filter turns it back off.
      */
