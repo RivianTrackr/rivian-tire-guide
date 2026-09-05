@@ -144,7 +144,23 @@ class RTG_Theme_Render {
         }
         ob_start();
         call_user_func( self::$active['content'] );
-        return ob_get_clean();
+        return self::ad_blocklist_markup() . ob_get_clean();
+    }
+
+    /**
+     * Mediavine's per-page opt-out: a settings element the ad script reads
+     * on load and, with data-blocklist-all, serves nothing on the page.
+     * Printed at the top of every tire-related page (the guide, tire pages,
+     * compare, the review page, the changelog) so the reading experience
+     * is not broken up by ads. Filter `rtg_block_ads` to false to keep ads.
+     *
+     * @return string Markup, or '' when ads are allowed.
+     */
+    public static function ad_blocklist_markup() {
+        if ( ! apply_filters( 'rtg_block_ads', true ) ) {
+            return '';
+        }
+        return '<div id="mediavine-settings" data-blocklist-all="1"></div>';
     }
 
     /**

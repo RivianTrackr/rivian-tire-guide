@@ -16,6 +16,29 @@ class Test_RTG_Meta extends WP_UnitTestCase {
         $this->assertSame( RTG_Meta::DEFAULT_SHARE_IMAGE, RTG_Meta::share_image() );
     }
 
+    /**
+     * Every tire-related page opens with Mediavine's blocklist element, so
+     * the ad script serves nothing there; the filter turns it back off.
+     */
+    public function test_tire_pages_carry_the_mediavine_blocklist() {
+        $tag = '<div id="mediavine-settings" data-blocklist-all="1"></div>';
+        $this->assertSame( $tag, RTG_Theme_Render::ad_blocklist_markup() );
+
+        RTG_Theme_Render::render( array(
+            'title'   => 'Test',
+            'slug'    => 'test',
+            'content' => function () { echo '<p>body</p>'; },
+        ) );
+        $this->assertSame( $tag . '<p>body</p>', RTG_Theme_Render::filter_the_content( '' ), 'routed pages lead with it' );
+
+        $guide = do_shortcode( '[rivian_tire_guide]' );
+        $this->assertStringStartsWith( $tag, $guide, 'the guide shortcode leads with it' );
+
+        add_filter( 'rtg_block_ads', '__return_false' );
+        $this->assertSame( '', RTG_Theme_Render::ad_blocklist_markup(), 'the filter keeps ads' );
+        remove_filter( 'rtg_block_ads', '__return_false' );
+    }
+
     public function test_the_renderer_hands_its_image_to_every_seo_path_and_prints_it_itself() {
         RTG_Theme_Render::render( array(
             'title'       => 'Some Tire — Rivian Tire Guide',
