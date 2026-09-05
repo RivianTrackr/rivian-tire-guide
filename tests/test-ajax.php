@@ -446,7 +446,7 @@ class Test_RTG_Ajax extends WP_Ajax_UnitTestCase {
         $this->assertTrue( $response['success'], 'guest submit accepted' );
 
         global $wpdb;
-        $row = $wpdb->get_row( $wpdb->prepare( 'SELECT vehicle, miles, is_owner, rating_noise, rating_snow FROM ' . RTG_Database::ratings_table() . ' WHERE tire_id = %s AND guest_email = %s', $tire_id, 'dana2@example.com' ), ARRAY_A );
+        $row = $wpdb->get_row( $wpdb->prepare( 'SELECT vehicle, miles, is_owner, rating_noise, rating_snow FROM ' . $wpdb->prefix . 'rtg_ratings WHERE tire_id = %s AND guest_email = %s', $tire_id, 'dana2@example.com' ), ARRAY_A );
         $this->assertSame( 'R2', $row['vehicle'] );
         $this->assertSame( 3100, (int) $row['miles'] );
         $this->assertSame( 1, (int) $row['is_owner'] );

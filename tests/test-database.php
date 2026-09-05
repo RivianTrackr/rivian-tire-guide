@@ -395,7 +395,7 @@ class Test_RTG_Database extends WP_UnitTestCase {
         $this->assertArrayNotHasKey( $tire_id, RTG_Database::get_review_counts_by_tire() );
 
         global $wpdb;
-        $wpdb->update( RTG_Database::ratings_table(), array( 'review_status' => 'approved' ), array( 'tire_id' => $tire_id, 'guest_email' => 'dana@example.com' ) );
+        $wpdb->update( $wpdb->prefix . 'rtg_ratings', array( 'review_status' => 'approved' ), array( 'tire_id' => $tire_id, 'guest_email' => 'dana@example.com' ) );
 
         $counts = RTG_Database::get_review_counts_by_tire();
         $this->assertSame( 1, $counts[ $tire_id ] );
