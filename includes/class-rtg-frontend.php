@@ -31,7 +31,7 @@ class RTG_Frontend {
 
         ob_start();
         include RTG_PLUGIN_DIR . 'frontend/templates/tire-guide.php';
-        return ob_get_clean();
+        return RTG_Theme_Render::ad_blocklist_markup() . ob_get_clean();
     }
 
     public function render_user_reviews_shortcode( $atts ) {
@@ -39,7 +39,7 @@ class RTG_Frontend {
 
         ob_start();
         include RTG_PLUGIN_DIR . 'frontend/templates/user-reviews.php';
-        return ob_get_clean();
+        return RTG_Theme_Render::ad_blocklist_markup() . ob_get_clean();
     }
 
     private function enqueue_user_reviews_assets() {
