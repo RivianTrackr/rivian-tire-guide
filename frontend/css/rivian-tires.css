@@ -1244,11 +1244,98 @@
     flex: 1;
   }
 }
+/* The footer's Changelog: a text link, not a button. The dot still rides
+   it, so a new release shows there; .has-unseen from whats-new.js lights it. */
+.rtg-whats-new-btn.rtg-whats-new-link {
+  height: auto;
+  padding: 0 2px;
+  border: none;
+  background: none;
+  color: var(--rtg-accent);
+  font-size: 12px;
+  opacity: 1;
+}
+.rtg-whats-new-btn.rtg-whats-new-link:hover,
+.rtg-whats-new-btn.rtg-whats-new-link:focus-visible {
+  color: var(--rtg-accent-hover);
+  background: none;
+}
+.rtg-whats-new-btn.rtg-whats-new-link .rtg-whats-new-dot {
+  top: -5px;
+  right: -8px;
+  border-color: var(--rtg-bg-primary);
+}
+
+/* Write a Review, in the filter header beside Clear All. The Changelog's
+   old slot: same size, the accent on the icon and border so it reads as a
+   door out of the guide rather than another filter control. */
+.rtg-write-review-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rtg-accent);
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--rtg-accent) 45%, var(--rtg-border));
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.rtg-write-review-btn:hover,
+.rtg-write-review-btn:focus-visible {
+  background: color-mix(in srgb, var(--rtg-accent) 10%, transparent);
+  border-color: var(--rtg-accent);
+  color: var(--rtg-accent-hover);
+  text-decoration: none;
+}
+.rtg-write-review-btn:focus-visible {
+  outline: 2px solid var(--rtg-accent);
+  outline-offset: 2px;
+}
+.rtg-write-review-btn i {
+  font-size: 12px;
+  color: inherit;
+  width: auto;
+}
+
+/* Guide footer: the version and the Changelog on the left, the Roamer
+   credit on the right. Under the cards, where version notes live. */
+.rtg-guide-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 20px 0 0;
+  padding: 14px 0 0;
+  border-top: 1px solid rgba(52, 56, 63, 0.4);
+  font-size: 12px;
+  color: var(--rtg-text-muted);
+}
+.rtg-guide-footer-version {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.rtg-guide-footer-credit a {
+  color: var(--rtg-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.rtg-guide-footer-credit a:hover {
+  color: var(--rtg-accent);
+}
+
 @media (max-width: 480px) {
-  .rtg-whats-new-btn .rtg-whats-new-label {
+  .rtg-write-review-btn .rtg-write-review-label {
     display: none;
   }
-  .rtg-whats-new-btn {
+  .rtg-write-review-btn {
     width: 34px;
     padding: 0;
     justify-content: center;
