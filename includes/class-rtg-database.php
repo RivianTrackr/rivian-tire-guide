@@ -1665,8 +1665,8 @@ class RTG_Database {
     /** The detail axes a review can rate, in the order the form shows them. Column is rating_<axis>. */
     const REVIEW_AXES = array( 'range', 'noise', 'comfort', 'wet', 'snow', 'wear' );
 
-    /** Vehicles a review can name. The guide's size map groups R1T and R1S as R1; a review keeps them apart. */
-    const REVIEW_VEHICLES = array( 'R1T', 'R1S', 'R2', 'R3' );
+    /** Vehicles a review can name. The guide's size map groups R1T and R1S as R1; a review keeps them apart. R3 waits until it is on the road. */
+    const REVIEW_VEHICLES = array( 'R1T', 'R1S', 'R2' );
 
     /** Largest mileage a review may claim on one set of tires. */
     const REVIEW_MAX_MILES = 500000;

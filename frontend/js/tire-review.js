@@ -32,7 +32,7 @@
   var autoApprove = config.autoApprove === true || config.autoApprove === '1' || config.autoApprove === 1;
   var vehicleSizeMap = (config.vehicleSizeMap && typeof config.vehicleSizeMap === 'object' && !Array.isArray(config.vehicleSizeMap)) ? config.vehicleSizeMap : {};
   var reviewCounts = (config.reviewCounts && typeof config.reviewCounts === 'object' && !Array.isArray(config.reviewCounts)) ? config.reviewCounts : {};
-  var vehicles = Array.isArray(config.vehicles) && config.vehicles.length ? config.vehicles : ['R1T', 'R1S', 'R2', 'R3'];
+  var vehicles = Array.isArray(config.vehicles) && config.vehicles.length ? config.vehicles : ['R1T', 'R1S', 'R2'];
 
   var selectedTire = null;
   var selectedRating = 0;
@@ -289,7 +289,7 @@
     buildSeg(sw, groups, active, function(v) {
       try { localStorage.setItem(LS_VEHICLE, v); } catch (e) { /* private browsing */ }
       renderPopular(v);
-      // A group like R2 or R3 is also the review's vehicle; R1 is not (R1T or R1S).
+      // A group like R2 is also the review's vehicle; R1 is not (R1T or R1S).
       if (vehicles.indexOf(v) !== -1 && !pickedVehicle) {
         pickedVehicle = v;
         paintSeg($('rvVehiclePick'), v);
