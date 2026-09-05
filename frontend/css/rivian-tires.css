@@ -14,6 +14,12 @@
   --rtg-star-filled: #fba919;
   --rtg-star-user: #4ade80;
   --rtg-star-empty: #2c2f34;
+  /* What an empty star is actually painted with: the empty-star color lifted
+     toward the muted text color, so the outline reads on the card. Ink on
+     ink (#2c2f34 on #16191e at 35% opacity) was invisible on many screens.
+     Every star on the guide, the review modal, and the user-reviews page
+     uses this; the tire page and the review page carry the same mix. */
+  --rtg-star-empty-visible: color-mix(in srgb, var(--rtg-star-empty) 35%, var(--rtg-text-muted));
 }
 
 /* === Mobile Filter Toggle === */
@@ -2419,7 +2425,7 @@
   align-items: center;
 }
 .rating-stars .star {
-  color: var(--rtg-star-empty, #2c2f34);
+  color: var(--rtg-star-empty-visible, #6f6e6b);
   display: flex;
   align-items: center;
   user-select: none;
@@ -2429,7 +2435,7 @@
 }
 /* SVG layer visibility */
 .rating-stars .star .star-bg {
-  opacity: 0.35;
+  opacity: 0.8;
 }
 .rating-stars .star .star-fill,
 .rating-stars .star .star-half {
@@ -2622,7 +2628,7 @@
   gap: 8px;
 }
 .rtg-review-star {
-  color: var(--rtg-star-empty, #2c2f34);
+  color: var(--rtg-star-empty-visible, #6f6e6b);
   cursor: pointer;
   transition: color 0.15s ease, transform 0.15s ease, filter 0.15s ease;
   user-select: none;
@@ -2630,7 +2636,7 @@
   line-height: 0;
 }
 .rtg-review-star .star-bg {
-  opacity: 0.35;
+  opacity: 0.8;
 }
 .rtg-review-star .star-fill,
 .rtg-review-star .star-half {
@@ -2810,12 +2816,12 @@
   gap: 2px;
 }
 .rtg-mini-star {
-  color: var(--rtg-star-empty, #2c2f34);
+  color: var(--rtg-star-empty-visible, #6f6e6b);
   display: inline-flex;
   line-height: 0;
 }
 .rtg-mini-star .star-bg {
-  opacity: 0.35;
+  opacity: 0.8;
 }
 .rtg-mini-star .star-fill,
 .rtg-mini-star .star-half {

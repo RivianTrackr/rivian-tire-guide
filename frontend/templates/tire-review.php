@@ -86,6 +86,8 @@ if ( ! empty( $guide_pages ) ) {
       --rtg-star-user: #4ade80;
       --rtg-star-empty: #2c2f34;
       <?php if ( $rtg_css_vars ) echo $rtg_css_vars; ?>
+      /* Empty stars paint with this: the empty color lifted toward muted text (see rivian-tires.css). */
+      --rtg-star-empty-visible: color-mix(in srgb, var(--rtg-star-empty) 35%, var(--rtg-text-muted));
     }
 
     .rv-root *, .rv-root *::before, .rv-root *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -289,7 +291,7 @@ if ( ! empty( $guide_pages ) ) {
     .rv-tire-stars {
       display: flex;
       gap: 2px;
-      color: var(--rtg-star-empty);
+      color: var(--rtg-star-empty-visible);
     }
     .rv-tire-stars .star-active { color: var(--rtg-star-filled); }
     .rv-tire-stars .star-half-active { color: var(--rtg-star-filled); }
@@ -355,14 +357,14 @@ if ( ! empty( $guide_pages ) ) {
       gap: 8px;
     }
     .rv-star {
-      color: var(--rtg-star-empty);
+      color: var(--rtg-star-empty-visible);
       cursor: pointer;
       transition: color .15s, transform .15s, filter .15s;
       user-select: none;
       display: inline-flex;
       line-height: 0;
     }
-    .rv-star .star-bg { opacity: 0.35; }
+    .rv-star .star-bg { opacity: 0.8; }
     .rv-star .star-fill,
     .rv-star .star-half { opacity: 0; transition: opacity .15s; }
     .rv-star.selected {
@@ -629,8 +631,8 @@ if ( ! empty( $guide_pages ) ) {
     .rv-axis-name { font-size: 14px; font-weight: 600; color: var(--rtg-text-primary); }
     .rv-axis-note { font-size: 12px; color: var(--rtg-text-muted); }
     .rv-axis-stars { display: inline-flex; gap: 2px; flex-shrink: 0; }
-    .rv-axis-star { background: none; border: none; padding: 2px; margin: 0; color: var(--rtg-star-empty); cursor: pointer; line-height: 0; display: inline-flex; border-radius: 4px; transition: color .15s, transform .15s; }
-    .rv-axis-star .star-bg { opacity: 0.35; }
+    .rv-axis-star { background: none; border: none; padding: 2px; margin: 0; color: var(--rtg-star-empty-visible); cursor: pointer; line-height: 0; display: inline-flex; border-radius: 4px; transition: color .15s, transform .15s; }
+    .rv-axis-star .star-bg { opacity: 0.8; }
     .rv-axis-star .star-fill, .rv-axis-star .star-half { opacity: 0; transition: opacity .15s; }
     .rv-axis-star.selected { color: var(--rtg-star-user); }
     .rv-axis-star.selected .star-fill { opacity: 1; }
@@ -663,9 +665,9 @@ if ( ! empty( $guide_pages ) ) {
     .rv-success-recap strong { color: var(--rtg-text-heading); font-weight: 600; }
     /* Small read-only stars: the success recap and both "already reviewed" banners. */
     .rv-recap-stars { display: inline-flex; gap: 1px; color: var(--rtg-star-filled); vertical-align: -2px; }
-    .rv-recap-stars .star-bg { opacity: 0.35; }
+    .rv-recap-stars .star-bg { opacity: 0.8; }
     .rv-recap-stars .star-half { opacity: 0; }
-    .rv-recap-stars .star-empty { color: var(--rtg-text-muted); }
+    .rv-recap-stars .star-empty { color: var(--rtg-star-empty-visible); }
     .rv-recap-stars .star-empty .star-fill { opacity: 0; }
     .rv-hint[hidden] { display: none; }
     .rv-btn[hidden] { display: none; }
