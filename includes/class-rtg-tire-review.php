@@ -77,17 +77,34 @@ class RTG_Tire_Review {
                 'size'     => $row[1],
                 'category' => $row[5],
                 'image'    => $row[19],
+                'slug'     => $row[28] ?? '',
             );
         }
+
+        $settings     = get_option( 'rtg_settings', array() );
+        $review_slug  = sanitize_title( $settings['tire_review_slug'] ?? 'tire-review' );
+        $current_user = wp_get_current_user();
 
         wp_localize_script( 'rtg-tire-review', 'rtgTireReview', array(
             'tires'           => $review_tires,
             'ajaxurl'         => admin_url( 'admin-ajax.php' ),
             'nonce'           => wp_create_nonce( 'tire_rating_nonce' ),
             'is_logged_in'    => is_user_logged_in(),
-            'login_url'       => wp_login_url( home_url( '/' ) ),
+            // Back to this page after signing in, not the home page.
+            'login_url'       => wp_login_url( home_url( '/' . $review_slug . '/' ) ),
             'preselectedTire' => $preselected,
             'tireGuideUrl'    => RTG_Tire_Page::guide_url(),
+            // "See the tire page" after a submit: base + slug + '/'.
+            'tirePageBase'    => home_url( '/' . RTG_Tire_Page::slug_base() . '/' ),
+            // Landing: a vehicle switch over the size map, and how many
+            // approved reviews each tire has, for "most reviewed for your Rivian".
+            'vehicleSizeMap'  => RTG_Database::get_vehicle_size_map(),
+            'reviewCounts'    => RTG_Database::get_review_counts_by_tire(),
+            'vehicles'        => RTG_Database::REVIEW_VEHICLES,
+            // The few with an account: who they are, and whether their words
+            // post at once (admins) or wait in the queue like a guest's.
+            'displayName'     => is_user_logged_in() ? $current_user->display_name : '',
+            'autoApprove'     => current_user_can( 'manage_options' ),
         ) );
     }
 

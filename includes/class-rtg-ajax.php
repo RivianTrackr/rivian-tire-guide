@@ -91,6 +91,11 @@ class RTG_Ajax {
         // Submit guest review — non-logged-in users only.
         add_action( 'wp_ajax_nopriv_submit_guest_tire_rating', array( $this, 'submit_guest_tire_rating' ) );
 
+        // Has this email already reviewed this tire? Asked by the review page
+        // as soon as the email is typed, so nobody writes a review and then
+        // hits the duplicate wall at Submit.
+        add_action( 'wp_ajax_nopriv_rtg_check_guest_review', array( $this, 'check_guest_review' ) );
+
         // Get reviews for a tire — public.
         add_action( 'wp_ajax_get_tire_reviews', array( $this, 'get_tire_reviews' ) );
         add_action( 'wp_ajax_nopriv_get_tire_reviews', array( $this, 'get_tire_reviews' ) );
@@ -264,8 +269,10 @@ class RTG_Ajax {
             $review_status = 'approved';
         }
 
-        // Save the rating with optional review.
-        RTG_Database::set_rating( $tire_id, $user_id, $rating, $review_title, $review_text );
+        // Save the rating with optional review and the optional details
+        // (vehicle, miles, owner flag, per-axis stars); anything malformed
+        // is dropped by normalize_review_details(), never rejected.
+        RTG_Database::set_rating( $tire_id, $user_id, $rating, $review_title, $review_text, $post );
 
         // Return updated rating data.
         $ratings     = RTG_Database::get_tire_ratings( array( $tire_id ) );
@@ -359,8 +366,8 @@ class RTG_Ajax {
             wp_send_json_error( 'You have already reviewed this tire.' );
         }
 
-        // Save the guest review (always pending).
-        RTG_Database::set_guest_rating( $tire_id, $guest_name, $guest_email, $rating, $review_title, $review_text );
+        // Save the guest review (always pending) with the optional details.
+        RTG_Database::set_guest_rating( $tire_id, $guest_name, $guest_email, $rating, $review_title, $review_text, $post );
 
         // Notify admin about the new guest review.
         RTG_Mailer::send_admin_guest_review_notification( $guest_name, $guest_email, array(
@@ -372,6 +379,51 @@ class RTG_Ajax {
 
         wp_send_json_success( array(
             'review_status' => 'pending',
+        ) );
+    }
+
+    /**
+     * Whether a guest email already has a review on a tire.
+     *
+     * Answers only what the tire page already shows beside the reviewer's
+     * name: the star and the month. Rate-limited by fingerprint at a higher
+     * ceiling than submissions, since a form can ask this a few times.
+     */
+    public function check_guest_review() {
+        if ( ! check_ajax_referer( 'tire_rating_nonce', 'nonce', false ) ) {
+            wp_send_json_error( 'Security check failed.' );
+        }
+
+        if ( ! empty( $_POST['website'] ) ) {
+            wp_send_json_success( array( 'exists' => false ) );
+        }
+
+        $fingerprint = $this->get_client_fingerprint();
+        if ( $this->check_rate_limit( 'review_check', $fingerprint, 20, self::RATE_LIMIT_WINDOW ) ) {
+            wp_send_json_error( 'Too many requests. Please wait a moment and try again.' );
+        }
+
+        $post        = wp_unslash( $_POST );
+        $tire_id     = sanitize_text_field( $post['tire_id'] ?? '' );
+        $guest_email = sanitize_email( $post['guest_email'] ?? '' );
+
+        if ( ! RTG_Database::validate_tire_id( $tire_id ) ) {
+            wp_send_json_error( 'Invalid tire ID.' );
+        }
+        if ( empty( $guest_email ) || ! is_email( $guest_email ) ) {
+            wp_send_json_error( 'A valid email address is required.' );
+        }
+
+        $summary = RTG_Database::get_guest_review_summary( $guest_email, $tire_id );
+        if ( ! $summary ) {
+            wp_send_json_success( array( 'exists' => false ) );
+        }
+
+        wp_send_json_success( array(
+            'exists'  => true,
+            'rating'  => $summary['rating'],
+            'month'   => date_i18n( 'M Y', strtotime( $summary['created_at'] ) ),
+            'pending' => 'approved' !== $summary['review_status'],
         ) );
     }
 

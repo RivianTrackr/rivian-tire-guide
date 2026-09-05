@@ -298,6 +298,31 @@ if ( ! function_exists( 'rtg_tire_page_stars' ) ) {
     }
 }
 
+if ( ! function_exists( 'rtg_tire_page_review_meta' ) ) {
+    /**
+     * What the reviewer told us about their setup: verified owner, which
+     * Rivian, miles on the set. One quiet line under the name; nothing when
+     * the review predates those questions. tire-page.js renders the same
+     * markup for reviews loaded by "Show more" and the sort control.
+     */
+    function rtg_tire_page_review_meta( $review ) {
+        $parts = array();
+        if ( ! empty( $review['is_owner'] ) ) {
+            $parts[] = '<span class="rtg-tp-review-tag rtg-tp-review-owner"><i class="fa-solid fa-certificate" aria-hidden="true"></i>Verified owner</span>';
+        }
+        if ( ! empty( $review['vehicle'] ) ) {
+            $parts[] = '<span class="rtg-tp-review-tag">' . esc_html( $review['vehicle'] ) . '</span>';
+        }
+        if ( ! empty( $review['miles'] ) && (int) $review['miles'] > 0 ) {
+            $parts[] = '<span class="rtg-tp-review-tag">' . esc_html( number_format( (int) $review['miles'] ) ) . ' mi on this set</span>';
+        }
+        if ( empty( $parts ) ) {
+            return '';
+        }
+        return '<div class="rtg-tp-review-meta">' . implode( '', $parts ) . '</div>';
+    }
+}
+
 if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
     /**
      * One related-tire row: thumbnail, name, size · price · efficiency, and
@@ -563,6 +588,10 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
   .rtg-tp .rtg-tp-review-who { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .rtg-tp .rtg-tp-review-author { font-weight: 600; color: var(--rtg-tp-heading); font-size: 14px; }
   .rtg-tp .rtg-tp-review-date { font-size: 12px; color: var(--rtg-tp-muted); }
+  .rtg-tp .rtg-tp-review-meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 6px; }
+  .rtg-tp .rtg-tp-review-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; line-height: 1; padding: 5px 9px; border-radius: 20px; color: var(--rtg-tp-muted); background: var(--rtg-tp-deep); border: 1px solid var(--rtg-tp-divider); }
+  .rtg-tp .rtg-tp-review-owner { color: var(--rtg-tp-text); background: color-mix(in srgb, #34d399 12%, var(--rtg-tp-deep)); border-color: color-mix(in srgb, #34d399 35%, transparent); }
+  .rtg-tp .rtg-tp-review-owner i { color: #34d399; font-size: 11px; }
   .rtg-tp .rtg-tp-review-title { font-weight: 600; font-size: 14px; margin: 4px 0; }
   .rtg-tp .rtg-tp-review-body { font-size: 14px; color: var(--rtg-tp-text); margin: 0; }
   .rtg-tp .rtg-tp-reviews-more { display: flex; justify-content: center; margin: 12px 0 0; }
@@ -845,6 +874,7 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
         </span>
         <span class="rtg-tp-review-stars"><?php echo rtg_tire_page_stars( (float) $review['rating'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static markup ?></span>
       </div>
+      <?php echo rtg_tire_page_review_meta( $review ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside ?>
       <?php if ( ! empty( $review['review_title'] ) ) : ?>
       <div class="rtg-tp-review-title"><?php echo esc_html( $review['review_title'] ); ?></div>
       <?php endif; ?>

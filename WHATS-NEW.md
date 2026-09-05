@@ -11,6 +11,18 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.2.0 - 2026-09-05
+
+The Review a Tire page was rebuilt for the way most people use it: without an account.
+
+- **No account needed, and the page says so.** The first line tells you a review goes live after a quick check, and the form asks for your name and email last, after you have said your piece. Come back later and both are remembered, with a "Not you?" if it is someone else's turn.
+- **Somewhere to start.** Under the search box, pick your Rivian and see the most-reviewed tires for it, ready to review in one tap.
+- **Tell us more than one star.** Rate range, noise, comfort, wet grip, snow and wear separately if you like, say which Rivian and how many miles are on the set, and tick "I own this tire" for a verified-owner badge. All of it is optional; the overall stars are the only must.
+- **Your setup shows on the review.** Tire pages now show the owner badge, the vehicle and the miles under each review that has them, so a review from someone 12,000 miles in reads differently from a first impression.
+- **No more writing a review only to be told you already did.** If your email has reviewed that tire before, the page says so as soon as you type it, with the month and the stars you gave.
+- **Clearer after you submit.** Guests see that the review is in the queue, which email will hear when it is live, and a recap of what was captured, with a button to the tire page.
+- **If you do have an account**, the page shows your earlier review of a tire and lets you load it to edit, start fresh, or delete it.
+
 ## 2.1.0 - 2026-09-05
 
 Owner reviews on a tire page are easier to dig through.

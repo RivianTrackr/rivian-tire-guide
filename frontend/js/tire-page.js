@@ -268,6 +268,40 @@ var RTG_TP_TOOLTIPS = {
       return MONTHS[month - 1] + ' ' + m[1];
     }
 
+    // Same markup rtg_tire_page_review_meta() renders server-side: owner
+    // badge, vehicle, miles on the set. Nothing for older reviews.
+    function renderReviewMeta(review) {
+      var tags = [];
+      if (parseInt(review.is_owner, 10)) {
+        var owner = document.createElement('span');
+        owner.className = 'rtg-tp-review-tag rtg-tp-review-owner';
+        var icon = document.createElement('i');
+        icon.className = 'fa-solid fa-certificate';
+        icon.setAttribute('aria-hidden', 'true');
+        owner.appendChild(icon);
+        owner.appendChild(document.createTextNode('Verified owner'));
+        tags.push(owner);
+      }
+      if (review.vehicle) {
+        var veh = document.createElement('span');
+        veh.className = 'rtg-tp-review-tag';
+        veh.textContent = review.vehicle;
+        tags.push(veh);
+      }
+      var miles = parseInt(review.miles, 10) || 0;
+      if (miles > 0) {
+        var mi = document.createElement('span');
+        mi.className = 'rtg-tp-review-tag';
+        mi.textContent = miles.toLocaleString() + ' mi on this set';
+        tags.push(mi);
+      }
+      if (!tags.length) return null;
+      var wrap = document.createElement('div');
+      wrap.className = 'rtg-tp-review-meta';
+      tags.forEach(function (t) { wrap.appendChild(t); });
+      return wrap;
+    }
+
     function renderReview(review) {
       var item = document.createElement('div');
       item.className = 'rtg-tp-review';
@@ -290,6 +324,9 @@ var RTG_TP_TOOLTIPS = {
       head.appendChild(who);
       head.appendChild(renderStars(parseFloat(review.rating) || 0));
       item.appendChild(head);
+
+      var meta = renderReviewMeta(review);
+      if (meta) item.appendChild(meta);
 
       if (review.review_title) {
         var title = document.createElement('div');

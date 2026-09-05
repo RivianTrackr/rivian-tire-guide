@@ -319,6 +319,93 @@ class Test_RTG_Database extends WP_UnitTestCase {
     }
 
     /**
+     * 2.2.0: a review knows more than one star. Vehicle, miles, the owner
+     * flag and six optional detail axes ride along on both write paths,
+     * come back on the tire page list and in the user's own review, and
+     * anything malformed is dropped rather than rejected.
+     */
+    public function test_review_details_persist_and_normalize() {
+        $tire_id = 'details-001';
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => $tire_id ) ) );
+        $admin = $this->factory->user->create( array( 'role' => 'administrator' ) );
+
+        RTG_Database::set_rating( $tire_id, $admin, 4, 'Quiet', 'Body.', array(
+            'vehicle'      => 'r1s',
+            'miles'        => '6,400',
+            'is_owner'     => '1',
+            'axis_noise'   => 5,
+            'axis_range'   => '4',
+            'axis_snow'    => 9,      // out of range: not answered
+            'axis_wear'    => '',     // blank: not answered
+        ) );
+
+        $rows = RTG_Database::get_tire_reviews( $tire_id );
+        $this->assertCount( 1, $rows );
+        $this->assertSame( 'R1S', $rows[0]['vehicle'], 'vehicle is upper-cased and whitelisted' );
+        $this->assertSame( 6400, (int) $rows[0]['miles'], 'miles lose their thousands separator' );
+        $this->assertSame( 1, (int) $rows[0]['is_owner'] );
+        $this->assertSame( 5, (int) $rows[0]['rating_noise'] );
+        $this->assertSame( 4, (int) $rows[0]['rating_range'] );
+        $this->assertNull( $rows[0]['rating_snow'], 'an out-of-range axis is left blank' );
+        $this->assertNull( $rows[0]['rating_wear'] );
+        $this->assertNull( $rows[0]['rating_comfort'], 'an axis never sent is left blank' );
+
+        $mine = RTG_Database::get_user_ratings( array( $tire_id ), $admin );
+        $this->assertSame( 'R1S', $mine[ $tire_id ]['vehicle'] );
+        $this->assertSame( 6400, $mine[ $tire_id ]['miles'] );
+        $this->assertSame( 1, $mine[ $tire_id ]['is_owner'] );
+        $this->assertSame( 5, $mine[ $tire_id ]['rating_noise'] );
+        $this->assertNull( $mine[ $tire_id ]['rating_snow'] );
+        $this->assertSame( 'approved', $mine[ $tire_id ]['review_status'] );
+
+        // An edit that sends no details clears them: the form always sends
+        // what it shows, so a blank is a deliberate blank.
+        RTG_Database::set_rating( $tire_id, $admin, 4, 'Quiet', 'Body.' );
+        $rows = RTG_Database::get_tire_reviews( $tire_id );
+        $this->assertSame( '', $rows[0]['vehicle'] );
+        $this->assertSame( 0, (int) $rows[0]['is_owner'] );
+        $this->assertNull( $rows[0]['rating_noise'] );
+
+        $norm = RTG_Database::normalize_review_details( array( 'vehicle' => 'Cybertruck', 'miles' => 99999999, 'is_owner' => '0', 'rating_wet' => 3 ) );
+        $this->assertSame( '', $norm['vehicle'] );
+        $this->assertSame( RTG_Database::REVIEW_MAX_MILES, $norm['miles'] );
+        $this->assertSame( 0, $norm['is_owner'] );
+        $this->assertSame( 3, $norm['rating_wet'], 'the column name works as a key too' );
+    }
+
+    /**
+     * Guest side of the same: details ride the insert, the duplicate check
+     * reports the star and the month without the words, and the landing
+     * list's per-tire counts only count approved reviews.
+     */
+    public function test_guest_review_details_summary_and_counts() {
+        $tire_id = 'details-guest-001';
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => $tire_id ) ) );
+
+        RTG_Database::set_guest_rating( $tire_id, 'Dana', 'dana@example.com', 4, 'Title', 'Body', array( 'vehicle' => 'R1T', 'miles' => 12000, 'is_owner' => 1, 'axis_comfort' => 4 ) );
+
+        $summary = RTG_Database::get_guest_review_summary( 'dana@example.com', $tire_id );
+        $this->assertSame( 4, $summary['rating'] );
+        $this->assertSame( 'pending', $summary['review_status'] );
+        $this->assertArrayNotHasKey( 'review_text', $summary, 'the summary never carries the words' );
+        $this->assertNull( RTG_Database::get_guest_review_summary( 'nobody@example.com', $tire_id ) );
+
+        // Pending: not on the tire page, not in the landing counts.
+        $this->assertCount( 0, RTG_Database::get_tire_reviews( $tire_id ) );
+        $this->assertArrayNotHasKey( $tire_id, RTG_Database::get_review_counts_by_tire() );
+
+        global $wpdb;
+        $wpdb->update( $wpdb->prefix . 'rtg_ratings', array( 'review_status' => 'approved' ), array( 'tire_id' => $tire_id, 'guest_email' => 'dana@example.com' ) );
+
+        $counts = RTG_Database::get_review_counts_by_tire();
+        $this->assertSame( 1, $counts[ $tire_id ] );
+        $rows = RTG_Database::get_tire_reviews( $tire_id );
+        $this->assertSame( 'R1T', $rows[0]['vehicle'] );
+        $this->assertSame( 12000, (int) $rows[0]['miles'] );
+        $this->assertSame( 4, (int) $rows[0]['rating_comfort'] );
+    }
+
+    /**
      * Tire-page review list: three sorts, a star filter, and the counts that
      * feed the filter chips. Ratings written in the same second fall back to
      * insertion order (newest id first), so "recent" is still deterministic.

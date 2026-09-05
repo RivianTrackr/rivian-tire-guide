@@ -1441,7 +1441,7 @@ class RTG_Database {
 
         $results = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT tire_id, rating, review_title, review_text FROM {$table} WHERE tire_id IN ({$placeholders}) AND user_id = %d",
+                "SELECT tire_id, rating, review_title, review_text, review_status, created_at, " . self::review_detail_columns() . " FROM {$table} WHERE tire_id IN ({$placeholders}) AND user_id = %d",
                 ...$args
             ),
             ARRAY_A
@@ -1449,11 +1449,20 @@ class RTG_Database {
 
         $ratings = array();
         foreach ( $results as $row ) {
-            $ratings[ $row['tire_id'] ] = array(
-                'rating'       => (int) $row['rating'],
-                'review_title' => $row['review_title'],
-                'review_text'  => $row['review_text'],
+            $entry = array(
+                'rating'        => (int) $row['rating'],
+                'review_title'  => $row['review_title'],
+                'review_text'   => $row['review_text'],
+                'review_status' => $row['review_status'],
+                'created_at'    => $row['created_at'],
+                'vehicle'       => (string) $row['vehicle'],
+                'miles'         => (int) $row['miles'],
+                'is_owner'      => (int) $row['is_owner'],
             );
+            foreach ( self::REVIEW_AXES as $axis ) {
+                $entry[ 'rating_' . $axis ] = null === $row[ 'rating_' . $axis ] ? null : (int) $row[ 'rating_' . $axis ];
+            }
+            $ratings[ $row['tire_id'] ] = $entry;
         }
 
         return $ratings;
@@ -1653,6 +1662,65 @@ class RTG_Database {
         return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
     }
 
+    /** The detail axes a review can rate, in the order the form shows them. Column is rating_<axis>. */
+    const REVIEW_AXES = array( 'range', 'noise', 'comfort', 'wet', 'snow', 'wear' );
+
+    /** Vehicles a review can name. The guide's size map groups R1T and R1S as R1; a review keeps them apart. */
+    const REVIEW_VEHICLES = array( 'R1T', 'R1S', 'R2', 'R3' );
+
+    /** Largest mileage a review may claim on one set of tires. */
+    const REVIEW_MAX_MILES = 500000;
+
+    /**
+     * Normalize the optional review details from any caller.
+     *
+     * Everything here is optional: an axis outside 1–5 stays NULL, a
+     * vehicle not in the list is '', miles are clamped, the owner flag is
+     * 0 or 1. Callers can pass the whole $_POST array.
+     *
+     * @param array $raw Keys: vehicle, miles, is_owner, axis_<axis> or rating_<axis>.
+     * @return array Column => value, ready for $wpdb->insert / update.
+     */
+    public static function normalize_review_details( $raw ) {
+        $raw = is_array( $raw ) ? $raw : array();
+
+        $vehicle = strtoupper( trim( (string) ( $raw['vehicle'] ?? '' ) ) );
+        if ( ! in_array( $vehicle, self::REVIEW_VEHICLES, true ) ) {
+            $vehicle = '';
+        }
+
+        $miles = (int) preg_replace( '/[^0-9]/', '', (string) ( $raw['miles'] ?? '' ) );
+        $miles = max( 0, min( self::REVIEW_MAX_MILES, $miles ) );
+
+        $is_owner = ! empty( $raw['is_owner'] ) && '0' !== (string) $raw['is_owner'] ? 1 : 0;
+
+        $out = array(
+            'vehicle'  => $vehicle,
+            'miles'    => $miles,
+            'is_owner' => $is_owner,
+        );
+        foreach ( self::REVIEW_AXES as $axis ) {
+            $v = $raw[ 'axis_' . $axis ] ?? ( $raw[ 'rating_' . $axis ] ?? null );
+            $v = ( null === $v || '' === $v ) ? null : (int) $v;
+            $out[ 'rating_' . $axis ] = ( null !== $v && $v >= 1 && $v <= 5 ) ? $v : null;
+        }
+        return $out;
+    }
+
+    /** $wpdb formats matching normalize_review_details(), in key order. */
+    private static function review_detail_formats() {
+        return array_merge( array( '%s', '%d', '%d' ), array_fill( 0, count( self::REVIEW_AXES ), '%d' ) );
+    }
+
+    /** The detail columns, for SELECT lists. */
+    private static function review_detail_columns() {
+        $cols = array( 'vehicle', 'miles', 'is_owner' );
+        foreach ( self::REVIEW_AXES as $axis ) {
+            $cols[] = 'rating_' . $axis;
+        }
+        return implode( ', ', $cols );
+    }
+
     /**
      * Create or update a logged-in user's rating (and optional review) for a tire.
      *
@@ -1664,11 +1732,13 @@ class RTG_Database {
      * @param int    $rating       Star rating (1-5).
      * @param string $review_title Optional review title.
      * @param string $review_text  Optional review body text.
+     * @param array  $details      Optional vehicle, miles, is_owner and per-axis ratings (see normalize_review_details()).
      * @return int|false Rows affected, or false on failure.
      */
-    public static function set_rating( $tire_id, $user_id, $rating, $review_title = '', $review_text = '' ) {
+    public static function set_rating( $tire_id, $user_id, $rating, $review_title = '', $review_text = '', $details = array() ) {
         global $wpdb;
-        $table = self::ratings_table();
+        $table   = self::ratings_table();
+        $details = self::normalize_review_details( $details );
 
         // Determine review status: admins auto-approve, others pending.
         $has_review_content = ! empty( $review_text ) || ! empty( $review_title );
@@ -1686,12 +1756,12 @@ class RTG_Database {
         );
 
         if ( $existing ) {
-            $update_data = array(
+            $update_data = array_merge( array(
                 'rating'       => $rating,
                 'review_title' => $review_title,
                 'review_text'  => $review_text,
-            );
-            $update_formats = array( '%d', '%s', '%s' );
+            ), $details );
+            $update_formats = array_merge( array( '%d', '%s', '%s' ), self::review_detail_formats() );
 
             // Reset status to pending whenever review content is present (re-moderation on edit).
             if ( $has_review_content ) {
@@ -1712,15 +1782,15 @@ class RTG_Database {
 
         $result = $wpdb->insert(
             $table,
-            array(
+            array_merge( array(
                 'tire_id'       => $tire_id,
                 'user_id'       => $user_id,
                 'rating'        => $rating,
                 'review_title'  => $review_title,
                 'review_text'   => $review_text,
                 'review_status' => $review_status,
-            ),
-            array( '%s', '%d', '%d', '%s', '%s', '%s' )
+            ), $details ),
+            array_merge( array( '%s', '%d', '%d', '%s', '%s', '%s' ), self::review_detail_formats() )
         );
         self::flush_review_counts();
         return $result;
@@ -1735,15 +1805,17 @@ class RTG_Database {
      * @param int    $rating       Star rating 1-5.
      * @param string $review_title Optional review title.
      * @param string $review_text  Review body text.
+     * @param array  $details      Optional vehicle, miles, is_owner and per-axis ratings (see normalize_review_details()).
      * @return int|false Rows inserted or false on failure.
      */
-    public static function set_guest_rating( $tire_id, $guest_name, $guest_email, $rating, $review_title = '', $review_text = '' ) {
+    public static function set_guest_rating( $tire_id, $guest_name, $guest_email, $rating, $review_title = '', $review_text = '', $details = array() ) {
         global $wpdb;
-        $table = self::ratings_table();
+        $table   = self::ratings_table();
+        $details = self::normalize_review_details( $details );
 
         $result = $wpdb->insert(
             $table,
-            array(
+            array_merge( array(
                 'tire_id'       => $tire_id,
                 'user_id'       => 0,
                 'rating'        => $rating,
@@ -1752,8 +1824,8 @@ class RTG_Database {
                 'review_status' => 'pending',
                 'guest_name'    => $guest_name,
                 'guest_email'   => $guest_email,
-            ),
-            array( '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s' )
+            ), $details ),
+            array_merge( array( '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s' ), self::review_detail_formats() )
         );
         self::flush_review_counts();
         return $result;
@@ -1800,6 +1872,56 @@ class RTG_Database {
                 $tire_id
             )
         );
+    }
+
+    /**
+     * What a guest already said about a tire, for the review page to show
+     * before they write a second one: the star and the month, nothing that
+     * is not already on the tire page next to their name.
+     *
+     * @param string $guest_email Guest email address.
+     * @param string $tire_id     Tire identifier.
+     * @return array|null { 'rating' => int, 'created_at' => string, 'review_status' => string } or null.
+     */
+    public static function get_guest_review_summary( $guest_email, $tire_id ) {
+        global $wpdb;
+        $table = self::ratings_table();
+        $row   = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT rating, created_at, review_status FROM {$table} WHERE user_id = 0 AND guest_email = %s AND tire_id = %s LIMIT 1",
+                $guest_email,
+                $tire_id
+            ),
+            ARRAY_A
+        );
+        if ( ! $row ) {
+            return null;
+        }
+        return array(
+            'rating'        => (int) $row['rating'],
+            'created_at'    => (string) $row['created_at'],
+            'review_status' => (string) $row['review_status'],
+        );
+    }
+
+    /**
+     * Approved review count for every tire that has one, keyed by tire_id.
+     * Feeds the review page's "most reviewed for your Rivian" list.
+     *
+     * @return array tire_id => int
+     */
+    public static function get_review_counts_by_tire() {
+        global $wpdb;
+        $table = self::ratings_table();
+        $rows  = $wpdb->get_results(
+            "SELECT tire_id, COUNT(*) AS n FROM {$table} WHERE review_status = 'approved' GROUP BY tire_id",
+            ARRAY_A
+        );
+        $out = array();
+        foreach ( (array) $rows as $row ) {
+            $out[ $row['tire_id'] ] = (int) $row['n'];
+        }
+        return $out;
     }
 
     /** Review sort orders the tire page and the review endpoints accept. */
@@ -1875,7 +1997,7 @@ class RTG_Database {
 
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT id, tire_id, user_id, rating, review_title, review_text, guest_name, created_at, updated_at
+                "SELECT id, tire_id, user_id, rating, review_title, review_text, guest_name, created_at, updated_at, " . self::review_detail_columns() . "
                  FROM {$table}
                  WHERE {$where}
                  ORDER BY {$order}

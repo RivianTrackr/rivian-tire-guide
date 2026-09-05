@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 24;
+    const DB_VERSION = 25;
 
     public static function activate() {
         self::create_tables();
@@ -135,6 +135,15 @@ class RTG_Activator {
             review_status VARCHAR(20) NOT NULL DEFAULT 'approved',
             guest_name VARCHAR(100) NOT NULL DEFAULT '',
             guest_email VARCHAR(254) NOT NULL DEFAULT '',
+            vehicle VARCHAR(10) NOT NULL DEFAULT '',
+            miles INT UNSIGNED NOT NULL DEFAULT 0,
+            is_owner TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
+            rating_range TINYINT UNSIGNED NULL DEFAULT NULL,
+            rating_noise TINYINT UNSIGNED NULL DEFAULT NULL,
+            rating_comfort TINYINT UNSIGNED NULL DEFAULT NULL,
+            rating_wet TINYINT UNSIGNED NULL DEFAULT NULL,
+            rating_snow TINYINT UNSIGNED NULL DEFAULT NULL,
+            rating_wear TINYINT UNSIGNED NULL DEFAULT NULL,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),
@@ -245,6 +254,7 @@ class RTG_Activator {
             22 => 'migrate_22_remove_retired_features',
             23 => 'migrate_23_add_sort_and_status_indexes',
             24 => 'migrate_24_register_whats_new_route',
+            25 => 'migrate_25_add_review_detail_columns',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -679,5 +689,18 @@ class RTG_Activator {
      */
     private static function migrate_24_register_whats_new_route() {
         update_option( 'rtg_flush_rewrite', 1 );
+    }
+
+    /**
+     * Migration 25: what a review knows beyond one star.
+     *
+     * Adds vehicle, miles on the set, the owner flag, and six nullable
+     * per-axis ratings (range, noise, comfort, wet, snow, wear) to the
+     * ratings table. Columns are added by dbDelta above; this marks the
+     * migration. Existing rows keep '' / 0 / NULL, which the page reads
+     * as "not answered".
+     */
+    private static function migrate_25_add_review_detail_columns() {
+        // Columns added by dbDelta above.
     }
 }
