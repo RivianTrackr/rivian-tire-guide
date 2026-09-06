@@ -170,6 +170,46 @@ or CSS, and nothing measures performance or accessibility.
 | T5 | **Lighthouse CI with a performance budget.** `@lhci/cli` against the wp-env guide page in the same CI job as T3, asserting on Largest Contentful Paint, script bytes and the accessibility score. | The guide lives on a consumer site with ads; a heavier page shows up here before readers feel it. | `lighthouserc.json`, `.github/workflows/ci.yml` |
 | T6 | **Bundle Chart.js locally.** `chart.js` as an npm dependency, an esbuild target that exposes `window.Chart`, the analytics page enqueues the local file. | Closes ADM14 and H10: the only third-party CDN script in the plugin, with no SRI and no fallback, blank under a strict CSP or offline. | `esbuild.config.mjs`, `admin/js/rtg-charts.js`, `class-rtg-admin.php` (enqueue) |
 
+Notes from a first pass (2026-09-06), so the next attempt starts ahead:
+
+- **T1.** PHPStan 2.1 at level 5 with `szepeviktor/phpstan-wordpress` 2.0
+  reports 95 findings once a bootstrap file defines the `RTG_*` constants
+  (without it, 41 more are "constant not found"). Most are `esc_html()` and
+  `esc_attr()` given an int or float, which WordPress accepts and the stubs
+  type as string; baseline those. Worth a look on their own:
+  `RTG_Catalog_Source::fetch()` called with two arguments where the base
+  class declares one (`class-rtg-catalog-sync.php`), two `DOING_CRON` reads
+  that should be `wp_doing_cron()`, `RTG_Frontend::$shortcode_present`
+  written and never read, and `add_submenu_page()` with a null parent.
+  Composer's `allow-plugins` should be false; the extension is included by
+  path in `phpstan.neon`, no installer plugin needed.
+- **T2.** Version 3 of the action needs two workflow files (build, then a
+  `workflow_run` publish) and a zip whose top folder is the plugin slug;
+  `git archive --prefix=rivian-tire-guide/` of the PR head does it with no
+  npm install, since the minified assets are committed. A `.gitattributes`
+  with `export-ignore` keeps tests and tooling config out of the zip.
+- **T3.** `@wordpress/env` needs a Docker daemon and downloads WordPress
+  itself, so it runs in GitHub Actions but not in a sandbox without egress
+  to wordpress.org. Seed through a mapped `tests/e2e/fixtures/` directory
+  and `wp eval-file`: `RTG_Database::insert_wheel()` (name, stock_size,
+  alt_sizes, vehicles) drives the vehicle toggle, `insert_tire()` the cards,
+  and a page holding `[rivian_tire_guide]` is the URL under test. Hooks to
+  drive: `.rtg-vehicle-btn[data-vehicle]`, `#filterSize`, `[data-tire-id]`
+  cards, `.compare-checkbox` and `#compareBar`, `#rtg-review-modal`.
+- **T4.** Biome 2.5 lint with the recommended rules on the source (minified
+  output excluded) gives 111 errors: 92 `noInnerDeclarations` (`var` inside
+  blocks, mostly `tire-review.js` and `tire-page.js`), 18
+  `useIterableCallbackReturn` (`forEach` arrows returning `appendChild`),
+  and one real `noRedeclare` in `user-reviews.js`. Downgrade the first two
+  to warnings and fix the third to start green. The formatter, with the
+  codebase's own settings (two-space indent, single quotes, 120 columns),
+  would still rewrite about 3,300 JavaScript lines and most of both CSS
+  files, so adopt the linter first and the formatter in one mechanical
+  commit of its own.
+- **T6.** `chart.js/auto` imported by a ten-line `admin/js/rtg-charts.js`
+  that assigns `window.Chart`, bundled as an IIFE, is a 200 KB file and a
+  one-line enqueue change; the analytics page's inline script is untouched.
+
 ---
 
 ## Suggested order of attack
