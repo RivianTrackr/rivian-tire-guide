@@ -9,6 +9,14 @@
     "test": "node tests/test-validation.js && node tests/test-dropdown-options.mjs && node tests/test-domain-sync.mjs && node tests/test-fitment.mjs && node tests/test-pricing.mjs && node tests/test-efficiency.mjs"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@biomejs/biome": "^2.5.12",
+    "@lhci/cli": "^0.15.1",
+    "@playwright/test": "^1.63.0",
+    "@wordpress/env": "^11.14.0",
     "esbuild": "^0.28.1"
+  },
+  "dependencies": {
+    "chart.js": "^4.5.1"
   }
 }
