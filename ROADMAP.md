@@ -1,7 +1,7 @@
 # Rivian Tire Guide — Roadmap
 
-**Current release:** 2.0.7 (DB schema v24)
-**Updated:** 2026-09-01
+**Current release:** 2.3.2 (DB schema v25)
+**Updated:** 2026-09-06
 
 This is the one place open work is tracked. It replaces the four planning
 documents that used to sit beside it — `PLUGIN-REVIEW.md` (the v1.48
@@ -152,6 +152,23 @@ re-proposed; none is scheduled.
 
 GraphQL layer, session replay, retailer price-scraping (ToS/vendor risk; CJ's
 feed is the sanctioned path). Real, but none load-bearing.
+
+## 9. Tooling
+
+Tools around the code rather than in it. None changes what a visitor sees;
+each turns a class of mistake into a red check. Added 2026-09-06 after a
+review of what the CI in `ci.yml` cannot see: nothing exercises a real page
+in a browser, nothing checks types in the PHP, nothing lints the JavaScript
+or CSS, and nothing measures performance or accessibility.
+
+| ID | Item | Why | Where |
+|----|------|-----|-------|
+| T1 | **PHPStan with the WordPress extension.** `szepeviktor/phpstan-wordpress` on top of `php-stubs/wordpress-stubs`, a generated baseline for today's findings, the level ratcheted up over time. | Catches undefined variables, wrong argument types and nullability mistakes that PHPCS never sees; the undefined-variable bug 1.86.0 fixed is the model case (H14). | `composer.json`, `phpstan.neon`, `.github/workflows/ci.yml` |
+| T2 | **WordPress Playground PR previews.** `WordPress/action-wp-playground-pr-preview@v3`, which builds the plugin zip and posts a one-click "Preview in Playground" link on every pull request. | Reviewers use the real guide in the browser before merging instead of reading the diff or deploying to see a change. | `.github/workflows/` |
+| T3 | **Playwright end-to-end tests with axe on wp-env.** `@wordpress/env` boots WordPress in Docker, a seed script creates the guide page and a few tires, Playwright drives the vehicle toggle, filters, compare bar and review modal, and `@axe-core/playwright` reports accessibility violations on each page. | The Node tests cover fitment, pricing and validation math only; nothing clicks the guide. The nine open §2 items become checks that stay fixed. | `.wp-env.json`, `playwright.config.js`, `tests/e2e/` |
+| T4 | **Biome for JavaScript and CSS.** One binary for linting and formatting `frontend/`, `admin/` and `tests/`, minified output excluded. | The JavaScript and CSS have never had a linter; unused variables, unreachable code and typos go straight through esbuild. | `biome.json`, `package.json` |
+| T5 | **Lighthouse CI with a performance budget.** `@lhci/cli` against the wp-env guide page in the same CI job as T3, asserting on Largest Contentful Paint, script bytes and the accessibility score. | The guide lives on a consumer site with ads; a heavier page shows up here before readers feel it. | `lighthouserc.json`, `.github/workflows/ci.yml` |
+| T6 | **Bundle Chart.js locally.** `chart.js` as an npm dependency, an esbuild target that exposes `window.Chart`, the analytics page enqueues the local file. | Closes ADM14 and H10: the only third-party CDN script in the plugin, with no SRI and no fallback, blank under a strict CSP or offline. | `esbuild.config.mjs`, `admin/js/rtg-charts.js`, `class-rtg-admin.php` (enqueue) |
 
 ---
 
