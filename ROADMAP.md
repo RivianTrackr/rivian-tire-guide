@@ -195,3 +195,10 @@ For the record, so nothing here is re-proposed. Details are in `CHANGELOG.md`.
 - Tire Discovery (CJ catalog monitoring, qualification, review queue, link and
   price sync, coverage, health alerts, stale-price report, image import), the
   unified rate limiter, the cached `/feed`, the rotating link checker.
+- **2.4.0, third-party wheel sizes:** a wheel row carries a `source` and a
+  fitment note, the third-party size map sits beside the vehicle size map
+  (factory always wins), and every surface that reads the map labels those
+  sizes: the size menu, the card's fitment slot, the tire page's chip and
+  notice, the wheel guide's Aftermarket setups group, the compare table, the
+  review page, the discovery queue, and the advisor (which skips them unless
+  the owner names the size).

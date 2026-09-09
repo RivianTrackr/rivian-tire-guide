@@ -5,7 +5,10 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 ## Features
 
 ### Tire Catalog
-- **Vehicle Filter** — Segmented toggle (All / R1 / R2) filters tires by Rivian vehicle. Vehicle-to-size compatibility is derived automatically from the stock wheels database — adding a wheel for a new vehicle makes it appear in the toggle with no extra configuration.
+- **Vehicle Filter** — Segmented toggle (All / R1 / R2) filters tires by Rivian vehicle. Vehicle-to-size compatibility is derived automatically from the wheels database — adding a wheel for a new vehicle makes it appear in the toggle with no extra configuration.
+- **Wheel Guide** — A "Not sure which tire fits your Rivian?" panel above the cards lists every wheel per vehicle with its stock and alternate sizes, split into Factory wheels and Aftermarket setups.
+- **Third-Party Wheel Sizes** — The guide can list a size Rivian never shipped (say, 18-inch tires on an R2) for owners running aftermarket wheels. A wheel marked *Third-party* in the admin makes its sizes "3rd-party wheels" sizes for that vehicle, unless a factory wheel also lists them. Those sizes are suffixed in the size menu, tire cards carry a lavender note with the wheel's fitment note in its tooltip, tire pages show a "Fits R2 · 3rd-party wheels" chip and a plain-language notice, the compare table and review page say it beside the size, and the advisor never recommends one unless the owner names that size.
+- **Load-Index Fitment** — Every card, tire page and compare column is judged against the vehicle's minimum load index (R1 116, R2 112, both settings) and warns in red when a tire falls short. The warning wins over the third-party note when a tire earns both.
 - **Interactive Tire Cards** — Browse tires with real-time filtering by size, brand, category, price, weight, warranty, 3PMS, EV rated, and studded availability.
 - **Smart Search** — Fuzzy search with type-ahead suggestions for brands, models, categories, and sizes.
 - **Side-by-Side Comparison** — Select up to 4 tires and compare specs on a dedicated comparison page with best-value highlighting.
@@ -14,7 +17,8 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Active Filter Chips** — Dismissible chips show active filters at a glance.
 - **Smart No Results** — When filters produce no matches, actionable suggestions help users relax specific filters.
 - **AI Tire Advisor** — "Help me choose" asks three questions and returns three picks with reasons and trade-offs, grounded in the catalog (only tires that fit the vehicle, only numbers from the guide). "What owners say" summarizes a tire's reviews on its page; the compare page opens with a plain-words paragraph. Runs on Claude through the Anthropic API; without a key, Help me choose falls back to the guide's own ranking rules.
-- **Changelog** — A "Changelog" pill in the filter header opens plain-language release notes (from `WHATS-NEW.md`), with a dot until the newest release has been seen; the same notes live at `/tire-guide/whats-new/`.
+- **Changelog** — A "Changelog" link in the guide footer opens plain-language release notes (from `WHATS-NEW.md`), with a dot until the newest release has been seen; the same notes live at `/tire-guide/whats-new/`.
+- **Write a Review** — A link in the filter header to the review page, where a visitor picks a tire and reviews it with or without an account.
 
 ### Ratings & Reviews
 - **Star Ratings** — SVG star ratings with half-star precision. Logged-in users rate tires 1-5 stars with keyboard navigation (arrow keys, Enter/Space). Users can delete their own ratings.
@@ -37,7 +41,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 ### Tire Discovery (Affiliate Catalog Monitoring)
 - **Daily Catalog Check** — Watches affiliate catalogs for tires in Rivian fitments that aren't in the guide yet, so new arrivals surface on their own instead of waiting on a manual search of each size.
 - **Qualification Rules** — Every product is judged against the guide's requirements: size must be a Rivian fitment, load index must clear a configurable floor (default 112 — the R2 minimum; R1 needs 116), and the listing must be identifiable. Specs are parsed out of the product title when the feed doesn't supply them as fields.
-- **Review Queue** — Admin page badged with the number awaiting a decision, split across Awaiting Review / Near Misses / Already in Guide / Dismissed / Added and filterable by size. Near misses show the reason they were held back rather than being silently filtered out.
+- **Review Queue** — Admin page badged with the number awaiting a decision, split across Awaiting Review / Near Misses / Already in Guide / Dismissed / Added and filterable by size. Near misses show the reason they were held back rather than being silently filtered out. The fits column names each vehicle a candidate is legal on, with "· 3rd-party" when that vehicle takes the size only on aftermarket wheels.
 - **One-Click Add** — Opens the Add New Tire form prefilled with brand, model, size, price, load index, load range, speed rating and purchase link, plus derived diameter and max load.
 - **Sticky Dismissals** — A dismissed candidate never returns to the queue, so it stays short enough to stay useful. Decisions made by a person always outrank what a later run concludes.
 - **Email Digest** — Sent only when a run finds a qualifying tire not seen before.
@@ -58,7 +62,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Reviews Management** — Pending/approved/rejected tabs with approve, reject, and delete actions.
 - **Affiliate Links Dashboard** — Centralized view of all purchase and review links with link classification (affiliate vs. direct), filter tabs, and inline AJAX editing.
 - **Tire Discovery** — Review queue for tires found in affiliate catalogs (see Tire Discovery section above), with its own settings for the daily check, the digest email, and the minimum load index.
-- **Stock Wheels Guide** — Manage stock wheel data for Rivian models.
+- **Stock Wheels** — Manage the wheel guide: name, stock and alternate sizes, image, vehicles, sort order, and whether the wheel is a Rivian factory wheel or a third-party setup with a one-sentence fitment note.
 - **Analytics** — Visual analytics with Chart.js (see Analytics section above).
 - **Settings** — Rows per page, compare slug, user reviews slug, server-side pagination toggle, theme colors (14 CSS custom properties), dropdown options (brands, sizes, categories, load ranges, speed ratings, size-to-diameter mapping, load index-to-lbs mapping), affiliate domains, and analytics retention.
 
@@ -72,7 +76,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Lazy Loading** — IntersectionObserver-based image lazy loading with shimmer placeholders and 600px root margin preloading.
 - **Skeleton Loading** — Shimmer placeholder cards display immediately while data loads.
 - **Minified Assets** — esbuild produces `.min.js` and `.min.css` files with console stripping. Served automatically when `SCRIPT_DEBUG` is off.
-- **Inline SVG Icons** — Replaced Font Awesome CDN (~60 KB) with lightweight inline SVGs for the ~35 icons used.
+- **No Icon Font Shipped** — Icons are Font Awesome 6 classes (`fa-solid`) rendered by the site's theme; the plugin enqueues no icon font of its own.
 
 ### Accessibility
 - **Keyboard Navigation** — Arrow keys, Enter/Space for star ratings. Tab navigation for all interactive elements.
@@ -88,6 +92,10 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - `GET /wp-json/rtg/v1/tires/{tire_id}/reviews` — Paginated reviews.
 - `POST /wp-json/rtg/v1/efficiency` — Calculate efficiency score from specs.
 - `GET /wp-json/rtg/v1/feed` — Full tire catalog JSON feed with ratings and Roamer real-world efficiency data.
+- `GET /wp-json/rtg/v1/whats-new` — The parsed release notes the guide's Changelog modal loads.
+- `POST /wp-json/rtg/v1/advise` — Help me choose: three picks with reasons and trade-offs.
+- `GET /wp-json/rtg/v1/tires/{tire_id}/review-summary` — "What owners say" for a tire page.
+- `GET /wp-json/rtg/v1/compare-summary?ids=a,b` — The compare page's plain-words paragraph.
 - **Rate Limiting** — 60 req/min for reads, 10 req/min for writes per IP.
 
 ## Requirements
@@ -146,6 +154,12 @@ With pre-filter attributes:
 
 For bulk operations, use **Tire Guide > Import / Export** to import tires via CSV.
 
+### Wheel Guide and Third-Party Sizes
+
+**Tire Guide > Stock Wheels** holds one row per wheel: a name, the stock tire size, alternate sizes, an image, the vehicles it fits, and a sort order. Every vehicle-to-size rule in the plugin is derived from these rows: the vehicle toggle, the size menu, the load-index fitment checks, the advisor's candidates, the discovery qualifier and the review page's vehicle switch. There is no separate size list to maintain.
+
+To list a size Rivian never offered, add a wheel, set **Source** to *Third-party*, enter the size it is run with as its stock size (and any others as alternates), tick the vehicle, and write a **Fitment note** such as "Needs an 8.5-inch or wider wheel around ET35. Some owners report light rubbing at full lock." The note shows under the tire page's third-party notice, in the card's info tooltip, and on the wheel guide card. A size is treated as third-party for a vehicle only when no factory wheel for that vehicle lists it; a factory listing always wins. Add the size to the sizes list and the size-to-diameter map under **Settings > Dropdown Options** so the tire page can show its overall diameter.
+
 ### Comparison Page
 
 The plugin registers a custom URL at `/tire-compare/` (configurable in settings). Users select tires from the guide and compare specs side-by-side with best-value highlighting.
@@ -177,62 +191,83 @@ Navigate to **Tire Guide > Settings** to configure:
 ```
 rivian-tire-guide/
 ├── rivian-tire-guide.php            # Main plugin entry point
+├── CHANGELOG.md                     # Developer record: reasons, file names, tests
 ├── WHATS-NEW.md                     # Owner-facing release notes (rendered in the guide)
+├── ROADMAP.md                       # Open items and what has shipped
 ├── uninstall.php                    # Cleanup on plugin deletion
-├── package.json                     # Build tools (esbuild)
-├── esbuild.config.mjs              # Build configuration
+├── package.json                     # Build tools (esbuild) and the Node test script
+├── esbuild.config.mjs               # Build configuration
 ├── includes/
-│   ├── class-rtg-activator.php      # Database creation & migrations
+│   ├── class-rtg-activator.php      # Database creation & numbered migrations
 │   ├── class-rtg-deactivator.php    # Deactivation cleanup
-│   ├── class-rtg-database.php       # All database operations & caching
-│   ├── class-rtg-admin.php          # Admin UI, CSV import/export, settings
+│   ├── class-rtg-database.php       # All database operations, caching, the vehicle and third-party size maps
+│   ├── class-rtg-fitment.php        # Load-index and third-party wheel fitment rules (JS twin: modules/fitment.js)
+│   ├── class-rtg-admin.php          # Admin UI, CSV import/export, settings, wheel editor
 │   ├── class-rtg-frontend.php       # Shortcode rendering & asset enqueue
-│   ├── class-rtg-ajax.php           # AJAX endpoints (ratings, reviews, analytics)
+│   ├── class-rtg-ajax.php           # AJAX endpoints (ratings, reviews, analytics, filter options)
+│   ├── class-rtg-rest-api.php       # REST API endpoints and the cached /feed
+│   ├── class-rtg-rate-limiter.php   # Shared per-IP limiter for reviews and REST
 │   ├── class-rtg-compare.php        # Comparison page routing & CSP headers
+│   ├── class-rtg-tire-page.php      # /tires/{slug}/ landing pages
+│   ├── class-rtg-tire-review.php    # /tire-review/ page and its shortcode
+│   ├── class-rtg-theme-render.php   # Renders routed pages inside the theme; ad blocklist
 │   ├── class-rtg-schema.php         # Schema.org JSON-LD structured data
-│   ├── class-rtg-meta.php           # Open Graph & Twitter Card meta tags
-│   ├── class-rtg-rest-api.php       # REST API endpoints
+│   ├── class-rtg-meta.php           # Per-tire meta, Open Graph & Twitter Cards
 │   ├── class-rtg-whats-new.php      # What's new: notes parser, page, REST route
 │   ├── class-rtg-advisor.php        # AI Tire Advisor: ranking, prompts, Claude client, routes
 │   ├── class-rtg-roamer-sync.php    # Rivian Roamer efficiency data sync
+│   ├── class-rtg-catalog-sync.php   # Tire Discovery: the daily catalog check
+│   ├── class-rtg-catalog-source.php # Retailer source interface (+ class-rtg-catalog-source-cj.php)
+│   ├── class-rtg-tire-qualifier.php # Discovery: spec parsing and qualification rules
+│   ├── class-rtg-candidates.php     # Discovery: the review queue table
+│   ├── class-rtg-catalog-presence.php, class-rtg-coverage.php, class-rtg-health.php
+│   ├── class-rtg-price-sync.php, class-rtg-stale-prices.php, class-rtg-retailer.php
+│   ├── class-rtg-link-sync.php, class-rtg-link-checker.php, class-rtg-tire-images.php
+│   ├── class-rtg-lock.php           # Named locks for cron and migrations
 │   └── class-rtg-mailer.php         # HTML email notifications
 ├── admin/
-│   ├── views/                       # Admin page templates (11 views)
-│   ├── css/                         # Admin stylesheets
-│   └── js/                          # Admin scripts (incl. rtg-roamer.js)
+│   ├── views/                       # Admin page templates (14 views, incl. wheel-list / wheel-edit and tire-discovery)
+│   ├── css/                         # Admin stylesheet (+ .min)
+│   └── js/                          # admin-scripts.js, rtg-discovery.js, rtg-roamer.js
 ├── frontend/
-│   ├── templates/                   # Frontend templates (tire-guide, compare, user-reviews, whats-new)
-│   ├── css/                         # Frontend stylesheets
+│   ├── templates/                   # tire-guide, tire-page-content, compare, tire-review, user-reviews, whats-new
+│   ├── css/                         # rivian-tires.css (+ .min)
 │   └── js/
-│       ├── rivian-tires.js          # Main entry point (ES module)
-│       ├── compare.js               # Comparison page script
-│       ├── rtg-shared.js            # Shared URL validation & escaping
+│       ├── rivian-tires.js          # Main entry point (ES modules, bundled)
+│       ├── compare.js               # Comparison page (bundled, shares the guide's modules)
+│       ├── tire-page.js             # Tire page interactions
+│       ├── tire-review.js           # Review page (not bundled)
 │       ├── user-reviews.js          # User reviews page script
+│       ├── rtg-shared.js            # Shared URL validation & escaping
 │       └── modules/                 # Focused ES modules
-│           ├── state.js             # Global state management
+│           ├── state.js             # Global state, incl. the vehicle and third-party size maps
 │           ├── helpers.js           # DOM utilities, debounce, icons
 │           ├── validation.js        # Input sanitization & patterns
+│           ├── allowed-domains.js   # Link domain allowlist
 │           ├── analytics.js         # Click & search tracking
-│           ├── cards.js             # Tire card rendering
+│           ├── cards.js             # Tire card rendering and the fitment slot
+│           ├── fitment.js           # Load-index and third-party fitment (PHP twin: class-rtg-fitment.php)
+│           ├── pricing.js           # Set-of-four price and freshness
+│           ├── efficiency.js        # Efficiency badge helpers
+│           ├── vehicle-memory.js    # Remembered vehicle toggle
 │           ├── compare.js           # Compare checkbox & bar
-│           ├── filters.js           # Filter UI, sorting, URL state
+│           ├── filters.js           # Filter UI, size menu, sorting, URL state
 │           ├── ratings.js           # Review modal & drawer
 │           ├── search.js            # Smart search autocomplete
 │           ├── server.js            # Server-side pagination
-│           ├── tooltips.js          # Filter help tooltips
+│           ├── tooltips.js          # Info tooltips and their modal
 │           ├── image-modal.js       # Image lightbox
-│           ├── whats-new.js         # What's new pill + modal
+│           ├── whats-new.js         # Changelog link + modal
 │           └── advisor.js           # Help me choose dialog
 ├── tests/
 │   ├── bootstrap.php                # PHPUnit WordPress test bootstrap
-│   ├── test-database.php            # PHP unit tests (21 tests)
-│   ├── test-activator.php           # Activator tests
-│   ├── test-admin.php               # Admin tests
-│   ├── test-ajax.php                # AJAX integration tests (14 tests)
-│   └── test-validation.js           # JS unit tests (83 tests)
+│   ├── test-*.php                   # PHPUnit suites (database, activator, admin, ajax, fitment, advisor, discovery, sync, ...)
+│   ├── test-validation.js           # Node: input validation
+│   ├── test-*.mjs                   # Node: dropdown options, domain sync, fitment, pricing, efficiency
+│   └── contract/                    # Plain-PHP contract checks (advisor, CJ lookup, health, what's new)
 ├── .phpcs.xml                       # PHP CodeSniffer config (WordPress standards)
 └── .github/
-    └── workflows/ci.yml             # CI: JS tests, build, PHP linting, PHPCS
+    └── workflows/ci.yml             # CI: JS tests + build check, PHPUnit, PHP lint + contracts, PHPCS
 ```
 
 ## Database Schema
@@ -241,13 +276,14 @@ The plugin creates 6 tables (all prefixed with `wp_rtg_`):
 
 | Table | Purpose |
 |-------|---------|
-| `rtg_tires` | Main tire catalog (31 columns) |
-| `rtg_ratings` | User and guest reviews with moderation |
-| `rtg_wheels` | Stock wheel guide data |
+| `rtg_tires` | Main tire catalog (38 columns) |
+| `rtg_ratings` | User and guest reviews with moderation and optional detail ratings |
+| `rtg_wheels` | Wheel guide: factory wheels and third-party setups (`source`, `fitment_note`), the source of every vehicle-to-size rule |
 | `rtg_click_events` | Affiliate link click tracking |
-| `rtg_search_events` | Search and filter analytics |
+| `rtg_search_events` | Search, filter and advisor analytics |
+| `rtg_tire_candidates` | Tire Discovery review queue |
 
-Schema changes are managed via a numbered migration system (`rtg_db_version` option, currently v23).
+Schema changes are managed via a numbered migration system (`rtg_db_version` option, currently v26).
 
 ## Efficiency Score
 
@@ -281,12 +317,13 @@ npm run build:watch    # Watch mode for development
 ### Test
 
 ```bash
-npm test               # Run JS validation tests (83 tests)
+npm test               # Six Node suites: validation, dropdown options, domain sync, fitment, pricing, efficiency
+php tests/contract/*.php   # Plain-PHP contract checks (no WordPress needed)
 ```
 
 PHP tests require a WordPress test environment:
 ```bash
-phpunit                # Run PHP unit & integration tests (35+ tests)
+phpunit                # PHPUnit suites (350+ tests across 23 files)
 ```
 
 PHP coding standards:
@@ -297,9 +334,9 @@ phpcs --standard=.phpcs.xml    # Run WordPress Coding Standards checks
 ### CI
 
 GitHub Actions runs on every push and PR:
-- JavaScript unit tests
-- esbuild build verification
-- PHP syntax linting (PHP 7.4, 8.0, 8.2)
+- JavaScript unit tests, an esbuild build, and a check that the committed minified assets match the source
+- PHPUnit against the WordPress test library (PHP 7.4, 8.0, 8.2)
+- PHP syntax linting (PHP 7.4, 8.0, 8.2) plus the contract checks
 - PHP coding standards (WPCS via PHPCS)
 
 ## Security
