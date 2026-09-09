@@ -189,6 +189,40 @@ class Test_RTG_Advisor extends WP_UnitTestCase {
         $this->assertSame( 404, $this->advise( array( 'vehicle' => 'R1' ) )->get_status() );
     }
 
+    public function test_a_third_party_size_is_picked_only_when_the_owner_names_it() {
+        // An 18" setup Rivian never sold for the R2, and a tire in its size.
+        RTG_Database::insert_wheel( array( 'name' => '18" aftermarket wheels', 'stock_size' => '245/60R18', 'alt_sizes' => '', 'vehicles' => 'R2', 'source' => 'third_party', 'fitment_note' => 'Needs an 8.5-inch or wider wheel.' ) );
+        RTG_Database::insert_tire( $this->tire( 'adv-18', array( 'size' => '245/60R18', 'diameter' => '18"', 'load_index' => '113', 'price' => 190 ) ) );
+        RTG_Database::insert_tire( $this->tire( 'adv-r2', array( 'size' => '255/45R21', 'diameter' => '21"', 'load_index' => '113', 'price' => 260 ) ) );
+        RTG_Database::flush_cache();
+
+        $data = $this->advise( array( 'vehicle' => 'R2', 'priorities' => array( 'price' ), 'budget' => '' ) )->get_data();
+        $ids  = array_column( $data['picks'], 'tire_id' );
+        $this->assertContains( 'adv-r2', $ids, 'the factory-size tire is picked' );
+        $this->assertNotContains( 'adv-18', $ids, 'a stock R2 never gets a size that needs aftermarket wheels' );
+        $this->assertStringNotContainsString( '3rd-party', $data['summary'] );
+
+        $data = $this->advise( array( 'vehicle' => 'R2', 'priorities' => array( 'price' ), 'budget' => '', 'size' => '245/60R18' ) )->get_data();
+        $this->assertSame( array( 'adv-18' ), array_column( $data['picks'], 'tire_id' ), 'naming the size is the owner saying they have those wheels' );
+        $this->assertStringContainsString( '245/60R18 fits the R2 only on 3rd-party 18" wheels, not a factory size, so fitment may vary.', $data['summary'] );
+    }
+
+    public function test_the_third_party_caveat_is_one_sentence_or_nothing() {
+        $third = array( 'R2' => array( '245/60R18' => array( 'wheel' => 'w', 'note' => '' ) ) );
+        $this->assertSame( 'Ranked.', RTG_Advisor::with_third_party_caveat( 'Ranked.', array( 'vehicle' => 'R2', 'size' => '' ), $third ) );
+        $this->assertSame( 'Ranked.', RTG_Advisor::with_third_party_caveat( 'Ranked.', array( 'vehicle' => 'R2', 'size' => '255/45R21' ), $third ) );
+        $this->assertSame( 'Ranked.', RTG_Advisor::with_third_party_caveat( 'Ranked.', array( 'vehicle' => 'R1', 'size' => '245/60R18' ), $third ), 'not an R1 size at all' );
+        $this->assertSame(
+            'Ranked. 245/60R18 fits the R2 only on 3rd-party 18" wheels, not a factory size, so fitment may vary.',
+            RTG_Advisor::with_third_party_caveat( 'Ranked. ', array( 'vehicle' => 'R2', 'size' => '245/60R18' ), $third )
+        );
+        $this->assertSame(
+            '245/60R18 fits the R2 only on 3rd-party 18" wheels, not a factory size, so fitment may vary.',
+            RTG_Advisor::with_third_party_caveat( '', array( 'vehicle' => '', 'size' => '245/60R18' ), $third ),
+            'with no vehicle chosen, every vehicle in the map is judged'
+        );
+    }
+
     public function test_nothing_fits_is_an_honest_empty_answer() {
         $data = $this->advise( array( 'vehicle' => 'R1', 'budget' => '250', 'size' => '255/45R21' ) )->get_data();
         $this->assertTrue( $data['ok'] );

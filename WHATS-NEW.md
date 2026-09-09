@@ -19,6 +19,8 @@ The guide can now list tire sizes Rivian never offered, for owners who run after
 - **The card says so.** A tire in one of those sizes carries a short note: it fits your Rivian on 3rd-party wheels only, it is not a factory size, and fitment may vary. Tap the info icon for the details we have on the wheel, such as the width and offset it needs.
 - **The tire page says so too.** Instead of the green "Fits R2" chip you get a lavender "Fits R2 · 3rd-party wheels" chip and a plain-language notice under it, so a page you land on from a search never reads as a factory fit.
 - **Wheel guide.** The "Not sure which tire fits your Rivian?" panel now separates Factory wheels from Aftermarket setups, with a badge and a note on each aftermarket one.
+- **Help me choose stays honest.** The advisor never recommends a 3rd-party wheel size for your Rivian unless you pick that size yourself, and when you do, its answer says so in plain words.
+- **Compare and review pages too.** The compare table marks a 3rd-party wheel size under Tire Size, and the review page's "most reviewed for your Rivian" list says it beside the size.
 - **The load-index rule still applies.** A tire below your Rivian's minimum is still flagged in red first, whatever wheel it is on.
 
 ## 2.2.0 - 2026-09-05

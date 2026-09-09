@@ -7,7 +7,7 @@
    vehicle-memory modules rather than copying them.
    ===================================================================== */
 
-import { fitmentShortfalls, describeShortfalls, parseLoadIndex } from './modules/fitment.js';
+import { fitmentShortfalls, describeShortfalls, parseLoadIndex, thirdPartyFits } from './modules/fitment.js';
 import { formatSetPrice, formatWholePrice, priceFreshness, SET_QUANTITY } from './modules/pricing.js';
 import { rememberedVehicle } from './modules/vehicle-memory.js';
 
@@ -202,6 +202,21 @@ function renderPrice(tire) {
     html += `<br><span class="cmp-meta cmp-price-asof${fresh.stale ? ' is-stale' : ''}">${escapeHTML(fresh.label)}${fresh.stale ? ' · may be outdated' : ''}</span>`;
   }
   return rawHTML(html, n);
+}
+
+// --- Tire size, with the 3rd-party wheel note ---
+function renderSize(tire) {
+  const size = tire[COL.size] || '';
+  if (!size) return '-';
+  const s = settings();
+  const fits = thirdPartyFits({ size }, s.thirdPartySizes || {}, rememberedVehicle());
+  if (!fits.length) return size;
+  const who = fits.map(f => f.vehicle).join(' and ');
+  return rawHTML(
+    escapeHTML(size) +
+    `<br><span class="cmp-fitment-note">${rtgIcon('circle-info', 12)} Fits ${escapeHTML(who)} · 3rd-party wheels</span>`,
+    size
+  );
 }
 
 // --- Load index with the fitment verdict ---
@@ -517,7 +532,7 @@ function renderComparison(rows, tokens) {
   ], tires, best, n);
 
   html += specSection('weight-hanging', 'Size & Weight', [
-    ['Tire Size', t => t[COL.size] || "-"],
+    ['Tire Size', renderSize],
     ['Rim Diameter', t => {
       const d = t[COL.diameter] || "-";
       return d !== "-" && !d.includes('"') ? d + '"' : d;

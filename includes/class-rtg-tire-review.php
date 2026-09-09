@@ -102,6 +102,7 @@ class RTG_Tire_Review {
             // Landing: a vehicle switch over the size map, and how many
             // approved reviews each tire has, for "most reviewed for your Rivian".
             'vehicleSizeMap'  => RTG_Database::get_vehicle_size_map(),
+            'thirdPartySizes' => RTG_Database::get_third_party_size_map(),
             'reviewCounts'    => RTG_Database::get_review_counts_by_tire(),
             'vehicles'        => RTG_Database::REVIEW_VEHICLES,
             // The few with an account: who they are, and whether their words

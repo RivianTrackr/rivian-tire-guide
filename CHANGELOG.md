@@ -22,9 +22,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Tests
 - `tests/test-fitment.mjs`: `thirdPartyFits` on a chosen vehicle, on all, case-insensitive, against factory sizes and malformed maps; `rimInches` and the sentences.
 - `tests/test-fitment.php`: verdict shape with `third_party`/`note`, `third_party_fits()`, `describe_third_party()`, the map builder (factory wins, any case; R1T/R1S collapse), and source normalization.
+- `tests/test-advisor.php`: a third-party size is skipped for a stock R2 and picked, with the caveat in the summary, when the owner names it; the caveat helper says one sentence or nothing.
 
-### Not yet (Phase 2)
-- The advisor still picks from every size the vehicle takes; it should skip third-party sizes unless the shopper names one. The discovery queue's fits column, the compare page's fit row and the review form's size picker do not carry the label yet.
+### Changed
+- **The advisor never puts a stock truck on aftermarket wheels.** `RTG_Advisor::candidates()` takes the third-party map and skips a candidate whose size is third-party for the chosen vehicle unless the owner named that exact size; naming it is the owner saying they have those wheels. `compact_tire()` carries a `third_party` flag (stripped from the model payload, since every candidate passed the same rule). Whoever wrote the summary, `with_third_party_caveat()` appends one sentence when the named size is third-party: "245/60R18 fits the R2 only on 3rd-party 18" wheels, not a factory size, so fitment may vary." The advisor form's size menu suffixes those sizes for the chosen Rivian.
+- **Compare page.** The Tire Size row carries a lavender "Fits R2 · 3rd-party wheels" note (`renderSize()` in `compare.js`, `.cmp-fitment-note`), judged against the remembered vehicle like the load-index warning; `thirdPartySizes` is localized beside `vehicleSizeMap`.
+- **Discovery queue.** The fits column reads "R2 · 3rd-party" with the admin badge for a candidate whose size is third-party for that vehicle, so an 18" R2 candidate isn't mistaken for a factory size. No schema change: judged in the view from the map.
+- **Review page.** The "most reviewed for your Rivian" list appends "· 3rd-party wheels" to a tire's size when the chosen group takes it only on aftermarket wheels (`thirdPartySizes` localized in `class-rtg-tire-review.php`; `tire-review.js` is not bundled, so the lookup is mirrored inline).
 
 ## [2.3.2] - 2026-09-05
 

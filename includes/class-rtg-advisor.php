@@ -335,7 +335,7 @@ class RTG_Advisor {
      * The fields the model sees for one tire: numbers, no links, no prose.
      * Also what the rules score on and what the picks carry back to the UI.
      */
-    public static function compact_tire( $tire, $size_map, $floors, $vehicle = '' ) {
+    public static function compact_tire( $tire, $size_map, $floors, $vehicle = '', $third_party = array() ) {
         $size     = (string) ( $tire['size'] ?? '' );
         $vehicles = array();
         foreach ( (array) $size_map as $v => $sizes ) {
@@ -346,6 +346,9 @@ class RTG_Advisor {
         $load_index = RTG_Fitment::parse_load_index( $tire['load_index'] ?? '' );
         $floor      = $vehicle && isset( $floors[ $vehicle ] ) ? (int) $floors[ $vehicle ] : 0;
         $fits       = $vehicle ? in_array( $vehicle, $vehicles, true ) && ( 0 === $load_index || 0 === $floor || $load_index >= $floor ) : true;
+        // Fits only on wheels Rivian never sold: for the chosen vehicle, or
+        // for any vehicle when none is chosen.
+        $on_third   = (bool) RTG_Fitment::third_party_fits( array( 'size' => $size ), $third_party, $vehicle );
         $tags       = array_values( array_filter( array_map( 'trim', explode( ',', strtolower( (string) ( $tire['tags'] ?? '' ) ) ) ) ) );
         $price      = round( (float) ( $tire['price'] ?? 0 ) );
         $eff        = (float) ( $tire['roamer_efficiency'] ?? 0 );
@@ -361,6 +364,7 @@ class RTG_Advisor {
             'load_index'       => $load_index,
             'load_range'       => (string) ( $tire['load_range'] ?? '' ),
             'fits'             => $fits,
+            'third_party'      => $on_third,
             'vehicles'         => $vehicles,
             'mileage_warranty' => (int) ( $tire['mileage_warranty'] ?? 0 ),
             'weight_lb'        => (float) ( $tire['weight_lb'] ?? 0 ),
@@ -422,18 +426,24 @@ class RTG_Advisor {
      * at CANDIDATE_LIMIT. Pure: the tires, the size map and the floors are
      * passed in.
      */
-    public static function candidates( $tires, $input, $size_map, $floors ) {
+    public static function candidates( $tires, $input, $size_map, $floors, $third_party = array() ) {
         $vehicle = $input['vehicle'];
         if ( $vehicle && ! isset( $size_map[ $vehicle ] ) ) {
             $vehicle = '';
         }
         $pool = array();
         foreach ( $tires as $tire ) {
-            $c = self::compact_tire( $tire, $size_map, $floors, $vehicle );
+            $c = self::compact_tire( $tire, $size_map, $floors, $vehicle, $third_party );
             if ( $vehicle && ! $c['fits'] ) {
                 continue;
             }
             if ( $input['size'] && $c['size'] !== $input['size'] ) {
+                continue;
+            }
+            // The advisor answers "what should I buy for my truck", and a
+            // stock truck never gets a size that needs aftermarket wheels.
+            // Naming the size is the owner saying they have those wheels.
+            if ( ! $input['size'] && $c['third_party'] ) {
                 continue;
             }
             if ( '' !== $input['budget'] && $c['price'] > (float) $input['budget'] ) {
@@ -602,6 +612,9 @@ class RTG_Advisor {
             ),
             'candidates' => array_map( function ( $c ) {
                 unset( $c['components'], $c['slug'], $c['fits'], $c['tags'] );
+                // Every candidate passed the same 3rd-party rule, so the flag
+                // says nothing the model should weigh between them.
+                unset( $c['third_party'] );
                 return $c;
             }, $candidates ),
         );
@@ -708,14 +721,15 @@ class RTG_Advisor {
 
     /** The whole flow: cache, candidates, model, fallback. */
     public static function advise( $input ) {
-        $tires    = RTG_Database::get_tires_with_ratings();
-        $size_map = RTG_Database::get_vehicle_size_map();
-        $floors   = RTG_Fitment::floors();
+        $tires       = RTG_Database::get_tires_with_ratings();
+        $size_map    = RTG_Database::get_vehicle_size_map();
+        $third_party = RTG_Database::get_third_party_size_map();
+        $floors      = RTG_Fitment::floors();
         if ( $input['vehicle'] && ! isset( $size_map[ $input['vehicle'] ] ) ) {
             $input['vehicle'] = '';
         }
 
-        $candidates = self::candidates( $tires, $input, $size_map, $floors );
+        $candidates = self::candidates( $tires, $input, $size_map, $floors, $third_party );
         if ( ! $candidates ) {
             return array(
                 'ok'      => true,
@@ -763,12 +777,38 @@ class RTG_Advisor {
         $result = array(
             'ok'      => true,
             'source'  => $source,
-            'summary' => $picked['summary'],
+            'summary' => self::with_third_party_caveat( $picked['summary'], $input, $third_party ),
             'picks'   => self::hydrate_picks( $picked['picks'], $candidates ),
             'input'   => $input,
         );
         set_transient( $key, $result, DAY_IN_SECONDS );
         return $result;
+    }
+
+    /**
+     * The summary, plus one sentence when the owner named a size that fits
+     * only on 3rd-party wheels. Said once here, whoever wrote the summary.
+     *
+     * @param string $summary     From the model or the rules.
+     * @param array  $input       Parsed answers.
+     * @param array  $third_party Vehicle => [ size => [ 'wheel', 'note' ] ].
+     * @return string
+     */
+    public static function with_third_party_caveat( $summary, $input, $third_party ) {
+        if ( empty( $input['size'] ) ) {
+            return $summary;
+        }
+        $fits = RTG_Fitment::third_party_fits( array( 'size' => $input['size'] ), $third_party, $input['vehicle'] ?? '' );
+        if ( ! $fits ) {
+            return $summary;
+        }
+        $names = array_column( $fits, 'vehicle' );
+        $last  = array_pop( $names );
+        $who   = $names ? implode( ', ', $names ) . ' and ' . $last : $last;
+        $rim   = RTG_Fitment::rim_inches( $input['size'] );
+        $on    = $rim ? sprintf( '3rd-party %d" wheels', $rim ) : '3rd-party wheels';
+        $note  = sprintf( '%s fits the %s only on %s, not a factory size, so fitment may vary.', $input['size'], $who, $on );
+        return trim( $summary ) === '' ? $note : rtrim( $summary ) . ' ' . $note;
     }
 
     // ------------------------------------------------------------------

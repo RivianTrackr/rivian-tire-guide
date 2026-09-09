@@ -31,6 +31,16 @@
   var isLoggedIn = config.is_logged_in === true || config.is_logged_in === '1' || config.is_logged_in === 1;
   var autoApprove = config.autoApprove === true || config.autoApprove === '1' || config.autoApprove === 1;
   var vehicleSizeMap = (config.vehicleSizeMap && typeof config.vehicleSizeMap === 'object' && !Array.isArray(config.vehicleSizeMap)) ? config.vehicleSizeMap : {};
+  // vehicle => { size => { wheel, note } }: sizes that fit only on 3rd-party wheels.
+  var thirdPartySizes = (config.thirdPartySizes && typeof config.thirdPartySizes === 'object' && !Array.isArray(config.thirdPartySizes)) ? config.thirdPartySizes : {};
+
+  /** Does this vehicle group take the size only on 3rd-party wheels? (This file is not bundled, so the guide's fitment module is mirrored here.) */
+  function isThirdPartySize(size, group) {
+    var want = String(size || '').trim().toLowerCase();
+    var sizes = thirdPartySizes[group];
+    if (!want || !sizes || typeof sizes !== 'object') return false;
+    return Object.keys(sizes).some(function(listed) { return String(listed).trim().toLowerCase() === want; });
+  }
   var reviewCounts = (config.reviewCounts && typeof config.reviewCounts === 'object' && !Array.isArray(config.reviewCounts)) ? config.reviewCounts : {};
   var vehicles = Array.isArray(config.vehicles) && config.vehicles.length ? config.vehicles : ['R1T', 'R1S', 'R2'];
 
@@ -335,7 +345,7 @@
       name.textContent = (tire.brand || '') + ' ' + (tire.model || '');
       var meta = document.createElement('div');
       meta.className = 'rv-popular-meta';
-      meta.textContent = (tire.size || '') + ' · ' + (n ? n + ' review' + (n !== 1 ? 's' : '') : 'No reviews yet, be the first');
+      meta.textContent = (tire.size || '') + (isThirdPartySize(tire.size, group) ? ' · 3rd-party wheels' : '') + ' · ' + (n ? n + ' review' + (n !== 1 ? 's' : '') : 'No reviews yet, be the first');
       text.appendChild(name);
       text.appendChild(meta);
       var cta = document.createElement('span');
