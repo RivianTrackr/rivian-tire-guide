@@ -4,6 +4,28 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.4.0] - 2026-09-09
+
+### Added
+- **Third-party wheel sizes.** The guide can list a size Rivian never shipped, such as 18-inch tires on an R2, and tell every shopper it fits only on aftermarket wheels. The provenance lives on the wheel, not the tire: a 275/65R18 is a factory size on R1 and a third-party size on R2, so "third-party" is a property of the size and vehicle pair, which is exactly what a wheel row is.
+  - `rtg_wheels` gains `source` ('oem' default, 'third_party') and `fitment_note` (255 chars) via dbDelta; migration 26 marks it (`DB_VERSION` 26). `RTG_Database::insert_wheel()` / `update_wheel()` carry both; `normalize_wheel_source()`, `is_third_party_wheel()`, and the constants `WHEEL_SOURCE_OEM` / `WHEEL_SOURCE_THIRD_PARTY`.
+  - `RTG_Database::get_third_party_size_map()` (pure builder `build_third_party_size_map( $wheels )`): vehicle => [ size => [ wheel, note ] ], only for sizes no factory wheel for that vehicle lists. A factory listing always wins. `get_vehicle_size_map()` is unchanged and still carries every size, so the vehicle filter, the fitment floors and the discovery gate keep working as they did.
+  - `RTG_Fitment::verdicts()` takes the third-party map as a fourth argument and every verdict now carries `third_party` and `note`. New `third_party_entry()`, `third_party_fits()`, `rim_inches()` and `describe_third_party()`. The JS twin in `fitment.js` gains `thirdPartyEntry()`, `thirdPartyFits()`, `rimInches()` and `describeThirdPartyFits()`.
+  - Localized as `settings.thirdPartySizes` beside `vehicleSizeMap` (`class-rtg-frontend.php`, and the filter-options AJAX in `class-rtg-ajax.php`), held in `state.thirdPartySizes`.
+  - **Size menu.** With a vehicle pressed, a size it takes only on third-party wheels reads "245/60R18 · 3rd-party wheels" (`sizeOptionSuffix()` in `filters.js`; the suffix rides `option.dataset.suffix` so the count stamping keeps it). With "All" pressed there is no suffix, because 275/65R18 is a plain R1 size.
+  - **Tire card.** The fitment slot gets a second voice: a lavender `.tire-card-fitment.is-third-party` note, "Fits R2 on 3rd-party 18" wheels only. Not a factory size, so fitment may vary." The load-index shortfall wins the slot when a tire earns both (`fitmentMessage()` in `cards.js`). Its ⓘ opens a new "3rd-party wheels" tooltip that appends the wheel's fitment note under the wheel's name (`data-tooltip-note` / `data-tooltip-wheel`, escaped, in `tooltips.js`).
+  - **Tire page.** A lavender "Fits R2 · 3rd-party wheels" chip (`.rtg-tp-chip-fit-3p`) instead of the green one, a `.rtg-tp-fitment-note` notice under the chips ("Rivian doesn't sell the R2 with 18-inch wheels. This size fits on aftermarket wheels only, and whether it clears depends on your wheel's width and offset." plus the wheel's note), "· 3rd-party size" in the load-index tile's meta, the at-a-glance sentence says "the R2 on aftermarket wheels" so a search snippet never promises a factory fit, and related tires carry the lavender chip too. A tire with no load index still gets the chip and the notice, since the size alone decides.
+  - **Wheel drawer.** Heading is now "Rivian Wheel Guide". A vehicle tab with both kinds splits into "Factory wheels" and "Aftermarket setups" (`.wheel-section-heading`); a third-party card carries a "3rd-party" badge, lists its sizes under "Fits" rather than "Stock", and shows "Not offered by Rivian. <note> Fitment may vary."
+  - **Admin.** The wheel editor has a Rivian factory / Third-party segmented control (`.rtg-segmented`, pure CSS with `:has()`) and a fitment-note field; `handle_wheel_save()` normalizes the source and caps the note at 255. The wheel list shows a "3rd-party" badge beside the name.
+- Lavender (#a78bfa) is the color for this state everywhere: red already means the tire can't carry the truck, green means factory fit, blue means winter rated, and amber is the accent.
+
+### Tests
+- `tests/test-fitment.mjs`: `thirdPartyFits` on a chosen vehicle, on all, case-insensitive, against factory sizes and malformed maps; `rimInches` and the sentences.
+- `tests/test-fitment.php`: verdict shape with `third_party`/`note`, `third_party_fits()`, `describe_third_party()`, the map builder (factory wins, any case; R1T/R1S collapse), and source normalization.
+
+### Not yet (Phase 2)
+- The advisor still picks from every size the vehicle takes; it should skip third-party sizes unless the shopper names one. The discovery queue's fits column, the compare page's fit row and the review form's size picker do not carry the label yet.
+
 ## [2.3.2] - 2026-09-05
 
 ### Added

@@ -177,6 +177,7 @@ function initializeUI() {
   // Initialize vehicle state from localized data (works for both modes before server-side overrides).
   if (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.vehicleSizeMap) {
     state.vehicleSizeMap = rtgData.settings.vehicleSizeMap;
+    state.thirdPartySizes = rtgData.settings.thirdPartySizes || {};
     state.VALID_VEHICLES = Object.keys(state.vehicleSizeMap).sort();
     populateVehicleToggle(state.vehicleSizeMap);
   }

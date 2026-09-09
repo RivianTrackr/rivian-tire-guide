@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 25;
+    const DB_VERSION = 26;
 
     public static function activate() {
         self::create_tables();
@@ -64,6 +64,8 @@ class RTG_Activator {
             alt_sizes VARCHAR(200) NOT NULL DEFAULT '',
             image TEXT NOT NULL,
             vehicles VARCHAR(200) NOT NULL DEFAULT '',
+            source VARCHAR(20) NOT NULL DEFAULT 'oem',
+            fitment_note VARCHAR(255) NOT NULL DEFAULT '',
             sort_order INT UNSIGNED NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -255,6 +257,7 @@ class RTG_Activator {
             23 => 'migrate_23_add_sort_and_status_indexes',
             24 => 'migrate_24_register_whats_new_route',
             25 => 'migrate_25_add_review_detail_columns',
+            26 => 'migrate_26_add_wheel_source',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -701,6 +704,19 @@ class RTG_Activator {
      * as "not answered".
      */
     private static function migrate_25_add_review_detail_columns() {
+        // Columns added by dbDelta above.
+    }
+
+    /**
+     * Migration 26: Wheels carry where they come from.
+     *
+     * `source` is 'oem' for every wheel Rivian sells and 'third_party' for
+     * an aftermarket setup the guide lists so owners who bought one can
+     * find tires for it; `fitment_note` is the one sentence shown beside
+     * those sizes. Columns added by dbDelta above; the 'oem' default keeps
+     * every existing row exactly as it was.
+     */
+    private static function migrate_26_add_wheel_source() {
         // Columns added by dbDelta above.
     }
 }

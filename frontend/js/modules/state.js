@@ -30,6 +30,8 @@ export const state = {
   VALID_CATEGORIES: [],
   VALID_VEHICLES: [],
   vehicleSizeMap: {},
+  // vehicle => { size => { wheel, note } }: sizes that fit only on 3rd-party wheels.
+  thirdPartySizes: {},
 
   // DOM cache
   domCache: {},

@@ -11,7 +11,7 @@ import { TOOLTIP_DATA, createInfoTooltip } from './tooltips.js';
 import { createRatingHTML } from './ratings.js';
 import { setupCompareCheckboxes } from './compare.js';
 import { openImageModal } from './image-modal.js';
-import { fitmentShortfalls, describeShortfalls, parseLoadIndex } from './fitment.js';
+import { fitmentShortfalls, describeShortfalls, parseLoadIndex, thirdPartyFits, describeThirdPartyFits } from './fitment.js';
 import { formatSetPrice, formatWholePrice, priceFreshness, SET_QUANTITY } from './pricing.js';
 import { isLimitedSample } from './efficiency.js';
 
@@ -220,7 +220,30 @@ function fitmentSettings() {
   const map = (state.vehicleSizeMap && Object.keys(state.vehicleSizeMap).length)
     ? state.vehicleSizeMap
     : (settings.vehicleSizeMap || {});
-  return { map, floors: settings.loadIndexFloors || {} };
+  const thirdParty = (state.thirdPartySizes && Object.keys(state.thirdPartySizes).length)
+    ? state.thirdPartySizes
+    : (settings.thirdPartySizes || {});
+  return { map, floors: settings.loadIndexFloors || {}, thirdParty };
+}
+
+/**
+ * What the card's fitment slot should say, if anything.
+ *
+ * The load-index shortfall wins the slot: "it will not carry the truck" is
+ * the sentence that matters, and the tire page still tells the rest. Only a
+ * tire that clears the floor gets the 3rd-party note.
+ *
+ * @return {{kind: string, text: string, fits: Array}|null}
+ */
+function fitmentMessage(tire, vehicle) {
+  const { map, floors, thirdParty } = fitmentSettings();
+  const shortfall = describeShortfalls(tire.loadIndex, fitmentShortfalls(tire, map, floors, vehicle));
+  if (shortfall) return { kind: 'shortfall', text: shortfall, fits: [] };
+
+  const fits = thirdPartyFits(tire, thirdParty, vehicle);
+  const note = describeThirdPartyFits(tire.size, fits);
+  if (note) return { kind: 'third-party', text: note, fits };
+  return null;
 }
 
 /**
@@ -234,11 +257,10 @@ export function applyFitmentWarning(card, vehicle = activeVehicle()) {
   const slot = card.querySelector('.tire-card-fitment-slot');
   if (!slot) return;
 
-  const { map, floors } = fitmentSettings();
   const tire = { loadIndex: card.dataset.loadIndex, size: card.dataset.size };
-  const text = describeShortfalls(tire.loadIndex, fitmentShortfalls(tire, map, floors, vehicle));
+  const message = fitmentMessage(tire, vehicle);
 
-  if (!text) {
+  if (!message) {
     slot.innerHTML = '';
     slot.hidden = true;
     delete slot.dataset.text;
@@ -246,18 +268,21 @@ export function applyFitmentWarning(card, vehicle = activeVehicle()) {
     return;
   }
 
+  const { kind, text, fits } = message;
+  const thirdParty = kind === 'third-party';
+
   // Same text: leave the node alone so a re-render doesn't flicker it.
   if (slot.dataset.text === text) return;
   slot.dataset.text = text;
   slot.innerHTML = '';
 
   const warning = document.createElement('div');
-  warning.className = 'tire-card-fitment';
+  warning.className = 'tire-card-fitment' + (thirdParty ? ' is-third-party' : '');
   warning.setAttribute('role', 'note');
 
   const icon = document.createElement('span');
   icon.className = 'tire-card-fitment-icon';
-  icon.innerHTML = rtgIcon('triangle-exclamation', 13);
+  icon.innerHTML = rtgIcon(thirdParty ? 'circle-info' : 'triangle-exclamation', 13);
 
   const label = document.createElement('span');
   label.className = 'tire-card-fitment-text';
@@ -266,9 +291,17 @@ export function applyFitmentWarning(card, vehicle = activeVehicle()) {
   const infoBtn = document.createElement('button');
   infoBtn.type = 'button';
   infoBtn.className = 'info-tooltip-trigger';
-  infoBtn.dataset.tooltipKey = 'Load Index';
-  infoBtn.setAttribute('aria-label', 'More info about Load Index');
+  infoBtn.dataset.tooltipKey = thirdParty ? '3rd-party wheels' : 'Load Index';
+  infoBtn.setAttribute('aria-label', thirdParty ? 'More info about 3rd-party wheel sizes' : 'More info about Load Index');
   infoBtn.innerHTML = rtgIcon('circle-info', 12);
+  if (thirdParty) {
+    // The admin's note for the wheel, shown in the tooltip under its name.
+    const withNote = fits.find(f => f.note);
+    if (withNote) {
+      infoBtn.dataset.tooltipNote = withNote.note;
+      if (withNote.wheel) infoBtn.dataset.tooltipWheel = withNote.wheel;
+    }
+  }
 
   warning.appendChild(icon);
   warning.appendChild(label);

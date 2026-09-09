@@ -232,6 +232,7 @@ export function fetchDropdownOptions() {
       // Update vehicle state from server response.
       if (d.vehicleSizeMap) {
         state.vehicleSizeMap = d.vehicleSizeMap;
+        state.thirdPartySizes = d.thirdPartySizes || {};
         state.VALID_VEHICLES = Object.keys(d.vehicleSizeMap).sort();
         populateVehicleToggle(d.vehicleSizeMap);
       }

@@ -9,14 +9,17 @@ $is_edit = (bool) $wheel;
 $page_title = $is_edit ? 'Edit Stock Wheel' : 'Add Stock Wheel';
 
 $defaults = array(
-    'name'       => '',
-    'stock_size' => '',
-    'alt_sizes'  => '',
-    'image'      => '',
-    'vehicles'   => '',
-    'sort_order' => 0,
+    'name'         => '',
+    'stock_size'   => '',
+    'alt_sizes'    => '',
+    'image'        => '',
+    'vehicles'     => '',
+    'source'       => RTG_Database::WHEEL_SOURCE_OEM,
+    'fitment_note' => '',
+    'sort_order'   => 0,
 );
 $v = $wheel ? wp_parse_args( $wheel, $defaults ) : $defaults;
+$is_third_party = RTG_Database::is_third_party_wheel( $v );
 
 $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) : '';
 
@@ -65,7 +68,7 @@ $dd_sizes = RTG_Admin::get_dropdown_options( 'sizes' );
                         <div class="rtg-field-label-row">
                             <label class="rtg-field-label" for="stock_size">Stock Size <span class="rtg-badge-required">Required</span></label>
                         </div>
-                        <p class="rtg-field-description">The factory-default tire size for this wheel.</p>
+                        <p class="rtg-field-description">The factory-default tire size for this wheel. For a third-party wheel, the size it is usually run with.</p>
                         <?php
                         $stock_size_options = $dd_sizes;
                         if ( ! empty( $v['stock_size'] ) && ! in_array( $v['stock_size'], $stock_size_options, true ) ) {
@@ -85,6 +88,29 @@ $dd_sizes = RTG_Admin::get_dropdown_options( 'sizes' );
                         </div>
                         <p class="rtg-field-description">Comma-separated list of alternative tire sizes (e.g. 275/60R20, 285/50R22).</p>
                         <input type="text" id="alt_sizes" name="alt_sizes" value="<?php echo esc_attr( $v['alt_sizes'] ); ?>" class="rtg-input-wide" placeholder="e.g. 275/60R20, 285/50R22">
+                    </div>
+                    <div class="rtg-field-row">
+                        <div class="rtg-field-label-row">
+                            <label class="rtg-field-label">Source</label>
+                        </div>
+                        <p class="rtg-field-description">Third-party wheels are shown to shoppers with a "3rd-party wheels" label and never counted as a factory size. A size a factory wheel also lists stays a factory size.</p>
+                        <div class="rtg-segmented" role="radiogroup" aria-label="Wheel source">
+                            <label class="rtg-segmented-option">
+                                <input type="radio" name="wheel_source" value="<?php echo esc_attr( RTG_Database::WHEEL_SOURCE_OEM ); ?>" <?php checked( ! $is_third_party ); ?>>
+                                <span>Rivian factory</span>
+                            </label>
+                            <label class="rtg-segmented-option">
+                                <input type="radio" name="wheel_source" value="<?php echo esc_attr( RTG_Database::WHEEL_SOURCE_THIRD_PARTY ); ?>" <?php checked( $is_third_party ); ?>>
+                                <span>Third-party</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="rtg-field-row">
+                        <div class="rtg-field-label-row">
+                            <label class="rtg-field-label" for="fitment_note">Fitment note</label>
+                        </div>
+                        <p class="rtg-field-description">One or two sentences, third-party wheels only. Shown under the tire page's third-party notice, in the card's info tooltip, and on the wheel guide card. For example: "Needs an 8.5-inch or wider wheel around ET35. Some owners report light rubbing at full lock."</p>
+                        <textarea id="fitment_note" name="fitment_note" rows="2" maxlength="255" class="rtg-input-wide" style="max-width:100%;font-size:14px;font-family:var(--rtg-font-stack);padding:10px 12px;border:1px solid var(--rtg-border);border-radius:8px;resize:vertical;"><?php echo esc_textarea( $v['fitment_note'] ); ?></textarea>
                     </div>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">

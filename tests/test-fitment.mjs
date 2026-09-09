@@ -10,7 +10,7 @@
  * Run with:  node tests/test-fitment.mjs
  */
 import assert from 'node:assert/strict';
-import { parseLoadIndex, fitmentShortfalls, describeShortfalls } from '../frontend/js/modules/fitment.js';
+import { parseLoadIndex, fitmentShortfalls, describeShortfalls, thirdPartyEntry, thirdPartyFits, rimInches, describeThirdPartyFits } from '../frontend/js/modules/fitment.js';
 
 let failures = 0;
 function test(name, fn) {
@@ -93,4 +93,51 @@ if (failures > 0) {
   console.log(`\n${failures} failure(s)`);
   process.exit(1);
 }
+console.log('thirdPartyFits');
+const THIRD = { R2: { '245/60R18': { wheel: '18" aftermarket wheels', note: 'Needs an 8.5-inch or wider wheel.' } } };
+test('a listed size on a chosen vehicle is a third-party fit with its note', () => {
+  assert.deepEqual(thirdPartyFits({ size: '245/60R18' }, THIRD, 'R2'), [{ vehicle: 'R2', wheel: '18" aftermarket wheels', note: 'Needs an 8.5-inch or wider wheel.' }]);
+});
+test('matches the size regardless of case and whitespace', () => {
+  assert.equal(thirdPartyEntry(' 245/60r18 ', 'R2', THIRD).wheel, '18" aftermarket wheels');
+});
+test('a factory size raises nothing', () => {
+  assert.deepEqual(thirdPartyFits({ size: '255/50R20' }, THIRD, 'R2'), []);
+});
+test('a chosen vehicle with no third-party sizes raises nothing', () => {
+  assert.deepEqual(thirdPartyFits({ size: '245/60R18' }, THIRD, 'R1'), []);
+});
+test('without a vehicle, every vehicle in the map is judged', () => {
+  const map = { R1: { '245/60R18': { wheel: 'a', note: '' } }, R2: { '245/60R18': { wheel: 'b', note: '' } } };
+  assert.deepEqual(thirdPartyFits({ size: '245/60R18' }, map).map(f => f.vehicle), ['R1', 'R2']);
+});
+test('tolerates a missing or malformed map', () => {
+  assert.deepEqual(thirdPartyFits({ size: '245/60R18' }, null, 'R2'), []);
+  assert.deepEqual(thirdPartyFits({ size: '245/60R18' }, { R2: 'nope' }, 'R2'), []);
+  assert.deepEqual(thirdPartyFits({}, THIRD, 'R2'), []);
+});
+
+console.log('describeThirdPartyFits');
+test('reads the rim diameter out of the size', () => {
+  assert.equal(rimInches('245/60R18'), 18);
+  assert.equal(rimInches('275/65r18'), 18);
+  assert.equal(rimInches('nope'), 0);
+});
+test('one vehicle', () => {
+  assert.equal(
+    describeThirdPartyFits('245/60R18', [{ vehicle: 'R2' }]),
+    'Fits R2 on 3rd-party 18" wheels only. Not a factory size, so fitment may vary.'
+  );
+});
+test('two vehicles', () => {
+  assert.equal(
+    describeThirdPartyFits('245/60R18', [{ vehicle: 'R1' }, { vehicle: 'R2' }]),
+    'Fits R1 and R2 on 3rd-party 18" wheels only. Not a factory size, so fitment may vary.'
+  );
+});
+test('a size with no rim diameter drops the inches', () => {
+  assert.equal(describeThirdPartyFits('odd', [{ vehicle: 'R2' }]), 'Fits R2 on 3rd-party wheels only. Not a factory size, so fitment may vary.');
+});
+test('nothing to say when nothing fits', () => assert.equal(describeThirdPartyFits('245/60R18', []), ''));
+
 console.log('\nAll fitment tests passed');

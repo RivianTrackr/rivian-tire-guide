@@ -1509,12 +1509,16 @@ class RTG_Admin {
             : array();
 
         $data = array(
-            'name'       => sanitize_text_field( $post['wheel_name'] ?? '' ),
-            'stock_size' => sanitize_text_field( $post['stock_size'] ?? '' ),
-            'alt_sizes'  => sanitize_text_field( $post['alt_sizes'] ?? '' ),
-            'image'      => esc_url_raw( $post['wheel_image'] ?? '' ),
-            'vehicles'   => implode( ', ', $vehicles_arr ),
-            'sort_order' => intval( $post['sort_order'] ?? 0 ),
+            'name'         => sanitize_text_field( $post['wheel_name'] ?? '' ),
+            'stock_size'   => sanitize_text_field( $post['stock_size'] ?? '' ),
+            'alt_sizes'    => sanitize_text_field( $post['alt_sizes'] ?? '' ),
+            'image'        => esc_url_raw( $post['wheel_image'] ?? '' ),
+            'vehicles'     => implode( ', ', $vehicles_arr ),
+            // Factory or third-party, and the one sentence shown beside a
+            // third-party wheel's sizes. The column is 255 wide.
+            'source'       => RTG_Database::normalize_wheel_source( $post['wheel_source'] ?? '' ),
+            'fitment_note' => mb_substr( sanitize_text_field( $post['fitment_note'] ?? '' ), 0, 255 ),
+            'sort_order'   => intval( $post['sort_order'] ?? 0 ),
         );
 
         if ( $editing_id > 0 ) {

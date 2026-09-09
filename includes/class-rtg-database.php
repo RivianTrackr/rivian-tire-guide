@@ -1573,6 +1573,103 @@ class RTG_Database {
         return $map;
     }
 
+    /** A wheel Rivian sells: its sizes are factory sizes for its vehicles. */
+    const WHEEL_SOURCE_OEM = 'oem';
+
+    /** An aftermarket setup: its sizes fit only on wheels Rivian never offered. */
+    const WHEEL_SOURCE_THIRD_PARTY = 'third_party';
+
+    /**
+     * The stored form of a wheel's source; anything unknown is factory.
+     *
+     * @param mixed $source Raw value.
+     * @return string 'oem' or 'third_party'.
+     */
+    public static function normalize_wheel_source( $source ) {
+        $source = strtolower( trim( (string) $source ) );
+        return in_array( $source, array( self::WHEEL_SOURCE_THIRD_PARTY, 'aftermarket', '3rd_party', 'third-party' ), true )
+            ? self::WHEEL_SOURCE_THIRD_PARTY
+            : self::WHEEL_SOURCE_OEM;
+    }
+
+    /**
+     * Is this wheel row an aftermarket setup?
+     *
+     * @param array $wheel Wheel row.
+     * @return bool
+     */
+    public static function is_third_party_wheel( $wheel ) {
+        return self::WHEEL_SOURCE_THIRD_PARTY === self::normalize_wheel_source( $wheel['source'] ?? '' );
+    }
+
+    /**
+     * The sizes each vehicle takes only on third-party wheels.
+     *
+     * A companion to get_vehicle_size_map(), which lists every size a
+     * vehicle can wear, factory or not. This one says which of those Rivian
+     * never offered: a size is third-party for a vehicle when a third-party
+     * wheel for that vehicle lists it and no factory wheel does. A factory
+     * listing always wins, so 275/65R18 stays a plain R1 size even if an
+     * aftermarket R1 wheel also carries it.
+     *
+     * Pure of the database once the rows are in: build_third_party_size_map()
+     * takes the wheel rows so it can be tested without one.
+     *
+     * @return array Vehicle => [ size => [ 'wheel' => name, 'note' => fitment note ] ].
+     */
+    public static function get_third_party_size_map() {
+        return self::build_third_party_size_map( self::get_all_wheels() );
+    }
+
+    /**
+     * @param array[] $wheels Wheel rows (name, stock_size, alt_sizes, vehicles, source, fitment_note).
+     * @return array Vehicle => [ size => [ 'wheel', 'note' ] ], vehicles sorted, sizes in wheel order.
+     */
+    public static function build_third_party_size_map( $wheels ) {
+        $factory     = array();
+        $third_party = array();
+
+        foreach ( (array) $wheels as $wheel ) {
+            $vehicles = array_filter( array_map( 'trim', explode( ',', (string) ( $wheel['vehicles'] ?? '' ) ) ) );
+            $sizes    = array_filter( array_map( 'trim', explode( ',', ( $wheel['stock_size'] ?? '' ) . ',' . ( $wheel['alt_sizes'] ?? '' ) ) ) );
+            $is_third = self::is_third_party_wheel( $wheel );
+
+            foreach ( $vehicles as $vehicle ) {
+                $group = ( strpos( $vehicle, 'R1' ) === 0 ) ? 'R1' : $vehicle;
+                foreach ( $sizes as $size ) {
+                    $key = strtolower( $size );
+                    if ( $is_third ) {
+                        if ( ! isset( $third_party[ $group ][ $key ] ) ) {
+                            $third_party[ $group ][ $key ] = array(
+                                'size'  => $size,
+                                'wheel' => trim( (string) ( $wheel['name'] ?? '' ) ),
+                                'note'  => trim( (string) ( $wheel['fitment_note'] ?? '' ) ),
+                            );
+                        }
+                    } else {
+                        $factory[ $group ][ $key ] = true;
+                    }
+                }
+            }
+        }
+
+        $map = array();
+        foreach ( $third_party as $group => $sizes ) {
+            foreach ( $sizes as $key => $entry ) {
+                if ( isset( $factory[ $group ][ $key ] ) ) {
+                    continue;
+                }
+                $map[ $group ][ $entry['size'] ] = array(
+                    'wheel' => $entry['wheel'],
+                    'note'  => $entry['note'],
+                );
+            }
+        }
+        ksort( $map );
+
+        return $map;
+    }
+
     /**
      * Get a single wheel by its numeric ID.
      *
@@ -1599,21 +1696,25 @@ class RTG_Database {
         $table = self::wheels_table();
 
         $defaults = array(
-            'name'       => '',
-            'stock_size' => '',
-            'alt_sizes'  => '',
-            'image'      => '',
-            'vehicles'   => '',
-            'sort_order' => 0,
+            'name'         => '',
+            'stock_size'   => '',
+            'alt_sizes'    => '',
+            'image'        => '',
+            'vehicles'     => '',
+            'source'       => self::WHEEL_SOURCE_OEM,
+            'fitment_note' => '',
+            'sort_order'   => 0,
         );
 
         $data = wp_parse_args( $data, $defaults );
+        $data['source'] = self::normalize_wheel_source( $data['source'] );
 
-        $result = $wpdb->insert(
-            $table,
-            $data,
-            array( '%s', '%s', '%s', '%s', '%s', '%d' )
-        );
+        $formats = array();
+        foreach ( $data as $key => $value ) {
+            $formats[] = $key === 'sort_order' ? '%d' : '%s';
+        }
+
+        $result = $wpdb->insert( $table, $data, $formats );
 
         return $result !== false ? $wpdb->insert_id : false;
     }
@@ -1630,6 +1731,9 @@ class RTG_Database {
         $table = self::wheels_table();
 
         unset( $data['id'], $data['created_at'], $data['updated_at'] );
+        if ( array_key_exists( 'source', $data ) ) {
+            $data['source'] = self::normalize_wheel_source( $data['source'] );
+        }
 
         $formats = array();
         foreach ( $data as $key => $value ) {

@@ -98,3 +98,84 @@ export function describeShortfalls(loadIndex, shortfalls) {
   const last = parts.pop();
   return `Load index ${li} is below the ${parts.join(', ')} and ${last} minimums.`;
 }
+
+// --- Third-party wheel sizes ---
+
+/**
+ * The third-party entry for a size on a vehicle, if it is one.
+ *
+ * The map (rtgData.settings.thirdPartySizes) lists, per vehicle, the sizes
+ * Rivian never offered but an aftermarket wheel in the guide takes:
+ * vehicle => { size => { wheel, note } }. A size a factory wheel also lists
+ * is never in it, so a hit here means "only on 3rd-party wheels".
+ *
+ * @param {string} size
+ * @param {string} vehicle
+ * @param {Object} thirdPartySizes
+ * @return {{wheel: string, note: string}|null}
+ */
+export function thirdPartyEntry(size, vehicle, thirdPartySizes) {
+  const want = String(size || '').trim().toLowerCase();
+  if (!want) return null;
+  const sizes = thirdPartySizes && typeof thirdPartySizes === 'object' ? thirdPartySizes[vehicle] : null;
+  if (!sizes || typeof sizes !== 'object') return null;
+  for (const listed of Object.keys(sizes)) {
+    if (String(listed).trim().toLowerCase() === want) {
+      const entry = sizes[listed] || {};
+      return { wheel: String(entry.wheel || ''), note: String(entry.note || '') };
+    }
+  }
+  return null;
+}
+
+/**
+ * Which vehicles take this tire only on third-party wheels.
+ *
+ * With a vehicle chosen, only that vehicle is judged; without one, every
+ * vehicle in the map. Needs no load index: the question is the size alone.
+ *
+ * @param {Object} tire            { size }
+ * @param {Object} thirdPartySizes vehicle => { size => { wheel, note } }
+ * @param {string} [vehicle]
+ * @return {Array<{vehicle: string, wheel: string, note: string}>}
+ */
+export function thirdPartyFits(tire, thirdPartySizes, vehicle = '') {
+  const map = thirdPartySizes && typeof thirdPartySizes === 'object' ? thirdPartySizes : {};
+  const vehicles = vehicle ? [vehicle] : Object.keys(map);
+  const out = [];
+  vehicles.forEach(name => {
+    const entry = thirdPartyEntry(tire && tire.size, name, map);
+    if (entry) out.push({ vehicle: name, wheel: entry.wheel, note: entry.note });
+  });
+  return out;
+}
+
+/**
+ * The rim diameter a size names, e.g. 18 for 245/60R18; 0 when it has none.
+ *
+ * @param {string} size
+ * @return {number}
+ */
+export function rimInches(size) {
+  const m = String(size || '').match(/R(\d{2})/i);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+/**
+ * One sentence for a third-party note.
+ *
+ *   'Fits R2 on 3rd-party 18" wheels only. Not a factory size, so fitment may vary.'
+ *
+ * @param {string} size
+ * @param {Array<{vehicle: string}>} fits From thirdPartyFits().
+ * @return {string} Empty when there is nothing to say.
+ */
+export function describeThirdPartyFits(size, fits) {
+  if (!Array.isArray(fits) || fits.length === 0) return '';
+  const names = fits.map(f => f.vehicle);
+  const last = names.pop();
+  const who = names.length ? `${names.join(', ')} and ${last}` : last;
+  const rim = rimInches(size);
+  const on = rim ? `3rd-party ${rim}" wheels` : '3rd-party wheels';
+  return `Fits ${who} on ${on} only. Not a factory size, so fitment may vary.`;
+}

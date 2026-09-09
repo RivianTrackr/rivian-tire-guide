@@ -134,20 +134,26 @@ if ( ! empty( $rtg_wheels ) ) :
     <i class="fa-solid fa-chevron-down rtg-wheel-callout-chevron" aria-hidden="true"></i>
   </button>
   <div id="wheelDrawer" class="wheel-drawer">
-    <p class="wheel-drawer-heading">Rivian Stock Wheel Guide</p>
+    <p class="wheel-drawer-heading">Rivian Wheel Guide</p>
     <?php
-    // Build vehicle groups from wheel data.
+    // Build vehicle groups from wheel data: factory wheels first, then the
+    // aftermarket setups the guide lists, each under its own heading.
     $rtg_vehicle_groups = array();
     foreach ( $rtg_wheels as $rtg_wheel ) {
       $vehicle_list = array_filter( array_map( 'trim', explode( ',', $rtg_wheel['vehicles'] ) ) );
+      $rtg_source   = RTG_Database::is_third_party_wheel( $rtg_wheel ) ? 'third_party' : 'oem';
       foreach ( $vehicle_list as $vehicle ) {
         if ( ! isset( $rtg_vehicle_groups[ $vehicle ] ) ) {
-          $rtg_vehicle_groups[ $vehicle ] = array();
+          $rtg_vehicle_groups[ $vehicle ] = array( 'oem' => array(), 'third_party' => array() );
         }
-        $rtg_vehicle_groups[ $vehicle ][] = $rtg_wheel;
+        $rtg_vehicle_groups[ $vehicle ][ $rtg_source ][] = $rtg_wheel;
       }
     }
     $rtg_vehicle_names = array_keys( $rtg_vehicle_groups );
+    $rtg_wheel_sections = array(
+      'oem'         => 'Factory wheels',
+      'third_party' => 'Aftermarket setups',
+    );
     ?>
     <div class="wheel-tabs" role="tablist" aria-label="Filter wheels by vehicle">
       <?php foreach ( $rtg_vehicle_names as $idx => $vehicle_name ) : ?>
@@ -171,16 +177,43 @@ if ( ! empty( $rtg_wheels ) ) :
       aria-labelledby="wheelTab-<?php echo esc_attr( $slug ); ?>"
       <?php echo 0 !== $idx ? 'hidden' : ''; ?>
     >
+      <?php
+      // Only vehicles with both kinds get the section headings; a tab of
+      // factory wheels alone reads as it always has.
+      $rtg_show_sections = ! empty( $rtg_vehicle_groups[ $vehicle_name ]['third_party'] );
+      foreach ( $rtg_wheel_sections as $rtg_section => $rtg_section_label ) :
+        $rtg_section_wheels = $rtg_vehicle_groups[ $vehicle_name ][ $rtg_section ];
+        if ( empty( $rtg_section_wheels ) ) {
+          continue;
+        }
+        $rtg_is_third = 'third_party' === $rtg_section;
+      ?>
+      <?php if ( $rtg_show_sections ) : ?>
+      <p class="wheel-section-heading<?php echo $rtg_is_third ? ' is-third-party' : ''; ?>"><?php echo esc_html( $rtg_section_label ); ?></p>
+      <?php endif; ?>
       <div class="wheel-card-grid">
-        <?php foreach ( $rtg_vehicle_groups[ $vehicle_name ] as $rtg_wheel ) :
+        <?php foreach ( $rtg_section_wheels as $rtg_wheel ) :
           $alt_list = array_filter( array_map( 'trim', explode( ',', $rtg_wheel['alt_sizes'] ) ) );
         ?>
-        <div class="wheel-card">
+        <div class="wheel-card<?php echo $rtg_is_third ? ' is-third-party' : ''; ?>">
+          <?php if ( $rtg_is_third ) : ?>
+            <span class="wheel-card-badge">3rd-party</span>
+          <?php endif; ?>
           <?php if ( ! empty( $rtg_wheel['image'] ) ) : ?>
             <img class="wheel-card-img" src="<?php echo esc_url( $rtg_wheel['image'] ); ?>" alt="<?php echo esc_attr( $rtg_wheel['name'] ); ?>" />
           <?php endif; ?>
           <div class="wheel-card-body">
             <strong class="wheel-card-name"><?php echo esc_html( $rtg_wheel['name'] ); ?></strong>
+            <?php if ( $rtg_is_third ) : ?>
+            <div class="wheel-card-sizes">
+              <span class="wheel-card-label">Fits</span>
+              <code><?php echo esc_html( $rtg_wheel['stock_size'] ); ?></code>
+              <?php foreach ( $alt_list as $alt ) : ?>
+                <code><?php echo esc_html( $alt ); ?></code>
+              <?php endforeach; ?>
+            </div>
+            <p class="wheel-card-note">Not offered by Rivian.<?php echo ! empty( $rtg_wheel['fitment_note'] ) ? ' ' . esc_html( $rtg_wheel['fitment_note'] ) : ''; ?> Fitment may vary.</p>
+            <?php else : ?>
             <div class="wheel-card-sizes">
               <span class="wheel-card-label">Stock</span>
               <code><?php echo esc_html( $rtg_wheel['stock_size'] ); ?></code>
@@ -193,10 +226,12 @@ if ( ! empty( $rtg_wheels ) ) :
               <?php endforeach; ?>
             </div>
             <?php endif; ?>
+            <?php endif; ?>
           </div>
         </div>
         <?php endforeach; ?>
       </div>
+      <?php endforeach; ?>
     </div>
     <?php endforeach; ?>
   </div>
