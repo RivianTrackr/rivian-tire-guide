@@ -1,6 +1,6 @@
 # RivianTrackr — Branding & Design System
 
-Design tokens and conventions for RivianTrackr projects. All values sourced from the Rivian Tire Guide plugin (v1.49.0, "ink & brass" theme).
+Design tokens and conventions for RivianTrackr projects. All values sourced from the Rivian Tire Guide plugin (v2.4.0, "ink & brass" theme).
 
 ---
 
@@ -25,15 +25,15 @@ CSS custom properties prefixed with `--rtg-`. This is the user-facing theme.
 | Token                | CSS Variable          | Value     | Usage                          |
 |----------------------|-----------------------|-----------|--------------------------------|
 | Primary Accent       | `--rtg-accent`        | `#fba919` | Buttons, links, active states  |
-| Accent Hover         | `--rtg-accent-hover`  | `#fba919` | Hover state for accent items   |
+| Accent Hover         | `--rtg-accent-hover`  | `#ffbe4a` | Hover state for accent items   |
 | Background (Primary) | `--rtg-bg-primary`    | `#16191e` | Page / section background      |
 | Background (Card)    | `--rtg-bg-card`       | `#16191e` | Card surfaces                  |
 | Background (Input)   | `--rtg-bg-input`      | `#3a3e45` | Form inputs, select fields     |
 | Background (Deep)    | `--rtg-bg-deep`       | `#121418` | Deeper containers, footers     |
 | Text (Primary)       | `--rtg-text-primary`  | `#ece9e4` | Body text                      |
-| Text (Light)         | `--rtg-text-light`    | `#ece9e4` | Emphasized text                |
-| Text (Muted)         | `--rtg-text-muted`    | `#ece9e4` | Secondary / helper text        |
-| Text (Heading)       | `--rtg-text-heading`  | `#ece9e4` | Headings, titles               |
+| Text (Light)         | `--rtg-text-light`    | `#f6f4f0` | Emphasized text                |
+| Text (Muted)         | `--rtg-text-muted`    | `#a19e97` | Secondary / helper text        |
+| Text (Heading)       | `--rtg-text-heading`  | `#f6f4f0` | Headings, titles               |
 | Border / Divider     | `--rtg-border`        | `#3a3e45` | Card borders, dividers, rules  |
 | Stars (Filled)       | `--rtg-star-filled`   | `#fba919` | Filled rating stars            |
 | Stars (Your Rating)  | `--rtg-star-user`     | `#4ade80` | User's own rating stars        |
@@ -81,6 +81,21 @@ Note: Grade C text is overridden to `#1d1d1f` for contrast on the yellow backgro
 
 ---
 
+## Fitment State Colors
+
+Each state a tire can be in for a vehicle has its own hue, so they can sit side by side on one card or chip row without competing with the gold accent.
+
+| State            | Color     | Where                                                        |
+|------------------|-----------|--------------------------------------------------------------|
+| Factory fit      | `#4ade80` | Tire-page "Fits R2" chip                                     |
+| Load shortfall   | `#ef4444` | Card warning, tire-page chip and notice, compare warning     |
+| Third-party fit  | `#a78bfa` | Card note, "Fits R2 · 3rd-party wheels" chip and notice, wheel-guide badge, compare note |
+| Winter rated     | `#60a5fa` | "3PMS Rated" chip, Roamer efficiency pill                    |
+
+Tints follow one recipe: `color-mix(in srgb, <color> 10–12%, var(--rtg-bg-deep))` for the background, 40% over transparent for the border, the color itself for the icon. The load shortfall always wins a card's single fitment slot.
+
+---
+
 ## Typography
 
 ### Font Stacks
@@ -103,7 +118,7 @@ Note: Grade C text is overridden to `#1d1d1f` for contrast on the yellow backgro
 
 ### Icons
 
-Font Awesome 6 Free (solid + regular weights).
+Font Awesome 6 Free (solid + regular weights), rendered as classes and loaded by the site theme; the plugin ships no icon font.
 
 ---
 
@@ -152,6 +167,7 @@ Reduced motion: all transitions and animations are disabled when `prefers-reduce
 - Secondary / outline buttons use `color: var(--rtg-accent)` with transparent or border-only backgrounds.
 - Destructive buttons (delete, dismiss) use red (`#ef4444` / `#ee383a`).
 - Review/special-action buttons use purple (`#7c3aed`).
+- Third-party wheel fitment notes and chips use lavender (`#a78bfa`); see Fitment State Colors.
 
 ---
 

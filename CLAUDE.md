@@ -18,8 +18,9 @@ no component library. Icons via Font Awesome 6. Modern CSS features assumed
 | Border          | `#3a3e45` | Dividers, card edges           |
 | Accent          | `#fba919` | CTAs, links, focus rings, stars|
 | Secondary CTA   | `#7c3aed` | Alternate action (hover: `#6d28d9`) |
-| Destructive     | `#ef4444` | Delete, fitment warning, error |
-| Positive        | `#4ade80` | User-contributed highlights    |
+| Destructive     | `#ef4444` | Delete, load-index fitment warning, error |
+| Positive        | `#4ade80` | User-contributed highlights, factory-fit chip |
+| Third-party fit | `#a78bfa` | A size that fits only on aftermarket wheels: card note, tire-page chip and notice, drawer badge, compare note. Informational, never blocking; tints at 10–12% bg / 40% border |
 | Star empty      | `#2c2f34` | Unfilled rating slots (painted via `--rtg-star-empty-visible`, the token mixed 35/65 with muted text, outline at 0.8) |
 | Placeholder     | `#a6a39c` | Input placeholder text         |
 | Overlay dark    | `#15130e` | Text-on-accent, dark contrast  |
