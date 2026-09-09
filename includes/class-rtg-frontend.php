@@ -176,6 +176,10 @@ class RTG_Frontend {
                 'analyticsNonce'  => wp_create_nonce( 'rtg_analytics_nonce' ),
                 'adminSizes'      => array_values( RTG_Admin::get_dropdown_options( 'sizes' ) ),
                 'vehicleSizeMap'  => RTG_Database::get_vehicle_size_map(),
+                // Per vehicle, the sizes Rivian never offered that an
+                // aftermarket wheel in the guide takes: what the size menu
+                // suffixes and the card's "3rd-party wheels" note read.
+                'thirdPartySizes' => RTG_Database::get_third_party_size_map(),
                 // The load-index floor per vehicle (Tire Discovery settings)
                 // and the stale-price threshold: what the card's fitment
                 // warning and "price as of" hint are judged against.

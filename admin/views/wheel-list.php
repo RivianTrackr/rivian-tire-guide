@@ -71,6 +71,9 @@ $wheels = RTG_Database::get_all_wheels();
                                         <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-wheel-edit&id=' . $wheel['id'] ) ); ?>">
                                             <?php echo esc_html( $wheel['name'] ); ?>
                                         </a>
+                                        <?php if ( RTG_Database::is_third_party_wheel( $wheel ) ) : ?>
+                                            <span class="rtg-badge rtg-badge-third-party" title="Not a Rivian wheel. Its sizes are labeled 3rd-party wheels in the guide.">3rd-party</span>
+                                        <?php endif; ?>
                                     </strong>
                                     <div class="row-actions">
                                         <span class="edit">

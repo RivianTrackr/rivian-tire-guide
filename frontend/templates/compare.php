@@ -261,6 +261,16 @@ $rtg_settings = get_option( 'rtg_settings', array() );
       font-family: inherit;
     }
     .cmp-fitment-warn i { margin-top: 2px; }
+    /* A size that fits only on 3rd-party wheels: same shape, lavender. */
+    .cmp-fitment-note {
+      display: inline-flex; align-items: flex-start; gap: 6px;
+      margin-top: 4px; padding: 4px 8px; border-radius: 6px;
+      font-size: 11px; font-weight: 600; line-height: 1.35; text-align: left;
+      color: #ece9e4;
+      background: color-mix(in srgb, #a78bfa 12%, #121418);
+      border: 1px solid color-mix(in srgb, #a78bfa 40%, transparent);
+    }
+    .cmp-fitment-note i { margin-top: 2px; color: #a78bfa; }
 
     /* --- Add another tire --- */
     .cmp-add {

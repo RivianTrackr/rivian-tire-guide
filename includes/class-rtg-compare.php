@@ -69,6 +69,7 @@ class RTG_Compare {
                 'guideUrl'        => RTG_Tire_Page::guide_url(),
                 'compareUrl'      => home_url( '/' . sanitize_title( $settings['compare_slug'] ?? 'tire-compare' ) . '/' ),
                 'vehicleSizeMap'  => RTG_Database::get_vehicle_size_map(),
+                'thirdPartySizes' => RTG_Database::get_third_party_size_map(),
                 'loadIndexFloors' => RTG_Fitment::floors(),
                 'stalePriceDays'  => RTG_Stale_Prices::stale_days(),
                 // The "in plain words" paragraph; empty when the advisor has no key.

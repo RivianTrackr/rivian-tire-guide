@@ -1795,6 +1795,16 @@
   margin-top: 1px;
   flex-shrink: 0;
 }
+/* A size that fits only on 3rd-party wheels: informational, never blocking.
+   Lavender because red already means "won't carry the truck", green means
+   factory fit, blue means winter rated, and amber is the accent. */
+.tire-card-fitment.is-third-party {
+  background: color-mix(in srgb, #a78bfa 10%, var(--rtg-bg-deep));
+  border-color: color-mix(in srgb, #a78bfa 40%, transparent);
+}
+.tire-card-fitment.is-third-party .tire-card-fitment-icon {
+  color: #a78bfa;
+}
 .tire-card-fitment-text {
   flex: 1;
   min-width: 0;
@@ -2397,6 +2407,55 @@
   letter-spacing: 0.04em;
   color: var(--rtg-text-muted);
   min-width: 34px;
+}
+/* Section headings inside a vehicle tab, shown only when it lists both
+   factory wheels and aftermarket setups. */
+.wheel-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rtg-text-muted);
+}
+.wheel-section-heading::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rtg-border);
+}
+.wheel-section-heading.is-third-party {
+  color: #a78bfa;
+}
+.wheel-card-grid + .wheel-section-heading {
+  margin-top: 18px;
+}
+.wheel-card {
+  position: relative;
+}
+.wheel-card-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: #a78bfa;
+  background: color-mix(in srgb, #a78bfa 18%, var(--rtg-bg-deep));
+  border: 1px solid color-mix(in srgb, #a78bfa 45%, transparent);
+}
+.wheel-card-note {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--rtg-text-muted);
 }
 .wheel-card-sizes code {
   background-color: var(--rtg-border);

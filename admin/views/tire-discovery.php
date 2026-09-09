@@ -82,6 +82,8 @@ $price_sync_max_change = intval( $settings['price_sync_max_change'] ?? 50 );
 $price_results         = RTG_Price_Sync::get_results();
 
 $vehicle_size_map = RTG_Database::get_vehicle_size_map();
+// Which of those sizes fit only on 3rd-party wheels, for the fits column.
+$third_party_map  = RTG_Database::get_third_party_size_map();
 $vehicle_minimums = RTG_Tire_Qualifier::get_vehicle_minimums();
 $vehicle_counts   = RTG_Candidates::get_vehicle_counts( $status_filter );
 
@@ -764,9 +766,14 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                     echo '<span style="color:var(--rtg-text-muted);">—</span>';
                                 } else {
                                     foreach ( $fits as $fit_vehicle ) {
+                                        // A fit on wheels Rivian never sold reads as such,
+                                        // so an 18" R2 candidate isn't mistaken for a factory size.
+                                        $fit_third = RTG_Fitment::third_party_entry( $candidate['size'] ?? '', $fit_vehicle, $third_party_map );
                                         printf(
-                                            '<span class="rtg-badge" style="margin-right:4px;">%s</span>',
-                                            esc_html( $fit_vehicle )
+                                            '<span class="rtg-badge%s" style="margin-right:4px;"%s>%s</span>',
+                                            $fit_third ? ' rtg-badge-third-party' : '',
+                                            $fit_third ? ' title="Fits only on 3rd-party wheels"' : '',
+                                            esc_html( $fit_vehicle . ( $fit_third ? ' · 3rd-party' : '' ) )
                                         );
                                     }
                                 }

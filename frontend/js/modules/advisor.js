@@ -16,6 +16,7 @@
  */
 
 import { state } from './state.js';
+import { thirdPartyEntry } from './fitment.js';
 import {
   getSelectedVehicle, setActiveVehicle, cascadeVehicleToSizes,
   filterAndRender, restoreDetachedFilterOptions
@@ -30,6 +31,11 @@ function settings() {
 function sizeMap() {
   const s = (typeof rtgData !== 'undefined' && rtgData.settings) ? rtgData.settings : {};
   return s.vehicleSizeMap && typeof s.vehicleSizeMap === 'object' && !Array.isArray(s.vehicleSizeMap) ? s.vehicleSizeMap : {};
+}
+
+function thirdPartyMap() {
+  const s = (typeof rtgData !== 'undefined' && rtgData.settings) ? rtgData.settings : {};
+  return s.thirdPartySizes && typeof s.thirdPartySizes === 'object' && !Array.isArray(s.thirdPartySizes) ? s.thirdPartySizes : {};
 }
 
 function el(tag, className, text) {
@@ -105,7 +111,10 @@ function buildForm(form, defaults) {
       sizes = Array.from(all).sort();
     }
     sizes.forEach(s => {
-      const o = el('option', '', s);
+      // A size the chosen Rivian takes only on aftermarket wheels says so;
+      // picking it is how the owner tells the advisor they have those wheels.
+      const third = vehicle && thirdPartyEntry(s, vehicle, thirdPartyMap());
+      const o = el('option', '', third ? `${s} · 3rd-party wheels` : s);
       o.value = s;
       sizeSel.appendChild(o);
     });

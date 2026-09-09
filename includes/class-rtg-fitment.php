@@ -103,7 +103,7 @@ class RTG_Fitment {
      * @return array[] Each ['vehicle', 'floor', 'ok'], only for fitting sizes
      *                 and only when the load index is known.
      */
-    public static function verdicts( $tire, $map, $floors ) {
+    public static function verdicts( $tire, $map, $floors, $third_party = array() ) {
         $load_index = self::parse_load_index( $tire['load_index'] ?? '' );
         if ( ! $load_index ) {
             return array();
@@ -121,14 +121,95 @@ class RTG_Fitment {
             if ( $floor <= 0 ) {
                 continue;
             }
+            $entry = self::third_party_entry( $size, $name, $third_party );
             $out[] = array(
-                'vehicle' => $name,
-                'floor'   => $floor,
-                'ok'      => $load_index >= $floor,
+                'vehicle'     => $name,
+                'floor'       => $floor,
+                'ok'          => $load_index >= $floor,
+                'third_party' => null !== $entry,
+                'note'        => $entry ? $entry['note'] : '',
             );
         }
 
         return $out;
+    }
+
+    /**
+     * The third-party entry for a size on a vehicle, if it is one.
+     *
+     * @param string $size        Tire size, any case.
+     * @param string $vehicle     Vehicle group (R1, R2).
+     * @param array  $third_party Vehicle => [ size => [ 'wheel', 'note' ] ] (RTG_Database::get_third_party_size_map()).
+     * @return array|null [ 'wheel' => ..., 'note' => ... ] or null when the size is a factory size or unknown.
+     */
+    public static function third_party_entry( $size, $vehicle, $third_party ) {
+        $size  = strtolower( trim( (string) $size ) );
+        $sizes = (array) ( $third_party[ $vehicle ] ?? array() );
+        foreach ( $sizes as $listed => $entry ) {
+            if ( strtolower( trim( (string) $listed ) ) === $size ) {
+                return array(
+                    'wheel' => (string) ( $entry['wheel'] ?? '' ),
+                    'note'  => (string) ( $entry['note'] ?? '' ),
+                );
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Which vehicles take this tire only on third-party wheels.
+     *
+     * With a vehicle named, only that vehicle is judged. Without one, every
+     * vehicle in the third-party map is. Unlike the load-index rule this
+     * needs no load index: the question is about the size alone.
+     *
+     * @param array  $tire        Row with size.
+     * @param array  $third_party Vehicle => [ size => [ 'wheel', 'note' ] ].
+     * @param string $vehicle     Chosen vehicle, or '' for every vehicle.
+     * @return array[] Each [ 'vehicle', 'wheel', 'note' ], in map order.
+     */
+    public static function third_party_fits( $tire, $third_party, $vehicle = '' ) {
+        $size     = (string) ( $tire['size'] ?? '' );
+        $vehicles = $vehicle ? array( $vehicle ) : array_keys( (array) $third_party );
+        $out      = array();
+        foreach ( $vehicles as $name ) {
+            $entry = self::third_party_entry( $size, $name, $third_party );
+            if ( $entry ) {
+                $out[] = array_merge( array( 'vehicle' => $name ), $entry );
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * The rim diameter a size names, e.g. 18 for 245/60R18.
+     *
+     * @param string $size
+     * @return int 0 when the size has none.
+     */
+    public static function rim_inches( $size ) {
+        return preg_match( '/R(\d{2})/i', (string) $size, $m ) ? (int) $m[1] : 0;
+    }
+
+    /**
+     * One sentence for a third-party note.
+     *
+     *   "Fits R2 on 3rd-party 18\" wheels only. Not a factory size, so fitment may vary."
+     *
+     * @param string  $size Tire size, for the rim diameter.
+     * @param array[] $fits From third_party_fits().
+     * @return string Empty when there is nothing to say.
+     */
+    public static function describe_third_party( $size, $fits ) {
+        if ( empty( $fits ) ) {
+            return '';
+        }
+        $names = array_column( $fits, 'vehicle' );
+        $last  = array_pop( $names );
+        $who   = $names ? implode( ', ', $names ) . ' and ' . $last : $last;
+        $rim   = self::rim_inches( $size );
+        $on    = $rim ? sprintf( '3rd-party %d" wheels', $rim ) : '3rd-party wheels';
+        return sprintf( 'Fits %s on %s only. Not a factory size, so fitment may vary.', $who, $on );
     }
 
     /**

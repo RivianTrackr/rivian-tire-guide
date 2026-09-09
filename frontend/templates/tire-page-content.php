@@ -65,8 +65,9 @@ $star_counts  = $review_tools ? RTG_Database::get_tire_review_star_counts( $tire
 // Load-index fitment: every vehicle this size fits, pass or fail. A visitor
 // from a search has pressed no vehicle toggle, so the page answers for all.
 $rtg_tp_vehicle_map = RTG_Database::get_vehicle_size_map();
+$rtg_tp_third_party = RTG_Database::get_third_party_size_map();
 $rtg_tp_floors      = RTG_Fitment::floors();
-$rtg_tp_verdicts    = RTG_Fitment::verdicts( $tire, $rtg_tp_vehicle_map, $rtg_tp_floors );
+$rtg_tp_verdicts    = RTG_Fitment::verdicts( $tire, $rtg_tp_vehicle_map, $rtg_tp_floors, $rtg_tp_third_party );
 $rtg_tp_load_index  = RTG_Fitment::parse_load_index( $tire['load_index'] ?? '' );
 $rtg_tp_fit_ok      = array_values( array_filter( $rtg_tp_verdicts, function ( $v ) {
     return $v['ok'];
@@ -74,6 +75,10 @@ $rtg_tp_fit_ok      = array_values( array_filter( $rtg_tp_verdicts, function ( $
 $rtg_tp_fit_fails   = array_values( array_filter( $rtg_tp_verdicts, function ( $v ) {
     return ! $v['ok'];
 } ) );
+// The vehicles that take this size only on 3rd-party wheels. Judged from the
+// size alone, so a tire with no load index still gets the notice.
+$rtg_tp_fit_3p      = RTG_Fitment::third_party_fits( $tire, $rtg_tp_third_party );
+$rtg_tp_3p_names    = array_column( $rtg_tp_fit_3p, 'vehicle' );
 
 // Price presentation: the set-of-four figure and how fresh the price is.
 $rtg_tp_price     = (float) ( $tire['price'] ?? 0 );
@@ -117,9 +122,19 @@ $rtg_tp_glance = '';
     $fail_names = array_column( $rtg_tp_fit_fails, 'vehicle' );
     $fit_clause = '';
     if ( $fit_names ) {
-        $fit_clause = ' that fits the ' . ( count( $fit_names ) > 1
-            ? implode( ', ', array_slice( $fit_names, 0, -1 ) ) . ' and ' . end( $fit_names )
-            : $fit_names[0] );
+        // A 3rd-party fit is named as such: the snippet must never promise
+        // a factory fit. "the R1, and the R2 on aftermarket wheels".
+        $factory_names = array_values( array_diff( $fit_names, $rtg_tp_3p_names ) );
+        $third_names   = array_values( array_intersect( $fit_names, $rtg_tp_3p_names ) );
+        $join          = function ( $names ) {
+            return count( $names ) > 1
+                ? implode( ', ', array_slice( $names, 0, -1 ) ) . ' and ' . end( $names )
+                : $names[0];
+        };
+        $fit_clause = ' that fits the ' . ( $factory_names ? $join( $factory_names ) : '' );
+        if ( $third_names ) {
+            $fit_clause .= ( $factory_names ? ', and the ' : '' ) . $join( $third_names ) . ' on aftermarket wheels';
+        }
         if ( $fail_names ) {
             $fit_clause .= ' but not the ' . implode( ' or ', $fail_names );
         }
@@ -148,6 +163,15 @@ if ( $size ) {
     $rtg_tp_chips[] = array( 'text' => $size . ( $diameter_display ? ' · ' . $diameter_display : '' ), 'class' => 'rtg-tp-chip-size' );
 }
 foreach ( $rtg_tp_verdicts as $rtg_tp_v ) {
+    if ( $rtg_tp_v['ok'] && $rtg_tp_v['third_party'] ) {
+        // A fit, but only on wheels Rivian never sold: lavender, not green.
+        $rtg_tp_chips[] = array(
+            'text'  => 'Fits ' . $rtg_tp_v['vehicle'] . ' · 3rd-party wheels',
+            'class' => 'rtg-tp-chip-fit-3p',
+            'icon'  => 'fa-circle-info',
+        );
+        continue;
+    }
     $rtg_tp_chips[] = array(
         // A pass is two words — the load index tile carries the numbers. A
         // failure keeps them, because there the detail is the warning.
@@ -157,6 +181,34 @@ foreach ( $rtg_tp_verdicts as $rtg_tp_v ) {
         'class' => $rtg_tp_v['ok'] ? 'rtg-tp-chip-fit' : 'rtg-tp-chip-fit-bad',
         'icon'  => $rtg_tp_v['ok'] ? 'fa-check' : 'fa-triangle-exclamation',
     );
+}
+// With no load index there are no verdicts, but the size still says which
+// vehicles take it on 3rd-party wheels.
+if ( ! $rtg_tp_verdicts ) {
+    foreach ( $rtg_tp_fit_3p as $rtg_tp_f ) {
+        $rtg_tp_chips[] = array(
+            'text'  => 'Fits ' . $rtg_tp_f['vehicle'] . ' · 3rd-party wheels',
+            'class' => 'rtg-tp-chip-fit-3p',
+            'icon'  => 'fa-circle-info',
+        );
+    }
+}
+// The notice under the chips: which vehicles, the rim size Rivian never
+// offered, and the admin's note for the wheel.
+$rtg_tp_3p_notice = '';
+if ( $rtg_tp_fit_3p ) {
+    $rtg_tp_rim = RTG_Fitment::rim_inches( $size );
+    $rtg_tp_who = count( $rtg_tp_3p_names ) > 1
+        ? implode( ', ', array_slice( $rtg_tp_3p_names, 0, -1 ) ) . ' or ' . end( $rtg_tp_3p_names )
+        : $rtg_tp_3p_names[0];
+    $rtg_tp_3p_notice = $rtg_tp_rim
+        ? sprintf( "Rivian doesn't sell the %s with %d-inch wheels.", $rtg_tp_who, $rtg_tp_rim )
+        : sprintf( "Rivian doesn't sell the %s in this size.", $rtg_tp_who );
+    $rtg_tp_3p_notice .= " This size fits on aftermarket wheels only, and whether it clears depends on your wheel's width and offset.";
+    $rtg_tp_3p_notes = array_values( array_unique( array_filter( array_column( $rtg_tp_fit_3p, 'note' ) ) ) );
+    if ( $rtg_tp_3p_notes ) {
+        $rtg_tp_3p_notice .= ' ' . implode( ' ', $rtg_tp_3p_notes );
+    }
 }
 if ( $category ) {
     $rtg_tp_chips[] = array( 'text' => $category, 'class' => '' );
@@ -177,9 +229,9 @@ if ( $rtg_tp_price > 0 && ! empty( $rtg_tp_freshness['show'] ) ) {
 $rtg_tp_load_meta = 'per-tire rating';
 if ( $rtg_tp_verdicts ) {
     $rtg_tp_load_meta = 1 === count( $rtg_tp_verdicts )
-        ? $rtg_tp_verdicts[0]['vehicle'] . ' minimum is ' . (int) $rtg_tp_verdicts[0]['floor']
+        ? $rtg_tp_verdicts[0]['vehicle'] . ' minimum is ' . (int) $rtg_tp_verdicts[0]['floor'] . ( $rtg_tp_verdicts[0]['third_party'] ? ' · 3rd-party size' : '' )
         : implode( ' · ', array_map( function ( $v ) {
-            return $v['vehicle'] . ' min ' . (int) $v['floor'];
+            return $v['vehicle'] . ' min ' . (int) $v['floor'] . ( $v['third_party'] ? ' (3rd-party)' : '' );
         }, $rtg_tp_verdicts ) );
 }
 $rtg_tp_tiles = array(
@@ -331,8 +383,9 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
      *
      * @param array $row         Tire row.
      * @param array $vehicle_map Vehicle => sizes.
+     * @param array $third_party Vehicle => [ size => [ 'wheel', 'note' ] ]; a fit listed here is labeled 3rd-party.
      */
-    function rtg_tire_page_related_row( $row, $vehicle_map ) {
+    function rtg_tire_page_related_row( $row, $vehicle_map, $third_party = array() ) {
         $url  = RTG_Tire_Page::tire_url( ! empty( $row['slug'] ) ? $row['slug'] : $row['tire_id'] );
         $img  = ! empty( $row['image'] ) ? esc_url( $row['image'] ) : '';
         $meta = array();
@@ -369,7 +422,11 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
           <?php if ( $fits ) : ?>
           <span class="rtg-tp-related-fits">
             <?php foreach ( $fits as $vehicle ) : ?>
+            <?php if ( RTG_Fitment::third_party_entry( $row_size, $vehicle, $third_party ) ) : ?>
+            <span class="rtg-tp-chip rtg-tp-chip-fit-3p"><i class="fa-solid fa-circle-info" aria-hidden="true"></i><?php echo esc_html( 'Fits ' . $vehicle . ' · 3rd-party wheels' ); ?></span>
+            <?php else : ?>
             <span class="rtg-tp-chip rtg-tp-chip-vehicle"><i class="fa-solid fa-car" aria-hidden="true"></i><?php echo esc_html( 'Fits ' . $vehicle ); ?></span>
+            <?php endif; ?>
             <?php endforeach; ?>
           </span>
           <?php endif; ?>
@@ -474,6 +531,9 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
   .rtg-tp .rtg-tp-chip-fit i { color: #4ade80; }
   .rtg-tp .rtg-tp-chip-fit-bad { background: color-mix(in srgb, #ef4444 12%, var(--rtg-tp-deep)); border-color: color-mix(in srgb, #ef4444 40%, transparent); }
   .rtg-tp .rtg-tp-chip-fit-bad i { color: #ef4444; }
+  /* Fits, but only on 3rd-party wheels: lavender, so it reads as "different, not dangerous" beside a red load warning. */
+  .rtg-tp .rtg-tp-chip-fit-3p { background: color-mix(in srgb, #a78bfa 12%, var(--rtg-tp-deep)); border-color: color-mix(in srgb, #a78bfa 40%, transparent); }
+  .rtg-tp .rtg-tp-chip-fit-3p i { color: #a78bfa; }
   .rtg-tp .rtg-tp-chip-3pms { background: color-mix(in srgb, #60a5fa 14%, var(--rtg-tp-deep)); border-color: color-mix(in srgb, #60a5fa 40%, transparent); }
   .rtg-tp .rtg-tp-chip-3pms i { color: #60a5fa; }
   .rtg-tp .rtg-tp-chip-vehicle { background: color-mix(in srgb, var(--rtg-tp-accent) 22%, var(--rtg-tp-deep)); border-color: color-mix(in srgb, var(--rtg-tp-accent) 55%, transparent); color: var(--rtg-tp-heading); }
@@ -486,6 +546,14 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
     font-size: 14px; line-height: 1.5;
   }
   .rtg-tp .rtg-tp-fitment-warning i { color: #ef4444; margin-top: 3px; }
+  .rtg-tp .rtg-tp-fitment-note {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin: 0; padding: 12px 14px; border-radius: 10px;
+    background: color-mix(in srgb, #a78bfa 10%, var(--rtg-tp-deep));
+    border: 1px solid color-mix(in srgb, #a78bfa 40%, transparent);
+    font-size: 14px; line-height: 1.5;
+  }
+  .rtg-tp .rtg-tp-fitment-note i { color: #a78bfa; margin-top: 3px; }
 
   /* --- Key-stat tiles --- */
   .rtg-tp .rtg-tp-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 2px 0 0; }
@@ -725,6 +793,13 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
       </div>
       <?php endif; ?>
 
+      <?php if ( $rtg_tp_3p_notice ) : ?>
+      <div class="rtg-tp-fitment-note" role="note">
+        <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+        <span><?php echo esc_html( $rtg_tp_3p_notice ); ?></span>
+      </div>
+      <?php endif; ?>
+
       <p class="rtg-tp-glance"><?php echo esc_html( $rtg_tp_glance ); ?></p>
 
       <div class="rtg-tp-rating">
@@ -818,7 +893,7 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
       <div class="rtg-tp-section-head"><h2 class="rtg-tp-section">Other sizes of this tire</h2></div>
       <div class="rtg-tp-related-list">
         <?php foreach ( $rtg_tp_other_sizes as $rtg_tp_row ) {
-            rtg_tire_page_related_row( $rtg_tp_row, $rtg_tp_vehicle_map );
+            rtg_tire_page_related_row( $rtg_tp_row, $rtg_tp_vehicle_map, $rtg_tp_third_party );
         } ?>
       </div>
       <?php endif; ?>
@@ -828,7 +903,7 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
       <div class="rtg-tp-section-caption">Best real-world efficiency first.</div>
       <div class="rtg-tp-related-list">
         <?php foreach ( $rtg_tp_similar as $rtg_tp_row ) {
-            rtg_tire_page_related_row( $rtg_tp_row, $rtg_tp_vehicle_map );
+            rtg_tire_page_related_row( $rtg_tp_row, $rtg_tp_vehicle_map, $rtg_tp_third_party );
         } ?>
       </div>
       <?php endif; ?>

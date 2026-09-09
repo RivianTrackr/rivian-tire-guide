@@ -13,6 +13,10 @@ import { loadTireRatings, updateRatingDisplay } from './ratings.js';
 import { isPreciseMatch } from './search.js';
 import { isServerSide, serverSideFilterAndRender } from './server.js';
 import { rememberVehicle, rememberedVehicle } from './vehicle-memory.js';
+import { thirdPartyEntry } from './fitment.js';
+
+/** What a size that fits only on aftermarket wheels says after its name in the size menu. */
+export const THIRD_PARTY_SUFFIX = '3rd-party wheels';
 
 export function getSelectedVehicle() {
   const active = document.querySelector('.rtg-vehicle-btn.active');
@@ -88,7 +92,7 @@ export function cascadeVehicleToSizes(vehicle, allSizes) {
 
   if (vehicle && state.vehicleSizeMap[vehicle]) {
     const vehicleSizes = state.vehicleSizeMap[vehicle];
-    populateSizeDropdownGrouped("filterSize", vehicleSizes);
+    populateSizeDropdownGrouped("filterSize", vehicleSizes, vehicle);
   } else {
     populateSizeDropdownGrouped("filterSize", allSizes);
   }
@@ -744,7 +748,7 @@ function stampAndLabel(select, counts, stash, selected) {
     opt.dataset.baseText = baseText;
 
     const count = counts.get(baseText) || 0;
-    opt.textContent = `${baseText} (${count})`;
+    opt.textContent = `${optionLabel(opt, baseText)} (${count})`;
     opt.disabled = false;
 
     // Cleared in case an earlier release marked this option hidden — that
@@ -875,7 +879,23 @@ export function populateDropdown(id, values) {
   });
 }
 
-export function populateSizeDropdownGrouped(id, sizesOrRows) {
+/**
+ * A size's suffix in the size menu: "3rd-party wheels" when the pressed
+ * vehicle takes it only on aftermarket wheels, '' otherwise (including with
+ * no vehicle pressed, when 275/65R18 is a plain R1 size).
+ */
+export function sizeOptionSuffix(size, vehicle) {
+  if (!vehicle) return '';
+  const entry = thirdPartyEntry(size, vehicle, state.thirdPartySizes);
+  return entry ? THIRD_PARTY_SUFFIX : '';
+}
+
+/** The label an option shows: its size, then its suffix when it has one. */
+function optionLabel(opt, baseText) {
+  return opt.dataset.suffix ? `${baseText} · ${opt.dataset.suffix}` : baseText;
+}
+
+export function populateSizeDropdownGrouped(id, sizesOrRows, vehicle = '') {
   const select = getDOMElement(id);
   if (!select) return;
 
@@ -915,8 +935,10 @@ export function populateSizeDropdownGrouped(id, sizesOrRows) {
     groups[rim].sort().forEach(size => {
       const option = document.createElement("option");
       option.value = size;
-      option.textContent = size;
       option.dataset.baseText = size;
+      const suffix = sizeOptionSuffix(size, vehicle);
+      if (suffix) option.dataset.suffix = suffix;
+      option.textContent = optionLabel(option, size);
       optgroup.appendChild(option);
     });
 

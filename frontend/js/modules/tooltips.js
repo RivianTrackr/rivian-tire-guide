@@ -5,12 +5,16 @@
  */
 
 import { state } from './state.js';
-import { rtgColor, rtgIcon } from './helpers.js';
+import { rtgColor, rtgIcon, escapeHTML } from './helpers.js';
 
 export const TOOLTIP_DATA = {
   'Load Index': {
     title: 'Load Index',
     content: 'Rivian vehicles require tires with a high enough load index to safely carry the vehicle\'s weight. R1 vehicles (R1T, R1S) require a minimum load index of 116, while R2 vehicles require a minimum of 112. Using a lower load index can affect safety, handling, and durability.'
+  },
+  '3rd-party wheels': {
+    title: '3rd-party wheels',
+    content: 'Rivian doesn\'t sell this vehicle with wheels in this size. The size fits only on aftermarket wheels, and whether it clears depends on the wheel\'s width and offset, so check with the wheel maker before buying. The load-index rule still applies.'
   },
   '3PMS Rated': {
     title: '3PMS Rating',
@@ -135,6 +139,12 @@ export function showTooltipModal(tooltipKey, triggerEl) {
   let extraContent = '';
   if (triggerEl && triggerEl.dataset && triggerEl.dataset.tooltipExtra) {
     extraContent = '<br><br><strong style="color:#60a5fa;">This tire:</strong> ' + triggerEl.dataset.tooltipExtra;
+  }
+  // The admin's fitment note for a 3rd-party wheel, under the wheel's name.
+  // Both are admin text and land here escaped.
+  if (triggerEl && triggerEl.dataset && triggerEl.dataset.tooltipNote) {
+    const who = triggerEl.dataset.tooltipWheel || 'This wheel';
+    extraContent += '<br><br><strong style="color:#a78bfa;">' + escapeHTML(who) + ':</strong> ' + escapeHTML(triggerEl.dataset.tooltipNote);
   }
 
   const overlay = document.createElement('div');
