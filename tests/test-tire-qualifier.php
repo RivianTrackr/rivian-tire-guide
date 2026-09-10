@@ -43,6 +43,8 @@ class Test_RTG_Tire_Qualifier extends WP_UnitTestCase {
         $this->assertSame( $expected, RTG_Tire_Qualifier::normalize_size( '275/65 R18' ) );
         $this->assertSame( $expected, RTG_Tire_Qualifier::normalize_size( '275/65ZR18' ) );
         $this->assertSame( $expected, RTG_Tire_Qualifier::normalize_size( '  275/65r18  ' ) );
+        $this->assertSame( $expected, RTG_Tire_Qualifier::normalize_size( '275x65R18' ), "SimpleTire's feed writes the size with an x" );
+        $this->assertSame( $expected, RTG_Tire_Qualifier::normalize_size( 'LT275X65R18' ) );
     }
 
     /**
@@ -102,6 +104,30 @@ class Test_RTG_Tire_Qualifier extends WP_UnitTestCase {
         $this->assertSame( '275/60R20', $specs['size'] );
         $this->assertSame( '115', $specs['load_index'] );
         $this->assertSame( 'Wrangler Territory HT', $specs['model'] );
+    }
+
+    /**
+     * SimpleTire's CJ feed titles the size with an x. This exact title was a
+     * tire the guide's owner could see at the retailer and the nightly run
+     * never surfaced: the keyword never matched, and had it been fetched the
+     * size would not have parsed either.
+     */
+    public function test_parse_specs_reads_simpletires_x_notation() {
+        $specs = RTG_Tire_Qualifier::parse_specs( array(
+            'title' => 'Nokian One H/T 255x70R18 116H All Season Light Truck Tires',
+            'brand' => 'Nokian',
+        ) );
+
+        $this->assertSame( '255/70R18', $specs['size'] );
+        $this->assertSame( '116', $specs['load_index'] );
+        $this->assertSame( 'H', $specs['speed_rating'] );
+        $this->assertSame( 'One H/T', $specs['model'] );
+    }
+
+    public function test_size_keywords_cover_both_spellings() {
+        $this->assertSame( array( '255/70R18', '255x70R18' ), RTG_Tire_Qualifier::size_keywords( '255/70R18' ) );
+        $this->assertSame( array( '255/70R18', '255x70R18' ), RTG_Tire_Qualifier::size_keywords( ' 255x70r18 ' ), 'any accepted spelling yields the same pair' );
+        $this->assertSame( array( 'Michelin Defender' ), RTG_Tire_Qualifier::size_keywords( 'Michelin Defender' ), 'a non-size keyword is sent as typed' );
     }
 
     /**
