@@ -270,11 +270,13 @@ parts it can see.
    part of the release, never left for later. Plain language, no file or
    class names, no test counts: what a visitor to the guide would notice and
    why it helps them. One `## version - date` heading, an optional intro
-   line, then bullets that open with a bold lead sentence. If the release
-   truly changes nothing an owner could see, skip the note and write the
-   phrase "Nothing visible to owners" in that version's changelog entry
-   instead. `tests/contract/whats-new.php` fails the build when neither is
-   present.
+   line, then bullets that open with a bold lead sentence. For a release
+   that is only polish or fixes, with nothing an owner would go looking for,
+   the note is one bullet: **Bug fixes and improvements.** Only a release
+   that truly changes nothing an owner could see skips the note, and then
+   the phrase "Nothing visible to owners" goes in that version's changelog
+   entry instead. `tests/contract/whats-new.php` fails the build when
+   neither is present.
 4. **Build and test**: `npm run build` (commit the minified assets),
    `npm test`, `php -l` on touched PHP, and `php tests/contract/*.php`.
 5. **Commit, push, PR, merge on green** with a merge commit titled

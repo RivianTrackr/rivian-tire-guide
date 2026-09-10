@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [2.4.1] - 2026-09-10
 
 ### Changed
-- **Wheel guide cards without a photo get a placeholder.** A wheel row with no image used to render a card with no image slot at all, so it sat shorter than its neighbors; a third-party setup like "18-inch aftermarket wheels" represents a category, not one product, and has no honest photo. `tire-guide.php` now renders a `.wheel-card-img-placeholder` in the slot: an inline wheel glyph (SVG, `currentColor`) on the deep background at muted text color, the same 16:10 aspect as a photo. Applies to any imageless wheel, factory or third-party. No What's New entry, at the owner's request: "Nothing visible to owners" for the release check.
+- **Wheel guide cards without a photo get a placeholder.** A wheel row with no image used to render a card with no image slot at all, so it sat shorter than its neighbors; a third-party setup like "18-inch aftermarket wheels" represents a category, not one product, and has no honest photo. `tire-guide.php` now renders a `.wheel-card-img-placeholder` in the slot: an inline wheel glyph (SVG, `currentColor`) on the deep background at muted text color, the same 16:10 aspect as a photo. Applies to any imageless wheel, factory or third-party. The owner-facing note for a release like this is the standing "Bug fixes and improvements" line.
 
 ## [2.4.0] - 2026-09-09
 
