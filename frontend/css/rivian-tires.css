@@ -2383,6 +2383,20 @@
   object-fit: cover;
   border-bottom: 1px solid var(--rtg-border);
 }
+/* A card with no photo keeps the image slot, holding a muted wheel glyph so
+   every card in the grid is the same height. */
+.wheel-card-img-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--rtg-bg-deep);
+  color: var(--rtg-text-muted);
+  opacity: 0.6;
+}
+.wheel-card-img-placeholder svg {
+  width: 56px;
+  height: 56px;
+}
 .wheel-card-body {
   padding: 12px 14px;
   display: flex;

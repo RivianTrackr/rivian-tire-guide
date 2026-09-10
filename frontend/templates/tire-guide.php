@@ -201,6 +201,16 @@ if ( ! empty( $rtg_wheels ) ) :
           <?php endif; ?>
           <?php if ( ! empty( $rtg_wheel['image'] ) ) : ?>
             <img class="wheel-card-img" src="<?php echo esc_url( $rtg_wheel['image'] ); ?>" alt="<?php echo esc_attr( $rtg_wheel['name'] ); ?>" />
+          <?php else : ?>
+            <?php // No photo: a wheel glyph keeps the card the height of its neighbors without implying a product. ?>
+            <div class="wheel-card-img wheel-card-img-placeholder" aria-hidden="true">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <circle cx="32" cy="32" r="28" />
+                <circle cx="32" cy="32" r="19" />
+                <circle cx="32" cy="32" r="5" />
+                <path d="M32 13v14M32 37v14M13 32h14M37 32h14M18.6 18.6l9.9 9.9M35.5 35.5l9.9 9.9M45.4 18.6l-9.9 9.9M28.5 35.5l-9.9 9.9" />
+              </svg>
+            </div>
           <?php endif; ?>
           <div class="wheel-card-body">
             <strong class="wheel-card-name"><?php echo esc_html( $rtg_wheel['name'] ); ?></strong>
