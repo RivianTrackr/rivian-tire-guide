@@ -400,7 +400,6 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
                 break;
             }
 
-            $offset    = 0;
             $collected = 0;
             $total     = null;
             $pages     = 0;
@@ -420,38 +419,59 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
             // catalogs do not look like that; a paging fault does.
             $unique_ids = array();
 
-            do {
-                $result = $this->query_keyword( $size, $offset );
+            // A feed writes one size several ways ("255/70R18" at Tire Rack,
+            // "255x70R18" at SimpleTire) and CJ's keyword search is literal,
+            // so each spelling is its own query. Results merge by product ID
+            // and the coverage figures below add up across spellings.
+            foreach ( RTG_Tire_Qualifier::size_keywords( $size ) as $keyword ) {
+                $offset   = 0;
+                $kw_read  = 0;
+                $kw_total = null;
+                $kw_pages = 0;
 
-                if ( '' !== $result['error'] ) {
-                    $failures[] = $size . ': ' . $result['error'];
-                    break;
-                }
+                do {
+                    $result = $this->query_keyword( $keyword, $offset );
 
-                $total    = $result['total_count'];
-                $returned = count( $result['products'] );
+                    if ( '' !== $result['error'] ) {
+                        $failures[] = $keyword . ': ' . $result['error'];
+                        break;
+                    }
 
-                foreach ( $result['products'] as $product ) {
-                    // A product can match several sizes' keywords; key by
-                    // external ID so it reaches the queue once.
-                    $products[ $product['external_id'] ] = $product;
-                    $unique_ids[ $product['external_id'] ] = true;
-                }
+                    $kw_total = $result['total_count'];
+                    $returned = count( $result['products'] );
 
-                $collected += $returned;
-                $offset    += $limit;
-                $pages++;
+                    foreach ( $result['products'] as $product ) {
+                        // A product can match several keywords; key by
+                        // external ID so it reaches the queue once.
+                        $products[ $product['external_id'] ] = $product;
+                        $unique_ids[ $product['external_id'] ] = true;
+                    }
 
-                // An empty page means the result set is exhausted whatever the
-                // reported total claims.
-                if ( 0 === $returned ) {
-                    break;
+                    $kw_read   += $returned;
+                    $collected += $returned;
+                    $offset    += $limit;
+                    $kw_pages++;
+                    $pages++;
+
+                    // An empty page means the result set is exhausted whatever
+                    // the reported total claims.
+                    if ( 0 === $returned ) {
+                        break;
+                    }
+
+                    if ( ( microtime( true ) - $started ) > $budget ) {
+                        break;
+                    }
+                } while ( $kw_pages < $max_pages && ( null === $kw_total || $kw_read < $kw_total ) );
+
+                if ( null !== $kw_total ) {
+                    $total = intval( $total ) + intval( $kw_total );
                 }
 
                 if ( ( microtime( true ) - $started ) > $budget ) {
                     break;
                 }
-            } while ( $pages < $max_pages && ( null === $total || $collected < $total ) );
+            }
 
             $this->last_coverage[ $size ] = array(
                 'received' => $collected,

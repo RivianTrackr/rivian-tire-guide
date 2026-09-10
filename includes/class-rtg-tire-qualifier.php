@@ -101,8 +101,9 @@ class RTG_Tire_Qualifier {
     /**
      * Normalize a tire size to the guide's canonical form.
      *
-     * Feeds write the same size as "LT275/65R18", "275/65 R18", "275/65ZR18"
-     * and "P275/65R18". All of those are the same fitment for our purposes.
+     * Feeds write the same size as "LT275/65R18", "275/65 R18", "275/65ZR18",
+     * "P275/65R18" and "275x65R18" (SimpleTire's product feed uses the x).
+     * All of those are the same fitment for our purposes.
      *
      * @param string $size Raw size string.
      * @return string Canonical size (e.g. 275/65R18), or '' if unparseable.
@@ -119,11 +120,34 @@ class RTG_Tire_Qualifier {
         // the numbers, and carrying the prefix would split one size in two.
         $size = preg_replace( '/^(?:LT|P|ST)/', '', $size );
 
-        if ( ! preg_match( '#^(\d{3})/(\d{2})[A-Z]?R(\d{2})#', $size, $m ) ) {
+        if ( ! preg_match( '#^(\d{3})[/X](\d{2})[A-Z]?R(\d{2})#', $size, $m ) ) {
             return '';
         }
 
         return $m[1] . '/' . $m[2] . 'R' . $m[3];
+    }
+
+    /**
+     * The spellings a retailer feed may write a size in, canonical first.
+     *
+     * CJ's keyword search is literal: a query for "255/70R18" never returns a
+     * listing titled "255x70R18", which is how SimpleTire's feed writes every
+     * size. A tire that plainly existed at the retailer never reached the
+     * queue while its slash-spelled neighbours did. The sweep queries each
+     * spelling and merges the results by product ID.
+     *
+     * @param string $size A size in any accepted notation.
+     * @return string[] Distinct keywords to query; the input alone when it is not a size.
+     */
+    public static function size_keywords( $size ) {
+        $canonical = self::normalize_size( $size );
+        if ( '' === $canonical ) {
+            return array( trim( (string) $size ) );
+        }
+        return array(
+            $canonical,
+            str_replace( '/', 'x', $canonical ),
+        );
     }
 
     /**
@@ -214,7 +238,8 @@ class RTG_Tire_Qualifier {
         // rating that follow it are what we parse next.
         $size_offset = null;
         $size_length = 0;
-        if ( preg_match( '#\b(?:LT|P|ST)?(\d{3})\s*/\s*(\d{2})\s*[A-Z]?R\s*(\d{2})\b#i', $text, $m, PREG_OFFSET_CAPTURE ) ) {
+        // The separator is a slash or, in SimpleTire's feed, an x.
+        if ( preg_match( '#\b(?:LT|P|ST)?(\d{3})\s*[/x]\s*(\d{2})\s*[A-Z]?R\s*(\d{2})\b#i', $text, $m, PREG_OFFSET_CAPTURE ) ) {
             $size_offset = $m[0][1];
             $size_length = strlen( $m[0][0] );
 

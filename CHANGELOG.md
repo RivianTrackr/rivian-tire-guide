@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.4.2] - 2026-09-10
+
+### Fixed
+- **Tire Discovery missed every SimpleTire listing whose size is written with an x.** SimpleTire's CJ product feed titles a tire "Nokian One H/T 255x70R18 116H …", and CJ's keyword search is literal, so the nightly query for "255/70R18" never returned it while slash-spelled listings in the same size came through. Had it been fetched, `normalize_size()` and the title regex in `parse_specs()` only accepted the slash form and would have filed it as "no tire size could be read." Three changes in `class-rtg-tire-qualifier.php` and `class-rtg-catalog-source-cj.php`: `normalize_size()` and the title regex accept `x` or `X` as the separator; new `size_keywords()` returns both spellings of a size, canonical first; the CJ sweep queries each spelling for a size and merges the results by product ID, with the per-size coverage figures (received, unique, pages, total) adding up across spellings so the run summary and the truncation warning keep their shape. Sizes the run queries doubled, so a run that was near its budget may now report more sizes skipped until the next run; the cursor rotation already handles that.
+
+### Tests
+- `tests/test-tire-qualifier.php`: the x spelling normalizes, the exact SimpleTire title parses (size, load index 116, speed H, model "One H/T"), and `size_keywords()` yields both spellings from either input and passes a non-size through.
+
+The owner-facing note for a release like this is the standing "Bug fixes and improvements" line.
+
 ## [2.4.1] - 2026-09-10
 
 ### Changed
