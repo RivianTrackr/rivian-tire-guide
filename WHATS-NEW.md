@@ -13,6 +13,7 @@ skipped. Keep it friendly: no file names, no class names, no test counts.
 
 ## 2.4.2 - 2026-09-10
 
+- **Size menu headings you can read on Windows.** The wheel-size headings in the size dropdown were showing up black on the dark menu in Chrome and Edge on Windows. They now match the rest of the menu everywhere.
 - **Bug fixes and improvements.**
 
 ## 2.4.1 - 2026-09-10

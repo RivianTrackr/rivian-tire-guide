@@ -287,6 +287,20 @@
   border-color: var(--rtg-accent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--rtg-accent) 25%, transparent);
 }
+/* The native popup. Windows Chrome and Edge paint it with the select's
+   background but give optgroup labels the UA default (black, bold) unless
+   the page sets one, so the "18\" Wheels" headings vanished on the dark
+   popup for a reader there. Options and group labels are painted
+   explicitly; macOS and Firefox were already inheriting. */
+.filter-group select option,
+.filter-group select optgroup,
+.sort-wrapper select option {
+  background-color: var(--rtg-bg-input);
+  color: var(--rtg-text-primary);
+}
+.filter-group select optgroup {
+  font-weight: 700;
+}
 .filter-group select option:disabled {
   color: #79766f;
 }
