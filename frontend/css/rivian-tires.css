@@ -22,149 +22,49 @@
   --rtg-star-empty-visible: color-mix(in srgb, var(--rtg-star-empty) 35%, var(--rtg-text-muted));
 }
 
-/* === Mobile Filter Toggle === */
-.toggle-filters-btn {
-  display: none;
-  background: var(--rtg-bg-card);
-  color: var(--rtg-text-heading);
-  font-weight: 600;
-  font-size: 15px;
-  padding: 14px 16px;
-  border: 1px solid var(--rtg-border);
-  border-radius: 10px;
-  margin: 0 0 12px;
-  cursor: pointer;
-  transition: all .15s;
-}
-.toggle-filters-btn:hover {
-  border-color: var(--rtg-accent);
-  color: var(--rtg-accent);
-}
-.mobile-filter-content {
-  display: block;
-  max-height: none;
-  overflow: visible;
-  transition: none;
-}
-@media (max-width: 600px) {
-  .mobile-filter-content {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
-  }
-  .mobile-filter-content.open {
-    max-height: none;
-  }
-  .toggle-filters-btn {
-    display: block;
-  }
-  .switch-row {
-    grid-template-columns: 1fr;
-  }
-  .switch-label {
-    justify-content: space-between;
-  }
-}
-
-/* === Search Row (input + Search button + optional AI button) === */
-.rtg-search-section {
-  margin-bottom: 20px;
-}
-
+/* === Search row: the field, and the door to the advisor ===
+   Search runs as the visitor types (the entry point debounces the field),
+   so there is no Search button; the magnifier sits in the field. */
 .rtg-search-row {
   display: flex !important;
   align-items: center !important;
-  gap: 8px !important;
+  gap: 10px !important;
 }
-
 .rtg-search-row .search-container {
   flex: 1 !important;
   min-width: 0 !important;
 }
-
-/* Search button */
-.rtg-search-btn {
-  flex-shrink: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 6px !important;
-  height: 44px !important;
-  min-width: 44px !important;
-  padding: 0 14px !important;
-  margin: 0 !important;
-  background: var(--rtg-bg-input) !important;
-  color: var(--rtg-text-primary) !important;
-  border: 2px solid transparent !important;
-  border-radius: 8px !important;
-  cursor: pointer !important;
-  font-size: 14px !important;
-  font-weight: 600 !important;
-  line-height: 1 !important;
-  white-space: nowrap !important;
-  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
-  position: static !important;
-  transform: none !important;
+.rtg-search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
+  color: var(--rtg-text-muted);
+  pointer-events: none;
 }
 
-.rtg-search-btn i {
-  font-size: 14px !important;
-}
-
-.rtg-search-btn:hover {
-  background: var(--rtg-accent) !important;
-  color: #15130e !important;
-}
-
-.rtg-search-btn:active {
-  transform: scale(0.93) !important;
-}
-
-
-/* === Filter Section — Card style matching compare page === */
+/* === Filter panel ===
+   One card: search row, the filter row (vehicle switch + chips), and the
+   results line. No header: the controls say what the panel is for. The
+   card is not overflow-hidden because chip popovers hang below it. */
 .filter-wrapper {
+  position: relative;
   background: var(--rtg-bg-card);
   border: 1px solid var(--rtg-border);
   border-radius: 12px;
   padding: 0;
   color: var(--rtg-text-primary);
   margin: 24px auto;
-  overflow: hidden;
-}
-.filter-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--rtg-text-heading);
-  padding: 14px 20px;
-  margin: 0;
-  background: var(--rtg-bg-primary);
-  border-bottom: 1px solid var(--rtg-border);
-}
-.filter-header-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.filter-header i {
-  color: var(--rtg-accent);
-  font-size: 16px;
-  width: 20px;
-  text-align: center;
-}
-.filter-header .rtg-clear-filters-btn {
-  height: 34px;
-  padding: 6px 12px;
-  font-size: 12px;
-  margin: 0;
 }
 .filter-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   padding: 20px;
 }
 
-/* === Search === */
+/* === Search field === */
 .search-container {
   position: relative !important;
   width: 100%;
@@ -172,24 +72,29 @@
 }
 .search-input {
   width: 100% !important;
-  padding: 12px 16px !important;
-  border-radius: 8px !important;
+  height: 48px !important;
+  padding: 0 16px 0 44px !important;
+  border-radius: 10px !important;
   border: 2px solid transparent !important;
   background-color: var(--rtg-bg-input) !important;
   color: var(--rtg-text-primary) !important;
   font-size: 15px !important;
   font-weight: 500 !important;
   transition: all 0.2s ease !important;
+  box-sizing: border-box !important;
 }
 .search-input::placeholder {
   color: #a6a39c !important;
+}
+.search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
 }
 .search-input:focus {
   outline: none !important;
   background-color: #1f2228 !important;
   box-shadow: 0 0 0 2px var(--rtg-accent) !important;
   border-color: var(--rtg-accent) !important;
-  border-radius: 8px !important;
 }
 
 /* === Vehicle Toggle === */
@@ -201,7 +106,6 @@
   padding: 4px;
   width: fit-content;
   flex: 0 0 auto;
-  align-self: flex-end;
   height: 40px;
   box-sizing: border-box;
   align-items: center;
@@ -246,43 +150,315 @@
   }
 }
 
-/* === Filter Controls === */
-.filter-container {
+/* === Filter bar ===
+   The vehicle switch, then one chip per filter. A chip opens a popover
+   that holds the real control (the select, the slider); a set chip shows
+   its value in accent, so the row is its own summary. 3PMS and OEM are
+   press-to-toggle chips. Under 600px the row scrolls sideways and any
+   chip opens the whole set as a bottom sheet (filter-bar.js). */
+.rtg-filter-row {
   display: flex;
+  align-items: center;
+  gap: 10px;
   flex-wrap: wrap;
-  gap: 12px;
-  width: 100%;
 }
-.filter-group {
+.rtg-filter-divider {
+  flex: 0 0 auto;
+  width: 1px;
+  height: 24px;
+  background: var(--rtg-border);
+  margin: 0 2px;
+}
+.rtg-filter-chips {
   display: flex;
-  flex-direction: column;
-  flex: 1 1 200px;
-  min-width: 180px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
-.filter-group label {
-  font-weight: 600;
-  font-size: 13px;
-  color: var(--rtg-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  margin-bottom: 4px;
+.rtg-sheet-head,
+.rtg-sheet-foot,
+.rtg-filter-chips .rtg-fchip-all,
+.rtg-fswitch,
+.rtg-fselect,
+.rtg-fcheckbox {
+  display: none;
 }
-.filter-group select {
+/* The hidden attribute must win over the display rules below. */
+.filter-wrapper [hidden] {
+  display: none !important;
+}
+.rtg-fitem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.rtg-fchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   height: 40px;
-  padding: 8px 12px;
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: 8px;
+  padding: 0 12px 0 14px;
+  margin: 0;
+  background: var(--rtg-bg-card);
   border: 1px solid var(--rtg-border);
-  background-color: var(--rtg-bg-input);
+  border-radius: 20px;
   color: var(--rtg-text-primary);
-  appearance: none;
-  transition: border-color .15s;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color .15s, background-color .15s, color .15s;
 }
-.filter-group select:hover {
+.rtg-fchip:hover {
   border-color: var(--rtg-accent);
 }
-.filter-group select:focus {
+.rtg-fitem.is-open > .rtg-fchip {
+  border-color: var(--rtg-accent);
+}
+.rtg-fitem.is-active > .rtg-fchip {
+  background: color-mix(in srgb, var(--rtg-accent) 12%, var(--rtg-bg-deep));
+  border-color: var(--rtg-accent);
+}
+.rtg-fchip-value {
+  color: var(--rtg-accent);
+  font-weight: 600;
+}
+.rtg-fchip-value:empty {
+  display: none;
+}
+.rtg-fchip-caret {
+  font-size: 11px;
+  color: var(--rtg-text-muted);
+  transition: transform .2s ease;
+}
+.rtg-fitem.is-open .rtg-fchip-caret {
+  transform: rotate(180deg);
+}
+/* Toggle chips: a small check disc appears when pressed. */
+.rtg-fchip-toggle {
+  padding-right: 14px;
+}
+.rtg-fchip-check {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--rtg-accent);
+  color: #15130e;
+  font-size: 9px;
+  margin-right: -4px;
+  animation: chipIn 0.2s ease;
+}
+.rtg-fchip-toggle[aria-pressed="true"] .rtg-fchip-check {
+  display: inline-flex;
+}
+.rtg-fchip-info {
+  flex-shrink: 0;
+}
+
+/* Popover */
+.rtg-fpop {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 40;
+  width: 300px;
+  max-width: calc(100vw - 32px);
+  padding: 16px;
+  box-sizing: border-box;
+  background: var(--rtg-bg-card);
+  border: 1px solid var(--rtg-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+.rtg-fitem.is-open > .rtg-fpop {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeIn 0.15s ease;
+}
+.rtg-fitem.is-right > .rtg-fpop {
+  left: auto;
+  right: 0;
+}
+.rtg-fpop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--rtg-text-heading);
+}
+.rtg-fpop-head label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--rtg-text-heading);
+  margin: 0;
+}
+.rtg-fpop-val {
+  color: var(--rtg-accent);
+  font-weight: 700;
+  white-space: nowrap;
+}
+/* Option list, mirrored from the select at open time */
+.rtg-fopts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 320px;
+  overflow-y: auto;
+  margin: 0 -6px;
+  padding: 0 6px;
+  overscroll-behavior: contain;
+}
+.rtg-fopt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 10px;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--rtg-text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color .15s;
+}
+.rtg-fopt:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.rtg-fopt[aria-selected="true"] {
+  color: var(--rtg-accent);
+  font-weight: 600;
+  background: color-mix(in srgb, var(--rtg-accent) 10%, transparent);
+}
+.rtg-fopt:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.rtg-fopt-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rtg-text-muted);
+}
+.rtg-fopt-group {
+  padding: 10px 10px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--rtg-text-muted);
+}
+.rtg-fopt-group:first-child {
+  padding-top: 2px;
+}
+/* Presets beside a slider */
+.rtg-fpresets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.rtg-fpreset {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  margin: 0;
+  background: transparent;
+  border: 1px solid var(--rtg-border);
+  border-radius: 16px;
+  color: var(--rtg-text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+.rtg-fpreset:hover {
+  border-color: var(--rtg-accent);
+}
+.rtg-fpreset.is-on {
+  background: var(--rtg-accent);
+  border-color: var(--rtg-accent);
+  color: #15130e;
+}
+.rtg-fpop-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid var(--rtg-border);
+}
+.rtg-fpop-reset {
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+  color: var(--rtg-text-muted);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.rtg-fpop-reset:hover {
+  color: var(--rtg-accent);
+}
+.rtg-fpop-done {
+  height: 36px;
+  padding: 0 14px;
+  margin: 0;
+  background: var(--rtg-accent);
+  border: none;
+  border-radius: 8px;
+  color: #15130e;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+.rtg-fpop-done:hover {
+  background: var(--rtg-accent-hover);
+}
+.rtg-fpop-done:active {
+  transform: scale(0.96);
+}
+/* The selects themselves: shown only in the phone sheet. */
+.rtg-fselect {
+  width: 100%;
+  height: 44px;
+  padding: 0 40px 0 12px;
+  border: 1px solid var(--rtg-border);
+  border-radius: 8px;
+  background-color: var(--rtg-bg-input);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a19e97' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  color: var(--rtg-text-primary);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+}
+.rtg-fselect:focus {
   outline: none;
   border-color: var(--rtg-accent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--rtg-accent) 25%, transparent);
@@ -292,21 +468,301 @@
    the page sets one, so the "18\" Wheels" headings vanished on the dark
    popup for a reader there. Options and group labels are painted
    explicitly; macOS and Firefox were already inheriting. */
-.filter-group select option,
-.filter-group select optgroup,
-.sort-wrapper select option {
+.rtg-fselect option,
+.rtg-fselect optgroup {
   background-color: var(--rtg-bg-input);
   color: var(--rtg-text-primary);
 }
-.filter-group select optgroup {
+.rtg-fselect optgroup {
   font-weight: 700;
 }
-.filter-group select option:disabled {
+.rtg-fselect option:disabled {
   color: #79766f;
+}
+.rtg-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 8999;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.rtg-sheet-backdrop[hidden] {
+  display: none;
+}
+body.rtg-sheet-open {
+  overflow: hidden;
+}
+@keyframes chipIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes rtgSheetUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* Phone: a sideways-scrolling chip row, and the sheet. */
+@media (max-width: 600px) {
+  .rtg-filter-row {
+    gap: 12px;
+  }
+  .rtg-filter-divider {
+    display: none;
+  }
+  .rtg-filter-chips:not(.is-sheet) {
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+    width: calc(100% + 32px);
+    margin: 0 -16px;
+    padding: 2px 16px;
+    box-sizing: border-box;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .rtg-filter-chips:not(.is-sheet)::-webkit-scrollbar {
+    display: none;
+  }
+  .rtg-filter-chips:not(.is-sheet) .rtg-fchip-all {
+    display: inline-flex;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+  .rtg-fchip-all i {
+    font-size: 13px;
+    color: var(--rtg-text-muted);
+  }
+  .rtg-fchip-all.is-active {
+    border-color: var(--rtg-accent);
+  }
+  .rtg-fchip-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: var(--rtg-accent);
+    color: #15130e;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .rtg-fchip-badge[hidden] {
+    display: none;
+  }
+  .rtg-fitem {
+    flex-shrink: 0;
+  }
+  /* Chips never open a popover here; they open the sheet. */
+  .rtg-filter-chips:not(.is-sheet) .rtg-fpop {
+    display: none;
+  }
+
+  .rtg-filter-chips.is-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9000;
+    max-height: 88dvh;
+    margin: 0;
+    padding: 0;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--rtg-bg-card);
+    border: 1px solid var(--rtg-border);
+    border-bottom: none;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
+    animation: rtgSheetUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .is-sheet .rtg-fchip-all {
+    display: none;
+  }
+  .is-sheet .rtg-sheet-head {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: var(--rtg-bg-card);
+    border-bottom: 1px solid var(--rtg-border);
+  }
+  .rtg-sheet-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--rtg-text-heading);
+  }
+  .rtg-sheet-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: 1px solid var(--rtg-border);
+    border-radius: 8px;
+    color: var(--rtg-text-primary);
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .is-sheet .rtg-fitem {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--rtg-border);
+  }
+  .is-sheet .rtg-fchip[data-pop] {
+    display: none;
+  }
+  .is-sheet .rtg-fpop {
+    display: flex;
+    position: static;
+    width: auto;
+    max-width: none;
+    padding: 0;
+    flex-direction: column;
+    gap: 12px;
+    background: none;
+    border: none;
+    box-shadow: none;
+  }
+  .is-sheet .rtg-fopts,
+  .is-sheet .rtg-fpop-foot {
+    display: none;
+  }
+  .is-sheet .rtg-fselect {
+    display: block;
+  }
+  .is-sheet .rtg-fitem-toggle {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+  .is-sheet .rtg-fchip-info {
+    order: -1;
+  }
+  .is-sheet .rtg-fchip-toggle {
+    flex: 1;
+    height: auto;
+    min-height: 44px;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 0;
+    justify-content: space-between;
+    font-size: 15px;
+  }
+  .is-sheet .rtg-fchip-toggle[aria-pressed="true"] .rtg-fchip-check {
+    display: none;
+  }
+  .is-sheet .rtg-fitem.is-active > .rtg-fchip {
+    background: none;
+    border: none;
+  }
+  .is-sheet .rtg-fswitch {
+    display: block;
+    position: relative;
+    flex-shrink: 0;
+    width: 44px;
+    height: 24px;
+    border-radius: 9999px;
+    background: #4a4e55;
+    transition: background-color 0.2s ease;
+  }
+  .is-sheet .rtg-fswitch::before {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--rtg-text-primary);
+    transition: transform 0.2s ease;
+  }
+  .is-sheet .rtg-fchip-toggle[aria-pressed="true"] .rtg-fswitch {
+    background: var(--rtg-accent);
+  }
+  .is-sheet .rtg-fchip-toggle[aria-pressed="true"] .rtg-fswitch::before {
+    transform: translateX(20px);
+  }
+  .is-sheet .rtg-sheet-foot {
+    display: flex;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 20px calc(14px + env(safe-area-inset-bottom));
+    background: var(--rtg-bg-card);
+    border-top: 1px solid var(--rtg-border);
+  }
+  .rtg-sheet-clear {
+    height: 44px;
+    padding: 0 16px;
+    margin: 0;
+    background: transparent;
+    border: 1px solid var(--rtg-border);
+    border-radius: 8px;
+    color: var(--rtg-text-primary);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .rtg-sheet-clear:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .rtg-sheet-done {
+    flex: 1;
+    height: 44px;
+    padding: 0 16px;
+    margin: 0;
+    background: var(--rtg-accent);
+    border: none;
+    border-radius: 8px;
+    color: #15130e;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .rtg-sort-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .rtg-sort {
+    flex: 1;
+  }
+  .sort-wrapper select {
+    flex: 1;
+    max-width: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rtg-filter-chips.is-sheet,
+  .rtg-fitem.is-open > .rtg-fpop,
+  .rtg-fchip-check {
+    animation: none;
+  }
 }
 
 /* === Range Sliders === */
-.filter-group input[type="range"] {
+input.range-slider {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
@@ -320,12 +776,12 @@
   position: relative;
   transition: background-size 0.3s ease;
 }
-.filter-group input[type="range"]::-webkit-slider-runnable-track {
+input.range-slider::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 9999px;
   background: linear-gradient(to right, var(--rtg-accent) 0%, var(--rtg-accent) var(--percent), var(--rtg-bg-input) var(--percent), var(--rtg-bg-input) 100%);
 }
-.filter-group input[type="range"]::-webkit-slider-thumb {
+input.range-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   height: 20px;
   width: 20px;
@@ -338,21 +794,21 @@
   position: relative;
   z-index: 2;
 }
-.filter-group input[type="range"]::-webkit-slider-thumb:hover {
+input.range-slider::-webkit-slider-thumb:hover {
   transform: scale(1.15);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--rtg-accent) 20%, transparent);
 }
-.filter-group input[type="range"]::-moz-range-track {
+input.range-slider::-moz-range-track {
   height: 6px;
   border-radius: 9999px;
   background: var(--rtg-bg-input);
 }
-.filter-group input[type="range"]::-moz-range-progress {
+input.range-slider::-moz-range-progress {
   height: 6px;
   border-radius: 9999px;
   background: var(--rtg-accent);
 }
-.filter-group input[type="range"]::-moz-range-thumb {
+input.range-slider::-moz-range-thumb {
   height: 20px;
   width: 20px;
   background-color: #ffffff;
@@ -361,195 +817,34 @@
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
   transition: transform 0.15s ease;
 }
-.filter-group input[type="range"]::-moz-range-thumb:hover {
+input.range-slider::-moz-range-thumb:hover {
   transform: scale(1.15);
 }
 
-/* === Toggle Switches === */
-.switch-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 8px;
-  margin-top: 16px;
-  align-items: start;
-}
-.slider-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  width: 100%;
-  margin-top: 0;
-}
-.switch-label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--rtg-text-primary);
-  transition: all .15s;
-  height: 40px;
-  margin-bottom: 0;
-  background-color: var(--rtg-bg-primary);
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--rtg-border);
-}
-.switch-label:hover {
-  border-color: var(--rtg-accent);
-}
-.switch-slider {
-  position: relative;
-  width: 44px;
-  height: 24px;
-  background-color: #4a4e55;
-  border-radius: 9999px;
-  transition: background-color 0.2s ease;
-  flex-shrink: 0;
-  cursor: pointer;
-}
-.switch-slider::before {
-  content: "";
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 18px;
-  height: 18px;
-  background-color: var(--rtg-text-primary);
-  border-radius: 50%;
-  transition: transform 0.2s ease;
-}
-.switch-label input[type="checkbox"]:checked + .switch-slider {
-  background-color: var(--rtg-accent);
-}
-.switch-label input[type="checkbox"]:checked + .switch-slider::before {
-  transform: translateX(20px);
-}
-.switch-label input[type="checkbox"] {
-  display: none;
-}
-.switch-text {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-/* === Clear All Button === */
+/* === Clear all ===
+   A quiet text button on the results line, beside the tally it clears. */
 .rtg-clear-filters-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 42px;
-  padding: 8px 16px;
+  height: 32px;
+  padding: 0 8px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--rtg-text-muted);
+  color: var(--rtg-accent);
   background: transparent;
-  border: 1px solid var(--rtg-border);
-  border-radius: 8px;
+  border: none;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;
-  opacity: 0.7;
 }
 .rtg-clear-filters-btn:hover {
   background: color-mix(in srgb, var(--rtg-accent) 10%, transparent);
-  border-color: var(--rtg-accent);
-  color: var(--rtg-accent);
-  opacity: 1;
+  color: var(--rtg-accent-hover);
 }
 .rtg-clear-filters-btn i {
-  font-size: 13px;
-}
-
-/* === Extended Filters Row ===
-   Flat row below the main filter container with the two remaining sliders
-   (Max Price, Min Warranty) and the two remaining feature toggles (3PMS,
-   OEM). Replaces the old collapsible "More Filters" disclosure, since
-   five controls don't justify a progressive-disclosure pattern.
-
-   Sliders and toggles share the same 40px bordered-pill treatment so the
-   whole row reads as a set of peer controls at a consistent height, with
-   matching typography (14px / 600 labels, primary text color). */
-.rtg-extended-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 12px;
-  align-items: center;
-}
-.rtg-extended-filters .slider-wrapper {
-  /* flex-direction must be explicit — .filter-group sets `column` and that
-     would otherwise stack the label above the range input inside the pill. */
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
-  flex: 1 1 260px;
-  min-width: 220px;
-  height: 40px;
-  padding: 0 14px;
-  background-color: var(--rtg-bg-primary);
-  border: 1px solid var(--rtg-border);
-  border-radius: 8px;
-  box-sizing: border-box;
-  transition: border-color .15s;
-}
-.rtg-extended-filters .slider-wrapper:hover {
-  border-color: var(--rtg-accent);
-}
-/* Override the generic `.filter-group label` rule (13px / uppercase / muted)
-   which was designed for the old label-above-control layout. Inline labels
-   in this row should match the rest of the filter area (14px / 600 /
-   sentence case / primary color). */
-.rtg-extended-filters .slider-wrapper label {
-  margin-bottom: 0;
-  flex: 0 0 auto;
-  white-space: nowrap;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--rtg-text-primary);
-  text-transform: none;
-  letter-spacing: 0;
-}
-.rtg-extended-filters .slider-wrapper label span {
-  font-weight: 500;
-  color: var(--rtg-text-muted);
-  margin-left: 4px;
-}
-.rtg-extended-filters .slider-wrapper input[type="range"] {
-  margin-top: 0;
-  flex: 1 1 auto;
-  min-width: 60px;
-}
-/* Bump the switch-label text from 13px/500 to 14px/600 so it matches the
-   slider labels and the rest of the filter area. */
-.rtg-extended-filters .switch-label {
-  flex: 0 0 auto;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-/* Mobile: stack each slider on its own full-width row, but let 3PMS and
-   OEM flow together on one row beneath them. Max Price and Min Warranty
-   each need the full viewport width to not feel cramped; the two
-   toggles fit comfortably side-by-side. */
-@media (max-width: 600px) {
-  .rtg-extended-filters .slider-wrapper {
-    flex: 1 1 100%;
-    min-width: 0;
-  }
-  .rtg-extended-filters .switch-label {
-    flex: 1 1 0;
-    min-width: 0;
-  }
-}
-
-/* === Filter header actions (Clear All) === */
-.filter-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  font-size: 12px;
 }
 
 /* === Help me choose (AI Tire Advisor) ===
@@ -563,13 +858,13 @@
   align-items: center !important;
   justify-content: center !important;
   gap: 8px !important;
-  height: 44px !important;
-  padding: 0 16px !important;
+  height: 48px !important;
+  padding: 0 18px !important;
   margin: 0 !important;
   background: var(--rtg-accent) !important;
   color: #15130e !important;
   border: 2px solid transparent !important;
-  border-radius: 8px !important;
+  border-radius: 10px !important;
   cursor: pointer !important;
   font-size: 14px !important;
   font-weight: 700 !important;
@@ -1389,53 +1684,6 @@
   background-color: color-mix(in srgb, var(--rtg-accent, #5ec095) 10%, transparent);
 }
 
-/* === Filter Result Count === */
-.filter-result-count {
-  display: none;
-  padding: 10px 16px;
-  margin-top: 12px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--rtg-accent);
-  background: color-mix(in srgb, var(--rtg-accent) 8%, transparent);
-  border: 1px solid color-mix(in srgb, var(--rtg-accent) 20%, transparent);
-  border-radius: 8px;
-  text-align: center;
-}
-
-/* === Mobile Filter Badge === */
-.mobile-filter-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #15130e;
-  background: var(--rtg-accent);
-  border-radius: 10px;
-  margin-left: 6px;
-}
-
-/* === Slider Wrapper === */
-.slider-wrapper {
-  background-color: var(--rtg-bg-primary);
-  padding: 8px 14px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--rtg-border);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1 1 30%;
-  min-width: 170px;
-  box-sizing: border-box;
-}
-.slider-wrapper label {
-  font-size: 12px;
-}
-
 /* === Tooltips === */
 .tooltip-container {
   position: relative;
@@ -1499,53 +1747,102 @@
   cursor: help;
 }
 
-/* === Sort Bar === */
+/* === Results line ===
+   Count, the filter tally and Clear all on the left; Write a review and a
+   labelled Sort on the right. */
 .sort-wrapper {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin-top: 16px;
   padding-top: 14px;
   border-top: 1px solid var(--rtg-border);
   font-size: 14px;
   color: var(--rtg-text-primary);
   flex-wrap: wrap;
 }
-.tire-count {
-  font-size: 14px;
-  color: var(--rtg-text-muted);
-  font-weight: 600;
-}
-/* Wraps the sort dropdown on the right side of the sort bar so it
-   pairs with the tire count on the left via space-between. */
-.rtg-sort-actions {
+.rtg-results-summary {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+  min-height: 32px;
+}
+.tire-count {
+  font-size: 14px;
+  color: var(--rtg-text-primary);
+  font-weight: 600;
+}
+.rtg-filter-tally {
+  font-size: 14px;
+  color: var(--rtg-text-muted);
+  font-weight: 500;
+}
+.rtg-sort-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
   justify-content: flex-end;
 }
-.sort-wrapper select {
+.sort-wrapper .rtg-write-review-btn {
   height: 40px;
-  padding: 8px 12px;
-  font-size: 14px;
-  font-weight: 500;
-  width: 210px;
-  max-width: 210px;
-  border-radius: 8px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+.rtg-sort {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px 0 14px;
   border: 1px solid var(--rtg-border);
-  background-color: var(--rtg-bg-input);
+  border-radius: 8px;
+  background: transparent;
   color: var(--rtg-text-primary);
-  appearance: none;
+  font-size: 14px;
   transition: border-color .15s;
 }
-.sort-wrapper select:hover {
+.rtg-sort:hover,
+.rtg-sort:focus-within {
   border-color: var(--rtg-accent);
 }
-.sort-wrapper select:focus {
+.rtg-sort > i {
+  font-size: 13px;
+  color: var(--rtg-text-muted);
+}
+.rtg-sort-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--rtg-text-muted);
+  margin: 0;
+}
+.sort-wrapper select {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 100%;
+  max-width: 220px;
+  padding: 0 20px 0 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  color: var(--rtg-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
   outline: none;
-  border-color: var(--rtg-accent);
+}
+.sort-wrapper select option {
+  background-color: var(--rtg-bg-input);
+  color: var(--rtg-text-primary);
+}
+.rtg-sort-caret {
+  position: absolute;
+  right: 12px;
+  font-size: 11px;
+  color: var(--rtg-text-muted);
+  pointer-events: none;
 }
 
 /* === Tire Card Grid === */
@@ -3212,36 +3509,12 @@ a.rtg-review-card-title-link:hover {
 
 /* === Responsive: Mobile === */
 @media (max-width: 600px) {
-  .filter-container {
-    flex-direction: column;
-  }
-  .filter-group {
-    margin-bottom: 4px;
-    flex: 1 1 0;
-  }
-  .switch-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-    margin-top: 16px;
-  }
-  .slider-row {
-    flex-direction: column;
-  }
-  .slider-wrapper {
-    max-width: 100%;
-    flex: 1 1 100%;
-  }
-  .filter-header {
-    font-size: 14px;
-    padding: 12px 16px;
-  }
   .filter-body {
     padding: 16px;
+    gap: 12px;
   }
   .search-input {
-    padding: 10px 14px;
-    font-size: 16px;
+    font-size: 16px !important;
   }
   .wheel-card-grid {
     grid-template-columns: 1fr;
@@ -3303,66 +3576,9 @@ a.rtg-review-card-title-link:hover {
   }
 }
 
-/* === Active Filter Chips === */
-.active-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-.active-filters:empty {
-  display: none;
-}
-.filter-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px 6px 12px;
-  background: var(--rtg-bg-primary);
-  border: 1px solid var(--rtg-border);
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--rtg-text-light);
-  line-height: 1;
-  animation: chipIn 0.2s ease;
-}
-.filter-chip-label {
-  color: var(--rtg-text-muted);
-  font-weight: 600;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-.filter-chip-dismiss {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border: none;
-  border-radius: 50%;
-  background: var(--rtg-border);
-  color: var(--rtg-text-muted);
-  font-size: 10px;
-  cursor: pointer;
-  padding: 0;
-  transition: all 0.15s;
-  flex-shrink: 0;
-}
-.filter-chip-dismiss:hover {
-  background: #ee383a;
-  color: #fff;
-}
-@keyframes chipIn {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-
 /* === Print Styles === */
 @media print {
-  .filter-wrapper, .sort-wrapper, .compare-bar, .toggle-filters-btn, .active-filters { display: none !important; }
+  .filter-wrapper, .sort-wrapper, .compare-bar, .rtg-sheet-backdrop { display: none !important; }
   .tire-card { border-color: #ddd; break-inside: avoid; }
   .tire-card-brand { color: #333; }
   .tire-card-model { color: #1a1a1a; }
@@ -3376,9 +3592,6 @@ a.rtg-review-card-title-link:hover {
 @media (prefers-reduced-motion: reduce) {
   .tire-card {
     transition: none;
-  }
-  .filter-chip {
-    animation: none;
   }
 }
 
@@ -3656,13 +3869,13 @@ a.rtg-user-review-tire-link:hover {
   outline-offset: 2px;
   border-radius: 2px;
 }
-.filter-group select:focus-visible,
+.rtg-fselect:focus-visible,
 .search-input:focus-visible,
-.range-slider:focus-visible {
-  outline: 2px solid var(--rtg-accent);
-  outline-offset: 2px;
-}
-.toggle-filters-btn:focus-visible {
+.range-slider:focus-visible,
+.rtg-fchip:focus-visible,
+.rtg-fopt:focus-visible,
+.rtg-fpreset:focus-visible,
+.rtg-clear-filters-btn:focus-visible {
   outline: 2px solid var(--rtg-accent);
   outline-offset: 2px;
 }
@@ -3704,11 +3917,6 @@ a.rtg-user-review-tire-link:hover {
 .no-results-suggestion-btn:focus-visible {
   outline: 2px solid var(--rtg-accent);
   outline-offset: 2px;
-}
-.switch-label:focus-visible {
-  outline: 2px solid var(--rtg-accent);
-  outline-offset: 2px;
-  border-radius: 4px;
 }
 .review-action-link:focus-visible,
 .rating-review-count:focus-visible {
