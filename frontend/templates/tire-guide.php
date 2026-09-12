@@ -39,6 +39,7 @@ $rtg_write_review_url = home_url( '/' . sanitize_title( $rtg_guide_settings['tir
           <i class="fa-solid fa-sliders" aria-hidden="true"></i> Filters <span class="rtg-fchip-badge" hidden></span>
         </button>
 
+        <div class="rtg-sheet-body">
         <div class="rtg-fitem" data-key="size">
           <button type="button" class="rtg-fchip" data-pop aria-expanded="false" aria-controls="rtgPopSize">
             <span class="rtg-fchip-label">Size</span><span class="rtg-fchip-value"></span>
@@ -161,6 +162,7 @@ $rtg_write_review_url = home_url( '/' . sanitize_title( $rtg_guide_settings['tir
             <strong>OEM</strong> Original equipment: a tire Rivian fits at the factory. A safe default if you want exactly what the truck came with.
           </div>
           <input type="checkbox" id="filterOEM" class="rtg-fcheckbox" aria-label="OEM" />
+        </div>
         </div>
 
         <div class="rtg-sheet-foot">

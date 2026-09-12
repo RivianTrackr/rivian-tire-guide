@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.7.2] - 2026-09-12
+
+### Fixed
+- **The phone filter sheet's footer no longer covers the last filter.** On iOS Safari the sheet's sticky "Clear all / Show N tires" footer painted underneath the filter sections (the pills are `position: relative`, and WebKit draws sticky children below positioned siblings in a scrolling container), so the warranty slider and its presets sat on top of the buttons and the OEM and 3PMS rows were unreachable behind them. The sheet no longer relies on `position: sticky`: the sections are wrapped in a `.rtg-sheet-body` (`display: contents` in the row, so the chip bar's flex layout is untouched) and in the sheet it is the only scrolling region, a `flex: 1 1 auto; min-height: 0; overflow-y: auto` column between a fixed header and footer. `frontend/templates/tire-guide.php`, `frontend/css/rivian-tires.css`; the last section drops its bottom border so it does not double the footer's top border.
+
+### Tests
+- `npm test`, `php -l` and the contract checks pass; the template was rendered in a headless browser at 390px with the sheet open: the body scrolls between the header and footer, the last section ends exactly where the footer starts, the closed row still scrolls sideways with all seven pills, and at 1280px a popover still opens under its pill.
+
 ## [2.7.1] - 2026-09-12
 
 ### Changed
