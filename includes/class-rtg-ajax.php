@@ -580,7 +580,6 @@ class RTG_Ajax {
             'size'         => sanitize_text_field( $_POST['size'] ?? '' ),
             'brand'        => sanitize_text_field( $_POST['brand'] ?? '' ),
             'category'     => sanitize_text_field( $_POST['category'] ?? '' ),
-            'load_range'   => sanitize_text_field( $_POST['load_range'] ?? '' ),
             'three_pms'    => ! empty( $_POST['three_pms'] ),
             'oem'          => ! empty( $_POST['oem'] ),
         );
@@ -634,7 +633,6 @@ class RTG_Ajax {
         $db_sizes   = $wpdb->get_col( "SELECT DISTINCT size FROM {$table} WHERE size != '' ORDER BY size ASC" );
         $brands     = $wpdb->get_col( "SELECT DISTINCT brand FROM {$table} WHERE brand != '' ORDER BY brand ASC" );
         $categories = $wpdb->get_col( "SELECT DISTINCT category FROM {$table} WHERE category != '' ORDER BY category ASC" );
-        $load_ranges = $wpdb->get_col( "SELECT DISTINCT UPPER(load_range) FROM {$table} WHERE load_range != ''" );
 
         // Merge admin-managed sizes with sizes found in the database.
         $admin_sizes = RTG_Admin::get_dropdown_options( 'sizes' );
@@ -645,7 +643,6 @@ class RTG_Ajax {
             'sizes'          => array_map( 'sanitize_text_field', array_values( $merged_sizes ) ),
             'brands'         => array_map( 'sanitize_text_field', $brands ),
             'categories'     => array_map( 'sanitize_text_field', $categories ),
-            'loadRanges'     => array_map( 'sanitize_text_field', $load_ranges ),
             'vehicleSizeMap' => RTG_Database::get_vehicle_size_map(),
             'thirdPartySizes' => RTG_Database::get_third_party_size_map(),
             'maxPrice'       => (float) $wpdb->get_var( "SELECT MAX(price) FROM {$table}" ),

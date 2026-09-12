@@ -1276,6 +1276,23 @@ class RTG_Admin {
         }
         $settings['catalog_vehicle_min_load_index'] = $vehicle_minimums;
 
+        // Per-vehicle load range floors. A blank means the built-in figure
+        // (R2: XL, R1: none); "none" is an explicit "no floor" and is kept.
+        $posted_ranges = isset( $_POST['catalog_vehicle_min_load_range'] ) && is_array( $_POST['catalog_vehicle_min_load_range'] )
+            ? wp_unslash( $_POST['catalog_vehicle_min_load_range'] )
+            : array();
+
+        $vehicle_ranges = array();
+        foreach ( $posted_ranges as $vehicle => $value ) {
+            $value = strtoupper( sanitize_text_field( (string) $value ) );
+            if ( strtoupper( RTG_Tire_Qualifier::LOAD_RANGE_NONE ) === $value ) {
+                $vehicle_ranges[ sanitize_text_field( $vehicle ) ] = RTG_Tire_Qualifier::LOAD_RANGE_NONE;
+            } elseif ( in_array( $value, RTG_Tire_Qualifier::LOAD_RANGE_ORDER, true ) ) {
+                $vehicle_ranges[ sanitize_text_field( $vehicle ) ] = $value;
+            }
+        }
+        $settings['catalog_vehicle_min_load_range'] = $vehicle_ranges;
+
         $settings['price_sync_enabled']    = ! empty( $_POST['price_sync_enabled'] );
         $settings['link_sync_enabled']     = ! empty( $_POST['link_sync_enabled'] );
         $settings['price_sync_max_change'] = max( 1, min( 100, intval( $_POST['price_sync_max_change'] ?? 50 ) ) );

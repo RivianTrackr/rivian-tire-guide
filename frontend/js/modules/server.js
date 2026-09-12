@@ -12,7 +12,7 @@ import { renderCards } from './cards.js';
 import { VALIDATION_PATTERNS } from './validation.js';
 import { loadTireRatings } from './ratings.js';
 import { rtgIcon } from './helpers.js';
-import { updateURLFromFilters, renderSmartNoResults, renderActiveFilterChips, applyFiltersFromURL, populateDropdown, populateLoadRangeDropdown, getSelectedVehicle, populateVehicleToggle, adaptPriceSlider } from './filters.js';
+import { updateURLFromFilters, renderSmartNoResults, renderActiveFilterChips, applyFiltersFromURL, populateDropdown, getSelectedVehicle, populateVehicleToggle, adaptPriceSlider } from './filters.js';
 
 export function isServerSide() {
   return state.serverSideMode && typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.ajaxurl;
@@ -37,8 +37,6 @@ export function fetchTiresFromServer(page) {
   body.append('size', getDOMElement("filterSize")?.value || '');
   body.append('brand', getDOMElement("filterBrand")?.value || '');
   body.append('category', getDOMElement("filterCategory")?.value || '');
-  const loadRangeSel = getDOMElement("filterLoadRange");
-  body.append('load_range', loadRangeSel && state.VALID_LOAD_RANGES.includes(loadRangeSel.value) ? loadRangeSel.value : '');
   body.append('three_pms', getDOMElement("filter3pms")?.checked ? '1' : '');
   body.append('oem', getDOMElement("filterOEM")?.checked ? '1' : '');
   // Sent only when the slider exists: an absent parameter means no price
@@ -270,7 +268,6 @@ export function fetchDropdownOptions() {
 
       populateDropdown("filterBrand", state.VALID_BRANDS);
       populateDropdown("filterCategory", state.VALID_CATEGORIES);
-      populateLoadRangeDropdown("filterLoadRange", d.loadRanges || []);
 
       // Re-apply URL params to newly populated dropdowns.
       applyFiltersFromURL();

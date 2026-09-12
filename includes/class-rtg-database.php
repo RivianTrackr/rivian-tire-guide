@@ -5,15 +5,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class RTG_Database {
 
-    /**
-     * The load range filter value meaning "XL and everything above it": the
-     * R2's minimum. Mirrors XL_PLUS in frontend/js/modules/load-range.js.
-     */
-    const LOAD_RANGE_XL_PLUS = 'xl+';
-
-    /** What "XL or higher" resolves to, in sidewall order. */
-    const LOAD_RANGES_XL_PLUS = array( 'XL', 'C', 'D', 'E', 'F' );
-
     private static function tires_table() {
         global $wpdb;
         return $wpdb->prefix . 'rtg_tires';
@@ -908,7 +899,6 @@ class RTG_Database {
      *     @type string $size     Exact size match.
      *     @type string $brand    Exact brand match.
      *     @type string $category Exact category match.
-     *     @type string $load_range A load range (SL, XL, C, D, E), or "xl+" for XL and above.
      *     @type bool   $three_pms Filter to 3PMS-rated only.
      *     @type bool   $oem       Filter to OEM tags.
      *     @type float  $price_max Max price.
@@ -971,19 +961,6 @@ class RTG_Database {
         if ( ! empty( $filters['category'] ) ) {
             $where[]  = 'category = %s';
             $values[] = $filters['category'];
-        }
-
-        // A rating, or "XL or higher" for the R2's floor. Mirrors XL_PLUS_SET
-        // in frontend/js/modules/load-range.js; keep them in step.
-        if ( ! empty( $filters['load_range'] ) ) {
-            if ( self::LOAD_RANGE_XL_PLUS === $filters['load_range'] ) {
-                $placeholders = implode( ', ', array_fill( 0, count( self::LOAD_RANGES_XL_PLUS ), '%s' ) );
-                $where[]      = "UPPER(load_range) IN ({$placeholders})";
-                $values       = array_merge( $values, self::LOAD_RANGES_XL_PLUS );
-            } else {
-                $where[]  = 'UPPER(load_range) = %s';
-                $values[] = strtoupper( $filters['load_range'] );
-            }
         }
 
         if ( ! empty( $filters['three_pms'] ) ) {

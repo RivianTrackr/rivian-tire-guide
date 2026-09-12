@@ -28,7 +28,6 @@ export const state = {
   VALID_SIZES: [],
   VALID_BRANDS: [],
   VALID_CATEGORIES: [],
-  VALID_LOAD_RANGES: [],
   VALID_VEHICLES: [],
   vehicleSizeMap: {},
   // vehicle => { size => { wheel, note } }: sizes that fit only on 3rd-party wheels.

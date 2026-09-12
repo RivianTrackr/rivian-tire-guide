@@ -65,15 +65,6 @@ $rtg_write_review_url = home_url( '/' . sanitize_title( $rtg_guide_settings['tir
             <option value="">All Categories</option>
           </select>
         </div>
-        <div class="filter-group filter-group-with-info">
-          <label for="filterLoadRange" class="screen-reader-text">Filter by load range</label>
-          <select id="filterLoadRange" aria-label="Filter by load range">
-            <option value="">All Load Ranges</option>
-          </select>
-          <button class="info-tooltip-trigger filter-info-trigger" type="button" data-tooltip-key="Load Range Filter" aria-label="About load range">
-            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-          </button>
-        </div>
       </div>
       <div class="rtg-extended-filters">
         <div class="filter-group slider-wrapper">

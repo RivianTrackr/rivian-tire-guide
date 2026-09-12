@@ -19,7 +19,7 @@ import { renderCards } from './modules/cards.js';
 import { updateCompareBar, openComparison, clearCompare, setupCompareCheckboxes } from './modules/compare.js';
 import {
   buildFilterIndexes, filterAndRender, setupSliderHandlers, resetFilters,
-  populateDropdown, populateSizeDropdownGrouped, populateLoadRangeDropdown,
+  populateDropdown, populateSizeDropdownGrouped,
   populateVehicleToggle, getSelectedVehicle, setActiveVehicle, cascadeVehicleToSizes,
   applyFiltersFromURL, applyCompareFromURL, applyTireDeepLink,
   applyShortcodePrefilters, renderActiveFilterChips,
@@ -172,7 +172,6 @@ function initializeUI() {
     populateSizeDropdownGrouped("filterSize", state.VALID_SIZES);
     populateDropdown("filterBrand", state.allRows.map(r => r[3]));
     populateDropdown("filterCategory", state.allRows.map(r => r[5]));
-    populateLoadRangeDropdown("filterLoadRange", state.allRows.map(r => r[13]));
   }
 
   // Initialize vehicle state from localized data (works for both modes before server-side overrides).
@@ -202,7 +201,6 @@ function initializeUI() {
     { id: "filterSize", listener: filterFn },
     { id: "filterBrand", listener: filterFn },
     { id: "filterCategory", listener: filterFn },
-    { id: "filterLoadRange", listener: filterFn },
     { id: "filter3pms", listener: filterFn },
     { id: "filterOEM", listener: filterFn },
   ];

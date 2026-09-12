@@ -12,7 +12,6 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Interactive Tire Cards** — Browse tires with real-time filtering by size, brand, category, price, weight, warranty, 3PMS, EV rated, and studded availability.
 - **Smart Search** — Fuzzy search with type-ahead suggestions for brands, models, categories, and sizes.
 - **Side-by-Side Comparison** — Select up to 4 tires and compare specs on a dedicated comparison page with best-value highlighting.
-- **Load Range Filter** — SL, XL, C, D, E, plus "XL or higher" in one pick, since the R2 needs XL at minimum. Counts beside each option say how many tires it would leave.
 - **Shareable Filtered Views** — All filter state persists in URL parameters (`?brand=Michelin&size=275/65R18`), enabling shareable links and browser back/forward navigation.
 - **Shareable Tire Links** — Direct links to individual tires with deep-link highlighting.
 - **Active Filter Chips** — Dismissible chips show active filters at a glance.
@@ -37,7 +36,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 
 ### Tire Discovery (Affiliate Catalog Monitoring)
 - **Daily Catalog Check** — Watches affiliate catalogs for tires in Rivian fitments that aren't in the guide yet, so new arrivals surface on their own instead of waiting on a manual search of each size.
-- **Qualification Rules** — Every product is judged against the guide's requirements: size must be a Rivian fitment, load index must clear a configurable floor (default 112 — the R2 minimum; R1 needs 116), and the listing must be identifiable. Specs are parsed out of the product title when the feed doesn't supply them as fields.
+- **Qualification Rules** — Every product is judged against the guide's requirements, per vehicle: size must be a Rivian fitment, load index must clear that platform's floor (R1 116, R2 112, both settings), load range must be at least that platform's minimum (the R2 needs XL or higher, so an SL tire in an R2 size is a near miss), and the listing must be identifiable. Specs are parsed out of the product title when the feed doesn't supply them as fields.
 - **Review Queue** — Admin page badged with the number awaiting a decision, split across Awaiting Review / Near Misses / Already in Guide / Dismissed / Added and filterable by size. Near misses show the reason they were held back rather than being silently filtered out. The fits column names each vehicle a candidate is legal on, with "· 3rd-party" when that vehicle takes the size only on aftermarket wheels.
 - **One-Click Add** — Opens the Add New Tire form prefilled with brand, model, size, price, load index, load range, speed rating and purchase link, plus derived diameter and max load.
 - **Sticky Dismissals** — A dismissed candidate never returns to the queue, so it stays short enough to stay useful. Decisions made by a person always outrank what a later run concludes.
@@ -58,7 +57,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **CSV Import/Export** — Bulk import with duplicate handling (skip/update), auto-generated IDs, MIME validation, and full catalog export.
 - **Reviews Management** — Pending/approved/rejected tabs with approve, reject, and delete actions.
 - **Affiliate Links Dashboard** — Centralized view of all purchase and review links with link classification (affiliate vs. direct), filter tabs, and inline AJAX editing.
-- **Tire Discovery** — Review queue for tires found in affiliate catalogs (see Tire Discovery section above), with its own settings for the daily check, the digest email, and the minimum load index.
+- **Tire Discovery** — Review queue for tires found in affiliate catalogs (see Tire Discovery section above), with its own settings for the daily check, the digest email, and the per-vehicle minimum load index and load range.
 - **Wheels** — Manage the wheel guide: name, stock and alternate sizes, image, vehicles, sort order, and whether the wheel is a Rivian factory wheel or a third-party setup with a one-sentence fitment note.
 - **Analytics** — Visual analytics with Chart.js (see Analytics section above).
 - **Settings** — Rows per page, compare slug, user reviews slug, server-side pagination toggle, theme colors (14 CSS custom properties), dropdown options (brands, sizes, categories, load ranges, speed ratings, size-to-diameter mapping, load index-to-lbs mapping), affiliate domains, and analytics retention.
@@ -128,10 +127,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 
 With pre-filter attributes:
 ```
-[rivian_tire_guide vehicle="R2" brand="Michelin" category="All-Season" size="245/60R18" load_range="xl+" sort="price-asc" 3pms="yes"]
-```
-
-`load_range` takes a rating (`SL`, `XL`, `C`, `D`, `E`) or `xl+` for XL and above, the R2's minimum. The same values work on the guide's URL (`?load_range=xl+`) and the REST listing.
+[rivian_tire_guide vehicle="R1" brand="Michelin" category="All-Season" size="275/65R20" sort="price-asc" 3pms="yes"]
 ```
 
 **User Reviews** — Display all reviews by a specific user (via `?reviewer=ID` URL param):

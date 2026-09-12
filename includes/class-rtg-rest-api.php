@@ -258,11 +258,6 @@ class RTG_REST_API {
             $filters['category'] = sanitize_text_field( $category );
         }
 
-        $load_range = $request->get_param( 'load_range' );
-        if ( ! empty( $load_range ) ) {
-            $filters['load_range'] = sanitize_text_field( $load_range );
-        }
-
         $three_pms = $request->get_param( 'three_pms' );
         if ( $three_pms ) {
             $filters['three_pms'] = true;
@@ -502,11 +497,6 @@ class RTG_REST_API {
             ),
             'category'  => array(
                 'description'       => 'Filter by tire category (e.g. All-Season, All-Terrain).',
-                'type'              => 'string',
-                'sanitize_callback' => 'sanitize_text_field',
-            ),
-            'load_range' => array(
-                'description'       => 'Filter by load range (SL, XL, C, D, E), or "xl+" for XL and above, the R2 minimum.',
                 'type'              => 'string',
                 'sanitize_callback' => 'sanitize_text_field',
             ),

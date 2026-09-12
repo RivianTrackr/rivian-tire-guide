@@ -85,6 +85,11 @@ $vehicle_size_map = RTG_Database::get_vehicle_size_map();
 // Which of those sizes fit only on 3rd-party wheels, for the fits column.
 $third_party_map  = RTG_Database::get_third_party_size_map();
 $vehicle_minimums = RTG_Tire_Qualifier::get_vehicle_minimums();
+// What each platform has saved for its load range floor: a rating, "none",
+// or nothing (the built-in figure applies).
+$vehicle_range_saved = isset( $settings['catalog_vehicle_min_load_range'] ) && is_array( $settings['catalog_vehicle_min_load_range'] )
+    ? $settings['catalog_vehicle_min_load_range']
+    : array();
 $vehicle_counts   = RTG_Candidates::get_vehicle_counts( $status_filter );
 
 $brand_policy = isset( $settings['catalog_brand_policy'] )
@@ -937,21 +942,25 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
         <div class="rtg-card">
             <div class="rtg-card-header">
                 <h2>What qualifies</h2>
-                <p>Size and load index are judged together, per vehicle: a tire has to be one of a platform's sizes <em>and</em> carry enough load for it. A tire that clears no platform is filed under Near misses, naming the one it came closest on.</p>
+                <p>Size, load index and load range are judged together, per vehicle: a tire has to be one of a platform's sizes, carry enough load for it, and be built to at least the platform's load range. A tire that clears no platform is filed under Near misses, naming what it fell short on.</p>
             </div>
             <div class="rtg-card-body">
                 <div class="rtg-field-row">
                     <div class="rtg-field-label-row">
-                        <span class="rtg-field-label">Minimum load index</span>
+                        <span class="rtg-field-label">Minimums per vehicle</span>
                     </div>
                     <?php if ( ! empty( $vehicle_size_map ) ) : ?>
                         <div class="rtg-table-wrapper">
                             <table class="rtg-table rtg-table-compact is-inset">
                                 <thead>
-                                    <tr><th>Vehicle</th><th>Minimum</th><th>Sizes</th></tr>
+                                    <tr><th>Vehicle</th><th>Load index</th><th>Load range</th><th>Sizes</th></tr>
                                 </thead>
                                 <tbody>
                                 <?php foreach ( $vehicle_size_map as $vehicle => $vehicle_sizes ) : ?>
+                                    <?php
+                                    $range_saved   = strtoupper( (string) ( $vehicle_range_saved[ $vehicle ] ?? '' ) );
+                                    $range_default = RTG_Tire_Qualifier::VEHICLE_MIN_LOAD_RANGE[ $vehicle ] ?? '';
+                                    ?>
                                     <tr>
                                         <td><label for="min_li_<?php echo esc_attr( $vehicle ); ?>"><strong><?php echo esc_html( $vehicle ); ?></strong></label></td>
                                         <td>
@@ -961,6 +970,18 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                                 value="<?php echo esc_attr( $vehicle_minimums[ $vehicle ] ?? '' ); ?>"
                                                 min="100" max="126" class="rtg-input-tiny">
                                         </td>
+                                        <td>
+                                            <select name="catalog_vehicle_min_load_range[<?php echo esc_attr( $vehicle ); ?>]"
+                                                id="min_lr_<?php echo esc_attr( $vehicle ); ?>"
+                                                class="rtg-input-small"
+                                                aria-label="<?php echo esc_attr( $vehicle ); ?> minimum load range">
+                                                <option value="" <?php selected( '' === $range_saved ); ?>>Default (<?php echo $range_default ? esc_html( $range_default . ' or higher' ) : 'none'; ?>)</option>
+                                                <option value="<?php echo esc_attr( RTG_Tire_Qualifier::LOAD_RANGE_NONE ); ?>" <?php selected( strtoupper( RTG_Tire_Qualifier::LOAD_RANGE_NONE ) === $range_saved ); ?>>No minimum</option>
+                                                <?php foreach ( RTG_Tire_Qualifier::LOAD_RANGE_ORDER as $range_option ) : ?>
+                                                    <option value="<?php echo esc_attr( $range_option ); ?>" <?php selected( $range_option === $range_saved ); ?>><?php echo esc_html( $range_option ); ?> or higher</option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </td>
                                         <td class="rtg-muted rtg-small rtg-mono"><?php echo esc_html( implode( ', ', $vehicle_sizes ) ); ?></td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -969,8 +990,9 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                         </div>
                         <p class="rtg-help">
                             Sizes come from <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-wheels' ) ); ?>">Wheels</a>,
-                            so a platform added there appears here on its own. Blank restores the built-in figure
-                            (R1 116, R2 112).
+                            so a platform added there appears here on its own. A blank load index restores the built-in figure
+                            (R1 116, R2 112). Load range runs SL, XL, HL, then C to F; the R2 needs XL or higher, so an SL tire in an
+                            R2 size is filed as a near miss. A listing that states no load range is surfaced with a note to confirm it.
                         </p>
                     <?php else : ?>
                         <input type="number" name="catalog_min_load_index" id="catalog_min_load_index" value="<?php echo esc_attr( $min_load_index ); ?>" min="100" max="126" class="rtg-input-small">
