@@ -1,4 +1,10 @@
 <?php
+/**
+ * Dashboard: what needs doing today, then how the catalog looks.
+ *
+ * The page leads with the attention list because that is what an admin
+ * opens it for. Everything below it is context.
+ */
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
@@ -9,8 +15,8 @@ $stats = RTG_Database::get_dashboard_stats();
 $core            = $stats['core'];
 $total_tires     = (int) ( $core['total_tires'] ?? 0 );
 $avg_price       = floatval( $core['avg_price'] ?? 0 );
-$avg_efficiency  = (int) ( $core['avg_efficiency'] ?? 0 );
 $total_reviews   = (int) ( $stats['ratings']['total_ratings'] ?? 0 );
+$avg_rating      = floatval( $stats['ratings']['avg_rating'] ?? 0 );
 
 // Price range.
 $min_price = floatval( $core['min_price'] ?? 0 );
@@ -48,6 +54,17 @@ $broken_link_count  = count( $broken_links );
 $link_check_results = RTG_Link_Checker::get_results();
 $last_link_check    = ! empty( $link_check_results['checked_at'] ) ? $link_check_results['checked_at'] : '';
 
+// The discovery queue and the health of the run that feeds it.
+$candidate_counts    = RTG_Candidates::get_counts();
+$awaiting_candidates = (int) ( $candidate_counts[ RTG_Candidates::STATUS_NEW ] ?? 0 );
+$discovery_stats     = RTG_Catalog_Sync::get_stats();
+$discovery_issues    = RTG_Health::evaluate(
+    $discovery_stats,
+    RTG_Admin::get_dropdown_options( 'sizes' ),
+    current_time( 'timestamp' )
+);
+$roamer_failed = $roamer_sync_stats && 'error' === ( $roamer_sync_stats['status'] ?? '' );
+
 // Helper: find max count in a grouped result for bar widths.
 $max_of = function ( $rows ) {
     $max = 0;
@@ -59,173 +76,222 @@ $max_of = function ( $rows ) {
     return max( $max, 1 );
 };
 
-// Grade colors map.
-$grade_colors = array(
-    'A' => '#34c759',
-    'B' => '#7dc734',
-    'C' => '#facc15',
-    'D' => '#f97316',
-    'E' => '#ef4444',
-    'F' => '#b91c1c',
+// Everything that wants a decision, most urgent first. Each item is a
+// label, a sentence, a severity and a button. Items that are fine are
+// listed after, dimmed, so "all clear" is visibly true rather than assumed.
+$attention = array();
+
+if ( ! empty( $discovery_issues ) ) {
+    $attention[] = array(
+        'level'  => 'error',
+        'icon'   => 'dashicons-warning',
+        'title'  => 'Tire Discovery needs a look',
+        'text'   => reset( $discovery_issues ),
+        'action' => array( 'Open Discovery', admin_url( 'admin.php?page=rtg-tire-discovery' ) ),
+    );
+}
+if ( $roamer_failed ) {
+    $attention[] = array(
+        'level'  => 'error',
+        'icon'   => 'dashicons-warning',
+        'title'  => 'The last Roamer sync failed',
+        'text'   => (string) ( $roamer_sync_stats['message'] ?? 'No reason was recorded.' ),
+        'action' => array( 'Open Roamer Data', admin_url( 'admin.php?page=rtg-roamer-sync' ) ),
+    );
+}
+if ( $pending_reviews > 0 ) {
+    $attention[] = array(
+        'level'  => 'warning',
+        'icon'   => 'dashicons-clock',
+        'title'  => sprintf( '%d review%s waiting for moderation', $pending_reviews, 1 === $pending_reviews ? '' : 's' ),
+        'text'   => 'Owners see their review on the tire page once it is approved.',
+        'action' => array( 'Moderate', admin_url( 'admin.php?page=rtg-reviews&status=pending' ) ),
+    );
+}
+if ( $awaiting_candidates > 0 ) {
+    $attention[] = array(
+        'level'  => 'info',
+        'icon'   => 'dashicons-search',
+        'title'  => sprintf( '%d discovered tire%s to review', $awaiting_candidates, 1 === $awaiting_candidates ? '' : 's' ),
+        'text'   => 'Retailer listings in a Rivian size that are not in the guide yet.',
+        'action' => array( 'Review queue', admin_url( 'admin.php?page=rtg-tire-discovery' ) ),
+    );
+}
+if ( $broken_link_count > 0 ) {
+    $attention[] = array(
+        'level'  => 'error',
+        'icon'   => 'dashicons-admin-links',
+        'title'  => sprintf( '%d broken affiliate link%s', $broken_link_count, 1 === $broken_link_count ? '' : 's' ),
+        'text'   => 'Links that land on a retailer homepage instead of the product.',
+        'action' => array( 'Fix links', admin_url( 'admin.php?page=rtg-affiliate-links&link_filter=broken' ) ),
+    );
+}
+if ( $missing_links > 0 ) {
+    $attention[] = array(
+        'level'  => 'warning',
+        'icon'   => 'dashicons-admin-links',
+        'title'  => sprintf( '%d tire%s with no purchase link', $missing_links, 1 === $missing_links ? '' : 's' ),
+        'text'   => 'A card with no link earns nothing when a shopper decides.',
+        'action' => array( 'Add links', admin_url( 'admin.php?page=rtg-affiliate-links&link_filter=missing' ) ),
+    );
+}
+if ( $missing_images > 0 ) {
+    $attention[] = array(
+        'level'  => 'warning',
+        'icon'   => 'dashicons-format-image',
+        'title'  => sprintf( '%d tire%s with no image', $missing_images, 1 === $missing_images ? '' : 's' ),
+        'text'   => 'The card shows a blank where the tire photo should be.',
+        'action' => array( 'View tires', admin_url( 'admin.php?page=rtg-tires' ) ),
+    );
+}
+
+$all_clear = array(
+    array( 'Reviews', 0 === $pending_reviews, 'All reviews moderated.' ),
+    array( 'Discovery queue', 0 === $awaiting_candidates, 'Nothing waiting for review.' ),
+    array( 'Affiliate links', 0 === $broken_link_count && 0 === $missing_links, $last_link_check ? 'Every tire has a link and the last check found them all working.' : 'Every tire has a link. No link check has run yet.' ),
+    array( 'Images', 0 === $missing_images, 'Every tire has an image.' ),
 );
 ?>
 
 <div class="rtg-wrap">
 
     <div class="rtg-page-header">
-        <h1 class="rtg-page-title">Dashboard</h1>
+        <div class="rtg-page-heading">
+            <h1 class="rtg-page-title">Dashboard</h1>
+            <p class="rtg-page-subtitle">
+                <?php echo esc_html( number_format( $total_tires ) ); ?> tires in the guide,
+                <?php echo esc_html( number_format( $total_reviews ) ); ?> owner reviews.
+            </p>
+        </div>
+        <div class="rtg-page-actions">
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit' ) ); ?>" class="rtg-btn rtg-btn-primary">
+                <span class="dashicons dashicons-plus-alt2"></span> Add tire
+            </a>
+        </div>
     </div>
 
     <!-- ================================================================
-         Overview Cards
+         Needs attention
+         ================================================================ -->
+    <div class="rtg-card">
+        <div class="rtg-card-header is-split">
+            <div>
+                <h2>Needs attention</h2>
+                <p>Everything that wants a decision, most urgent first.</p>
+            </div>
+            <?php if ( empty( $attention ) ) : ?>
+                <span class="rtg-badge rtg-badge-success">All clear</span>
+            <?php else : ?>
+                <span class="rtg-badge rtg-badge-warning"><?php echo count( $attention ); ?> item<?php echo 1 === count( $attention ) ? '' : 's'; ?></span>
+            <?php endif; ?>
+        </div>
+        <div class="rtg-card-body">
+            <?php foreach ( $attention as $item ) : ?>
+                <div class="rtg-health-item">
+                    <span class="rtg-health-icon rtg-health-icon-<?php echo esc_attr( $item['level'] ); ?>">
+                        <span class="dashicons <?php echo esc_attr( $item['icon'] ); ?>"></span>
+                    </span>
+                    <span class="rtg-health-content">
+                        <strong><?php echo esc_html( $item['title'] ); ?></strong>
+                        <p><?php echo esc_html( $item['text'] ); ?></p>
+                    </span>
+                    <span class="rtg-health-action">
+                        <a href="<?php echo esc_url( $item['action'][1] ); ?>" class="rtg-btn rtg-btn-secondary rtg-btn-sm"><?php echo esc_html( $item['action'][0] ); ?></a>
+                    </span>
+                </div>
+            <?php endforeach; ?>
+
+            <?php foreach ( $all_clear as $ok ) : ?>
+                <?php if ( ! $ok[1] ) { continue; } ?>
+                <div class="rtg-health-item is-ok">
+                    <span class="rtg-health-icon rtg-health-icon-success">
+                        <span class="dashicons dashicons-yes-alt"></span>
+                    </span>
+                    <span class="rtg-health-content">
+                        <strong><?php echo esc_html( $ok[0] ); ?></strong>
+                        <p><?php echo esc_html( $ok[2] ); ?></p>
+                    </span>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         Overview
          ================================================================ -->
     <div class="rtg-stats-grid">
+        <a class="rtg-stat-card" href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires' ) ); ?>">
+            <div class="rtg-stat-value"><?php echo esc_html( number_format( $total_tires ) ); ?></div>
+            <div class="rtg-stat-label">Tires</div>
+        </a>
+        <a class="rtg-stat-card" href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-reviews' ) ); ?>">
+            <div class="rtg-stat-value"><?php echo esc_html( number_format( $total_reviews ) ); ?><?php if ( $avg_rating > 0 ) : ?> <span class="rtg-stat-sub"><?php echo esc_html( number_format( $avg_rating, 1 ) ); ?>★</span><?php endif; ?></div>
+            <div class="rtg-stat-label">Owner reviews</div>
+        </a>
+        <a class="rtg-stat-card <?php echo $affiliate_pct < 100 ? 'is-warning' : 'is-success'; ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-affiliate-links' ) ); ?>">
+            <div class="rtg-stat-value"><?php echo esc_html( $affiliate_pct ); ?>%</div>
+            <div class="rtg-stat-label">Affiliate coverage</div>
+        </a>
+        <a class="rtg-stat-card" href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-roamer-sync' ) ); ?>">
+            <div class="rtg-stat-value"><?php echo esc_html( $roamer_pct ); ?>%</div>
+            <div class="rtg-stat-label">Roamer linked</div>
+        </a>
         <div class="rtg-stat-card">
-            <div class="rtg-stat-value"><?php echo esc_html( $total_tires ); ?></div>
-            <div class="rtg-stat-label">Total Tires</div>
-        </div>
-        <div class="rtg-stat-card">
-            <div class="rtg-stat-value">$<?php echo esc_html( number_format( $avg_price, 2 ) ); ?></div>
-            <div class="rtg-stat-label">Average Price</div>
-        </div>
-        <div class="rtg-stat-card">
-            <div class="rtg-stat-value" <?php echo ( $missing_images + $missing_links ) > 0 ? 'style="color:#c41e3a;"' : ''; ?>><?php echo esc_html( $missing_images + $missing_links ); ?></div>
-            <div class="rtg-stat-label">Content Gaps (Images / Links)</div>
-        </div>
-        <div class="rtg-stat-card">
-            <div class="rtg-stat-value"><?php echo esc_html( $total_reviews ); ?></div>
-            <div class="rtg-stat-label">Total Reviews</div>
+            <div class="rtg-stat-value">$<?php echo esc_html( number_format( $avg_price, 0 ) ); ?></div>
+            <div class="rtg-stat-label">Average price</div>
         </div>
     </div>
 
     <!-- ================================================================
-         Breakdowns: Two-Column Grid
+         Catalog breakdowns
          ================================================================ -->
-    <div class="rtg-dashboard-grid">
+    <div class="rtg-dashboard-grid is-thirds">
 
-        <!-- Tires by Category -->
-        <div class="rtg-card">
-            <div class="rtg-card-header"><h2>Tires by Category</h2></div>
-            <div class="rtg-card-body">
-                <?php if ( empty( $stats['by_category'] ) ) : ?>
-                    <p style="color: var(--rtg-text-muted);">No category data available.</p>
-                <?php else : ?>
-                    <?php $max_cat = $max_of( $stats['by_category'] ); ?>
-                    <ul class="rtg-bar-list">
-                        <?php foreach ( $stats['by_category'] as $row ) : ?>
-                            <li class="rtg-bar-item">
-                                <span class="rtg-bar-label"><?php echo esc_html( $row['category'] ); ?></span>
-                                <span class="rtg-bar-track">
-                                    <span class="rtg-bar-fill" style="width: <?php echo esc_attr( round( ( (int) $row['count'] / $max_cat ) * 100 ) ); ?>%;"></span>
-                                </span>
-                                <span class="rtg-bar-count"><?php echo esc_html( $row['count'] ); ?></span>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php endif; ?>
+        <?php
+        $breakdowns = array(
+            array( 'Tires by category', 'by_category', 'category' ),
+            array( 'Top brands', 'by_brand', 'brand' ),
+            array( 'Tires by size', 'by_size', 'size' ),
+        );
+        foreach ( $breakdowns as $bd ) :
+            list( $bd_title, $bd_key, $bd_field ) = $bd;
+            $rows = $stats[ $bd_key ] ?? array();
+        ?>
+            <div class="rtg-card">
+                <div class="rtg-card-header"><h2><?php echo esc_html( $bd_title ); ?></h2></div>
+                <div class="rtg-card-body">
+                    <?php if ( empty( $rows ) ) : ?>
+                        <p class="rtg-empty-line">No data yet.</p>
+                    <?php else : ?>
+                        <?php $bd_max = $max_of( $rows ); ?>
+                        <ul class="rtg-bar-list">
+                            <?php foreach ( $rows as $row ) : ?>
+                                <li class="rtg-bar-item">
+                                    <span class="rtg-bar-label" title="<?php echo esc_attr( $row[ $bd_field ] ); ?>"><?php echo esc_html( $row[ $bd_field ] ); ?></span>
+                                    <span class="rtg-bar-track">
+                                        <span class="rtg-bar-fill" style="width: <?php echo esc_attr( round( ( (int) $row['count'] / $bd_max ) * 100 ) ); ?>%;"></span>
+                                    </span>
+                                    <span class="rtg-bar-count"><?php echo esc_html( $row['count'] ); ?></span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+                </div>
             </div>
-        </div>
+        <?php endforeach; ?>
 
-        <!-- Tires by Brand (Top 10) -->
-        <div class="rtg-card">
-            <div class="rtg-card-header"><h2>Top Brands</h2></div>
-            <div class="rtg-card-body">
-                <?php if ( empty( $stats['by_brand'] ) ) : ?>
-                    <p style="color: var(--rtg-text-muted);">No brand data available.</p>
-                <?php else : ?>
-                    <?php $max_brand = $max_of( $stats['by_brand'] ); ?>
-                    <ul class="rtg-bar-list">
-                        <?php foreach ( $stats['by_brand'] as $row ) : ?>
-                            <li class="rtg-bar-item">
-                                <span class="rtg-bar-label"><?php echo esc_html( $row['brand'] ); ?></span>
-                                <span class="rtg-bar-track">
-                                    <span class="rtg-bar-fill" style="width: <?php echo esc_attr( round( ( (int) $row['count'] / $max_brand ) * 100 ) ); ?>%;"></span>
-                                </span>
-                                <span class="rtg-bar-count"><?php echo esc_html( $row['count'] ); ?></span>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php endif; ?>
-            </div>
-        </div>
-
-        <!-- Tires by Size -->
-        <div class="rtg-card">
-            <div class="rtg-card-header"><h2>Tires by Size</h2></div>
-            <div class="rtg-card-body">
-                <?php if ( empty( $stats['by_size'] ) ) : ?>
-                    <p style="color: var(--rtg-text-muted);">No size data available.</p>
-                <?php else : ?>
-                    <?php $max_size = $max_of( $stats['by_size'] ); ?>
-                    <ul class="rtg-bar-list">
-                        <?php foreach ( $stats['by_size'] as $row ) : ?>
-                            <li class="rtg-bar-item">
-                                <span class="rtg-bar-label"><?php echo esc_html( $row['size'] ); ?></span>
-                                <span class="rtg-bar-track">
-                                    <span class="rtg-bar-fill" style="width: <?php echo esc_attr( round( ( (int) $row['count'] / $max_size ) * 100 ) ); ?>%;"></span>
-                                </span>
-                                <span class="rtg-bar-count"><?php echo esc_html( $row['count'] ); ?></span>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php endif; ?>
-            </div>
-        </div>
-
-    </div><!-- .rtg-dashboard-grid -->
+    </div>
 
     <!-- ================================================================
-         Key Insights: Two-Column Grid
+         Community and price / weight
          ================================================================ -->
-    <div class="rtg-dashboard-grid">
+    <div class="rtg-dashboard-grid is-thirds">
 
-        <!-- Price & Weight Ranges -->
         <div class="rtg-card">
-            <div class="rtg-card-header"><h2>Key Insights</h2></div>
-            <div class="rtg-card-body">
-                <div class="rtg-stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 16px;">
-                    <div class="rtg-stat-card">
-                        <div class="rtg-stat-value">$<?php echo esc_html( number_format( $min_price, 0 ) ); ?></div>
-                        <div class="rtg-stat-label">Lowest Price</div>
-                    </div>
-                    <div class="rtg-stat-card">
-                        <div class="rtg-stat-value">$<?php echo esc_html( number_format( $avg_price, 0 ) ); ?></div>
-                        <div class="rtg-stat-label">Avg Price</div>
-                    </div>
-                    <div class="rtg-stat-card">
-                        <div class="rtg-stat-value">$<?php echo esc_html( number_format( $max_price, 0 ) ); ?></div>
-                        <div class="rtg-stat-label">Highest Price</div>
-                    </div>
-                </div>
-                <div class="rtg-stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 16px;">
-                    <div class="rtg-stat-card">
-                        <div class="rtg-stat-value"><?php echo esc_html( $min_weight ); ?> lb</div>
-                        <div class="rtg-stat-label">Lightest</div>
-                    </div>
-                    <div class="rtg-stat-card">
-                        <div class="rtg-stat-value"><?php echo esc_html( $avg_weight ); ?> lb</div>
-                        <div class="rtg-stat-label">Avg Weight</div>
-                    </div>
-                    <div class="rtg-stat-card">
-                        <div class="rtg-stat-value"><?php echo esc_html( $max_weight ); ?> lb</div>
-                        <div class="rtg-stat-label">Heaviest</div>
-                    </div>
-                </div>
-                <div class="rtg-stats-grid" style="grid-template-columns: 1fr; margin-bottom: 0;">
-                    <div class="rtg-stat-card">
-                        <div class="rtg-stat-value"><?php echo esc_html( $affiliate_pct ); ?>%</div>
-                        <div class="rtg-stat-label">Affiliate Link Coverage (<?php echo esc_html( $affiliate_count ); ?>/<?php echo esc_html( $total_tires ); ?> tires)</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Top Rated Tires -->
-        <div class="rtg-card">
-            <div class="rtg-card-header"><h2>Top Rated Tires</h2></div>
+            <div class="rtg-card-header"><h2>Top rated</h2></div>
             <div class="rtg-card-body">
                 <?php if ( empty( $stats['top_rated'] ) ) : ?>
-                    <p style="color: var(--rtg-text-muted);">No reviews yet.</p>
+                    <p class="rtg-empty-line">No reviews yet.</p>
                 <?php else : ?>
                     <ul class="rtg-mini-list">
                         <?php foreach ( $stats['top_rated'] as $i => $tire ) : ?>
@@ -236,7 +302,7 @@ $grade_colors = array(
                                 <?php endif; ?>
                                 <span class="rtg-mini-list-info">
                                     <span class="rtg-mini-list-name">
-                                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires&s=' . urlencode( $tire['tire_id'] ) ) ); ?>"><?php echo esc_html( $tire['brand'] . ' ' . $tire['model'] ); ?></a>
+                                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit&tire_id=' . rawurlencode( $tire['tire_id'] ) ) ); ?>"><?php echo esc_html( $tire['brand'] . ' ' . $tire['model'] ); ?></a>
                                     </span>
                                     <span class="rtg-mini-list-meta"><?php echo esc_html( $tire['rating_count'] ); ?> review<?php echo (int) $tire['rating_count'] !== 1 ? 's' : ''; ?></span>
                                 </span>
@@ -248,12 +314,11 @@ $grade_colors = array(
             </div>
         </div>
 
-        <!-- Most Reviewed Tires -->
         <div class="rtg-card">
-            <div class="rtg-card-header"><h2>Most Reviewed</h2></div>
+            <div class="rtg-card-header"><h2>Most reviewed</h2></div>
             <div class="rtg-card-body">
                 <?php if ( empty( $stats['most_reviewed'] ) ) : ?>
-                    <p style="color: var(--rtg-text-muted);">No reviews yet.</p>
+                    <p class="rtg-empty-line">No reviews yet.</p>
                 <?php else : ?>
                     <ul class="rtg-mini-list">
                         <?php foreach ( $stats['most_reviewed'] as $i => $tire ) : ?>
@@ -266,7 +331,7 @@ $grade_colors = array(
                                     <span class="rtg-mini-list-name">
                                         <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-reviews&s=' . urlencode( $tire['tire_id'] ) ) ); ?>"><?php echo esc_html( $tire['brand'] . ' ' . $tire['model'] ); ?></a>
                                     </span>
-                                    <span class="rtg-mini-list-meta">Avg: <?php echo esc_html( $tire['avg_rating'] ); ?> / 5</span>
+                                    <span class="rtg-mini-list-meta">Avg <?php echo esc_html( $tire['avg_rating'] ); ?> / 5</span>
                                 </span>
                                 <span class="rtg-mini-list-value"><?php echo esc_html( $tire['review_count'] ); ?> review<?php echo (int) $tire['review_count'] !== 1 ? 's' : ''; ?></span>
                             </li>
@@ -276,149 +341,111 @@ $grade_colors = array(
             </div>
         </div>
 
-        <!-- Content Health -->
         <div class="rtg-card">
-            <div class="rtg-card-header"><h2>Content Health</h2></div>
+            <div class="rtg-card-header"><h2>Price and weight</h2></div>
             <div class="rtg-card-body">
-                <!-- Pending Reviews -->
-                <div class="rtg-health-item">
-                    <span class="rtg-health-icon <?php echo $pending_reviews > 0 ? 'rtg-health-icon-warning' : 'rtg-health-icon-success'; ?>">
-                        <span class="dashicons <?php echo $pending_reviews > 0 ? 'dashicons-clock' : 'dashicons-yes-alt'; ?>"></span>
-                    </span>
-                    <span class="rtg-health-content">
-                        <strong><?php echo esc_html( $pending_reviews ); ?> Pending Review<?php echo $pending_reviews !== 1 ? 's' : ''; ?></strong>
-                        <p><?php echo $pending_reviews > 0 ? 'Reviews awaiting moderation.' : 'All reviews moderated.'; ?></p>
-                    </span>
-                    <?php if ( $pending_reviews > 0 ) : ?>
-                        <span class="rtg-health-action">
-                            <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-reviews&status=pending' ) ); ?>" class="rtg-btn rtg-btn-secondary" style="text-decoration:none;">Review</a>
-                        </span>
-                    <?php endif; ?>
+                <div class="rtg-kv-grid">
+                    <div>
+                        <span class="rtg-kv-label">Lowest price</span>
+                        <div class="rtg-kv-value">$<?php echo esc_html( number_format( $min_price, 0 ) ); ?></div>
+                    </div>
+                    <div>
+                        <span class="rtg-kv-label">Average</span>
+                        <div class="rtg-kv-value">$<?php echo esc_html( number_format( $avg_price, 0 ) ); ?></div>
+                    </div>
+                    <div>
+                        <span class="rtg-kv-label">Highest</span>
+                        <div class="rtg-kv-value">$<?php echo esc_html( number_format( $max_price, 0 ) ); ?></div>
+                    </div>
+                    <div>
+                        <span class="rtg-kv-label">Lightest</span>
+                        <div class="rtg-kv-value"><?php echo esc_html( $min_weight ); ?> <span class="rtg-stat-sub">lb</span></div>
+                    </div>
+                    <div>
+                        <span class="rtg-kv-label">Average weight</span>
+                        <div class="rtg-kv-value"><?php echo esc_html( $avg_weight ); ?> <span class="rtg-stat-sub">lb</span></div>
+                    </div>
+                    <div>
+                        <span class="rtg-kv-label">Heaviest</span>
+                        <div class="rtg-kv-value"><?php echo esc_html( $max_weight ); ?> <span class="rtg-stat-sub">lb</span></div>
+                    </div>
                 </div>
-
-                <!-- Missing Images -->
-                <div class="rtg-health-item">
-                    <span class="rtg-health-icon <?php echo $missing_images > 0 ? 'rtg-health-icon-error' : 'rtg-health-icon-success'; ?>">
-                        <span class="dashicons <?php echo $missing_images > 0 ? 'dashicons-format-image' : 'dashicons-yes-alt'; ?>"></span>
-                    </span>
-                    <span class="rtg-health-content">
-                        <strong><?php echo esc_html( $missing_images ); ?> Tire<?php echo $missing_images !== 1 ? 's' : ''; ?> Missing Images</strong>
-                        <p><?php echo $missing_images > 0 ? 'Add images to improve the visual guide.' : 'All tires have images.'; ?></p>
-                    </span>
-                    <?php if ( $missing_images > 0 ) : ?>
-                        <span class="rtg-health-action">
-                            <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires' ) ); ?>" class="rtg-btn rtg-btn-secondary" style="text-decoration:none;">View Tires</a>
-                        </span>
-                    <?php endif; ?>
-                </div>
-
-                <!-- Missing Links -->
-                <div class="rtg-health-item">
-                    <span class="rtg-health-icon <?php echo $missing_links > 0 ? 'rtg-health-icon-error' : 'rtg-health-icon-success'; ?>">
-                        <span class="dashicons <?php echo $missing_links > 0 ? 'dashicons-admin-links' : 'dashicons-yes-alt'; ?>"></span>
-                    </span>
-                    <span class="rtg-health-content">
-                        <strong><?php echo esc_html( $missing_links ); ?> Tire<?php echo $missing_links !== 1 ? 's' : ''; ?> Missing Links</strong>
-                        <p><?php echo $missing_links > 0 ? 'Add purchase links to monetize.' : 'All tires have purchase links.'; ?></p>
-                    </span>
-                    <?php if ( $missing_links > 0 ) : ?>
-                        <span class="rtg-health-action">
-                            <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-affiliate-links&link_filter=missing' ) ); ?>" class="rtg-btn rtg-btn-secondary" style="text-decoration:none;">Fix Links</a>
-                        </span>
-                    <?php endif; ?>
-                </div>
-
-                <!-- Broken Affiliate Links -->
-                <div class="rtg-health-item">
-                    <span class="rtg-health-icon <?php echo $broken_link_count > 0 ? 'rtg-health-icon-error' : 'rtg-health-icon-success'; ?>">
-                        <span class="dashicons <?php echo $broken_link_count > 0 ? 'dashicons-warning' : 'dashicons-yes-alt'; ?>"></span>
-                    </span>
-                    <span class="rtg-health-content">
-                        <strong><?php echo esc_html( $broken_link_count ); ?> Broken Affiliate <?php echo $broken_link_count !== 1 ? 'Links' : 'Link'; ?></strong>
-                        <p><?php
-                            if ( ! $last_link_check ) {
-                                echo 'No link check has run yet.';
-                            } elseif ( $broken_link_count > 0 ) {
-                                echo 'Links redirecting to homepage instead of product page.';
-                            } else {
-                                echo 'All affiliate links are working correctly.';
-                            }
-                        ?></p>
-                    </span>
-                    <?php if ( $broken_link_count > 0 ) : ?>
-                        <span class="rtg-health-action">
-                            <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-affiliate-links&link_filter=broken' ) ); ?>" class="rtg-btn rtg-btn-secondary" style="text-decoration:none;">Fix Links</a>
-                        </span>
-                    <?php endif; ?>
-                </div>
+                <p class="rtg-help">
+                    Affiliate links on <?php echo esc_html( $affiliate_count ); ?> of <?php echo esc_html( $total_tires ); ?> tires.
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-affiliate-links' ) ); ?>">Manage links</a>
+                </p>
             </div>
         </div>
 
-    </div><!-- .rtg-dashboard-grid -->
+    </div>
 
     <!-- ================================================================
-         Rivian Roamer Sync
+         Rivian Roamer: real-world efficiency
          ================================================================ -->
     <div class="rtg-dashboard-grid">
 
-        <!-- Roamer Overview -->
         <div class="rtg-card">
-            <div class="rtg-card-header">
-                <h2>Rivian Roamer — Real-World Efficiency</h2>
+            <div class="rtg-card-header is-split">
+                <div>
+                    <h2>Real-world efficiency</h2>
+                    <p>Miles per kWh reported by Rivian Roamer owners, matched to the guide's tires.</p>
+                </div>
+                <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-roamer-sync' ) ); ?>" class="rtg-btn rtg-btn-secondary rtg-btn-sm">Manage</a>
             </div>
             <div class="rtg-card-body">
-                <div class="rtg-stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 16px;">
-                    <div class="rtg-stat-card">
-                        <div class="rtg-stat-value"><?php echo esc_html( $roamer_linked ); ?><span style="font-size:14px;font-weight:400;color:var(--rtg-text-muted);">/<?php echo esc_html( $total_tires ); ?></span></div>
-                        <div class="rtg-stat-label">Tires Linked (<?php echo esc_html( $roamer_pct ); ?>%)</div>
+                <div class="rtg-kv-grid">
+                    <div>
+                        <span class="rtg-kv-label">Tires linked</span>
+                        <div class="rtg-kv-value"><?php echo esc_html( $roamer_linked ); ?> <span class="rtg-stat-sub">/ <?php echo esc_html( $total_tires ); ?></span></div>
+                        <div class="rtg-kv-note"><?php echo esc_html( $roamer_pct ); ?>% of the guide</div>
                     </div>
-                    <div class="rtg-stat-card">
-                        <div class="rtg-stat-value"><?php echo $avg_roamer_eff > 0 ? esc_html( number_format( $avg_roamer_eff, 2 ) ) : '—'; ?></div>
-                        <div class="rtg-stat-label">Avg mi/kWh</div>
+                    <div>
+                        <span class="rtg-kv-label">Average mi/kWh</span>
+                        <div class="rtg-kv-value"><?php echo $avg_roamer_eff > 0 ? esc_html( number_format( $avg_roamer_eff, 2 ) ) : '&mdash;'; ?></div>
                     </div>
-                    <div class="rtg-stat-card">
-                        <div class="rtg-stat-value"><?php echo esc_html( number_format( $total_roamer_km * 0.621371, 0 ) ); ?></div>
-                        <div class="rtg-stat-label">Total Miles Tracked</div>
+                    <div>
+                        <span class="rtg-kv-label">Best</span>
+                        <div class="rtg-kv-value is-success"><?php echo $max_roamer_eff > 0 ? esc_html( number_format( $max_roamer_eff, 2 ) ) : '&mdash;'; ?></div>
                     </div>
-                </div>
-                <div class="rtg-stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 16px;">
-                    <div class="rtg-stat-card">
-                        <div class="rtg-stat-value"><?php echo $max_roamer_eff > 0 ? esc_html( number_format( $max_roamer_eff, 2 ) ) : '—'; ?></div>
-                        <div class="rtg-stat-label">Best mi/kWh</div>
+                    <div>
+                        <span class="rtg-kv-label">Worst</span>
+                        <div class="rtg-kv-value is-muted"><?php echo $min_roamer_eff > 0 ? esc_html( number_format( $min_roamer_eff, 2 ) ) : '&mdash;'; ?></div>
                     </div>
-                    <div class="rtg-stat-card">
-                        <div class="rtg-stat-value"><?php echo $min_roamer_eff > 0 ? esc_html( number_format( $min_roamer_eff, 2 ) ) : '—'; ?></div>
-                        <div class="rtg-stat-label">Worst mi/kWh</div>
+                    <div>
+                        <span class="rtg-kv-label">Miles tracked</span>
+                        <div class="rtg-kv-value"><?php echo esc_html( number_format( $total_roamer_km * 0.621371, 0 ) ); ?></div>
                     </div>
-                    <div class="rtg-stat-card">
-                        <div class="rtg-stat-value"><?php echo esc_html( number_format( $total_roamer_veh ) ); ?></div>
-                        <div class="rtg-stat-label">Total Vehicles</div>
+                    <div>
+                        <span class="rtg-kv-label">Vehicles</span>
+                        <div class="rtg-kv-value"><?php echo esc_html( number_format( $total_roamer_veh ) ); ?></div>
                     </div>
                 </div>
                 <?php if ( $roamer_sync_stats && ! empty( $roamer_sync_stats['time'] ) ) : ?>
-                    <p style="color:var(--rtg-text-muted);font-size:13px;margin:0;">
-                        Last sync: <?php echo esc_html( $roamer_sync_stats['time'] ); ?>
-                        <?php if ( $roamer_sync_stats['status'] === 'success' ) : ?>
-                            — <?php echo intval( $roamer_sync_stats['matched'] ); ?> matched,
-                            <?php echo intval( $roamer_sync_stats['skipped'] ); ?> ambiguous,
-                            <?php echo intval( $roamer_sync_stats['unmatched'] ); ?> unmatched
-                        <?php endif; ?>
-                        · <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-roamer-sync' ) ); ?>">Manage →</a>
+                    <p class="rtg-help">
+                        Last sync <?php echo esc_html( human_time_diff( strtotime( $roamer_sync_stats['time'] ), current_time( 'timestamp' ) ) ); ?> ago<?php
+                        if ( 'success' === $roamer_sync_stats['status'] ) {
+                            printf(
+                                ': %d matched, %d ambiguous, %d unmatched.',
+                                intval( $roamer_sync_stats['matched'] ),
+                                intval( $roamer_sync_stats['skipped'] ),
+                                intval( $roamer_sync_stats['unmatched'] )
+                            );
+                        } else {
+                            echo '.';
+                        }
+                        ?>
                     </p>
                 <?php else : ?>
-                    <p style="color:var(--rtg-text-muted);font-size:13px;margin:0;">
-                        No sync has been run yet. <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-roamer-sync' ) ); ?>">Run first sync →</a>
-                    </p>
+                    <p class="rtg-help">No sync has run yet. <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-roamer-sync' ) ); ?>">Run the first sync</a>.</p>
                 <?php endif; ?>
             </div>
         </div>
 
-        <!-- Top Real-World Efficient Tires -->
         <div class="rtg-card">
-            <div class="rtg-card-header"><h2>Most Efficient (Real-World)</h2></div>
+            <div class="rtg-card-header"><h2>Most efficient in the real world</h2></div>
             <div class="rtg-card-body">
                 <?php if ( empty( $stats['top_roamer'] ) ) : ?>
-                    <p style="color: var(--rtg-text-muted);">No Roamer data linked yet. <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-roamer-sync' ) ); ?>">Sync now</a>.</p>
+                    <p class="rtg-empty-line">No Roamer data linked yet. <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-roamer-sync' ) ); ?>">Sync now</a>.</p>
                 <?php else : ?>
                     <ul class="rtg-mini-list">
                         <?php foreach ( $stats['top_roamer'] as $i => $tire ) : ?>
@@ -429,11 +456,11 @@ $grade_colors = array(
                                 <?php endif; ?>
                                 <span class="rtg-mini-list-info">
                                     <span class="rtg-mini-list-name">
-                                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires&s=' . urlencode( $tire['tire_id'] ) ) ); ?>"><?php echo esc_html( $tire['brand'] . ' ' . $tire['model'] ); ?></a>
+                                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit&tire_id=' . rawurlencode( $tire['tire_id'] ) ) ); ?>"><?php echo esc_html( $tire['brand'] . ' ' . $tire['model'] ); ?></a>
                                     </span>
-                                    <span class="rtg-mini-list-meta"><?php echo esc_html( $tire['size'] ); ?> · <?php echo number_format( floatval( $tire['roamer_total_km'] ?? 0 ) * 0.621371, 0 ); ?> mi tracked</span>
+                                    <span class="rtg-mini-list-meta"><?php echo esc_html( $tire['size'] ); ?> · <?php echo esc_html( number_format( floatval( $tire['roamer_total_km'] ?? 0 ) * 0.621371, 0 ) ); ?> mi tracked</span>
                                 </span>
-                                <span class="rtg-mini-list-value" style="color:#60a5fa;"><?php echo esc_html( number_format( $tire['roamer_efficiency'], 2 ) ); ?> mi/kWh</span>
+                                <span class="rtg-mini-list-value is-info"><?php echo esc_html( number_format( $tire['roamer_efficiency'], 2 ) ); ?> mi/kWh</span>
                             </li>
                         <?php endforeach; ?>
                     </ul>
@@ -441,63 +468,35 @@ $grade_colors = array(
             </div>
         </div>
 
-    </div><!-- .rtg-dashboard-grid (roamer) -->
-
-    <!-- ================================================================
-         JSON Data Feed (full-width)
-         ================================================================ -->
-    <?php $feed_url = rest_url( 'rtg/v1/feed' ); ?>
-    <div class="rtg-card">
-        <div class="rtg-card-header"><h2>JSON Data Feed</h2></div>
-        <div class="rtg-card-body">
-            <p style="color: var(--rtg-text-secondary); margin: 0 0 12px;">
-                Share this URL to give others live access to your tire data. It updates automatically whenever you add or edit tires.
-            </p>
-            <div style="display: flex; gap: 8px; align-items: center;">
-                <input
-                    type="text"
-                    id="rtg-feed-url"
-                    value="<?php echo esc_url( $feed_url ); ?>"
-                    readonly
-                    class="rtg-input"
-                    style="flex: 1; font-family: var(--rtg-font-mono); font-size: 13px; cursor: text;"
-                    onclick="this.select();"
-                />
-                <button type="button" id="rtg-copy-feed-url" class="rtg-btn rtg-btn-primary" style="white-space: nowrap;">
-                    Copy URL
-                </button>
-                <a href="<?php echo esc_url( $feed_url ); ?>" target="_blank" class="rtg-btn rtg-btn-secondary" style="white-space: nowrap; text-decoration: none;">
-                    Preview
-                </a>
-            </div>
-            <p id="rtg-feed-copy-status" style="color: var(--rtg-success); margin: 8px 0 0; font-size: 13px; display: none;">
-                Copied to clipboard!
-            </p>
-        </div>
     </div>
 
     <!-- ================================================================
-         Recently Added Tires (full-width)
+         Recently added
          ================================================================ -->
     <div class="rtg-card">
-        <div class="rtg-card-header"><h2>Recently Added</h2></div>
+        <div class="rtg-card-header is-split">
+            <div><h2>Recently added</h2></div>
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires' ) ); ?>" class="rtg-btn rtg-btn-secondary rtg-btn-sm">All tires</a>
+        </div>
         <div class="rtg-card-body">
             <?php if ( empty( $stats['recent_tires'] ) ) : ?>
-                <p style="color: var(--rtg-text-muted);">No tires added yet. <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit' ) ); ?>">Add your first tire</a>.</p>
+                <p class="rtg-empty-line">No tires added yet. <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit' ) ); ?>">Add your first tire</a>.</p>
             <?php else : ?>
                 <ul class="rtg-mini-list">
                     <?php foreach ( $stats['recent_tires'] as $tire ) : ?>
                         <li class="rtg-mini-list-item">
                             <?php if ( ! empty( $tire['image'] ) ) : ?>
                                 <img src="<?php echo esc_url( $tire['image'] ); ?>" alt="" class="rtg-mini-list-thumb">
+                            <?php else : ?>
+                                <span class="rtg-mini-list-thumb"></span>
                             <?php endif; ?>
                             <span class="rtg-mini-list-info">
                                 <span class="rtg-mini-list-name">
-                                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires&s=' . urlencode( $tire['tire_id'] ) ) ); ?>"><?php echo esc_html( $tire['brand'] . ' ' . $tire['model'] ); ?></a>
+                                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit&tire_id=' . rawurlencode( $tire['tire_id'] ) ) ); ?>"><?php echo esc_html( $tire['brand'] . ' ' . $tire['model'] ); ?></a>
                                 </span>
                                 <span class="rtg-mini-list-meta"><?php echo esc_html( $tire['category'] ); ?></span>
                             </span>
-                            <span class="rtg-mini-list-value" style="color: var(--rtg-text-muted); font-weight: 400; font-size: 13px;">
+                            <span class="rtg-mini-list-value is-muted">
                                 <?php echo esc_html( date( 'M j, Y', strtotime( $tire['created_at'] ) ) ); ?>
                             </span>
                         </li>

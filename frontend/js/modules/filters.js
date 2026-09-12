@@ -531,13 +531,13 @@ function applySorting(sortOption) {
       state.filteredRows.sort((a, b) => validateNumeric(a[8], NUMERIC_BOUNDS.weight, 0) - validateNumeric(b[8], NUMERIC_BOUNDS.weight, 0));
       break;
     case "newest":
-      state.filteredRows.sort((a, b) => safeString(b[23]).localeCompare(safeString(a[23])));
+      state.filteredRows.sort((a, b) => safeString(b[21]).localeCompare(safeString(a[21])));
       break;
     case "roamer-efficiency":
     default:
       state.filteredRows.sort((a, b) => {
-        const aVal = parseFloat(a[24]) || 0;
-        const bVal = parseFloat(b[24]) || 0;
+        const aVal = parseFloat(a[22]) || 0;
+        const bVal = parseFloat(b[22]) || 0;
         // Tires without Roamer data go to bottom.
         if (aVal > 0 && bVal === 0) return -1;
         if (aVal === 0 && bVal > 0) return 1;
@@ -1461,6 +1461,7 @@ export function applyFiltersFromURL() {
   const category = sanitizeInput(params.get("category"));
   if (category && state.VALID_CATEGORIES.includes(category)) setVal("filterCategory", category);
   else if (restoring) setVal("filterCategory", "");
+
 
   setChecked("filter3pms", params.get("3pms"));
   setChecked("filterOEM", params.get("oem"));

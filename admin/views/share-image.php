@@ -1,4 +1,10 @@
 <?php
+/**
+ * Share image panel of the Tools page. Rendered inside tools.php.
+ *
+ * The canvas is drawn by initShareImage() in admin-scripts.js from the
+ * figures published on window.rtgShareData below.
+ */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -9,7 +15,6 @@ $stats = RTG_Database::get_dashboard_stats();
 $core           = $stats['core'];
 $total_tires    = (int) ( $core['total_tires'] ?? 0 );
 $avg_price      = floatval( $core['avg_price'] ?? 0 );
-$avg_efficiency = (int) ( $core['avg_efficiency'] ?? 0 );
 $total_reviews  = (int) ( $stats['ratings']['total_ratings'] ?? 0 );
 $avg_rating     = floatval( $stats['ratings']['avg_rating'] ?? 0 );
 
@@ -45,72 +50,57 @@ if ( ! empty( $stats['top_rated'] ) ) {
 $site_name = get_bloginfo( 'name' );
 ?>
 
-<div class="rtg-wrap">
-
-	<div class="rtg-page-header">
-		<h1 class="rtg-page-title">Share Image</h1>
+<div class="rtg-card">
+	<div class="rtg-card-header">
+		<h2>Stats share image</h2>
+		<p>A branded 1200 by 630 image with the guide's headline numbers, ready for a social post. It redraws as you edit the text below.</p>
 	</div>
-
-	<div class="rtg-card">
-		<div class="rtg-card-header">
-			<h2>Stats Share Image</h2>
-			<p>Generate a branded image with your tire guide stats to share on social media.</p>
-		</div>
-		<div class="rtg-card-body">
-			<div style="margin-bottom: 20px;">
-				<canvas id="rtg-share-canvas" width="1200" height="630" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--rtg-border);"></canvas>
-			</div>
-			<div style="display: flex; gap: 12px; flex-wrap: wrap;">
-				<button type="button" id="rtg-download-image" class="rtg-btn rtg-btn-primary">
-					<span class="dashicons dashicons-download" style="margin-right: 4px;"></span>
-					Download Image
-				</button>
-				<button type="button" id="rtg-copy-image" class="rtg-btn rtg-btn-secondary">
-					<span class="dashicons dashicons-clipboard" style="margin-right: 4px;"></span>
-					Copy to Clipboard
-				</button>
-				<button type="button" id="rtg-regenerate-image" class="rtg-btn rtg-btn-secondary">
-					<span class="dashicons dashicons-update" style="margin-right: 4px;"></span>
-					Regenerate
-				</button>
-			</div>
-			<p id="rtg-share-status" style="margin-top: 12px; font-size: 13px; color: var(--rtg-text-secondary);"></p>
+	<div class="rtg-card-body">
+		<canvas id="rtg-share-canvas" width="1200" height="630" class="rtg-canvas-preview"></canvas>
+		<div class="rtg-toolbar">
+			<button type="button" id="rtg-download-image" class="rtg-btn rtg-btn-primary">
+				<span class="dashicons dashicons-download"></span>
+				Download image
+			</button>
+			<button type="button" id="rtg-copy-image" class="rtg-btn rtg-btn-secondary">
+				<span class="dashicons dashicons-clipboard"></span>
+				Copy to clipboard
+			</button>
+			<button type="button" id="rtg-regenerate-image" class="rtg-btn rtg-btn-secondary">
+				<span class="dashicons dashicons-update"></span>
+				Redraw
+			</button>
+			<span id="rtg-share-status" class="rtg-inline-status" role="status"></span>
 		</div>
 	</div>
-
-	<div class="rtg-card">
-		<div class="rtg-card-header">
-			<h2>Customize</h2>
-		</div>
-		<div class="rtg-card-body">
+	<div class="rtg-card-body">
+		<div class="rtg-field-grid">
 			<div class="rtg-field-row">
 				<div class="rtg-field-label-row">
 					<label class="rtg-field-label" for="rtg-share-title">Title</label>
 				</div>
-				<input type="text" id="rtg-share-title" class="rtg-text-input" value="Rivian Tire Guide" style="width: 100%; max-width: 400px;">
+				<input type="text" id="rtg-share-title" value="Rivian Tire Guide">
 			</div>
 			<div class="rtg-field-row">
 				<div class="rtg-field-label-row">
 					<label class="rtg-field-label" for="rtg-share-subtitle">Subtitle</label>
 				</div>
-				<input type="text" id="rtg-share-subtitle" class="rtg-text-input" value="by <?php echo esc_attr( $site_name ); ?>" style="width: 100%; max-width: 400px;">
+				<input type="text" id="rtg-share-subtitle" value="by <?php echo esc_attr( $site_name ); ?>">
 			</div>
 			<div class="rtg-field-row">
 				<div class="rtg-field-label-row">
-					<label class="rtg-field-label" for="rtg-share-footer">Footer Text</label>
+					<label class="rtg-field-label" for="rtg-share-footer">Footer text</label>
 				</div>
-				<input type="text" id="rtg-share-footer" class="rtg-text-input" value="Find the perfect tires for your Rivian" style="width: 100%; max-width: 400px;">
+				<input type="text" id="rtg-share-footer" value="Find the perfect tires for your Rivian">
 			</div>
 		</div>
 	</div>
-
 </div>
 
 <script>
 window.rtgShareData = {
 	totalTires: <?php echo (int) $total_tires; ?>,
 	avgPrice: <?php echo round( $avg_price, 2 ); ?>,
-	avgEfficiency: <?php echo (int) $avg_efficiency; ?>,
 	totalReviews: <?php echo (int) $total_reviews; ?>,
 	avgRating: <?php echo round( $avg_rating, 1 ); ?>,
 	categories: <?php echo wp_json_encode( $categories ); ?>,

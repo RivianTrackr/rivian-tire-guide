@@ -39,8 +39,6 @@ class Test_RTG_Database extends WP_UnitTestCase {
             'image'            => 'https://riviantrackr.com/images/tire.jpg',
             'bundle_link'      => '',
             'sort_order'       => 0,
-            'efficiency_score' => 75,
-            'efficiency_grade' => 'B',
         ), $overrides );
     }
 
@@ -128,7 +126,7 @@ class Test_RTG_Database extends WP_UnitTestCase {
         // Each row should be a numerically-indexed array of strings.
         $row = $tires[0];
         $this->assertIsArray( $row );
-        $this->assertGreaterThanOrEqual( 23, count( $row ) );
+        $this->assertCount( 30, $row, 'the frontend row layout is a fixed 30 columns' );
         foreach ( $row as $val ) {
             $this->assertIsString( $val );
         }
@@ -206,20 +204,6 @@ class Test_RTG_Database extends WP_UnitTestCase {
         $this->assertEquals( $count_before + 1, count( $after ) );
     }
 
-    public function test_efficiency_calculation() {
-        $data = $this->sample_tire( array(
-            'weight_lb'  => 35,
-            'tread'      => '10/32',
-            'load_range' => 'SL',
-        ) );
-
-        $result = RTG_Database::calculate_efficiency( $data );
-        $this->assertArrayHasKey( 'efficiency_score', $result );
-        $this->assertArrayHasKey( 'efficiency_grade', $result );
-        $this->assertGreaterThan( 0, $result['efficiency_score'] );
-        $this->assertContains( $result['efficiency_grade'], array( 'A', 'B', 'C', 'D', 'F' ) );
-    }
-
     public function test_bulk_delete_removes_ratings() {
         $ids = array( 'bulk-del-001', 'bulk-del-002' );
         foreach ( $ids as $id ) {
@@ -240,12 +224,12 @@ class Test_RTG_Database extends WP_UnitTestCase {
     // --- Frontend row format ---
 
     /**
-     * The JS reads fixed indexes up to row[31] (retailer label), so every
-     * producer of frontend rows must emit the same 32 columns.
+     * The JS reads fixed indexes up to row[29] (retailer label), so every
+     * producer of frontend rows must emit the same 30 columns.
      * get_filtered_tires() once lagged at 28, which silently dropped the
      * tire-page links whenever server-side pagination was on.
      */
-    public function test_every_frontend_row_producer_emits_the_same_32_columns() {
+    public function test_every_frontend_row_producer_emits_the_same_30_columns() {
         RTG_Database::insert_tire( $this->sample_tire( array(
             'tire_id' => 'row-format-001',
             'brand'   => 'RowBrand',
@@ -270,11 +254,11 @@ class Test_RTG_Database extends WP_UnitTestCase {
                 }
             }
             $this->assertNotNull( $row, "$name should return the inserted tire" );
-            $this->assertCount( 32, $row, "$name row width" );
-            $this->assertSame( $expected_slug, $row[28], "$name slug at index 28" );
-            $this->assertSame( '', $row[29], "$name price_synced_at at index 29 (never synced)" );
-            $this->assertMatchesRegularExpression( '/^\d{4}-\d{2}-\d{2} /', $row[30], "$name updated_at at index 30" );
-            $this->assertSame( 'Tire Rack', $row[31], "$name retailer label at index 31" );
+            $this->assertCount( 30, $row, "$name row width" );
+            $this->assertSame( $expected_slug, $row[26], "$name slug at index 26" );
+            $this->assertSame( '', $row[27], "$name price_synced_at at index 27 (never synced)" );
+            $this->assertMatchesRegularExpression( '/^\d{4}-\d{2}-\d{2} /', $row[28], "$name updated_at at index 28" );
+            $this->assertSame( 'Tire Rack', $row[29], "$name retailer label at index 29" );
         }
     }
 

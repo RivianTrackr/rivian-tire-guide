@@ -66,6 +66,38 @@ class RTG_Tire_Qualifier {
         'R2' => 112,
     );
 
+    /**
+     * Load ranges in sidewall order, lightest construction first.
+     *
+     * SL is standard load, XL extra load, HL the newer high-load rating that
+     * sits above XL, and C through F the light-truck ratings. The position in
+     * this list is what "at least XL" compares.
+     */
+    const LOAD_RANGE_ORDER = array( 'SL', 'XL', 'HL', 'C', 'D', 'E', 'F' );
+
+    /**
+     * Spellings that mean one of the ratings above. RF (reinforced) is the
+     * European marking for extra load and is judged as XL.
+     */
+    const LOAD_RANGE_ALIASES = array(
+        'RF' => 'XL',
+    );
+
+    /**
+     * Lightest load range each Rivian platform accepts.
+     *
+     * The R2 needs XL at minimum: an SL tire in an R2 size is not a fitment
+     * however good its load index looks. The R1 has no load range floor of
+     * its own; its load index rule already does the work. Judged per vehicle
+     * alongside size and load index, for the same reason those are.
+     */
+    const VEHICLE_MIN_LOAD_RANGE = array(
+        'R2' => 'XL',
+    );
+
+    /** Setting value meaning "this platform has no load range floor". */
+    const LOAD_RANGE_NONE = 'none';
+
     const CANONICAL_SPEED_RATINGS = array(
         'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'H', 'V', 'W', 'Y', 'Z', 'ZR',
     );
@@ -95,7 +127,57 @@ class RTG_Tire_Qualifier {
             'brand_policy'   => $brand_policy,
             'vehicle_sizes'  => RTG_Database::get_vehicle_size_map(),
             'vehicle_min_load_index' => self::get_vehicle_minimums(),
+            'vehicle_min_load_range' => self::get_vehicle_min_load_ranges(),
         );
+    }
+
+    /**
+     * Where a load range sits in sidewall order.
+     *
+     * @param string $range A load range as written on a listing or setting.
+     * @return int Position in LOAD_RANGE_ORDER, or -1 for a blank or unknown spelling.
+     */
+    public static function load_range_rank( $range ) {
+        $key = strtoupper( trim( (string) $range ) );
+        if ( isset( self::LOAD_RANGE_ALIASES[ $key ] ) ) {
+            $key = self::LOAD_RANGE_ALIASES[ $key ];
+        }
+        $rank = array_search( $key, self::LOAD_RANGE_ORDER, true );
+        return false === $rank ? -1 : (int) $rank;
+    }
+
+    /**
+     * Resolve the lightest load range each vehicle accepts.
+     *
+     * Vehicles come from the wheels table, like the load index floors. A
+     * saved rating wins; a saved "none" means the platform has no floor; a
+     * platform with neither takes the built-in figure when it has one and no
+     * floor otherwise. Vehicles with no floor are simply absent from the map,
+     * so callers can ask isset().
+     *
+     * @return array Vehicle => minimum load range (one of LOAD_RANGE_ORDER).
+     */
+    public static function get_vehicle_min_load_ranges() {
+        $settings = get_option( 'rtg_settings', array() );
+        $saved    = isset( $settings['catalog_vehicle_min_load_range'] ) && is_array( $settings['catalog_vehicle_min_load_range'] )
+            ? $settings['catalog_vehicle_min_load_range']
+            : array();
+
+        $minimums = array();
+        foreach ( array_keys( RTG_Database::get_vehicle_size_map() ) as $vehicle ) {
+            $chosen = isset( $saved[ $vehicle ] ) ? strtoupper( trim( (string) $saved[ $vehicle ] ) ) : '';
+
+            if ( strtoupper( self::LOAD_RANGE_NONE ) === $chosen ) {
+                continue;
+            }
+            if ( in_array( $chosen, self::LOAD_RANGE_ORDER, true ) ) {
+                $minimums[ $vehicle ] = $chosen;
+            } elseif ( isset( self::VEHICLE_MIN_LOAD_RANGE[ $vehicle ] ) ) {
+                $minimums[ $vehicle ] = self::VEHICLE_MIN_LOAD_RANGE[ $vehicle ];
+            }
+        }
+
+        return $minimums;
     }
 
     /**
@@ -360,14 +442,19 @@ class RTG_Tire_Qualifier {
         // enough load for you — and a tire qualifies if any vehicle says yes.
         $size       = self::normalize_size( $specs['size'] ?? '' );
         $load_index = trim( (string) ( $specs['load_index'] ?? '' ) );
+        $load_range = strtoupper( trim( (string) ( $specs['load_range'] ?? '' ) ) );
+        $range_rank = self::load_range_rank( $load_range );
 
-        $fits          = array();
-        $size_fits_any = false;
-        $short_on_load = array();
+        $fits           = array();
+        $size_fits_any  = false;
+        $short_on_load  = array();
+        $short_on_range = array();
+        $range_unknown_for = array();
 
-        $vehicle_sizes = (array) ( $context['vehicle_sizes'] ?? array() );
-        $vehicle_mins  = (array) ( $context['vehicle_min_load_index'] ?? array() );
-        $global_min    = intval( $context['min_load_index'] ?? self::DEFAULT_MIN_LOAD_INDEX );
+        $vehicle_sizes  = (array) ( $context['vehicle_sizes'] ?? array() );
+        $vehicle_mins   = (array) ( $context['vehicle_min_load_index'] ?? array() );
+        $vehicle_ranges = (array) ( $context['vehicle_min_load_range'] ?? array() );
+        $global_min     = intval( $context['min_load_index'] ?? self::DEFAULT_MIN_LOAD_INDEX );
 
         if ( '' === $size ) {
             $reasons[] = array(
@@ -393,10 +480,28 @@ class RTG_Tire_Qualifier {
 
                 // An unlisted load index is confirmed by hand, not guessed at,
                 // so it doesn't rule the vehicle out here — it warns below.
-                if ( '' === $load_index || intval( $load_index ) >= $min ) {
-                    $fits[] = $vehicle;
-                } else {
+                $carries_load = '' === $load_index || intval( $load_index ) >= $min;
+                if ( ! $carries_load ) {
                     $short_on_load[ $vehicle ] = $min;
+                }
+
+                // Load range, the same way: a platform with a floor (the R2
+                // needs XL) turns away a lighter construction outright, while
+                // a listing that states no range, or one in a spelling we
+                // can't place, is flagged for a person rather than rejected.
+                $carries_range = true;
+                if ( isset( $vehicle_ranges[ $vehicle ] ) ) {
+                    $floor_rank = self::load_range_rank( $vehicle_ranges[ $vehicle ] );
+                    if ( $range_rank < 0 ) {
+                        $range_unknown_for[ $vehicle ] = $vehicle_ranges[ $vehicle ];
+                    } elseif ( $floor_rank >= 0 && $range_rank < $floor_rank ) {
+                        $carries_range                = false;
+                        $short_on_range[ $vehicle ] = $vehicle_ranges[ $vehicle ];
+                    }
+                }
+
+                if ( $carries_load && $carries_range ) {
+                    $fits[] = $vehicle;
                 }
             }
 
@@ -406,20 +511,39 @@ class RTG_Tire_Qualifier {
                     'label' => sprintf( 'Size %s is not a Rivian fitment', $size ),
                 );
             } elseif ( empty( $fits ) ) {
-                // The size fits, but no vehicle taking it accepts this load.
-                $parts = array();
-                foreach ( $short_on_load as $vehicle => $min ) {
-                    $parts[] = sprintf( '%s needs %d', $vehicle, $min );
+                // The size fits, but no vehicle taking it accepts this tire:
+                // too little load, too light a construction, or both.
+                if ( ! empty( $short_on_load ) ) {
+                    $parts = array();
+                    foreach ( $short_on_load as $vehicle => $min ) {
+                        $parts[] = sprintf( '%s needs %d', $vehicle, $min );
+                    }
+
+                    $reasons[] = array(
+                        'code'  => 'load_index_low',
+                        'label' => sprintf(
+                            'Load index %d is too low — %s',
+                            intval( $load_index ),
+                            implode( ', ', $parts )
+                        ),
+                    );
                 }
 
-                $reasons[] = array(
-                    'code'  => 'load_index_low',
-                    'label' => sprintf(
-                        'Load index %d is too low — %s',
-                        intval( $load_index ),
-                        implode( ', ', $parts )
-                    ),
-                );
+                if ( ! empty( $short_on_range ) ) {
+                    $parts = array();
+                    foreach ( $short_on_range as $vehicle => $floor ) {
+                        $parts[] = sprintf( '%s needs %s or higher', $vehicle, $floor );
+                    }
+
+                    $reasons[] = array(
+                        'code'  => 'load_range_low',
+                        'label' => sprintf(
+                            'Load range %s is too light — %s',
+                            $load_range,
+                            implode( ', ', $parts )
+                        ),
+                    );
+                }
             }
         } else {
             // No stock wheels configured, so there is no vehicle map to judge
@@ -467,6 +591,24 @@ class RTG_Tire_Qualifier {
                             $fits
                         ) )
                     ),
+            );
+        }
+
+        // A platform with a load range floor could not judge this listing's
+        // range. Like an unlisted load index: a person confirms it, the
+        // qualifier doesn't guess. Only said for platforms the tire otherwise
+        // fits, since a vehicle already ruled out needs no second caveat.
+        $range_to_confirm = array_intersect_key( $range_unknown_for, array_flip( $fits ) );
+        if ( ! empty( $range_to_confirm ) ) {
+            $parts = array();
+            foreach ( $range_to_confirm as $vehicle => $floor ) {
+                $parts[] = sprintf( '%s or higher for %s', $floor, $vehicle );
+            }
+            $warnings[] = array(
+                'code'  => 'load_range_unknown',
+                'label' => '' === $load_range
+                    ? sprintf( 'Load range not listed — confirm it is %s before adding', implode( ', ', $parts ) )
+                    : sprintf( 'Unfamiliar load range "%s" — confirm it is %s before adding', $load_range, implode( ', ', $parts ) ),
             );
         }
 

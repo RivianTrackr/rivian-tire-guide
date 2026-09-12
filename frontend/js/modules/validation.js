@@ -203,7 +203,7 @@ export function validateNumeric(value, bounds, defaultValue = 0) {
 // Validate and sanitize a CSV row from the tire data
 export function validateAndSanitizeCSVRow(row) {
   if (!Array.isArray(row)) return null;
-  if (row.length < 23) return null;
+  if (row.length < 22) return null;
 
   const sanitized = new Array(row.length);
 
@@ -212,15 +212,15 @@ export function validateAndSanitizeCSVRow(row) {
 
     if (typeof cell === "string") {
       // Some columns must NOT have <>"'& stripped:
-      //   18 link, 19 image, 22 review_link — URLs where & separates query
+      //   18 link, 19 image, 20 review_link — URLs where & separates query
       //     params (stripping it corrupts the destination); each is validated
       //     by its own strict allowlist helper (safeLinkURL / safeImageURL /
       //     safeReviewLinkURL) before use, so <>"' can't slip through.
-      //   27 vehicle_breakdown — JSON, needs its quotes.
-      //   28 slug — identifier, url-encoded at use.
-      // 29 price_synced_at and 30 updated_at are MySQL datetimes (digits,
+      //   25 vehicle_breakdown — JSON, needs its quotes.
+      //   26 slug — identifier, url-encoded at use.
+      // 27 price_synced_at and 28 updated_at are MySQL datetimes (digits,
       // dashes, colons, a space): the strip below can't touch them.
-      if (i === 18 || i === 19 || i === 22 || i === 27 || i === 28) {
+      if (i === 18 || i === 19 || i === 20 || i === 25 || i === 26) {
         sanitized[i] = cell;
       } else {
         sanitized[i] = cell.replace(/[<>\"'&]/g, "").trim();

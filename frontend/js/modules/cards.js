@@ -321,7 +321,7 @@ export function createSingleCard(row) {
   const [
     tireId, size, diameter, brand, model, category, price, warranty, weight, tpms,
     tread, loadIndex, maxLoad, loadRange, speed, psi, utqg, tags, link, image,
-    /* efficiencyScore */ , /* efficiencyGrade */ , reviewLink, /* createdAt */ ,
+    reviewLink, /* createdAt */ ,
     roamerEfficiency, roamerTotalKm, roamerVehicleCount, roamerVehicleBreakdown, slug,
     priceSyncedAt, updatedAt, retailer
   ] = row;

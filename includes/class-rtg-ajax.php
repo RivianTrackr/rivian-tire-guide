@@ -32,7 +32,6 @@ class RTG_Ajax {
      * dropdown is the canonical list of user-visible sorts.
      */
     const ALLOWED_SORTS = array(
-        'efficiency_score',
         'price-asc',
         'price-desc',
         'warranty-desc',
@@ -125,9 +124,6 @@ class RTG_Ajax {
 
         // Analytics: admin data endpoint.
         add_action( 'wp_ajax_rtg_get_analytics', array( $this, 'get_analytics' ) );
-
-        // Efficiency calculator — admin only.
-        add_action( 'wp_ajax_rtg_calculate_efficiency', array( $this, 'calculate_efficiency' ) );
 
         // Link health check — admin only.
         add_action( 'wp_ajax_rtg_check_links', array( $this, 'check_links' ) );
@@ -767,36 +763,6 @@ class RTG_Ajax {
         RTG_Database::insert_search_event( $search_query, $filters_json, $sort_by, $result_count, $search_type );
 
         wp_send_json_success();
-    }
-
-    /**
-     * Calculate efficiency score and grade from tire spec data.
-     * Uses the canonical PHP formula — eliminates the need for a duplicate JS implementation.
-     * Admin-only endpoint for the tire edit form.
-     */
-    public function calculate_efficiency() {
-        if ( ! check_ajax_referer( 'rtg_admin_nonce', 'nonce', false ) ) {
-            wp_send_json_error( 'Security check failed.' );
-        }
-
-        if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( 'Unauthorized.' );
-        }
-
-        $data = array(
-            'size'         => sanitize_text_field( $_POST['size'] ?? '' ),
-            'weight_lb'    => floatval( $_POST['weight_lb'] ?? 0 ),
-            'tread'        => sanitize_text_field( $_POST['tread'] ?? '' ),
-            'load_range'   => sanitize_text_field( $_POST['load_range'] ?? '' ),
-            'speed_rating' => sanitize_text_field( $_POST['speed_rating'] ?? '' ),
-            'utqg'         => sanitize_text_field( $_POST['utqg'] ?? '' ),
-            'category'     => sanitize_text_field( $_POST['category'] ?? '' ),
-            'three_pms'    => sanitize_text_field( $_POST['three_pms'] ?? 'No' ),
-        );
-
-        $result = RTG_Database::calculate_efficiency( $data );
-
-        wp_send_json_success( $result );
     }
 
     /**

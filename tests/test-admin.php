@@ -247,14 +247,13 @@ class Test_RTG_Admin extends WP_UnitTestCase {
             'tags'             => 'oem',
             'link'             => 'https://example.com/tire',
         );
-        $efficiency = RTG_Database::calculate_efficiency( $data );
-        return array_merge( $data, $efficiency );
+        return $data;
     }
 
     /**
      * An update-mode file carrying only some columns must leave every other
      * stored column untouched — a partial price file once blanked size,
-     * category, links and tags, and re-derived the grade from empty specs.
+     * category, links and tags.
      */
     public function test_partial_csv_update_only_writes_the_columns_present() {
         RTG_Database::insert_tire( $this->csv_tire( 'CSV-001' ) );
@@ -272,11 +271,6 @@ class Test_RTG_Admin extends WP_UnitTestCase {
         $this->assertSame( $before['tags'], $after['tags'] );
         $this->assertSame( $before['weight_lb'], $after['weight_lb'] );
         $this->assertSame( $before['mileage_warranty'], $after['mileage_warranty'] );
-        $this->assertSame(
-            $before['efficiency_grade'],
-            $after['efficiency_grade'],
-            'a price-only update must not re-derive the grade from blanked specs'
-        );
     }
 
     public function test_duplicate_csv_row_is_skipped_outside_update_mode() {
@@ -329,7 +323,7 @@ class Test_RTG_Admin extends WP_UnitTestCase {
         $this->assertSame( array(), RTG_Admin::take_blocked_save(), 'the stash is one-shot' );
     }
 
-    public function test_new_csv_row_is_imported_with_a_derived_grade() {
+    public function test_new_csv_row_is_imported() {
         $col_map = array( 'tire_id' => 0, 'brand' => 1, 'model' => 2, 'size' => 3, 'weight_lb' => 4, 'category' => 5 );
         $result  = $this->admin->import_csv_row(
             array( 'CSV-003', 'Goodyear', 'Wrangler', '275/65R20', '42', 'All-Terrain' ),
@@ -340,7 +334,7 @@ class Test_RTG_Admin extends WP_UnitTestCase {
         $this->assertSame( 'imported', $result );
         $tire = RTG_Database::get_tire( 'CSV-003' );
         $this->assertSame( 'Goodyear', $tire['brand'] );
-        $this->assertContains( $tire['efficiency_grade'], array( 'A', 'B', 'C', 'D', 'F' ) );
+        $this->assertSame( 'All-Terrain', $tire['category'] );
     }
 
 

@@ -86,24 +86,33 @@
             var idx = tags.indexOf(tag);
             if (idx > -1) {
                 tags.splice(idx, 1);
-                $(this).css({ 'background': '#f5f5f7', 'color': '#1d1d1f' });
             } else {
                 tags.push(tag);
-                $(this).css({ 'background': '#0071e3', 'color': '#fff' });
             }
-            $tagsInput.val(tags.join(', '));
+            $tagsInput.val(tags.join(', ')).trigger('input');
+            syncTagChips();
         });
 
-        // Highlight tags that are already selected on load
-        var $tagsInput = $('#tags');
-        if ($tagsInput.length && $tagsInput.val().trim()) {
+        // Chips reflect the field, so typing a tag by hand highlights it too.
+        function syncTagChips() {
+            var $tagsInput = $('#tags');
+            if (!$tagsInput.length) {
+                return;
+            }
             var currentTags = $tagsInput.val().split(',').map(function(t) { return t.trim(); });
             $('.rtg-tag-suggestion').each(function() {
-                if (currentTags.indexOf($(this).data('tag')) > -1) {
-                    $(this).css({ 'background': '#0071e3', 'color': '#fff' });
-                }
+                var on = currentTags.indexOf(String($(this).data('tag'))) > -1;
+                $(this).toggleClass('is-selected', on).attr('aria-pressed', on ? 'true' : 'false');
             });
         }
+        syncTagChips();
+        $('#tags').on('input', syncTagChips);
+
+        // --- Shared page behaviors ---
+        initTabs();
+        initCollapsibles();
+        initColorFields();
+        initUnsavedIndicator();
 
         // --- Share image generator ---
         initShareImage();
@@ -121,11 +130,202 @@
             var maxLoad = selected.data('max-load') || '';
             $('#max_load_lb').val(maxLoad);
         });
+    });
 
-        // (The real-time efficiency calculator was removed in 1.58.0 along
-        // with the edit form's efficiency card — the score still auto-
-        // calculates server-side on save; the metric is no longer surfaced
-        // in admin since it was retired from the frontend in 1.51.0.)
+
+    // ==========================================================================
+    // Tabs — sections of one page.
+    //
+    // <div data-rtg-tabs data-default="general">
+    //   <nav class="rtg-tabs"><button class="rtg-tab" data-tab="general">…</button></nav>
+    //   <div class="rtg-tab-panel" data-tab-panel="general">…</div>
+    // </div>
+    //
+    // The open tab rides in the URL hash (#tab-general) so a reload, a back
+    // button and a link from another page all land on the same section.
+    // Panels are hidden, never removed, so a form spanning tabs still submits
+    // every field.
+    // ==========================================================================
+
+    function initTabs() {
+        $('[data-rtg-tabs]').each(function() {
+            var $root = $(this);
+            var $tabs = $root.find('.rtg-tab[data-tab]');
+            var $panels = $root.find('[data-tab-panel]');
+            if (!$tabs.length) {
+                return;
+            }
+
+            function names() {
+                return $tabs.map(function() { return $(this).data('tab'); }).get();
+            }
+
+            function activate(name, pushHash) {
+                if (names().indexOf(name) === -1) {
+                    name = $root.data('default') || $tabs.first().data('tab');
+                }
+                $tabs.each(function() {
+                    var on = $(this).data('tab') === name;
+                    $(this).toggleClass('is-active', on)
+                        .attr('aria-selected', on ? 'true' : 'false')
+                        .attr('tabindex', on ? '0' : '-1');
+                });
+                $panels.each(function() {
+                    var on = $(this).data('tab-panel') === name;
+                    this.hidden = !on;
+                });
+                if (pushHash && window.history && window.history.replaceState) {
+                    window.history.replaceState(null, '', '#tab-' + name);
+                }
+                $root.trigger('rtg:tab', [name]);
+            }
+
+            $tabs.attr('role', 'tab');
+            $root.find('.rtg-tabs').attr('role', 'tablist');
+            $panels.attr('role', 'tabpanel');
+
+            $tabs.on('click', function(e) {
+                e.preventDefault();
+                activate($(this).data('tab'), true);
+            });
+
+            // Left / right arrows move between tabs, as a tablist should.
+            $tabs.on('keydown', function(e) {
+                if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
+                    return;
+                }
+                e.preventDefault();
+                var list = names();
+                var i = list.indexOf($(this).data('tab'));
+                var next = e.key === 'ArrowRight' ? (i + 1) % list.length : (i - 1 + list.length) % list.length;
+                activate(list[next], true);
+                $tabs.eq(next).trigger('focus');
+            });
+
+            var fromHash = (window.location.hash || '').replace(/^#tab-/, '');
+            var initial = fromHash && names().indexOf(fromHash) > -1 ? fromHash : ($root.data('default') || $tabs.first().data('tab'));
+            activate(initial, false);
+
+            $(window).on('hashchange', function() {
+                var h = (window.location.hash || '').replace(/^#tab-/, '');
+                if (h && names().indexOf(h) > -1) {
+                    activate(h, false);
+                }
+            });
+        });
+    }
+
+    // ==========================================================================
+    // Collapsible cards — a header that opens and closes the card body.
+    //
+    // <div class="rtg-card-header rtg-card-toggle" data-rtg-collapse="#panel-id" aria-expanded="false">
+    // ==========================================================================
+
+    function initCollapsibles() {
+        $('[data-rtg-collapse]').each(function() {
+            var $toggle = $(this);
+            var $panel = $($toggle.data('rtg-collapse'));
+            if (!$panel.length) {
+                return;
+            }
+            var open = $toggle.attr('aria-expanded') === 'true';
+            $panel.toggle(open);
+            $toggle.attr({ role: 'button', tabindex: '0', 'aria-expanded': open ? 'true' : 'false' });
+
+            function flip() {
+                var isOpen = $toggle.attr('aria-expanded') === 'true';
+                $toggle.attr('aria-expanded', isOpen ? 'false' : 'true');
+                $panel.stop(true, true).slideToggle(200);
+            }
+
+            $toggle.on('click', function(e) {
+                if ($(e.target).closest('a, button, input, select, label').length) {
+                    return;
+                }
+                flip();
+            });
+            $toggle.on('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    flip();
+                }
+            });
+        });
+    }
+
+    // ==========================================================================
+    // Color fields — a native picker beside the hex input, kept in step.
+    // Only the text input is named, so what saves is unchanged.
+    // ==========================================================================
+
+    function initColorFields() {
+        $('.rtg-color-field').each(function() {
+            var $text = $(this).find('input[type="text"]');
+            var $picker = $(this).find('input[type="color"]');
+            if (!$text.length || !$picker.length) {
+                return;
+            }
+            $text.on('input', function() {
+                var val = $text.val().trim();
+                if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+                    $picker.val(val.toLowerCase());
+                }
+            });
+            $picker.on('input', function() {
+                $text.val($picker.val()).trigger('change');
+            });
+        });
+    }
+
+    // ==========================================================================
+    // Sticky save bar — says when the form above it has unsaved edits.
+    // ==========================================================================
+
+    function initUnsavedIndicator() {
+        $('.rtg-footer-actions.is-sticky').each(function() {
+            var $bar = $(this);
+            var $form = $bar.closest('form');
+            if (!$form.length) {
+                return;
+            }
+            var dirty = false;
+            $form.on('input change', 'input, select, textarea', function() {
+                if (!dirty) {
+                    dirty = true;
+                    $bar.addClass('has-changes');
+                }
+            });
+            $form.on('submit', function() {
+                dirty = false;
+                $bar.removeClass('has-changes');
+            });
+        });
+    }
+
+    // Copy any field's value: <button data-rtg-copy="#field-id" data-copied="Copied!">
+    $(document).on('click', '[data-rtg-copy]', function() {
+        var $btn = $(this);
+        var $input = $($btn.data('rtg-copy'));
+        var $status = $($btn.data('rtg-copy-status'));
+        if (!$input.length) {
+            return;
+        }
+        var value = $input.val();
+
+        function done() {
+            if ($status.length) {
+                $status.stop(true).show().css('opacity', 1);
+                setTimeout(function() { $status.fadeOut(400); }, 2000);
+            }
+        }
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(value).then(done);
+        } else {
+            $input[0].select();
+            document.execCommand('copy');
+            done();
+        }
     });
 
     // ==========================================================================
@@ -207,7 +407,7 @@
             var stats = [
                 { label: 'Total Tires',       value: String(data.totalTires) },
                 { label: 'Avg Price',          value: '$' + (data.avgPrice > 0 ? Math.round(data.avgPrice).toLocaleString() : '—') },
-                { label: 'Avg Efficiency',     value: data.avgEfficiency + ' / 100' },
+                { label: 'Avg Owner Rating',   value: (data.avgRating > 0 ? data.avgRating + ' / 5' : '—') },
                 { label: 'Community Reviews',  value: String(data.totalReviews) },
             ];
 
@@ -454,25 +654,5 @@
             setTimeout(function() { $el.animate({ opacity: 0 }, 2000); }, 3000);
         }
     }
-
-    // --- JSON Feed URL copy button ---
-    $('#rtg-copy-feed-url').on('click', function() {
-        var $input = $('#rtg-feed-url');
-        var $status = $('#rtg-feed-copy-status');
-        var url = $input.val();
-
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(url).then(function() {
-                $status.stop(true).show().css('opacity', 1);
-                setTimeout(function() { $status.fadeOut(400); }, 2000);
-            });
-        } else {
-            // Fallback for older browsers.
-            $input[0].select();
-            document.execCommand('copy');
-            $status.stop(true).show().css('opacity', 1);
-            setTimeout(function() { $status.fadeOut(400); }, 2000);
-        }
-    });
 
 })(jQuery);

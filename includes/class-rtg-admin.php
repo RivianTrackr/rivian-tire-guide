@@ -82,6 +82,8 @@ class RTG_Admin {
 
     public function __construct() {
         add_action( 'admin_menu', array( $this, 'register_menu' ) );
+        add_filter( 'parent_file', array( $this, 'highlight_parent_menu' ) );
+        add_filter( 'submenu_file', array( $this, 'highlight_submenu' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
         add_action( 'admin_init', array( $this, 'handle_actions' ) );
         add_action( 'admin_notices', array( $this, 'pending_reviews_notice' ) );
@@ -250,6 +252,13 @@ class RTG_Admin {
 
     /**
      * Register admin menu pages and submenu items.
+     *
+     * The order follows the work, not the order the screens were written in:
+     * the catalog first (tires, the discovery queue that feeds it, the
+     * reviews and wheels around it), then the money and data screens, then
+     * the utilities and settings. Screens reached from a row rather than
+     * the menu (edit a wheel, the share image) are registered without a
+     * menu entry and light up their parent item instead.
      */
     public function register_menu() {
         add_menu_page(
@@ -273,8 +282,8 @@ class RTG_Admin {
 
         add_submenu_page(
             'rtg-dashboard',
-            'All Tires',
-            'All Tires',
+            'Tires',
+            'Tires',
             'manage_options',
             'rtg-tires',
             array( $this, 'render_list_page' )
@@ -287,6 +296,22 @@ class RTG_Admin {
             'manage_options',
             'rtg-tire-edit',
             array( $this, 'render_edit_page' )
+        );
+
+        // Newly discovered affiliate tires, badged with the awaiting-review count.
+        $candidate_counts = RTG_Candidates::get_counts();
+        $awaiting         = intval( $candidate_counts[ RTG_Candidates::STATUS_NEW ] ?? 0 );
+        $candidate_badge  = $awaiting > 0
+            ? ' <span class="awaiting-mod">' . $awaiting . '</span>'
+            : '';
+
+        add_submenu_page(
+            'rtg-dashboard',
+            'Tire Discovery',
+            'Tire Discovery' . $candidate_badge,
+            'manage_options',
+            'rtg-tire-discovery',
+            array( $this, 'render_tire_discovery_page' )
         );
 
         // Reviews management page with pending count badge.
@@ -306,8 +331,8 @@ class RTG_Admin {
 
         add_submenu_page(
             'rtg-dashboard',
-            'Stock Wheels',
-            'Stock Wheels',
+            'Wheels',
+            'Wheels',
             'manage_options',
             'rtg-wheels',
             array( $this, 'render_wheels_page' )
@@ -333,6 +358,15 @@ class RTG_Admin {
 
         add_submenu_page(
             'rtg-dashboard',
+            'Roamer Data',
+            'Roamer Data',
+            'manage_options',
+            'rtg-roamer-sync',
+            array( $this, 'render_roamer_sync_page' )
+        );
+
+        add_submenu_page(
+            'rtg-dashboard',
             'Analytics',
             'Analytics',
             'manage_options',
@@ -340,47 +374,27 @@ class RTG_Admin {
             array( $this, 'render_analytics_page' )
         );
 
+        // Tools: CSV import / export, the share image and the data feed live
+        // on one page. The slug stays "rtg-import" so the README's link and
+        // every old bookmark keep working.
         add_submenu_page(
             'rtg-dashboard',
-            'Share Image',
-            'Share Image',
-            'manage_options',
-            'rtg-share-image',
-            array( $this, 'render_share_image_page' )
-        );
-
-        add_submenu_page(
-            'rtg-dashboard',
-            'Import / Export',
-            'Import / Export',
+            'Tools',
+            'Tools',
             'manage_options',
             'rtg-import',
             array( $this, 'render_import_page' )
         );
 
+        // The share image used to be its own menu item; the slug still
+        // answers, opening Tools on that tab.
         add_submenu_page(
-            'rtg-dashboard',
-            'Roamer Sync',
-            'Roamer Sync',
+            null,
+            'Share Image',
+            '',
             'manage_options',
-            'rtg-roamer-sync',
-            array( $this, 'render_roamer_sync_page' )
-        );
-
-        // Newly discovered affiliate tires, badged with the awaiting-review count.
-        $candidate_counts = RTG_Candidates::get_counts();
-        $awaiting         = intval( $candidate_counts[ RTG_Candidates::STATUS_NEW ] ?? 0 );
-        $candidate_badge  = $awaiting > 0
-            ? ' <span class="awaiting-mod">' . $awaiting . '</span>'
-            : '';
-
-        add_submenu_page(
-            'rtg-dashboard',
-            'Tire Discovery',
-            'Tire Discovery' . $candidate_badge,
-            'manage_options',
-            'rtg-tire-discovery',
-            array( $this, 'render_tire_discovery_page' )
+            'rtg-share-image',
+            array( $this, 'render_share_image_page' )
         );
 
         add_submenu_page(
@@ -391,6 +405,56 @@ class RTG_Admin {
             'rtg-settings',
             array( $this, 'render_settings_page' )
         );
+    }
+
+    /**
+     * Which menu entry a Tire Guide screen belongs under.
+     *
+     * Screens with no menu entry of their own (a wheel being edited, an
+     * existing tire being edited, the share image) would otherwise leave the
+     * menu with nothing highlighted, which reads as "where am I?".
+     *
+     * @return string Submenu slug, or '' when the current screen is not one of ours.
+     */
+    private function current_menu_slug() {
+        $page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- menu highlight only.
+        if ( '' === $page || 0 !== strpos( $page, 'rtg-' ) ) {
+            return '';
+        }
+
+        switch ( $page ) {
+            case 'rtg-wheel-edit':
+                return 'rtg-wheels';
+            case 'rtg-share-image':
+                return 'rtg-import';
+            case 'rtg-tire-edit':
+                // Editing an existing tire is part of the list; "Add New" is only for a new one.
+                $editing = ! empty( $_GET['id'] ) || ! empty( $_GET['tire_id'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                return $editing ? 'rtg-tires' : 'rtg-tire-edit';
+        }
+
+        return $page;
+    }
+
+    /**
+     * Keep the Tire Guide menu open on screens that have no menu entry.
+     *
+     * @param string $parent_file The parent menu slug WordPress resolved.
+     * @return string
+     */
+    public function highlight_parent_menu( $parent_file ) {
+        return '' !== $this->current_menu_slug() ? 'rtg-dashboard' : $parent_file;
+    }
+
+    /**
+     * Highlight the submenu item a screen belongs under.
+     *
+     * @param string $submenu_file The submenu slug WordPress resolved.
+     * @return string
+     */
+    public function highlight_submenu( $submenu_file ) {
+        $slug = $this->current_menu_slug();
+        return '' !== $slug ? $slug : $submenu_file;
     }
 
     /**
@@ -422,7 +486,7 @@ class RTG_Admin {
             true
         );
 
-        // Localize admin nonce for AJAX endpoints (efficiency calculator, etc.).
+        // Localize admin nonce for the admin AJAX endpoints (image fetch, sync, discovery).
         wp_localize_script( 'rtg-admin-scripts', 'rtgAdmin', array(
             'ajaxurl' => admin_url( 'admin-ajax.php' ),
             'nonce'   => wp_create_nonce( 'rtg_admin_nonce' ),
@@ -551,11 +615,6 @@ class RTG_Admin {
         // Handle review moderation.
         if ( isset( $_GET['action'] ) && in_array( $_GET['action'], array( 'approve_review', 'reject_review' ), true ) && isset( $_GET['rating_id'] ) ) {
             $this->handle_review_status();
-        }
-
-        // Handle recalculate all efficiency scores.
-        if ( isset( $_GET['action'] ) && $_GET['action'] === 'recalculate_efficiency' ) {
-            $this->handle_recalculate_efficiency();
         }
 
         // Handle tire duplication.
@@ -740,13 +799,16 @@ class RTG_Admin {
     }
 
     /**
-     * Render the CSV import/export admin page.
+     * Render the Tools page: CSV import / export, the share image, the data feed.
+     *
+     * @param string $default_tab Tab to open when the URL carries no hash.
      */
-    public function render_import_page() {
+    public function render_import_page( $default_tab = 'import' ) {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
         }
-        require_once RTG_PLUGIN_DIR . 'admin/views/import-export.php';
+        $rtg_tools_default_tab = is_string( $default_tab ) ? $default_tab : 'import';
+        require_once RTG_PLUGIN_DIR . 'admin/views/tools.php';
     }
 
     /**
@@ -770,13 +832,10 @@ class RTG_Admin {
     }
 
     /**
-     * Render the Share Image generator page.
+     * The old Share Image menu slug: the Tools page, opened on that tab.
      */
     public function render_share_image_page() {
-        if ( ! current_user_can( 'manage_options' ) ) {
-            return;
-        }
-        require_once RTG_PLUGIN_DIR . 'admin/views/share-image.php';
+        $this->render_import_page( 'share' );
     }
 
     /**
@@ -861,11 +920,6 @@ class RTG_Admin {
                     : esc_url_raw( $candidate['image'] );
             }
         }
-
-        // Auto-calculate efficiency score and grade.
-        $efficiency = RTG_Database::calculate_efficiency( $data );
-        $data['efficiency_score'] = $efficiency['efficiency_score'];
-        $data['efficiency_grade'] = $efficiency['efficiency_grade'];
 
         // Validate tire_id.
         if ( empty( $data['tire_id'] ) ) {
@@ -1222,6 +1276,23 @@ class RTG_Admin {
         }
         $settings['catalog_vehicle_min_load_index'] = $vehicle_minimums;
 
+        // Per-vehicle load range floors. A blank means the built-in figure
+        // (R2: XL, R1: none); "none" is an explicit "no floor" and is kept.
+        $posted_ranges = isset( $_POST['catalog_vehicle_min_load_range'] ) && is_array( $_POST['catalog_vehicle_min_load_range'] )
+            ? wp_unslash( $_POST['catalog_vehicle_min_load_range'] )
+            : array();
+
+        $vehicle_ranges = array();
+        foreach ( $posted_ranges as $vehicle => $value ) {
+            $value = strtoupper( sanitize_text_field( (string) $value ) );
+            if ( strtoupper( RTG_Tire_Qualifier::LOAD_RANGE_NONE ) === $value ) {
+                $vehicle_ranges[ sanitize_text_field( $vehicle ) ] = RTG_Tire_Qualifier::LOAD_RANGE_NONE;
+            } elseif ( in_array( $value, RTG_Tire_Qualifier::LOAD_RANGE_ORDER, true ) ) {
+                $vehicle_ranges[ sanitize_text_field( $vehicle ) ] = $value;
+            }
+        }
+        $settings['catalog_vehicle_min_load_range'] = $vehicle_ranges;
+
         $settings['price_sync_enabled']    = ! empty( $_POST['price_sync_enabled'] );
         $settings['link_sync_enabled']     = ! empty( $_POST['link_sync_enabled'] );
         $settings['price_sync_max_change'] = max( 1, min( 100, intval( $_POST['price_sync_max_change'] ?? 50 ) ) );
@@ -1475,19 +1546,6 @@ class RTG_Admin {
         } else {
             wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=error' ) );
         }
-        exit;
-    }
-
-    private function handle_recalculate_efficiency() {
-        if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( 'Unauthorized' );
-        }
-
-        check_admin_referer( 'rtg_recalculate_efficiency' );
-
-        $count = RTG_Database::recalculate_all_efficiency();
-
-        wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=recalculated&count=' . $count ) );
         exit;
     }
 
@@ -1753,9 +1811,6 @@ class RTG_Admin {
 
             // Only write the columns the file actually carries — a column
             // absent from the header must not blank the stored value.
-            // Efficiency is derived from the stored row with the file's
-            // values merged over it, so a partial file can't zero the grade
-            // either.
             $partial = array_intersect_key( $data, $col_map );
             unset( $partial['tire_id'] );
 
@@ -1765,23 +1820,12 @@ class RTG_Admin {
             $slug = (string) ( $partial['slug'] ?? '' );
             unset( $partial['slug'] );
 
-            $existing = RTG_Database::get_tire( $data['tire_id'] );
-            $merged   = array_merge( is_array( $existing ) ? $existing : array(), $partial );
-
-            $efficiency = RTG_Database::calculate_efficiency( $merged );
-            $partial['efficiency_score'] = $efficiency['efficiency_score'];
-            $partial['efficiency_grade'] = $efficiency['efficiency_grade'];
-
             RTG_Database::update_tire( $data['tire_id'], $partial );
             if ( '' !== $slug ) {
                 RTG_Database::set_tire_slug( $data['tire_id'], $slug );
             }
             return 'updated';
         }
-
-        $efficiency = RTG_Database::calculate_efficiency( $data );
-        $data['efficiency_score'] = $efficiency['efficiency_score'];
-        $data['efficiency_grade'] = $efficiency['efficiency_grade'];
 
         $slug = (string) ( $data['slug'] ?? '' );
         unset( $data['slug'] );

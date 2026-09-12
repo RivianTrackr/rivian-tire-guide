@@ -6,10 +6,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 $settings = get_option( 'rtg_settings', array() );
 
 // Saved through RTG_Admin::handle_catalog_settings_save() (post-redirect-get),
-// so a refresh of this page can't re-submit the form.
-if ( isset( $_GET['message'] ) && 'settings_saved' === $_GET['message'] ) {
-    echo '<div class="notice notice-success is-dismissible"><p>Tire Discovery settings saved.</p></div>';
-}
+// so a refresh of this page can't re-submit the form. The page reopens on
+// the settings tab so the admin sees the notice where they were working.
+$settings_saved = isset( $_GET['message'] ) && 'settings_saved' === $_GET['message'];
+$default_tab    = $settings_saved ? 'settings' : 'queue';
 
 $sync_enabled   = $settings['catalog_sync_enabled'] ?? true;
 $notify_enabled = $settings['catalog_notify_enabled'] ?? true;
@@ -85,6 +85,11 @@ $vehicle_size_map = RTG_Database::get_vehicle_size_map();
 // Which of those sizes fit only on 3rd-party wheels, for the fits column.
 $third_party_map  = RTG_Database::get_third_party_size_map();
 $vehicle_minimums = RTG_Tire_Qualifier::get_vehicle_minimums();
+// What each platform has saved for its load range floor: a rating, "none",
+// or nothing (the built-in figure applies).
+$vehicle_range_saved = isset( $settings['catalog_vehicle_min_load_range'] ) && is_array( $settings['catalog_vehicle_min_load_range'] )
+    ? $settings['catalog_vehicle_min_load_range']
+    : array();
 $vehicle_counts   = RTG_Candidates::get_vehicle_counts( $status_filter );
 
 $brand_policy = isset( $settings['catalog_brand_policy'] )
@@ -146,80 +151,102 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
 
 <div class="rtg-wrap">
 
+    <?php if ( $settings_saved ) : ?>
+        <div class="rtg-notice rtg-notice-success">
+            <span>Tire Discovery settings saved.</span>
+            <button type="button" class="rtg-notice-dismiss" aria-label="Dismiss">&times;</button>
+        </div>
+    <?php endif; ?>
+
     <div class="rtg-page-header">
-        <h1 class="rtg-page-title">Tire Discovery</h1>
-    </div>
-
-    <p style="margin:0 0 20px;color:var(--rtg-text-muted);max-width:820px;">
-        Watches affiliate catalogs for Rivian-fitment tires that aren't in the guide yet.
-        Dismissed products stay dismissed.
-    </p>
-
-    <!-- Counts -->
-    <div class="rtg-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
-        <div class="rtg-stat-card">
-            <div class="rtg-stat-value" style="color: var(--rtg-success);"><?php echo esc_html( $counts[ RTG_Candidates::STATUS_NEW ] ); ?></div>
-            <div class="rtg-stat-label">Awaiting Review</div>
+        <div class="rtg-page-heading">
+            <h1 class="rtg-page-title">Tire Discovery</h1>
+            <p class="rtg-page-subtitle">
+                Watches affiliate catalogs for tires in a Rivian size that are not in the guide yet, refreshes prices, and fills in purchase links. Dismissed products stay dismissed.
+            </p>
         </div>
-        <div class="rtg-stat-card">
-            <div class="rtg-stat-value" style="color: var(--rtg-warning-text);"><?php echo esc_html( $counts[ RTG_Candidates::STATUS_REJECTED ] ); ?></div>
-            <div class="rtg-stat-label">Near Misses</div>
-        </div>
-        <div class="rtg-stat-card">
-            <div class="rtg-stat-value"><?php echo esc_html( $counts[ RTG_Candidates::STATUS_EXISTING ] ); ?></div>
-            <div class="rtg-stat-label">Already in Guide</div>
-        </div>
-        <div class="rtg-stat-card">
-            <div class="rtg-stat-value"><?php echo esc_html( $counts[ RTG_Candidates::STATUS_IMPORTED ] ); ?></div>
-            <div class="rtg-stat-label">Added from Queue</div>
-        </div>
-        <div class="rtg-stat-card">
-            <div class="rtg-stat-value" style="color: var(--rtg-text-muted);"><?php echo esc_html( $counts[ RTG_Candidates::STATUS_DISMISSED ] ); ?></div>
-            <div class="rtg-stat-label">Dismissed</div>
+        <div class="rtg-page-actions">
+            <button type="button" id="rtg-catalog-sync-btn" class="rtg-btn rtg-btn-primary">
+                <span class="dashicons dashicons-update"></span> Run discovery now
+            </button>
         </div>
     </div>
+
+    <div data-rtg-tabs data-default="<?php echo esc_attr( $default_tab ); ?>">
+
+    <nav class="rtg-tabs" aria-label="Tire Discovery sections">
+        <button type="button" class="rtg-tab" data-tab="queue">
+            Review queue
+            <?php if ( $counts[ RTG_Candidates::STATUS_NEW ] > 0 ) : ?>
+                <span class="rtg-tab-count is-alert"><?php echo esc_html( $counts[ RTG_Candidates::STATUS_NEW ] ); ?></span>
+            <?php endif; ?>
+        </button>
+        <button type="button" class="rtg-tab" data-tab="coverage">
+            Retailer coverage &amp; prices
+            <?php if ( ! empty( $uncovered_tires ) ) : ?>
+                <span class="rtg-tab-count"><?php echo count( $uncovered_tires ); ?></span>
+            <?php endif; ?>
+        </button>
+        <button type="button" class="rtg-tab" data-tab="settings">Settings</button>
+    </nav>
+
+    <!-- ================================================================
+         Review queue
+         ================================================================ -->
+    <div class="rtg-tab-panel" data-tab-panel="queue">
 
     <!-- Sync status -->
-    <div class="rtg-card" style="margin-bottom:20px;">
-        <div class="rtg-card-header" style="display:flex;align-items:center;justify-content:space-between;">
-            <h2>Discovery Status</h2>
-            <button type="button" id="rtg-catalog-sync-btn" class="rtg-btn rtg-btn-primary">Run Discovery Now</button>
+    <div class="rtg-card">
+        <div class="rtg-card-header is-split">
+            <div><h2>Last run</h2></div>
+            <?php if ( $stats && isset( $stats['status'] ) ) : ?>
+                <?php if ( 'success' === $stats['status'] ) : ?>
+                    <span class="rtg-badge rtg-badge-success">Succeeded</span>
+                <?php else : ?>
+                    <span class="rtg-badge rtg-badge-error">Failed</span>
+                <?php endif; ?>
+            <?php elseif ( ! $cj_configured ) : ?>
+                <span class="rtg-badge rtg-badge-warning">No source configured</span>
+            <?php endif; ?>
         </div>
         <div class="rtg-card-body">
-            <div id="rtg-catalog-sync-status" style="display:none;margin-bottom:12px;"></div>
+            <div id="rtg-catalog-sync-status" style="display:none;"></div>
 
             <?php if ( $stats && isset( $stats['status'] ) ) : ?>
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;">
+                <div class="rtg-kv-grid">
                     <div>
-                        <strong style="color:var(--rtg-text-muted);font-size:12px;text-transform:uppercase;">Status</strong><br>
-                        <span style="font-size:18px;font-weight:600;color:<?php echo 'success' === $stats['status'] ? 'var(--rtg-success)' : 'var(--rtg-error)'; ?>;">
-                            <?php echo esc_html( ucfirst( $stats['status'] ) ); ?>
-                        </span>
-                    </div>
-                    <div>
-                        <strong style="color:var(--rtg-text-muted);font-size:12px;text-transform:uppercase;">Last Run</strong><br>
+                        <span class="rtg-kv-label">Last run</span>
                         <?php
                         $run_time = $stats['time'] ?? '';
                         $relative = $run_time
                             ? human_time_diff( strtotime( $run_time ), current_time( 'timestamp' ) ) . ' ago'
                             : 'N/A';
                         ?>
-                        <span style="font-size:18px;font-weight:600;" title="<?php echo esc_attr( $run_time ); ?>"><?php echo esc_html( $relative ); ?></span>
+                        <div class="rtg-kv-value" title="<?php echo esc_attr( $run_time ); ?>"><?php echo esc_html( $relative ); ?></div>
                     </div>
                     <div>
-                        <strong style="color:var(--rtg-text-muted);font-size:12px;text-transform:uppercase;">Products Seen</strong><br>
-                        <span style="font-size:18px;font-weight:600;"><?php echo esc_html( intval( $stats['fetched'] ?? 0 ) ); ?></span>
+                        <span class="rtg-kv-label">Products seen</span>
+                        <div class="rtg-kv-value"><?php echo esc_html( number_format( intval( $stats['fetched'] ?? 0 ) ) ); ?></div>
                     </div>
                     <div>
-                        <strong style="color:var(--rtg-text-muted);font-size:12px;text-transform:uppercase;">Newly Surfaced</strong><br>
-                        <span style="font-size:18px;font-weight:600;color:var(--rtg-success);"><?php echo esc_html( intval( $stats['newly_surfaced'] ?? 0 ) ); ?></span>
+                        <span class="rtg-kv-label">Newly surfaced</span>
+                        <div class="rtg-kv-value is-success"><?php echo esc_html( intval( $stats['newly_surfaced'] ?? 0 ) ); ?></div>
                     </div>
                     <div>
-                        <strong style="color:var(--rtg-text-muted);font-size:12px;text-transform:uppercase;">Next Run</strong><br>
-                        <span style="font-size:18px;font-weight:600;">
+                        <span class="rtg-kv-label">Next run</span>
+                        <div class="rtg-kv-value <?php echo $next_run ? '' : 'is-warning'; ?>">
                             <?php echo $next_run ? esc_html( 'in ' . human_time_diff( time(), $next_run ) ) : 'Not scheduled'; ?>
-                        </span>
+                        </div>
                     </div>
+                    <?php if ( ! empty( $stats['elapsed'] ) ) : ?>
+                    <div>
+                        <span class="rtg-kv-label">Run time</span>
+                        <div class="rtg-kv-value is-muted"><?php echo esc_html( number_format( (float) $stats['elapsed'], 1 ) ); ?>s <span class="rtg-stat-sub">of <?php echo esc_html( intval( $stats['run_budget'] ?? $catalog_run_budget ) ); ?>s</span></div>
+                        <?php if ( ! empty( $stats['budget_capped'] ) ) : ?>
+                            <div class="rtg-kv-note">Browser cap. The nightly run gets <?php echo intval( $catalog_run_budget ); ?>s.</div>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
                 </div>
 
                 <?php
@@ -231,16 +258,16 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                 }
                 ?>
                 <?php if ( ! empty( $sweep_coverage ) ) : ?>
-                    <details style="margin-top:14px;">
-                        <summary style="cursor:pointer;font-weight:600;">
-                            Fitment coverage &mdash; how much of each size's match set has been read
-                        </summary>
-                        <p class="description" style="max-width:860px;margin:8px 0;">
+                    <details class="rtg-details">
+                        <summary>Fitment coverage: how much of each size's match set has been read</summary>
+                        <div class="rtg-details-body">
+                        <p class="rtg-help">
                             <strong>Complete</strong> means an absence from that fitment is real, not a sweep gap.
                             If <strong>Distinct</strong> falls far below Read (shown in red), the pages overlapped
-                            and &ldquo;complete&rdquo; means re-read &mdash; distrust it.
+                            and "complete" means re-read. Distrust it.
                         </p>
-                        <table class="rtg-table" style="margin-top:8px;">
+                        <div class="rtg-table-wrapper">
+                        <table class="rtg-table rtg-table-compact">
                             <thead><tr><th>Size</th><th>Read</th><th>Distinct</th><th>Matches</th><th>Coverage</th></tr></thead>
                             <tbody>
                             <?php foreach ( $sweep_coverage as $cov_size => $cov ) : ?>
@@ -252,7 +279,7 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                     : null;
                                 ?>
                                 <tr>
-                                    <td style="font-family:var(--rtg-font-mono, monospace);"><?php echo esc_html( $cov_size ); ?></td>
+                                    <td class="rtg-mono"><?php echo esc_html( $cov_size ); ?></td>
                                     <td><?php echo esc_html( number_format( $cov_read ) ); ?></td>
                                     <td>
                                         <?php if ( ! isset( $cov['unique'] ) ) : ?>
@@ -265,7 +292,7 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                             $cov_unique = intval( $cov['unique'] );
                                             $cov_thin   = $cov_read > 0 && $cov_unique < ( $cov_read * 0.9 );
                                             ?>
-                                            <span<?php echo $cov_thin ? ' style="color:var(--rtg-error);font-weight:600;"' : ''; ?>>
+                                            <span<?php echo $cov_thin ? ' class="rtg-text-error rtg-strong"' : ''; ?>>
                                                 <?php echo esc_html( number_format( $cov_unique ) ); ?>
                                             </span>
                                         <?php endif; ?>
@@ -275,34 +302,25 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                         <?php if ( null === $cov_pct ) : ?>
                                             &mdash;
                                         <?php elseif ( $cov_pct >= 100 ) : ?>
-                                            <span style="color:var(--rtg-success);font-weight:600;">complete</span>
+                                            <span class="rtg-badge rtg-badge-success rtg-badge-sm">complete</span>
                                         <?php else : ?>
-                                            <span style="color:var(--rtg-text-muted);"><?php echo esc_html( $cov_pct ); ?>%</span>
+                                            <span class="rtg-muted"><?php echo esc_html( $cov_pct ); ?>%</span>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
                             </tbody>
                         </table>
+                        </div>
+                        </div>
                     </details>
-                <?php endif; ?>
-
-                <?php if ( ! empty( $stats['elapsed'] ) ) : ?>
-                    <p class="description" style="margin:12px 0 0;">
-                        Run: <?php echo esc_html( number_format( (float) $stats['elapsed'], 1 ) ); ?>s
-                        of <?php echo esc_html( intval( $stats['run_budget'] ?? $catalog_run_budget ) ); ?>s<?php
-                        if ( ! empty( $stats['budget_capped'] ) ) {
-                            printf( ' (browser cap &mdash; the nightly run gets %ds)', intval( $catalog_run_budget ) );
-                        }
-                        ?>.
-                    </p>
                 <?php endif; ?>
 
                 <?php
                 $pruned_total = intval( $stats['pruned']['off_fitment'] ?? 0 ) + intval( $stats['pruned']['stale'] ?? 0 );
                 ?>
                 <?php if ( $pruned_total > 0 ) : ?>
-                    <p class="description" style="margin:10px 0 0;">
+                    <p class="rtg-help">
                         Pruned <?php echo esc_html( number_format( $pruned_total ) ); ?> near misses
                         (<?php echo esc_html( number_format( intval( $stats['pruned']['off_fitment'] ?? 0 ) ) ); ?> off-fitment,
                         <?php echo esc_html( number_format( intval( $stats['pruned']['stale'] ?? 0 ) ) ); ?> unseen 60+ days).
@@ -310,7 +328,7 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                 <?php endif; ?>
 
                 <?php if ( ! empty( $stats['errors'] ) ) : ?>
-                    <div class="rtg-notice rtg-notice-warning" style="margin-top:16px;">
+                    <div class="rtg-notice rtg-notice-warning is-after">
                         <span>
                             <?php foreach ( $stats['errors'] as $error ) : ?>
                                 <strong><?php echo esc_html( $error['source'] ); ?>:</strong> <?php echo esc_html( $error['message'] ); ?><br>
@@ -319,20 +337,20 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                     </div>
                 <?php endif; ?>
             <?php else : ?>
-                <p style="color:var(--rtg-text-muted);margin:0;">Discovery hasn't run yet. Use <strong>Run Discovery Now</strong> to try it against the configured source.</p>
+                <p class="rtg-empty-line">Discovery has not run yet. Use <strong>Run discovery now</strong> to try it against the configured source<?php echo $cj_configured ? '' : ', once CJ is set up on the Settings tab'; ?>.</p>
             <?php endif; ?>
         </div>
     </div>
 
-    <!-- Filter tabs -->
-    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px;">
+    <!-- Status filter -->
+    <div class="rtg-pills">
         <?php
         $tabs = array(
-            RTG_Candidates::STATUS_NEW       => 'Awaiting Review (' . $counts[ RTG_Candidates::STATUS_NEW ] . ')',
-            RTG_Candidates::STATUS_REJECTED  => 'Near Misses (' . $counts[ RTG_Candidates::STATUS_REJECTED ] . ')',
-            RTG_Candidates::STATUS_EXISTING  => 'Already in Guide (' . $counts[ RTG_Candidates::STATUS_EXISTING ] . ')',
-            RTG_Candidates::STATUS_DISMISSED => 'Dismissed (' . $counts[ RTG_Candidates::STATUS_DISMISSED ] . ')',
-            RTG_Candidates::STATUS_IMPORTED  => 'Added (' . $counts[ RTG_Candidates::STATUS_IMPORTED ] . ')',
+            RTG_Candidates::STATUS_NEW       => 'Awaiting review',
+            RTG_Candidates::STATUS_REJECTED  => 'Near misses',
+            RTG_Candidates::STATUS_EXISTING  => 'Already in guide',
+            RTG_Candidates::STATUS_DISMISSED => 'Dismissed',
+            RTG_Candidates::STATUS_IMPORTED  => 'Added',
         );
         foreach ( $tabs as $key => $label ) :
             $url = add_query_arg(
@@ -344,18 +362,21 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                 ),
                 admin_url( 'admin.php' )
             );
-            $class = $status_filter === $key ? 'rtg-btn rtg-btn-primary' : 'rtg-btn rtg-btn-secondary';
+            $is_active = $status_filter === $key;
         ?>
-            <a href="<?php echo esc_url( $url ); ?>" class="<?php echo esc_attr( $class ); ?>" style="text-decoration:none;"><?php echo esc_html( $label ); ?></a>
+            <a href="<?php echo esc_url( $url ); ?>" class="rtg-pill <?php echo $is_active ? 'is-active' : ''; ?>" <?php echo $is_active ? 'aria-current="page"' : ''; ?>>
+                <?php echo esc_html( $label ); ?>
+                <span class="rtg-pill-count"><?php echo intval( $counts[ $key ] ); ?></span>
+            </a>
         <?php endforeach; ?>
     </div>
 
-    <form method="get" style="margin-bottom:20px;">
+    <form method="get">
         <input type="hidden" name="page" value="rtg-tire-discovery">
         <input type="hidden" name="candidate_status" value="<?php echo esc_attr( $status_filter ); ?>">
-        <div class="rtg-search-box" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+        <div class="rtg-toolbar">
             <?php if ( ! empty( $vehicle_size_map ) ) : ?>
-                <label for="candidate_vehicle" style="font-size:13px;color:var(--rtg-text-muted);">Vehicle</label>
+                <label for="candidate_vehicle" class="rtg-toolbar-label">Vehicle</label>
                 <select name="candidate_vehicle" id="candidate_vehicle" class="rtg-select">
                     <option value="">All vehicles</option>
                     <?php foreach ( array_keys( $vehicle_size_map ) as $vehicle_option ) : ?>
@@ -371,7 +392,7 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                 </select>
             <?php endif; ?>
 
-            <label for="candidate_brand" style="font-size:13px;color:var(--rtg-text-muted);">Brand</label>
+            <label for="candidate_brand" class="rtg-toolbar-label">Brand</label>
             <select name="candidate_brand" id="candidate_brand" class="rtg-select">
                 <option value="">All brands</option>
                 <?php foreach ( $brand_counts as $brand_option => $brand_total ) : ?>
@@ -382,7 +403,7 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                 <?php endforeach; ?>
             </select>
 
-            <label for="candidate_size" style="font-size:13px;color:var(--rtg-text-muted);">Size</label>
+            <label for="candidate_size" class="rtg-toolbar-label">Size</label>
             <select name="candidate_size" id="candidate_size" class="rtg-select">
                 <option value="">All sizes</option>
                 <?php foreach ( $dd_sizes as $size_option ) : ?>
@@ -392,7 +413,8 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
             <button type="submit" class="rtg-btn rtg-btn-secondary">Filter</button>
 
             <?php if ( in_array( $status_filter, array( RTG_Candidates::STATUS_NEW, RTG_Candidates::STATUS_DISMISSED ), true ) && ! empty( $candidates ) ) : ?>
-                <button type="button" id="rtg-bulk-candidates" class="rtg-btn rtg-btn-danger"
+                <span class="rtg-toolbar-spacer"></span>
+                <button type="button" id="rtg-bulk-candidates" class="rtg-btn <?php echo RTG_Candidates::STATUS_NEW === $status_filter ? 'rtg-btn-danger-quiet' : 'rtg-btn-secondary'; ?>"
                     data-status="<?php echo esc_attr( $status_filter ); ?>"
                     data-brand="<?php echo esc_attr( $brand_filter ); ?>"
                     data-size="<?php echo esc_attr( $size_filter ); ?>"
@@ -403,7 +425,7 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
             <?php endif; ?>
 
             <?php if ( '' !== $vehicle_filter ) : ?>
-                <span style="font-size:12px;color:var(--rtg-text-muted);">
+                <span class="rtg-toolbar-note">
                     Showing tires legal on <strong><?php echo esc_html( $vehicle_filter ); ?></strong>
                     (size <em>and</em> load index
                     <?php echo isset( $vehicle_minimums[ $vehicle_filter ] ) ? '&ge; ' . intval( $vehicle_minimums[ $vehicle_filter ] ) : ''; ?>).
@@ -414,198 +436,25 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
     </form>
 
     <?php if ( RTG_Candidates::STATUS_NEW === $status_filter && $uncovered_brand_total > 0 ) : ?>
-        <div class="rtg-notice rtg-notice-info" style="margin-bottom:16px;">
+        <div class="rtg-notice rtg-notice-info">
             <span>
                 <strong><?php echo esc_html( number_format( $uncovered_brand_total ) ); ?></strong> of the
-                <?php echo esc_html( number_format( $counts[ RTG_Candidates::STATUS_NEW ] ) ); ?> tire(s)
-                awaiting review are from brands outside your curated list &mdash; set the
-                <strong>brand policy</strong> to <em>reject</em> to file them automatically, or clear a brand
-                with the filter and bulk button.
+                <?php echo esc_html( number_format( $counts[ RTG_Candidates::STATUS_NEW ] ) ); ?> tires
+                awaiting review are from brands outside your list. Set the
+                <strong>brand policy</strong> on the Settings tab to file them automatically, or clear a brand
+                with the filter and the dismiss button.
             </span>
         </div>
     <?php endif; ?>
-
-    <!-- Retailer coverage and price refresh -->
-    <div class="rtg-card" style="margin-bottom:20px;">
-        <div class="rtg-card-header">
-            <h2>Retailer Coverage &amp; Prices</h2>
-        </div>
-        <div class="rtg-card-body">
-            <div class="rtg-stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:16px;">
-                <div class="rtg-stat-card">
-                    <div class="rtg-stat-value" style="color:var(--rtg-success);"><?php echo count( $covered_tires ); ?></div>
-                    <div class="rtg-stat-label">Tires Covered</div>
-                </div>
-                <div class="rtg-stat-card">
-                    <div class="rtg-stat-value" style="color:var(--rtg-text-muted);"><?php echo count( $uncovered_tires ); ?></div>
-                    <div class="rtg-stat-label">No Retailer Match</div>
-                </div>
-                <?php if ( $price_results && isset( $price_results['updated'] ) ) : ?>
-                    <div class="rtg-stat-card">
-                        <div class="rtg-stat-value"><?php echo intval( $price_results['updated'] ); ?></div>
-                        <div class="rtg-stat-label">Prices Updated</div>
-                    </div>
-                    <div class="rtg-stat-card">
-                        <div class="rtg-stat-value" style="color:var(--rtg-text-muted);"><?php echo intval( $price_results['skipped'] ); ?></div>
-                        <div class="rtg-stat-label">Left Unchanged</div>
-                    </div>
-                <?php endif; ?>
-            </div>
-
-            <?php if ( ! empty( $uncovered_tires ) ) : ?>
-                <details>
-                    <summary style="cursor:pointer;font-weight:600;margin-bottom:8px;">
-                        <?php echo count( $uncovered_tires ); ?> tire(s) no retailer is carrying
-                    </summary>
-                    <p class="description" style="max-width:820px;margin:8px 0;">
-                        These have no catalog match, so their prices don't refresh on their own. Only
-                        <strong>likely listed under another name</strong> is actionable (adopt the alias and
-                        the next run matches it); other rows just show what <em>did</em> arrive in that brand
-                        and fitment.
-                    </p>
-
-                    <?php if ( ! empty( $coverage_summary ) ) : ?>
-                        <p style="margin:8px 0;font-size:13px;">
-                            <?php
-                            $gap_labels = array(
-                                RTG_Coverage::GAP_MODEL_VARIANT   => 'likely listed under another name',
-                                RTG_Coverage::GAP_MODEL_ABSENT    => 'brand and fitment carried, this model not',
-                                RTG_Coverage::GAP_BRAND_ABSENT    => 'fitment carried, brand not',
-                                RTG_Coverage::GAP_SIZE_ABSENT     => 'fitment never reached the queue',
-                                RTG_Coverage::GAP_BRAND_MISSING   => 'guide row has no brand',
-                                RTG_Coverage::GAP_SIZE_UNREADABLE => 'guide size unreadable',
-                            );
-                            $summary_parts = array();
-                            foreach ( $coverage_summary as $gap_code => $gap_count ) {
-                                $summary_parts[] = '<strong>' . intval( $gap_count ) . '</strong> '
-                                    . esc_html( $gap_labels[ $gap_code ] ?? $gap_code );
-                            }
-                            echo wp_kses_post( implode( ' &middot; ', $summary_parts ) );
-                            ?>
-                        </p>
-                    <?php endif; ?>
-
-                    <table class="rtg-table" style="margin-top:8px;">
-                        <thead>
-                            <tr><th>Tire</th><th>Size</th><th>Price</th><th>Price age</th><th>Link</th><th>Why it isn't matched</th></tr>
-                        </thead>
-                        <tbody>
-                        <?php foreach ( $uncovered_tires as $uncovered ) : ?>
-                            <?php $reason = $coverage_reasons[ (string) $uncovered['tire_id'] ] ?? array(); ?>
-                            <tr>
-                                <td>
-                                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit&id=' . intval( $uncovered['id'] ) ) ); ?>">
-                                        <?php echo esc_html( trim( $uncovered['brand'] . ' ' . $uncovered['model'] ) ); ?>
-                                    </a>
-                                </td>
-                                <td style="font-family:var(--rtg-font-mono, monospace);"><?php echo esc_html( $uncovered['size'] ); ?></td>
-                                <td><?php echo $uncovered['price'] > 0 ? '$' . esc_html( number_format( (float) $uncovered['price'], 2 ) ) : '&mdash;'; ?></td>
-                                <td style="font-size:12px;color:var(--rtg-text-muted);">
-                                    <?php
-                                    // These prices only move when a person moves them, so
-                                    // their age is the number that matters.
-                                    $price_touch = RTG_Stale_Prices::last_price_touch( $uncovered );
-                                    if ( $price_touch > 0 ) {
-                                        $price_age_days = ( current_time( 'timestamp' ) - $price_touch ) / DAY_IN_SECONDS;
-                                        echo '<span' . ( $price_age_days > RTG_Stale_Prices::DEFAULT_STALE_DAYS ? ' style="color:var(--rtg-error);font-weight:600;"' : '' ) . '>'
-                                            . esc_html( human_time_diff( $price_touch, current_time( 'timestamp' ) ) ) . ' ago</span>';
-                                    } else {
-                                        echo '&mdash;';
-                                    }
-                                    ?>
-                                </td>
-                                <td style="font-size:12px;color:var(--rtg-text-muted);">
-                                    <?php
-                                    $link_retailer = RTG_Price_Sync::resolve_link_retailer( $uncovered['link'] ?? '' );
-                                    if ( empty( $uncovered['link'] ) ) {
-                                        echo 'No link';
-                                    } elseif ( '' !== $link_retailer ) {
-                                        echo esc_html( $link_retailer );
-                                    } else {
-                                        echo 'Elsewhere';
-                                    }
-                                    ?>
-                                </td>
-                                <td style="font-size:12px;">
-                                    <?php echo esc_html( $reason['label'] ?? '' ); ?>
-                                    <?php if ( ! empty( $reason['near'] ) ) : ?>
-                                        <ul style="margin:6px 0 0;padding-left:16px;color:var(--rtg-text-muted);">
-                                        <?php foreach ( $reason['near'] as $near ) : ?>
-                                            <li>
-                                                <code><?php echo esc_html( $near['model'] ?: '(no model parsed)' ); ?></code>
-                                                <?php if ( ! empty( $near['advertisers'] ) ) : ?>
-                                                    &mdash; <?php echo esc_html( implode( ', ', $near['advertisers'] ) ); ?>
-                                                <?php endif; ?>
-                                                <?php if ( RTG_Coverage::GAP_MODEL_VARIANT === ( $reason['code'] ?? '' ) && '' !== $near['model'] ) : ?>
-                                                    <button type="button" class="rtg-btn rtg-btn-secondary rtg-adopt-alias"
-                                                        style="padding:2px 8px;font-size:11px;margin-left:6px;"
-                                                        data-tire-id="<?php echo esc_attr( $uncovered['tire_id'] ); ?>"
-                                                        data-alias="<?php echo esc_attr( $near['model'] ); ?>">
-                                                        Adopt as alias
-                                                    </button>
-                                                <?php endif; ?>
-                                            </li>
-                                        <?php endforeach; ?>
-                                        </ul>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </details>
-            <?php endif; ?>
-
-            <?php
-            // Why a covered tire's price didn't move. Everything the run
-            // decided is recorded, so this never needs a re-run to answer.
-            $unchanged = array();
-            if ( $price_results && ! empty( $price_results['outcomes'] ) ) {
-                foreach ( $price_results['outcomes'] as $outcome_tire_id => $outcome ) {
-                    if ( 'updated' !== $outcome['code'] && 'unchanged' !== $outcome['code'] ) {
-                        $unchanged[ $outcome_tire_id ] = $outcome;
-                    }
-                }
-            }
-            ?>
-            <?php if ( ! empty( $unchanged ) ) : ?>
-                <details style="margin-top:12px;">
-                    <summary style="cursor:pointer;font-weight:600;">
-                        <?php echo count( $unchanged ); ?> covered tire(s) whose price was not refreshed
-                    </summary>
-                    <table class="rtg-table" style="margin-top:8px;">
-                        <thead>
-                            <tr><th>Tire</th><th>Size</th><th>Retailer</th><th>Reason</th></tr>
-                        </thead>
-                        <tbody>
-                        <?php foreach ( $unchanged as $outcome ) : ?>
-                            <tr>
-                                <td><?php echo esc_html( trim( $outcome['brand'] . ' ' . $outcome['model'] ) ); ?></td>
-                                <td style="font-family:var(--rtg-font-mono, monospace);"><?php echo esc_html( $outcome['size'] ); ?></td>
-                                <td><?php echo esc_html( $outcome['retailer'] ?: '&mdash;' ); ?></td>
-                                <td style="font-size:12px;color:var(--rtg-text-muted);"><?php echo esc_html( $outcome['label'] ); ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </details>
-            <?php endif; ?>
-
-            <?php if ( ! $price_results ) : ?>
-                <p class="description" style="margin-top:12px;">
-                    Prices refresh on the next discovery run.
-                </p>
-            <?php endif; ?>
-        </div>
-    </div>
 
     <!-- Candidates table -->
     <div class="rtg-card">
         <div class="rtg-table-wrapper">
             <?php if ( empty( $candidates ) ) : ?>
-                <div class="rtg-empty-state" style="padding:60px 20px;text-align:center;">
-                    <h2 style="font-size:20px;font-weight:600;margin:0 0 8px;">Nothing here</h2>
-                    <p style="color:var(--rtg-text-muted);max-width:500px;margin:0 auto;line-height:1.6;">
+                <div class="rtg-empty-state">
+                    <span class="dashicons dashicons-search"></span>
+                    <h2>Nothing here</h2>
+                    <p>
                         <?php if ( RTG_Candidates::STATUS_NEW === $status_filter ) : ?>
                             No tires are waiting for review. New arrivals show up here after a discovery run.
                         <?php else : ?>
@@ -615,10 +464,10 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                 </div>
             <?php else : ?>
                 <?php if ( $candidate_total > count( $candidates ) ) : ?>
-                    <div style="padding:10px 16px;color:var(--rtg-text-muted);font-size:13px;border-bottom:1px solid var(--rtg-border);">
+                    <div class="rtg-table-note">
                         Showing the <?php echo esc_html( count( $candidates ) ); ?> most recent of
-                        <?php echo esc_html( $candidate_total ); ?> rows in this view —
-                        narrow with the size, vehicle, or brand filters to reach the rest.
+                        <?php echo esc_html( $candidate_total ); ?> rows in this view.
+                        Narrow with the size, vehicle, or brand filters to reach the rest.
                     </div>
                 <?php endif; ?>
                 <table class="rtg-table rtg-table-compact">
@@ -631,11 +480,11 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                             <th>Speed</th>
                             <th>Price</th>
                             <th>Retailer</th>
-                            <th>First Seen</th>
+                            <th>First seen</th>
                             <?php if ( RTG_Candidates::STATUS_REJECTED === $status_filter ) : ?>
-                                <th>Why Not</th>
+                                <th>Why not</th>
                             <?php endif; ?>
-                            <th style="text-align:right;">Actions</th>
+                            <th class="is-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -678,23 +527,23 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 $product_name = trim( $candidate['brand'] . ' ' . $candidate['model'] );
                                 ?>
                                 <?php if ( '' !== $product_url ) : ?>
-                                    <a href="<?php echo esc_url( $product_url ); ?>" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:inherit;" title="View on the retailer's site">
-                                        <strong><?php echo esc_html( $product_name ); ?></strong>
-                                        <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:10px;color:var(--rtg-text-muted);margin-left:4px;"></i>
+                                    <a href="<?php echo esc_url( $product_url ); ?>" target="_blank" rel="noopener noreferrer" class="rtg-row-title" title="View on the retailer's site">
+                                        <?php echo esc_html( $product_name ); ?>
+                                        <span class="dashicons dashicons-external rtg-external-icon"></span>
                                     </a>
                                 <?php else : ?>
                                     <strong><?php echo esc_html( $product_name ); ?></strong>
                                 <?php endif; ?>
                                 <?php if ( ! empty( $candidate['matched_tire_id'] ) ) : ?>
-                                    <br><span class="rtg-badge rtg-badge-muted">in guide as <?php echo esc_html( $candidate['matched_tire_id'] ); ?></span>
+                                    <span class="rtg-row-meta"><span class="rtg-badge rtg-badge-muted rtg-badge-sm">in guide as <?php echo esc_html( $candidate['matched_tire_id'] ); ?></span></span>
                                     <?php if ( $matched_by_name ) : ?>
-                                        <br><span style="font-size:11px;color:var(--rtg-text-muted);">
-                                            Matched on the name, not the guide's own spelling &mdash; add it anyway if it's a different tire.
+                                        <span class="rtg-row-note">
+                                            Matched on the name, not the guide's own spelling. Add it anyway if it is a different tire.
                                         </span>
                                     <?php endif; ?>
                                 <?php elseif ( $imported_orphan ) : ?>
-                                    <br><span style="font-size:11px;color:var(--rtg-warning-text);">
-                                        No guide tire matches this any more &mdash; removed, or renamed since it was added.
+                                    <span class="rtg-row-note is-warning">
+                                        No guide tire matches this any more. It was removed, or renamed since it was added.
                                     </span>
                                 <?php elseif ( RTG_Candidates::STATUS_NEW === $candidate['status'] ) :
                                     // Same brand, same fitment, a name that shares
@@ -728,7 +577,7 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                             $near_tire['load_index'] ?? ''
                                         );
                                         ?>
-                                        <br><span style="font-size:11px;color:var(--rtg-text-muted);">
+                                        <span class="rtg-row-note">
                                             Guide already has
                                             <a href="<?php echo esc_url( $near_url ); ?>"><?php echo esc_html( $near_tire['model'] ); ?></a>
                                             in this size
@@ -753,29 +602,31 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                         continue;
                                     }
                                     ?>
-                                    <br><span style="font-size:11px;color:var(--rtg-warning-text);">⚠ <?php echo esc_html( $warning['label'] ); ?></span>
+                                    <span class="rtg-row-note is-warning">⚠ <?php echo esc_html( $warning['label'] ); ?></span>
                                 <?php endforeach; ?>
                             </td>
-                            <td style="font-family:var(--rtg-font-mono, monospace);"><?php echo esc_html( $candidate['size'] ); ?></td>
+                            <td class="rtg-mono"><?php echo esc_html( $candidate['size'] ); ?></td>
                             <td>
                                 <?php
                                 // Blank for a row that qualified before platform
                                 // fitment was recorded; it fills in on the next run.
                                 $fits = (array) ( $candidate['fits_vehicles'] ?? array() );
                                 if ( empty( $fits ) ) {
-                                    echo '<span style="color:var(--rtg-text-muted);">—</span>';
+                                    echo '<span class="rtg-empty">—</span>';
                                 } else {
+                                    echo '<span class="rtg-badge-list">';
                                     foreach ( $fits as $fit_vehicle ) {
                                         // A fit on wheels Rivian never sold reads as such,
                                         // so an 18" R2 candidate isn't mistaken for a factory size.
                                         $fit_third = RTG_Fitment::third_party_entry( $candidate['size'] ?? '', $fit_vehicle, $third_party_map );
                                         printf(
-                                            '<span class="rtg-badge%s" style="margin-right:4px;"%s>%s</span>',
-                                            $fit_third ? ' rtg-badge-third-party' : '',
+                                            '<span class="rtg-badge%s"%s>%s</span>',
+                                            $fit_third ? ' rtg-badge-third-party' : ' rtg-badge-info',
                                             $fit_third ? ' title="Fits only on 3rd-party wheels"' : '',
                                             esc_html( $fit_vehicle . ( $fit_third ? ' · 3rd-party' : '' ) )
                                         );
                                     }
+                                    echo '</span>';
                                 }
                                 ?>
                             </td>
@@ -787,7 +638,7 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 <?php echo esc_html( human_time_diff( strtotime( $candidate['first_seen_at'] ), current_time( 'timestamp' ) ) ); ?> ago
                             </td>
                             <?php if ( RTG_Candidates::STATUS_REJECTED === $status_filter ) : ?>
-                                <td style="font-size:12px;color:var(--rtg-text-muted);">
+                                <td class="rtg-muted rtg-small">
                                     <?php
                                     $labels = array();
                                     foreach ( (array) $candidate['fail_reasons'] as $reason ) {
@@ -797,25 +648,27 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                     ?>
                                 </td>
                             <?php endif; ?>
-                            <td style="text-align:right;white-space:nowrap;">
+                            <td class="is-right">
+                                <div class="rtg-table-actions">
                                 <?php if ( ! empty( $candidate['link'] ) ) : ?>
-                                    <a href="<?php echo esc_url( $candidate['link'] ); ?>" target="_blank" rel="noopener noreferrer nofollow" class="rtg-btn rtg-btn-secondary" style="text-decoration:none;">Listing</a>
+                                    <a href="<?php echo esc_url( $candidate['link'] ); ?>" target="_blank" rel="noopener noreferrer nofollow" class="rtg-btn rtg-btn-secondary rtg-btn-sm">Listing</a>
                                 <?php endif; ?>
 
                                 <?php if ( RTG_Candidates::STATUS_IMPORTED !== $status_filter
                                     && ( RTG_Candidates::STATUS_EXISTING !== $status_filter || $matched_by_name ) ) : ?>
-                                    <a href="<?php echo esc_url( $add_url ); ?>" class="rtg-btn rtg-btn-primary" style="text-decoration:none;">Add to Guide</a>
+                                    <a href="<?php echo esc_url( $add_url ); ?>" class="rtg-btn rtg-btn-primary rtg-btn-sm">Add to guide</a>
                                 <?php endif; ?>
 
                                 <?php if ( $imported_orphan ) : ?>
-                                    <button type="button" class="rtg-btn rtg-btn-secondary rtg-candidate-action" data-status="<?php echo esc_attr( RTG_Candidates::STATUS_NEW ); ?>">Return to review</button>
+                                    <button type="button" class="rtg-btn rtg-btn-secondary rtg-btn-sm rtg-candidate-action" data-status="<?php echo esc_attr( RTG_Candidates::STATUS_NEW ); ?>">Return to review</button>
                                 <?php endif; ?>
 
                                 <?php if ( RTG_Candidates::STATUS_DISMISSED === $status_filter ) : ?>
-                                    <button type="button" class="rtg-btn rtg-btn-secondary rtg-candidate-action" data-status="<?php echo esc_attr( RTG_Candidates::STATUS_NEW ); ?>">Restore</button>
+                                    <button type="button" class="rtg-btn rtg-btn-secondary rtg-btn-sm rtg-candidate-action" data-status="<?php echo esc_attr( RTG_Candidates::STATUS_NEW ); ?>">Restore</button>
                                 <?php elseif ( RTG_Candidates::STATUS_IMPORTED !== $status_filter ) : ?>
-                                    <button type="button" class="rtg-btn rtg-btn-danger rtg-candidate-action" data-status="<?php echo esc_attr( RTG_Candidates::STATUS_DISMISSED ); ?>">Dismiss</button>
+                                    <button type="button" class="rtg-btn rtg-btn-danger-quiet rtg-btn-sm rtg-candidate-action" data-status="<?php echo esc_attr( RTG_Candidates::STATUS_DISMISSED ); ?>">Dismiss</button>
                                 <?php endif; ?>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -825,357 +678,613 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
         </div>
     </div>
 
-    <!-- Settings -->
-    <div class="rtg-card" style="margin-top:20px;">
+    </div><!-- queue panel -->
+
+    <!-- ================================================================
+         Retailer coverage and price refresh
+         ================================================================ -->
+    <div class="rtg-tab-panel" data-tab-panel="coverage" hidden>
+
+    <div class="rtg-card">
         <div class="rtg-card-header">
-            <h2>Discovery Settings</h2>
+            <h2>Retailer coverage and prices</h2>
+            <p>A covered tire is one a retailer's catalog lists, so its price refreshes on every run. The rest only change when a person edits them.</p>
         </div>
         <div class="rtg-card-body">
-            <form method="post">
-                <?php wp_nonce_field( 'rtg_catalog_settings', 'rtg_catalog_settings_nonce' ); ?>
-                <table class="form-table">
-                    <tr>
-                        <th scope="row"><label for="catalog_sync_enabled">Enable Discovery</label></th>
-                        <td>
-                            <label>
-                                <input type="checkbox" name="catalog_sync_enabled" id="catalog_sync_enabled" value="1" <?php checked( $sync_enabled ); ?>>
-                                Check affiliate catalogs once a day
-                            </label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="catalog_notify_enabled">Email Digest</label></th>
-                        <td>
-                            <label>
-                                <input type="checkbox" name="catalog_notify_enabled" id="catalog_notify_enabled" value="1" <?php checked( $notify_enabled ); ?>>
-                                Email me when a qualifying tire is found
-                            </label>
-                            <p class="description">Only newly surfaced tires are included — a run that finds nothing new sends nothing.</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="health_alerts_enabled">Health Alerts</label></th>
-                        <td>
-                            <label>
-                                <input type="checkbox" name="health_alerts_enabled" id="health_alerts_enabled" value="1" <?php checked( $health_alerts ); ?>>
-                                Email me when discovery breaks, recovers, or a tire is dropped from the catalog
-                            </label>
-                            <p class="description" style="max-width:680px;">
-                                The digest only fires on success, so without this every failure is silent: a rotated
-                                CJ token failing each run with a 401, the daily schedule not firing, a fitment no
-                                longer being read completely. Each problem emails once when it appears and once when
-                                it clears — a week-long outage is two emails, not seven. Delistings email as they are
-                                detected.
-                                <br><br>
-                                <strong>For a schedule that cannot silently die:</strong> WP-Cron only fires when the
-                                site gets traffic. The reliable setup is a real server cron hitting
-                                <code>wp-cron.php</code> every few minutes with <code>DISABLE_WP_CRON</code> set —
-                                most hosts have a checkbox for this. Until then, any wp-admin visit also checks and
-                                will flag a schedule that has gone quiet.
-                            </p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="stale_price_report_enabled">Stale Price Report</label></th>
-                        <td>
-                            <label>
-                                <input type="checkbox" name="stale_price_report_enabled" id="stale_price_report_enabled" value="1" <?php checked( $stale_price_report ); ?>>
-                                Email me monthly about prices only a person can refresh
-                            </label>
-                            <p class="description" style="max-width:680px;">
-                                Covered tires re-price themselves daily. The rest update only when someone edits them,
-                                and a stale price is neither a broken link nor a failed run, so nothing else would
-                                mention it. Monthly, listing tires untouched for
-                                <?php echo esc_html( RTG_Stale_Prices::DEFAULT_STALE_DAYS ); ?>+ days, oldest first.
-                            </p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Minimum Load Index</th>
-                        <td>
-                            <?php if ( ! empty( $vehicle_size_map ) ) : ?>
-                                <p class="description" style="max-width:680px;margin:0 0 10px;">
-                                    Size and load index are judged together, per vehicle: a tire has to be one of a
-                                    platform's sizes <em>and</em> carry enough load for it. A tire that clears no
-                                    platform is filed under Near Misses naming the one it came closest on.
-                                </p>
-                                <table style="border-collapse:collapse;">
-                                    <?php foreach ( $vehicle_size_map as $vehicle => $vehicle_sizes ) : ?>
-                    <tr>
-                                            <td style="padding:4px 12px 4px 0;">
-                                                <label for="min_li_<?php echo esc_attr( $vehicle ); ?>"><strong><?php echo esc_html( $vehicle ); ?></strong></label>
-                                            </td>
-                                            <td style="padding:4px 12px 4px 0;">
-                                                <input type="number"
-                                                    name="catalog_vehicle_min_load_index[<?php echo esc_attr( $vehicle ); ?>]"
-                                                    id="min_li_<?php echo esc_attr( $vehicle ); ?>"
-                                                    value="<?php echo esc_attr( $vehicle_minimums[ $vehicle ] ?? '' ); ?>"
-                                                    min="100" max="126" class="small-text">
-                                            </td>
-                                            <td style="padding:4px 0;font-size:12px;color:var(--rtg-text-muted);">
-                                                <?php echo esc_html( implode( ', ', $vehicle_sizes ) ); ?>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </table>
-                                <p class="description" style="margin-top:8px;">
-                                    Sizes come from <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-wheels' ) ); ?>">Stock Wheels</a>,
-                                    so a platform added there appears here on its own. Blank restores the built-in figure
-                                    (R1 116, R2 112).
-                                </p>
-                            <?php else : ?>
-                                <input type="number" name="catalog_min_load_index" id="catalog_min_load_index" value="<?php echo esc_attr( $min_load_index ); ?>" min="100" max="126" class="small-text">
-                                <p class="description" style="max-width:680px;">
-                                    No stock wheels are configured, so there is no vehicle map to judge against and this
-                                    single floor applies to every size. Add wheels under
-                                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-wheels' ) ); ?>">Stock Wheels</a>
-                                    to get per-platform rules.
-                                </p>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="price_sync_enabled">Price Refresh</label></th>
-                        <td>
-                            <label>
-                                <input type="checkbox" name="price_sync_enabled" id="price_sync_enabled" value="1" <?php checked( $price_sync_enabled ); ?>>
-                                Refresh guide prices on each discovery run
-                            </label>
-                            <p class="description" style="max-width:680px;">
-                                A price is taken only from the retailer the tire's own purchase link points to, so the
-                                figure on the page always matches what a reader sees on click. A tire linked somewhere
-                                discovery doesn't price — Amazon, a manufacturer — is left alone and listed below.
-                            </p>
-                            <p style="margin-top:8px;">
-                                <label for="price_sync_max_change">Ignore changes larger than</label>
-                                <input type="number" name="price_sync_max_change" id="price_sync_max_change" value="<?php echo esc_attr( $price_sync_max_change ); ?>" min="1" max="100" class="small-text">%
-                            </p>
-                            <p class="description" style="max-width:680px;">
-                                Tires are matched on brand, model and size, which can collide across load ratings. A
-                                price that moves further than this is more likely to be that collision than a real sale,
-                                so it is reported rather than written.
-                            </p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="link_sync_enabled">Link Sync</label></th>
-                        <td>
-                            <label>
-                                <input type="checkbox" name="link_sync_enabled" id="link_sync_enabled" value="1" <?php checked( $link_sync_enabled ); ?>>
-                                Fill and upgrade purchase links from the catalog daily
-                            </label>
-                            <p class="description" style="max-width:680px;">
-                                A tire with <strong>no link</strong> gets the cheapest fresh tracked listing — and
-                                price sync then follows that retailer, so the price shown and the page clicked stay
-                                consistent. A tire with a <strong>plain retailer link</strong> is upgraded to a
-                                tracked link for the <em>same</em> retailer only — where the reader lands was already
-                                chosen; monetizing it is mechanical, switching retailers is not. A link that is
-                                <strong>already affiliate is never touched</strong> &mdash; with one exception: when
-                                its retailer has <strong>delisted the tire</strong> (unseen for
-                                <?php echo esc_html( RTG_Link_Sync::FRESH_DAYS ); ?>+ days in a completely-read
-                                fitment) while another retailer still lists it with a tracked link, the link moves
-                                to the retailer that actually carries the product &mdash; in either direction. Only
-                                listings the sweep has seen in the last
-                                <?php echo esc_html( RTG_Link_Sync::FRESH_DAYS ); ?> days qualify as sources, so a
-                                delisted product's link can't be applied. Every decision is reported on the
-                                Affiliate Links page.
-                            </p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="catalog_brand_policy">Brands Outside Your List</label></th>
-                        <td>
-                            <select name="catalog_brand_policy" id="catalog_brand_policy">
-                                <option value="<?php echo esc_attr( RTG_Tire_Qualifier::BRAND_POLICY_WARN ); ?>" <?php selected( $brand_policy, RTG_Tire_Qualifier::BRAND_POLICY_WARN ); ?>>
-                                    Surface them, flagged
-                                </option>
-                                <option value="<?php echo esc_attr( RTG_Tire_Qualifier::BRAND_POLICY_REJECT ); ?>" <?php selected( $brand_policy, RTG_Tire_Qualifier::BRAND_POLICY_REJECT ); ?>>
-                                    File them under Near Misses
-                                </option>
-                                <option value="<?php echo esc_attr( RTG_Tire_Qualifier::BRAND_POLICY_OFF ); ?>" <?php selected( $brand_policy, RTG_Tire_Qualifier::BRAND_POLICY_OFF ); ?>>
-                                    Don't judge brand at all
-                                </option>
-                            </select>
-                            <p class="description" style="max-width:640px;">
-                                Retailer catalogs carry far more brands than the guide covers, and most of a first
-                                run is usually marques you'd never list. <strong>Surface them, flagged</strong> keeps
-                                everything reviewable but marks an uncovered brand, so a newcomer worth covering
-                                still reaches you. <strong>File them under Near Misses</strong> keeps the queue
-                                tight, at the cost of never seeing a new brand until you add it to the list below.
-                            </p>
-                            <p class="description" style="margin-top:6px;">
-                                <?php if ( ! empty( $covered_brands ) ) : ?>
-                                    Currently covering <strong><?php echo count( $covered_brands ); ?></strong> brands:
-                                    <?php echo esc_html( implode( ', ', $covered_brands ) ); ?>.
-                                    Edit the list under <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-settings' ) ); ?>">Settings &rarr; Dropdown Options</a>.
-                                <?php else : ?>
-                                    No brand list is configured, so this rule stays silent whatever it is set to.
-                                <?php endif; ?>
-                            </p>
-                        </td>
-                    </tr>
-                </table>
+            <div class="rtg-stats-grid is-compact is-inset">
+                <div class="rtg-stat-card is-success">
+                    <div class="rtg-stat-value"><?php echo count( $covered_tires ); ?></div>
+                    <div class="rtg-stat-label">Tires covered</div>
+                </div>
+                <div class="rtg-stat-card is-muted">
+                    <div class="rtg-stat-value"><?php echo count( $uncovered_tires ); ?></div>
+                    <div class="rtg-stat-label">No retailer match</div>
+                </div>
+                <?php if ( $price_results && isset( $price_results['updated'] ) ) : ?>
+                    <div class="rtg-stat-card">
+                        <div class="rtg-stat-value"><?php echo intval( $price_results['updated'] ); ?></div>
+                        <div class="rtg-stat-label">Prices updated</div>
+                    </div>
+                    <div class="rtg-stat-card is-muted">
+                        <div class="rtg-stat-value"><?php echo intval( $price_results['skipped'] ); ?></div>
+                        <div class="rtg-stat-label">Left unchanged</div>
+                    </div>
+                <?php endif; ?>
+            </div>
 
-                <h3 style="margin:24px 0 8px;">CJ Affiliate</h3>
-                <p class="description" style="max-width:820px;margin-bottom:8px;">
-                    Both Tire Rack and SimpleTire run their affiliate programs on CJ, so one connection
-                    covers both. Discovery sends one request per tire size, scoped to the advertisers below.
-                    <?php if ( $cj_configured ) : ?>
-                        <strong style="color:var(--rtg-success);">Configured.</strong>
-                    <?php else : ?>
-                        <strong style="color:var(--rtg-warning-text);">Not configured — discovery has no source until it is.</strong>
+            <?php if ( ! empty( $uncovered_tires ) ) : ?>
+                <details class="rtg-details" open>
+                    <summary><?php echo count( $uncovered_tires ); ?> tire<?php echo 1 === count( $uncovered_tires ) ? '' : 's'; ?> no retailer is carrying</summary>
+                    <div class="rtg-details-body">
+                    <p class="rtg-help">
+                        These have no catalog match, so their prices do not refresh on their own. Only
+                        <strong>likely listed under another name</strong> is actionable: adopt the alias and
+                        the next run matches it. Other rows show what <em>did</em> arrive in that brand
+                        and fitment.
+                    </p>
+
+                    <?php if ( ! empty( $coverage_summary ) ) : ?>
+                        <p class="rtg-help">
+                            <?php
+                            $gap_labels = array(
+                                RTG_Coverage::GAP_MODEL_VARIANT   => 'likely listed under another name',
+                                RTG_Coverage::GAP_MODEL_ABSENT    => 'brand and fitment carried, this model not',
+                                RTG_Coverage::GAP_BRAND_ABSENT    => 'fitment carried, brand not',
+                                RTG_Coverage::GAP_SIZE_ABSENT     => 'fitment never reached the queue',
+                                RTG_Coverage::GAP_BRAND_MISSING   => 'guide row has no brand',
+                                RTG_Coverage::GAP_SIZE_UNREADABLE => 'guide size unreadable',
+                            );
+                            $summary_parts = array();
+                            foreach ( $coverage_summary as $gap_code => $gap_count ) {
+                                $summary_parts[] = '<strong>' . intval( $gap_count ) . '</strong> '
+                                    . esc_html( $gap_labels[ $gap_code ] ?? $gap_code );
+                            }
+                            echo wp_kses_post( implode( ' &middot; ', $summary_parts ) );
+                            ?>
+                        </p>
                     <?php endif; ?>
-                </p>
 
-                <table class="form-table">
-                    <tr>
-                        <th scope="row"><label for="cj_enabled">Use CJ</label></th>
-                        <td>
-                            <label>
-                                <input type="checkbox" name="cj_enabled" id="cj_enabled" value="1" <?php checked( $cj_enabled ); ?>>
-                                Pull candidates from the CJ Product Search API
-                            </label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="cj_company_id">Company ID (CID)</label></th>
-                        <td>
-                            <input type="text" name="cj_company_id" id="cj_company_id" value="<?php echo esc_attr( $cj_company_id ); ?>" class="regular-text" inputmode="numeric">
-                            <p class="description">From CJ &rarr; Account &rarr; Account Information.</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="cj_website_id">Website ID (PID)</label></th>
-                        <td>
-                            <input type="text" name="cj_website_id" id="cj_website_id" value="<?php echo esc_attr( $cj_website_id ); ?>" class="regular-text" inputmode="numeric">
-                            <p class="description" style="max-width:680px;">
-                                The property your deep links are minted for — the <strong>first number</strong> in one
-                                of your existing CJ links: <code>click-<u>101098512</u>-13697786</code>. With it set,
-                                every product the sweep fetches carries a ready-made <em>tracked</em> click URL, which
-                                is what lets link sync below fill and upgrade purchase links automatically. Without
-                                it, candidates only carry the retailer's plain URL, which pays nothing. After setting
-                                it, use <strong>Test Connection</strong> — the sample product's link should show a
-                                tracking domain (tkqlhce.com or similar), not the retailer's.
-                            </p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="cj_pat">Personal Access Token</label></th>
-                        <td>
-                            <?php if ( $cj_pat_constant ) : ?>
-                                <p style="margin:0;color:var(--rtg-success);"><strong>Set in wp-config.php</strong> via <code>RTG_CJ_PAT</code>. This field is ignored while that constant is defined.</p>
-                            <?php else : ?>
-                                <input type="password" name="cj_pat" id="cj_pat" value="" class="regular-text" autocomplete="off"
-                                    placeholder="<?php echo $cj_has_pat ? esc_attr( 'Saved — leave blank to keep' ) : esc_attr( 'Paste your CJ token' ); ?>">
-                                <?php if ( $cj_has_pat ) : ?>
-                                    <label style="margin-left:12px;">
-                                        <input type="checkbox" name="cj_pat_clear" value="1"> Clear saved token
-                                    </label>
-                                <?php endif; ?>
-                                <p class="description">
-                                    Never displayed once saved. Better still, keep it out of the database entirely by adding
-                                    <code>define( 'RTG_CJ_PAT', '...' );</code> to <code>wp-config.php</code> — that takes precedence over this field.
-                                </p>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="cj_advertisers">Advertisers</label></th>
-                        <td>
-                            <textarea name="cj_advertisers" id="cj_advertisers" rows="3" class="large-text code" placeholder="<?php echo esc_attr( $cj_advertiser_placeholder ); ?>"><?php echo esc_textarea( $cj_advertisers ); ?></textarea>
-                            <p class="description">One per line, as <code>advertiserId|Name</code>. Leave blank for the defaults shown. Only advertisers you have joined return products.</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="cj_limit">Records per size</label></th>
-                        <td>
-                            <input type="number" name="cj_limit" id="cj_limit" value="<?php echo esc_attr( $cj_limit ); ?>" min="1" max="1000" class="small-text">
-                            <p class="description" style="max-width:680px;">
-                                How many products to request per tire size — one request each. A popular fitment can
-                                carry several hundred, and anything beyond this is discarded by the retailer before it
-                                reaches the queue, so a tire that plainly exists can look like nobody stocks it. When a
-                                run comes back capped, the status above says so and names the sizes.
-                            </p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="cj_max_pages">Pages per size</label></th>
-                        <td>
-                            <input type="number" name="cj_max_pages" id="cj_max_pages" value="<?php echo esc_attr( $cj_max_pages ); ?>" min="1" max="50" class="small-text">
-                            <p class="description" style="max-width:680px;">
-                                How far to page through one size's matches before moving on — pages of "Records per
-                                size" each. Paging to the end of an unfiltered search would spend the whole budget on a
-                                single size, so a size stops here and the status says how much it left behind.
-                            </p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="catalog_run_budget">Whole-run budget</label></th>
-                        <td>
-                            <input type="number" name="catalog_run_budget" id="catalog_run_budget" value="<?php echo esc_attr( $catalog_run_budget ); ?>" min="30" max="900" class="small-text"> seconds
-                            <p class="description" style="max-width:680px;">
-                                A ceiling on the run as a whole, which the sweep and the direct lookups share. Each
-                                pass honouring only its own budget is not the same as the run having one: together
-                                they could outlive the request and return nothing at all. <strong>Lower this first
-                                if Run Discovery Now fails with no reply.</strong> A shorter run costs
-                                time-to-complete, never coverage &mdash; both passes resume where they stopped.
-                                This full budget applies to the nightly cron run;
-                                <strong>Run Discovery Now caps itself at
-                                <?php echo esc_html( RTG_Catalog_Sync::INTERACTIVE_BUDGET ); ?>s</strong> regardless,
-                                because the proxy in front of the site (Cloudflare&rsquo;s 524) stops waiting for a
-                                browser request after about 100 seconds &mdash; no setting can negotiate with that.
-                            </p>
-                        </td>
-                    </tr>
-                                                            <tr>
-                        <th scope="row"><label for="cj_sweep_budget">Time budget</label></th>
-                        <td>
-                            <input type="number" name="cj_sweep_budget" id="cj_sweep_budget" value="<?php echo esc_attr( $cj_sweep_budget ); ?>" min="15" max="600" class="small-text"> seconds
-                            <p class="description" style="max-width:680px;">
-                                How long a sweep may spend fetching before it stops and reports the sizes it didn't
-                                reach. Lower it if your host has a tight PHP execution limit; raise it if the status
-                                above says sizes went unchecked.
-                            </p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="cj_query">GraphQL query</label></th>
-                        <td>
-                            <textarea name="cj_query" id="cj_query" rows="10" class="large-text code" spellcheck="false" placeholder="<?php echo esc_attr( RTG_Catalog_Source_CJ::DEFAULT_QUERY ); ?>"><?php echo esc_textarea( $cj_query ); ?></textarea>
-                            <p class="description">
-                                Leave blank to use the shipped query. If Test Connection reports a GraphQL error naming a field,
-                                correct it here rather than waiting on a plugin update — the response mapping accepts several
-                                field spellings, so only the query itself usually needs changing.
-                            </p>
-                            <p style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                                <input type="text" id="rtg-cj-test-keyword" class="regular-text"
-                                    placeholder="Michelin Defender LTX M/S2 305/45R22"
-                                    style="flex:1 1 340px;min-width:240px;">
-                                <input type="number" id="rtg-cj-test-offset" min="0" step="1000" value="0"
-                                    class="small-text" placeholder="offset" title="Records to skip">
-                                <button type="button" id="rtg-cj-test-btn" class="rtg-btn rtg-btn-secondary">Test Connection</button>
-                            </p>
-                            <p class="description" style="max-width:680px;">
-                                Any keyword may be probed here, and the reply lists the titles it returned. That is how to
-                                tell whether CJ is <em>matching</em> a term or merely ranking against it: type a tire's
-                                full name and see whether that tire is anywhere in the answer. Blank uses the first
-                                guide size, which tests the connection itself.
-                                <br><br>
-                                <strong>The offset is how to check that paging works.</strong> Probe a size at 0, then
-                                the same size at 1000. Different titles mean the sweep really is reading deeper each
-                                page. <em>The same titles mean it is re-reading page one</em> &mdash; and a sweep that
-                                counts what came back rather than what was new would still call that fitment complete.
-                            </p>
-                            <div id="rtg-cj-test-result" style="display:none;margin-top:10px;"></div>
-                        </td>
-                    </tr>
-                </table>
+                    <div class="rtg-table-wrapper">
+                    <table class="rtg-table rtg-table-compact">
+                        <thead>
+                            <tr><th>Tire</th><th>Size</th><th>Price</th><th>Price age</th><th>Link</th><th>Why it is not matched</th></tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ( $uncovered_tires as $uncovered ) : ?>
+                            <?php $reason = $coverage_reasons[ (string) $uncovered['tire_id'] ] ?? array(); ?>
+                            <tr>
+                                <td>
+                                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit&id=' . intval( $uncovered['id'] ) ) ); ?>" class="rtg-row-title">
+                                        <?php echo esc_html( trim( $uncovered['brand'] . ' ' . $uncovered['model'] ) ); ?>
+                                    </a>
+                                </td>
+                                <td class="rtg-mono"><?php echo esc_html( $uncovered['size'] ); ?></td>
+                                <td><?php echo $uncovered['price'] > 0 ? '$' . esc_html( number_format( (float) $uncovered['price'], 2 ) ) : '&mdash;'; ?></td>
+                                <td class="rtg-muted rtg-small">
+                                    <?php
+                                    // These prices only move when a person moves them, so
+                                    // their age is the number that matters.
+                                    $price_touch = RTG_Stale_Prices::last_price_touch( $uncovered );
+                                    if ( $price_touch > 0 ) {
+                                        $price_age_days = ( current_time( 'timestamp' ) - $price_touch ) / DAY_IN_SECONDS;
+                                        echo '<span' . ( $price_age_days > RTG_Stale_Prices::DEFAULT_STALE_DAYS ? ' class="rtg-text-error rtg-strong"' : '' ) . '>'
+                                            . esc_html( human_time_diff( $price_touch, current_time( 'timestamp' ) ) ) . ' ago</span>';
+                                    } else {
+                                        echo '&mdash;';
+                                    }
+                                    ?>
+                                </td>
+                                <td class="rtg-muted rtg-small">
+                                    <?php
+                                    $link_retailer = RTG_Price_Sync::resolve_link_retailer( $uncovered['link'] ?? '' );
+                                    if ( empty( $uncovered['link'] ) ) {
+                                        echo 'No link';
+                                    } elseif ( '' !== $link_retailer ) {
+                                        echo esc_html( $link_retailer );
+                                    } else {
+                                        echo 'Elsewhere';
+                                    }
+                                    ?>
+                                </td>
+                                <td class="rtg-small rtg-row-note-cell">
+                                    <?php echo esc_html( $reason['label'] ?? '' ); ?>
+                                    <?php if ( ! empty( $reason['near'] ) ) : ?>
+                                        <ul class="rtg-row-note">
+                                        <?php foreach ( $reason['near'] as $near ) : ?>
+                                            <li>
+                                                <code><?php echo esc_html( $near['model'] ?: '(no model parsed)' ); ?></code>
+                                                <?php if ( ! empty( $near['advertisers'] ) ) : ?>
+                                                    &mdash; <?php echo esc_html( implode( ', ', $near['advertisers'] ) ); ?>
+                                                <?php endif; ?>
+                                                <?php if ( RTG_Coverage::GAP_MODEL_VARIANT === ( $reason['code'] ?? '' ) && '' !== $near['model'] ) : ?>
+                                                    <button type="button" class="rtg-btn rtg-btn-secondary rtg-btn-xs rtg-adopt-alias"
+                                                        data-tire-id="<?php echo esc_attr( $uncovered['tire_id'] ); ?>"
+                                                        data-alias="<?php echo esc_attr( $near['model'] ); ?>">
+                                                        Adopt as alias
+                                                    </button>
+                                                <?php endif; ?>
+                                            </li>
+                                        <?php endforeach; ?>
+                                        </ul>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    </div>
+                    </div>
+                </details>
+            <?php endif; ?>
 
-                <p class="submit">
-                    <input type="submit" name="rtg_catalog_settings_save" class="button button-primary" value="Save Settings">
-                </p>
-            </form>
+            <?php
+            // Why a covered tire's price didn't move. Everything the run
+            // decided is recorded, so this never needs a re-run to answer.
+            $unchanged = array();
+            if ( $price_results && ! empty( $price_results['outcomes'] ) ) {
+                foreach ( $price_results['outcomes'] as $outcome_tire_id => $outcome ) {
+                    if ( 'updated' !== $outcome['code'] && 'unchanged' !== $outcome['code'] ) {
+                        $unchanged[ $outcome_tire_id ] = $outcome;
+                    }
+                }
+            }
+            ?>
+            <?php if ( ! empty( $unchanged ) ) : ?>
+                <details class="rtg-details">
+                    <summary><?php echo count( $unchanged ); ?> covered tire<?php echo 1 === count( $unchanged ) ? '' : 's'; ?> whose price was not refreshed</summary>
+                    <div class="rtg-details-body">
+                    <div class="rtg-table-wrapper">
+                    <table class="rtg-table rtg-table-compact">
+                        <thead>
+                            <tr><th>Tire</th><th>Size</th><th>Retailer</th><th>Reason</th></tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ( $unchanged as $outcome ) : ?>
+                            <tr>
+                                <td><?php echo esc_html( trim( $outcome['brand'] . ' ' . $outcome['model'] ) ); ?></td>
+                                <td class="rtg-mono"><?php echo esc_html( $outcome['size'] ); ?></td>
+                                <td><?php echo esc_html( $outcome['retailer'] ?: '—' ); ?></td>
+                                <td class="rtg-muted rtg-small"><?php echo esc_html( $outcome['label'] ); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    </div>
+                    </div>
+                </details>
+            <?php endif; ?>
+
+            <?php if ( ! $price_results ) : ?>
+                <p class="rtg-help">Prices refresh on the next discovery run.</p>
+            <?php endif; ?>
         </div>
     </div>
+
+    </div><!-- coverage panel -->
+
+    <!-- ================================================================
+         Settings
+         ================================================================ -->
+    <div class="rtg-tab-panel" data-tab-panel="settings" hidden>
+
+    <form method="post">
+        <?php wp_nonce_field( 'rtg_catalog_settings', 'rtg_catalog_settings_nonce' ); ?>
+
+        <div class="rtg-card">
+            <div class="rtg-card-header">
+                <h2>Discovery</h2>
+                <p>What the daily run does and who hears about it.</p>
+            </div>
+            <div class="rtg-card-body">
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="catalog_sync_enabled">Daily check</label>
+                    </div>
+                    <label class="rtg-toggle is-small">
+                        <input type="checkbox" name="catalog_sync_enabled" id="catalog_sync_enabled" value="1" <?php checked( $sync_enabled ); ?>>
+                        <span class="rtg-toggle-track"></span>
+                        <span class="rtg-toggle-label">Check affiliate catalogs once a day</span>
+                    </label>
+                </div>
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="catalog_notify_enabled">Email digest</label>
+                    </div>
+                    <p class="rtg-field-description">Only newly surfaced tires are included. A run that finds nothing new sends nothing.</p>
+                    <label class="rtg-toggle is-small">
+                        <input type="checkbox" name="catalog_notify_enabled" id="catalog_notify_enabled" value="1" <?php checked( $notify_enabled ); ?>>
+                        <span class="rtg-toggle-track"></span>
+                        <span class="rtg-toggle-label">Email me when a qualifying tire is found</span>
+                    </label>
+                </div>
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="health_alerts_enabled">Health alerts</label>
+                    </div>
+                    <p class="rtg-field-description">
+                        The digest only fires on success, so without this every failure is silent: a rotated
+                        CJ token failing each run, the daily schedule not firing, a fitment no longer being read
+                        completely. Each problem emails once when it appears and once when it clears. Delistings
+                        email as they are detected.
+                    </p>
+                    <label class="rtg-toggle is-small">
+                        <input type="checkbox" name="health_alerts_enabled" id="health_alerts_enabled" value="1" <?php checked( $health_alerts ); ?>>
+                        <span class="rtg-toggle-track"></span>
+                        <span class="rtg-toggle-label">Email me when discovery breaks, recovers, or a tire is dropped from the catalog</span>
+                    </label>
+                    <p class="rtg-help">
+                        <strong>For a schedule that cannot silently die:</strong> WP-Cron only fires when the
+                        site gets traffic. The reliable setup is a real server cron hitting
+                        <code>wp-cron.php</code> every few minutes with <code>DISABLE_WP_CRON</code> set.
+                        Most hosts have a checkbox for this. Until then, any wp-admin visit also checks and
+                        will flag a schedule that has gone quiet.
+                    </p>
+                </div>
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="stale_price_report_enabled">Stale price report</label>
+                    </div>
+                    <p class="rtg-field-description">
+                        Covered tires re-price themselves daily. The rest update only when someone edits them,
+                        and a stale price is neither a broken link nor a failed run, so nothing else would
+                        mention it. Monthly, listing tires untouched for
+                        <?php echo esc_html( RTG_Stale_Prices::DEFAULT_STALE_DAYS ); ?>+ days, oldest first.
+                    </p>
+                    <label class="rtg-toggle is-small">
+                        <input type="checkbox" name="stale_price_report_enabled" id="stale_price_report_enabled" value="1" <?php checked( $stale_price_report ); ?>>
+                        <span class="rtg-toggle-track"></span>
+                        <span class="rtg-toggle-label">Email me monthly about prices only a person can refresh</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="rtg-card">
+            <div class="rtg-card-header">
+                <h2>What qualifies</h2>
+                <p>Size, load index and load range are judged together, per vehicle: a tire has to be one of a platform's sizes, carry enough load for it, and be built to at least the platform's load range. A tire that clears no platform is filed under Near misses, naming what it fell short on.</p>
+            </div>
+            <div class="rtg-card-body">
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <span class="rtg-field-label">Minimums per vehicle</span>
+                    </div>
+                    <?php if ( ! empty( $vehicle_size_map ) ) : ?>
+                        <div class="rtg-table-wrapper">
+                            <table class="rtg-table rtg-table-compact is-inset">
+                                <thead>
+                                    <tr><th>Vehicle</th><th>Load index</th><th>Load range</th><th>Sizes</th></tr>
+                                </thead>
+                                <tbody>
+                                <?php foreach ( $vehicle_size_map as $vehicle => $vehicle_sizes ) : ?>
+                                    <?php
+                                    $range_saved   = strtoupper( (string) ( $vehicle_range_saved[ $vehicle ] ?? '' ) );
+                                    $range_default = RTG_Tire_Qualifier::VEHICLE_MIN_LOAD_RANGE[ $vehicle ] ?? '';
+                                    ?>
+                                    <tr>
+                                        <td><label for="min_li_<?php echo esc_attr( $vehicle ); ?>"><strong><?php echo esc_html( $vehicle ); ?></strong></label></td>
+                                        <td>
+                                            <input type="number"
+                                                name="catalog_vehicle_min_load_index[<?php echo esc_attr( $vehicle ); ?>]"
+                                                id="min_li_<?php echo esc_attr( $vehicle ); ?>"
+                                                value="<?php echo esc_attr( $vehicle_minimums[ $vehicle ] ?? '' ); ?>"
+                                                min="100" max="126" class="rtg-input-tiny">
+                                        </td>
+                                        <td>
+                                            <select name="catalog_vehicle_min_load_range[<?php echo esc_attr( $vehicle ); ?>]"
+                                                id="min_lr_<?php echo esc_attr( $vehicle ); ?>"
+                                                class="rtg-input-small"
+                                                aria-label="<?php echo esc_attr( $vehicle ); ?> minimum load range">
+                                                <option value="" <?php selected( '' === $range_saved ); ?>>Default (<?php echo $range_default ? esc_html( $range_default . ' or higher' ) : 'none'; ?>)</option>
+                                                <option value="<?php echo esc_attr( RTG_Tire_Qualifier::LOAD_RANGE_NONE ); ?>" <?php selected( strtoupper( RTG_Tire_Qualifier::LOAD_RANGE_NONE ) === $range_saved ); ?>>No minimum</option>
+                                                <?php foreach ( RTG_Tire_Qualifier::LOAD_RANGE_ORDER as $range_option ) : ?>
+                                                    <option value="<?php echo esc_attr( $range_option ); ?>" <?php selected( $range_option === $range_saved ); ?>><?php echo esc_html( $range_option ); ?> or higher</option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </td>
+                                        <td class="rtg-muted rtg-small rtg-mono"><?php echo esc_html( implode( ', ', $vehicle_sizes ) ); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="rtg-help">
+                            Sizes come from <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-wheels' ) ); ?>">Wheels</a>,
+                            so a platform added there appears here on its own. A blank load index restores the built-in figure
+                            (R1 116, R2 112). Load range runs SL, XL, HL, then C to F; the R2 needs XL or higher, so an SL tire in an
+                            R2 size is filed as a near miss. A listing that states no load range is surfaced with a note to confirm it.
+                        </p>
+                    <?php else : ?>
+                        <input type="number" name="catalog_min_load_index" id="catalog_min_load_index" value="<?php echo esc_attr( $min_load_index ); ?>" min="100" max="126" class="rtg-input-small">
+                        <p class="rtg-help">
+                            No wheels are configured, so there is no vehicle map to judge against and this
+                            single floor applies to every size. Add wheels under
+                            <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-wheels' ) ); ?>">Wheels</a>
+                            to get per-platform rules.
+                        </p>
+                    <?php endif; ?>
+                </div>
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="catalog_brand_policy">Brands outside your list</label>
+                    </div>
+                    <p class="rtg-field-description">
+                        Retailer catalogs carry far more brands than the guide covers, and most of a first
+                        run is usually marques you would never list. <strong>Surface them, flagged</strong> keeps
+                        everything reviewable but marks an uncovered brand, so a newcomer worth covering
+                        still reaches you. <strong>File them under Near misses</strong> keeps the queue
+                        tight, at the cost of never seeing a new brand until you add it to the list.
+                    </p>
+                    <select name="catalog_brand_policy" id="catalog_brand_policy" class="rtg-input-medium">
+                        <option value="<?php echo esc_attr( RTG_Tire_Qualifier::BRAND_POLICY_WARN ); ?>" <?php selected( $brand_policy, RTG_Tire_Qualifier::BRAND_POLICY_WARN ); ?>>
+                            Surface them, flagged
+                        </option>
+                        <option value="<?php echo esc_attr( RTG_Tire_Qualifier::BRAND_POLICY_REJECT ); ?>" <?php selected( $brand_policy, RTG_Tire_Qualifier::BRAND_POLICY_REJECT ); ?>>
+                            File them under Near misses
+                        </option>
+                        <option value="<?php echo esc_attr( RTG_Tire_Qualifier::BRAND_POLICY_OFF ); ?>" <?php selected( $brand_policy, RTG_Tire_Qualifier::BRAND_POLICY_OFF ); ?>>
+                            Do not judge brand at all
+                        </option>
+                    </select>
+                    <p class="rtg-help">
+                        <?php if ( ! empty( $covered_brands ) ) : ?>
+                            Currently covering <strong><?php echo count( $covered_brands ); ?></strong> brands:
+                            <?php echo esc_html( implode( ', ', $covered_brands ) ); ?>.
+                            Edit the list under <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-settings#tab-options' ) ); ?>">Settings, Dropdown options</a>.
+                        <?php else : ?>
+                            No brand list is configured, so this rule stays silent whatever it is set to.
+                        <?php endif; ?>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="rtg-card">
+            <div class="rtg-card-header">
+                <h2>Prices and links</h2>
+                <p>What each run is allowed to change on tires already in the guide. Every decision is reported on the <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-affiliate-links' ) ); ?>">Affiliate Links</a> page.</p>
+            </div>
+            <div class="rtg-card-body">
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="price_sync_enabled">Price refresh</label>
+                    </div>
+                    <p class="rtg-field-description">
+                        A price is taken only from the retailer the tire's own purchase link points to, so the
+                        figure on the page always matches what a reader sees on click. A tire linked somewhere
+                        discovery does not price, such as Amazon or a manufacturer, is left alone and listed on the coverage tab.
+                    </p>
+                    <label class="rtg-toggle is-small">
+                        <input type="checkbox" name="price_sync_enabled" id="price_sync_enabled" value="1" <?php checked( $price_sync_enabled ); ?>>
+                        <span class="rtg-toggle-track"></span>
+                        <span class="rtg-toggle-label">Refresh guide prices on each discovery run</span>
+                    </label>
+                    <div class="rtg-field-inline">
+                        <label for="price_sync_max_change">Ignore changes larger than</label>
+                        <input type="number" name="price_sync_max_change" id="price_sync_max_change" value="<?php echo esc_attr( $price_sync_max_change ); ?>" min="1" max="100" class="rtg-input-tiny">
+                        <span>%</span>
+                    </div>
+                    <p class="rtg-help">
+                        Tires are matched on brand, model and size, which can collide across load ratings. A
+                        price that moves further than this is more likely to be that collision than a real sale,
+                        so it is reported rather than written.
+                    </p>
+                </div>
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="link_sync_enabled">Link sync</label>
+                    </div>
+                    <p class="rtg-field-description">
+                        A tire with <strong>no link</strong> gets the cheapest fresh tracked listing, and
+                        price sync then follows that retailer. A tire with a <strong>plain retailer link</strong>
+                        is upgraded to a tracked link for the <em>same</em> retailer only. A link that is
+                        <strong>already affiliate is never touched</strong>, with one exception: when its
+                        retailer has <strong>delisted the tire</strong> (unseen for
+                        <?php echo esc_html( RTG_Link_Sync::FRESH_DAYS ); ?>+ days in a completely read
+                        fitment) while another retailer still lists it with a tracked link, the link moves
+                        to the retailer that carries the product. Only listings seen in the last
+                        <?php echo esc_html( RTG_Link_Sync::FRESH_DAYS ); ?> days qualify as sources.
+                    </p>
+                    <label class="rtg-toggle is-small">
+                        <input type="checkbox" name="link_sync_enabled" id="link_sync_enabled" value="1" <?php checked( $link_sync_enabled ); ?>>
+                        <span class="rtg-toggle-track"></span>
+                        <span class="rtg-toggle-label">Fill and upgrade purchase links from the catalog daily</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="rtg-card">
+            <div class="rtg-card-header is-split">
+                <div>
+                    <h2>CJ Affiliate</h2>
+                    <p>Tire Rack and SimpleTire both run their affiliate programs on CJ, so one connection covers both. Discovery sends one request per tire size, scoped to the advertisers below.</p>
+                </div>
+                <?php if ( $cj_configured ) : ?>
+                    <span class="rtg-badge rtg-badge-success">Configured</span>
+                <?php else : ?>
+                    <span class="rtg-badge rtg-badge-warning">Not configured</span>
+                <?php endif; ?>
+            </div>
+            <div class="rtg-card-body">
+                <?php if ( ! $cj_configured ) : ?>
+                    <div class="rtg-notice rtg-notice-warning">
+                        <span>Discovery has no source until CJ is configured. It needs the company ID, the website ID and a personal access token.</span>
+                    </div>
+                <?php endif; ?>
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="cj_enabled">Use CJ</label>
+                    </div>
+                    <label class="rtg-toggle is-small">
+                        <input type="checkbox" name="cj_enabled" id="cj_enabled" value="1" <?php checked( $cj_enabled ); ?>>
+                        <span class="rtg-toggle-track"></span>
+                        <span class="rtg-toggle-label">Pull candidates from the CJ Product Search API</span>
+                    </label>
+                </div>
+                <div class="rtg-field-grid">
+                    <div class="rtg-field-row">
+                        <div class="rtg-field-label-row">
+                            <label class="rtg-field-label" for="cj_company_id">Company ID (CID)</label>
+                        </div>
+                        <p class="rtg-field-description">From CJ: Account, then Account Information.</p>
+                        <input type="text" name="cj_company_id" id="cj_company_id" value="<?php echo esc_attr( $cj_company_id ); ?>" class="rtg-input-medium is-code" inputmode="numeric">
+                    </div>
+                    <div class="rtg-field-row">
+                        <div class="rtg-field-label-row">
+                            <label class="rtg-field-label" for="cj_website_id">Website ID (PID)</label>
+                        </div>
+                        <p class="rtg-field-description">The first number in one of your CJ links: <code>click-<u>101098512</u>-13697786</code>.</p>
+                        <input type="text" name="cj_website_id" id="cj_website_id" value="<?php echo esc_attr( $cj_website_id ); ?>" class="rtg-input-medium is-code" inputmode="numeric">
+                    </div>
+                </div>
+                <p class="rtg-help">
+                    With the website ID set, every product the sweep fetches carries a ready-made <em>tracked</em> click URL, which
+                    is what lets link sync fill and upgrade purchase links automatically. Without
+                    it, candidates only carry the retailer's plain URL, which pays nothing. After setting
+                    it, use <strong>Test connection</strong>: the sample product's link should show a
+                    tracking domain (tkqlhce.com or similar), not the retailer's.
+                </p>
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="cj_pat">Personal access token</label>
+                        <?php if ( $cj_pat_constant ) : ?>
+                            <span class="rtg-badge rtg-badge-info">Set in wp-config.php</span>
+                        <?php elseif ( $cj_has_pat ) : ?>
+                            <span class="rtg-badge rtg-badge-success">Saved</span>
+                        <?php endif; ?>
+                    </div>
+                    <?php if ( $cj_pat_constant ) : ?>
+                        <p class="rtg-field-description">Set via <code>RTG_CJ_PAT</code> in <code>wp-config.php</code>. This field is ignored while that constant is defined.</p>
+                    <?php else : ?>
+                        <p class="rtg-field-description">
+                            Never displayed once saved. Better still, keep it out of the database entirely by adding
+                            <code>define( 'RTG_CJ_PAT', '...' );</code> to <code>wp-config.php</code>, which takes precedence over this field.
+                        </p>
+                        <input type="password" name="cj_pat" id="cj_pat" value="" class="rtg-input-wide" autocomplete="off"
+                            placeholder="<?php echo $cj_has_pat ? esc_attr( 'Saved. Leave blank to keep it.' ) : esc_attr( 'Paste your CJ token' ); ?>">
+                        <?php if ( $cj_has_pat ) : ?>
+                            <div class="rtg-choice-list">
+                                <label class="rtg-choice"><input type="checkbox" name="cj_pat_clear" value="1"> Clear the saved token</label>
+                            </div>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </div>
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="cj_advertisers">Advertisers</label>
+                    </div>
+                    <p class="rtg-field-description">One per line, as <code>advertiserId|Name</code>. Leave blank for the defaults shown. Only advertisers you have joined return products.</p>
+                    <textarea name="cj_advertisers" id="cj_advertisers" rows="3" class="rtg-input-wide is-code" placeholder="<?php echo esc_attr( $cj_advertiser_placeholder ); ?>"><?php echo esc_textarea( $cj_advertisers ); ?></textarea>
+                </div>
+
+                <h3 class="rtg-subsection-title">Run budget</h3>
+                <p class="rtg-help">How much each run may read, and how long it may take. A shorter run costs time to complete, never coverage: both passes resume where they stopped.</p>
+
+                <div class="rtg-field-grid">
+                    <div class="rtg-field-row">
+                        <div class="rtg-field-label-row">
+                            <label class="rtg-field-label" for="cj_limit">Records per size</label>
+                        </div>
+                        <p class="rtg-field-description">
+                            How many products to request per tire size, one request each. A popular fitment can
+                            carry several hundred, and anything beyond this is discarded by the retailer before it
+                            reaches the queue, so a tire that plainly exists can look like nobody stocks it. When a
+                            run comes back capped, the status says so and names the sizes.
+                        </p>
+                        <input type="number" name="cj_limit" id="cj_limit" value="<?php echo esc_attr( $cj_limit ); ?>" min="1" max="1000" class="rtg-input-small">
+                    </div>
+                    <div class="rtg-field-row">
+                        <div class="rtg-field-label-row">
+                            <label class="rtg-field-label" for="cj_max_pages">Pages per size</label>
+                        </div>
+                        <p class="rtg-field-description">
+                            How far to page through one size's matches before moving on, in pages of "Records per
+                            size" each. Paging to the end of an unfiltered search would spend the whole budget on a
+                            single size, so a size stops here and the status says how much it left behind.
+                        </p>
+                        <input type="number" name="cj_max_pages" id="cj_max_pages" value="<?php echo esc_attr( $cj_max_pages ); ?>" min="1" max="50" class="rtg-input-small">
+                    </div>
+                    <div class="rtg-field-row">
+                        <div class="rtg-field-label-row">
+                            <label class="rtg-field-label" for="catalog_run_budget">Whole-run budget</label>
+                        </div>
+                        <p class="rtg-field-description">
+                            A ceiling on the run as a whole, which the sweep and the direct lookups share.
+                            <strong>Lower this first if Run discovery now fails with no reply.</strong>
+                            This full budget applies to the nightly cron run. Run discovery now caps itself at
+                            <?php echo esc_html( RTG_Catalog_Sync::INTERACTIVE_BUDGET ); ?>s regardless, because the
+                            proxy in front of the site stops waiting for a browser request after about 100 seconds.
+                        </p>
+                        <div class="rtg-field-inline">
+                            <input type="number" name="catalog_run_budget" id="catalog_run_budget" value="<?php echo esc_attr( $catalog_run_budget ); ?>" min="30" max="900" class="rtg-input-small">
+                            <span>seconds</span>
+                        </div>
+                    </div>
+                    <div class="rtg-field-row">
+                        <div class="rtg-field-label-row">
+                            <label class="rtg-field-label" for="cj_sweep_budget">Sweep time budget</label>
+                        </div>
+                        <p class="rtg-field-description">
+                            How long a sweep may spend fetching before it stops and reports the sizes it did not
+                            reach. Lower it if your host has a tight PHP execution limit; raise it if the status
+                            says sizes went unchecked.
+                        </p>
+                        <div class="rtg-field-inline">
+                            <input type="number" name="cj_sweep_budget" id="cj_sweep_budget" value="<?php echo esc_attr( $cj_sweep_budget ); ?>" min="15" max="600" class="rtg-input-small">
+                            <span>seconds</span>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="rtg-subsection-title">Query and connection test</h3>
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="cj_query">GraphQL query</label>
+                    </div>
+                    <p class="rtg-field-description">
+                        Leave blank to use the shipped query. If Test connection reports a GraphQL error naming a field,
+                        correct it here rather than waiting on a plugin update. The response mapping accepts several
+                        field spellings, so only the query itself usually needs changing.
+                    </p>
+                    <textarea name="cj_query" id="cj_query" rows="10" class="rtg-input-wide is-code" spellcheck="false" placeholder="<?php echo esc_attr( RTG_Catalog_Source_CJ::DEFAULT_QUERY ); ?>"><?php echo esc_textarea( $cj_query ); ?></textarea>
+                </div>
+                <div class="rtg-field-row">
+                    <div class="rtg-field-label-row">
+                        <label class="rtg-field-label" for="rtg-cj-test-keyword">Test connection</label>
+                    </div>
+                    <p class="rtg-field-description">
+                        Any keyword may be probed here, and the reply lists the titles it returned. That is how to
+                        tell whether CJ is <em>matching</em> a term or merely ranking against it: type a tire's
+                        full name and see whether that tire is anywhere in the answer. Blank uses the first
+                        guide size, which tests the connection itself.
+                    </p>
+                    <div class="rtg-input-row">
+                        <input type="text" id="rtg-cj-test-keyword" placeholder="Michelin Defender LTX M/S2 305/45R22" aria-label="Keyword to probe">
+                        <input type="number" id="rtg-cj-test-offset" min="0" step="1000" value="0" class="rtg-input-small" placeholder="offset" title="Records to skip" aria-label="Offset">
+                        <button type="button" id="rtg-cj-test-btn" class="rtg-btn rtg-btn-secondary">Test connection</button>
+                    </div>
+                    <p class="rtg-help">
+                        <strong>The offset is how to check that paging works.</strong> Probe a size at 0, then
+                        the same size at 1000. Different titles mean the sweep really is reading deeper each
+                        page. <em>The same titles mean it is re-reading page one</em>, and a sweep that
+                        counts what came back rather than what was new would still call that fitment complete.
+                    </p>
+                    <div id="rtg-cj-test-result" class="rtg-test-result" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="rtg-footer-actions is-sticky">
+            <button type="submit" name="rtg_catalog_settings_save" value="1" class="rtg-btn rtg-btn-primary">Save settings</button>
+            <span class="rtg-footer-end">
+                <span class="rtg-unsaved">Unsaved changes</span>
+            </span>
+        </div>
+    </form>
+
+    </div><!-- settings panel -->
+
+    </div><!-- tabs -->
 
 </div>

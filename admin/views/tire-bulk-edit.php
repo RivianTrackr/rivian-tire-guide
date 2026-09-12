@@ -20,8 +20,11 @@ $rtg_categories = RTG_Admin::get_dropdown_options( 'categories' );
 ?>
 <div class="rtg-wrap">
     <div class="rtg-page-header">
-        <h1 class="rtg-page-title">Bulk Edit — <?php echo count( $rtg_sel ); ?> tire<?php echo count( $rtg_sel ) !== 1 ? 's' : ''; ?></h1>
-        <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires' ) ); ?>" class="rtg-page-title-action" style="background:#f5f5f7;color:#1d1d1f;">Cancel</a>
+        <div class="rtg-page-heading">
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires' ) ); ?>" class="rtg-breadcrumb"><span class="dashicons dashicons-arrow-left-alt2"></span> All tires</a>
+            <h1 class="rtg-page-title">Bulk edit <?php echo count( $rtg_sel ); ?> tire<?php echo count( $rtg_sel ) !== 1 ? 's' : ''; ?></h1>
+            <p class="rtg-page-subtitle">Fields left blank keep each tire's current value.</p>
+        </div>
     </div>
 
     <?php if ( empty( $rtg_sel ) ) : ?>
@@ -35,10 +38,10 @@ $rtg_categories = RTG_Admin::get_dropdown_options( 'categories' );
             <input type="hidden" name="tire_ids[]" value="<?php echo esc_attr( $rtg_tire['tire_id'] ); ?>">
         <?php endforeach; ?>
 
-        <div class="rtg-card" style="max-width:640px;">
-            <div class="rtg-card-header"><h2>Selected Tires</h2></div>
+        <div class="rtg-card is-narrow">
+            <div class="rtg-card-header"><h2>Selected tires</h2></div>
             <div class="rtg-card-body">
-                <p style="color:#6e6e73;font-size:13px;line-height:1.6;margin:0;">
+                <p class="rtg-help">
                     <?php
                     $rtg_names = array_map(
                         function ( $t ) {
@@ -52,12 +55,11 @@ $rtg_categories = RTG_Admin::get_dropdown_options( 'categories' );
             </div>
         </div>
 
-        <div class="rtg-card" style="max-width:640px;">
+        <div class="rtg-card is-narrow">
             <div class="rtg-card-header">
                 <h2>Changes</h2>
             </div>
             <div class="rtg-card-body">
-                <p class="rtg-field-description" style="margin-top:0;">Fields left blank keep each tire's current value.</p>
 
                 <div class="rtg-field-row">
                     <div class="rtg-field-label-row">
@@ -91,18 +93,18 @@ $rtg_categories = RTG_Admin::get_dropdown_options( 'categories' );
                     </div>
                     <p class="rtg-field-description">Comma-separated. Choose whether to append to or replace each tire's tags.</p>
                     <input type="text" id="bulk_tags" name="bulk_tags" placeholder="e.g. EV Rated, Reviewed" class="rtg-input-wide">
-                    <div style="margin-top:8px;display:flex;gap:16px;font-size:13px;">
-                        <label><input type="radio" name="bulk_tags_mode" value="append" checked> Append</label>
-                        <label><input type="radio" name="bulk_tags_mode" value="replace"> Replace</label>
+                    <div class="rtg-choice-list is-inline">
+                        <label class="rtg-choice"><input type="radio" name="bulk_tags_mode" value="append" checked> Append to existing tags</label>
+                        <label class="rtg-choice"><input type="radio" name="bulk_tags_mode" value="replace"> Replace existing tags</label>
                     </div>
                 </div>
             </div>
         </div>
 
-        <p>
+        <div class="rtg-footer-actions">
             <button type="submit" class="rtg-btn rtg-btn-primary" onclick="return confirm('Apply these changes to <?php echo count( $rtg_sel ); ?> tire<?php echo count( $rtg_sel ) !== 1 ? 's' : ''; ?>?');">Apply to <?php echo count( $rtg_sel ); ?> tire<?php echo count( $rtg_sel ) !== 1 ? 's' : ''; ?></button>
             <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires' ) ); ?>" class="rtg-btn rtg-btn-secondary">Cancel</a>
-        </p>
+        </div>
     </form>
 
     <?php endif; ?>

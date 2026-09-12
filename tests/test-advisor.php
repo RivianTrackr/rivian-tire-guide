@@ -37,7 +37,7 @@ class Test_RTG_Advisor extends WP_UnitTestCase {
             'category' => 'All-Season', 'price' => 300, 'mileage_warranty' => 60000, 'weight_lb' => 40, 'three_pms' => 'No',
             'tread' => '10/32', 'load_index' => '116', 'max_load_lb' => 2756, 'load_range' => 'SL', 'speed_rating' => 'T',
             'psi' => '51', 'utqg' => '620 A B', 'tags' => '', 'link' => 'https://example.com/t', 'image' => '',
-            'bundle_link' => '', 'sort_order' => 0, 'efficiency_score' => 75, 'efficiency_grade' => 'B',
+            'bundle_link' => '', 'sort_order' => 0,
         ), $over );
     }
 

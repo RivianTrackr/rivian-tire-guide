@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 $editing_id = isset( $_GET['id'] ) ? intval( $_GET['id'] ) : 0;
 $wheel = $editing_id ? RTG_Database::get_wheel( $editing_id ) : null;
 $is_edit = (bool) $wheel;
-$page_title = $is_edit ? 'Edit Stock Wheel' : 'Add Stock Wheel';
+$page_title = $is_edit ? 'Edit Wheel' : 'Add Wheel';
 
 $defaults = array(
     'name'         => '',
@@ -41,7 +41,15 @@ $dd_sizes = RTG_Admin::get_dropdown_options( 'sizes' );
     <?php endif; ?>
 
     <div class="rtg-page-header">
-        <h1 class="rtg-page-title"><?php echo esc_html( $page_title ); ?></h1>
+        <div class="rtg-page-heading">
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-wheels' ) ); ?>" class="rtg-breadcrumb"><span class="dashicons dashicons-arrow-left-alt2"></span> All wheels</a>
+            <h1 class="rtg-page-title"><?php echo esc_html( $page_title ); ?></h1>
+            <?php if ( $is_edit ) : ?>
+                <p class="rtg-page-subtitle"><?php echo esc_html( $v['name'] ); ?><?php echo $is_third_party ? ' · third-party' : ''; ?></p>
+            <?php else : ?>
+                <p class="rtg-page-subtitle">A wheel's sizes decide which tires the guide offers for the vehicles it fits.</p>
+            <?php endif; ?>
+        </div>
     </div>
 
     <form method="post" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>">
@@ -110,7 +118,7 @@ $dd_sizes = RTG_Admin::get_dropdown_options( 'sizes' );
                             <label class="rtg-field-label" for="fitment_note">Fitment note</label>
                         </div>
                         <p class="rtg-field-description">One or two sentences, third-party wheels only. Shown under the tire page's third-party notice, in the card's info tooltip, and on the wheel guide card. For example: "Needs an 8.5-inch or wider wheel around ET35. Some owners report light rubbing at full lock."</p>
-                        <textarea id="fitment_note" name="fitment_note" rows="2" maxlength="255" class="rtg-input-wide" style="max-width:100%;font-size:14px;font-family:var(--rtg-font-stack);padding:10px 12px;border:1px solid var(--rtg-border);border-radius:8px;resize:vertical;"><?php echo esc_textarea( $v['fitment_note'] ); ?></textarea>
+                        <textarea id="fitment_note" name="fitment_note" rows="2" maxlength="255" class="rtg-input-wide"><?php echo esc_textarea( $v['fitment_note'] ); ?></textarea>
                     </div>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">
@@ -138,7 +146,7 @@ $dd_sizes = RTG_Admin::get_dropdown_options( 'sizes' );
                             <label class="rtg-field-label">Vehicles</label>
                         </div>
                         <p class="rtg-field-description">Select which Rivian vehicles use this wheel configuration.</p>
-                        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px;">
+                        <div class="rtg-choice-list is-inline">
                             <?php foreach ( $vehicle_options as $vehicle ) : ?>
                                 <label class="rtg-checkbox-label">
                                     <input type="checkbox" name="vehicles[]" value="<?php echo esc_attr( $vehicle ); ?>" <?php checked( in_array( $vehicle, $selected_vehicles, true ) ); ?>>
@@ -159,9 +167,15 @@ $dd_sizes = RTG_Admin::get_dropdown_options( 'sizes' );
 
         </div>
 
-        <div class="rtg-footer-actions">
-            <button type="submit" class="rtg-btn rtg-btn-primary"><?php echo $is_edit ? 'Update Wheel' : 'Add Wheel'; ?></button>
+        <div class="rtg-footer-actions is-sticky">
+            <button type="submit" class="rtg-btn rtg-btn-primary"><?php echo $is_edit ? 'Save changes' : 'Add wheel'; ?></button>
             <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-wheels' ) ); ?>" class="rtg-btn rtg-btn-secondary">Cancel</a>
+            <span class="rtg-footer-end">
+                <span class="rtg-unsaved">Unsaved changes</span>
+                <?php if ( $is_edit ) : ?>
+                    <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=rtg-wheels&action=delete_wheel&wheel_id=' . $editing_id ), 'rtg_delete_wheel_' . $editing_id ) ); ?>" class="rtg-btn rtg-btn-danger-quiet" onclick="return confirm('Delete this wheel? Its sizes stop being offered for the vehicles it fits.');">Delete wheel</a>
+                <?php endif; ?>
+            </span>
         </div>
     </form>
 </div>

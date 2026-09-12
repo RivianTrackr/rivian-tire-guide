@@ -507,7 +507,117 @@ class Test_RTG_Tire_Qualifier extends WP_UnitTestCase {
                 'R2' => array( '255/60R20', '255/55R21', '275/55R22' ),
             ),
             'vehicle_min_load_index' => array( 'R1' => 116, 'R2' => 112 ),
+            'vehicle_min_load_range' => array( 'R2' => 'XL' ),
         );
+    }
+
+    // --- Per-vehicle load range ---
+
+    /**
+     * An SL tire in an R2-only size is a near miss: the R2 needs XL or
+     * higher, and the reason says so in those words.
+     */
+    public function test_an_sl_tire_in_an_r2_size_is_rejected_on_load_range() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Michelin Primacy Tour 255/60R20 SL 113H', 'brand' => 'Michelin' ),
+            $this->vehicle_context()
+        );
+
+        $this->assertFalse( $result['qualifies'] );
+        $this->assertSame( array( 'load_range_low' ), $this->codes( $result ) );
+        $this->assertStringContainsString( 'SL', $result['reasons'][0]['label'] );
+        $this->assertStringContainsString( 'R2 needs XL or higher', $result['reasons'][0]['label'] );
+        $this->assertSame( array(), $result['fits_vehicles'] );
+    }
+
+    /**
+     * XL clears the R2 floor, and so does anything heavier.
+     */
+    public function test_xl_and_heavier_ranges_clear_the_r2_floor() {
+        foreach ( array( 'XL', 'HL', 'E' ) as $range ) {
+            $result = RTG_Tire_Qualifier::evaluate(
+                array( 'title' => "Michelin Primacy Tour 255/60R20 {$range} 113H", 'brand' => 'Michelin' ),
+                $this->vehicle_context()
+            );
+
+            $this->assertTrue( $result['qualifies'], $range );
+            $this->assertSame( array( 'R2' ), $result['fits_vehicles'], $range );
+            $this->assertSame( array(), array_column( $result['warnings'], 'code' ), $range );
+        }
+    }
+
+    /**
+     * RF is the European spelling of extra load and is judged as XL.
+     */
+    public function test_a_reinforced_marking_counts_as_extra_load() {
+        $this->assertSame( RTG_Tire_Qualifier::load_range_rank( 'XL' ), RTG_Tire_Qualifier::load_range_rank( 'rf' ) );
+        $this->assertSame( -1, RTG_Tire_Qualifier::load_range_rank( '' ) );
+        $this->assertSame( -1, RTG_Tire_Qualifier::load_range_rank( 'LT' ) );
+        $this->assertLessThan( RTG_Tire_Qualifier::load_range_rank( 'XL' ), RTG_Tire_Qualifier::load_range_rank( 'SL' ) );
+        $this->assertLessThan( RTG_Tire_Qualifier::load_range_rank( 'C' ), RTG_Tire_Qualifier::load_range_rank( 'HL' ) );
+    }
+
+    /**
+     * A size both platforms take: an SL tire still fits the R1, which has no
+     * load range floor, and is reported against the R1 only.
+     */
+    public function test_an_sl_tire_in_a_shared_size_fits_only_the_platform_without_a_floor() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Pirelli Scorpion Zero 275/55R22 SL 116H', 'brand' => 'Pirelli' ),
+            $this->vehicle_context()
+        );
+
+        $this->assertTrue( $result['qualifies'] );
+        $this->assertSame( array( 'R1' ), $result['fits_vehicles'] );
+    }
+
+    /**
+     * A listing that states no load range is not rejected for it; the row
+     * carries a note naming the floor to confirm, like an unlisted load index.
+     */
+    public function test_an_unlisted_load_range_warns_rather_than_rejects() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Michelin Primacy Tour 255/60R20 113H', 'brand' => 'Michelin' ),
+            $this->vehicle_context()
+        );
+
+        $this->assertTrue( $result['qualifies'] );
+        $this->assertSame( array( 'R2' ), $result['fits_vehicles'] );
+        $this->assertContains( 'load_range_unknown', array_column( $result['warnings'], 'code' ) );
+        $this->assertStringContainsString( 'XL or higher for R2', $result['warnings'][0]['label'] );
+    }
+
+    /**
+     * Short on both counts, both reasons are given, load index first.
+     */
+    public function test_a_tire_short_on_load_and_range_reports_both() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Atlas Force 255/60R20 SL 108H', 'brand' => 'Atlas' ),
+            $this->vehicle_context()
+        );
+
+        $this->assertFalse( $result['qualifies'] );
+        $this->assertSame( array( 'load_index_low', 'load_range_low' ), $this->codes( $result ) );
+    }
+
+    /**
+     * The floors come from settings: a saved rating wins, a saved "none"
+     * lifts the built-in R2 floor, and a platform with neither keeps the
+     * built-in figure (R2) or has no floor at all (R1).
+     */
+    public function test_vehicle_load_range_floors_come_from_settings_with_built_in_defaults() {
+        RTG_Activator::activate();
+        RTG_Database::insert_wheel( array( 'name' => 'R1 20', 'stock_size' => '275/60R20', 'alt_sizes' => '', 'vehicles' => 'R1T, R1S', 'sort_order' => 0 ) );
+        RTG_Database::insert_wheel( array( 'name' => 'R2 20', 'stock_size' => '255/60R20', 'alt_sizes' => '', 'vehicles' => 'R2', 'sort_order' => 1 ) );
+
+        update_option( 'rtg_settings', array() );
+        $this->assertSame( array( 'R2' => 'XL' ), RTG_Tire_Qualifier::get_vehicle_min_load_ranges() );
+
+        update_option( 'rtg_settings', array( 'catalog_vehicle_min_load_range' => array( 'R1' => 'xl', 'R2' => 'none' ) ) );
+        $this->assertSame( array( 'R1' => 'XL' ), RTG_Tire_Qualifier::get_vehicle_min_load_ranges() );
+
+        update_option( 'rtg_settings', array( 'catalog_vehicle_min_load_range' => array( 'R2' => 'bogus' ) ) );
+        $this->assertSame( array( 'R2' => 'XL' ), RTG_Tire_Qualifier::get_vehicle_min_load_ranges(), 'an unknown saved rating falls back to the built-in floor' );
     }
 
     /**

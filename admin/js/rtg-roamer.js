@@ -84,7 +84,7 @@
       roamer_tire_id: roamerId
     }, function (response) {
       if (response.success) {
-        $row.css('background', '#d1fae5');
+        $row.addClass('is-flash');
         $btn.text('Assigned').removeClass('button-primary');
         setTimeout(function () { location.reload(); }, 1000);
       } else {
@@ -123,17 +123,8 @@
     });
   });
 
-  // --- Collapsible sections ---
-
-  $(document).on('click', '#rtg-linked-toggle', function () {
-    $('#rtg-linked-section').slideToggle(200);
-    $('#rtg-linked-arrow').toggleClass('rtg-arrow-open');
-  });
-
-  $(document).on('click', '#rtg-unlinked-toggle', function () {
-    $('#rtg-unlinked-section').slideToggle(200);
-    $('#rtg-unlinked-arrow').toggleClass('rtg-arrow-open');
-  });
+  // Collapsible sections are driven by the shared data-rtg-collapse
+  // behavior in admin-scripts.js.
 
   // --- Unmatched Roamer tires: multi-select assign ---
 
@@ -279,11 +270,6 @@
   });
 
   // --- Hidden Roamer tires: toggle & restore ---
-
-  $(document).on('click', '#rtg-hidden-toggle', function () {
-    $('#rtg-hidden-section').slideToggle(200);
-    $('#rtg-hidden-arrow').toggleClass('rtg-arrow-open');
-  });
 
   function updateHiddenBar() {
     var checked = $('.rtg-hidden-cb:checked');

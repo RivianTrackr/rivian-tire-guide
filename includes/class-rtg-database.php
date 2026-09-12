@@ -285,15 +285,15 @@ class RTG_Database {
      * Convert one tire row (associative) into the numerically-indexed frontend
      * row format. Single source of truth: every producer of frontend rows must
      * use this so the column layout can't drift between code paths — the JS
-     * reads fixed indexes up to row[31] (retailer label).
+     * reads fixed indexes up to row[29] (retailer label).
      *
-     * Indexes 29 and 30 (price_synced_at, updated_at) feed the "price as of"
+     * Indexes 27 and 28 (price_synced_at, updated_at) feed the "price as of"
      * hint; the later of the two is when the price was last touched. Index
-     * 31 is the retailer's display name for the "View at …" button, resolved
+     * 29 is the retailer's display name for the "View at …" button, resolved
      * here so the one hostname map lives in PHP.
      *
      * @param array $tire Tire row as associative array.
-     * @return array Numerically-indexed frontend row (32 elements).
+     * @return array Numerically-indexed frontend row (30 elements).
      */
     public static function to_frontend_row( $tire ) {
         return array(
@@ -317,8 +317,6 @@ class RTG_Database {
             (string) $tire['tags'],
             (string) $tire['link'],
             (string) $tire['image'],
-            (string) $tire['efficiency_score'],
-            (string) $tire['efficiency_grade'],
             (string) $tire['review_link'],
             (string) $tire['created_at'],
             (string) $tire['roamer_efficiency'],
@@ -503,6 +501,32 @@ class RTG_Database {
     }
 
     /**
+     * The wpdb placeholder for a tires-table column.
+     *
+     * The one place the numeric columns are named, used by insert and update
+     * alike so the two can never disagree about a column's type.
+     *
+     * @param string $column Column name.
+     * @return string '%f', '%d' or '%s'.
+     */
+    private static function column_format( $column ) {
+        switch ( $column ) {
+            case 'price':
+            case 'weight_lb':
+            case 'roamer_efficiency':
+            case 'roamer_total_km':
+                return '%f';
+            case 'mileage_warranty':
+            case 'max_load_lb':
+            case 'sort_order':
+            case 'roamer_vehicle_count':
+                return '%d';
+            default:
+                return '%s';
+        }
+    }
+
+    /**
      * Insert a new tire into the database.
      *
      * @param array $data Tire data (keys match column names). Missing keys use defaults.
@@ -534,8 +558,6 @@ class RTG_Database {
             'tags'             => '',
             'link'             => '',
             'image'            => '',
-            'efficiency_score' => 0,
-            'efficiency_grade' => '',
             'bundle_link'          => '',
             'review_link'          => '',
             'roamer_tire_id'            => '',
@@ -549,15 +571,14 @@ class RTG_Database {
 
         $data = wp_parse_args( $data, $defaults );
 
-        $formats = array(
-            '%s', '%s', '%s', '%s', '%s', '%s', '%s',
-            '%f', '%d', '%f',
-            '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s',
-            '%s', '%s',
-            '%d', '%s', '%s', '%s',
-            '%s', '%f', '%f', '%d', '%s', '%s',
-            '%d',
-        );
+        // Formats keyed by column, not by position. A positional list has to
+        // be kept in step with the defaults above by hand, and when two
+        // columns left in 2.6.0 the list was not: every format after them
+        // shifted by two, so bundle_link was written through %d as "0".
+        $formats = array();
+        foreach ( array_keys( $data ) as $key ) {
+            $formats[] = self::column_format( $key );
+        }
 
         $result = $wpdb->insert( $table, $data, $formats );
         if ( $result !== false ) {
@@ -607,25 +628,8 @@ class RTG_Database {
         }
 
         $formats = array();
-        foreach ( $data as $key => $value ) {
-            switch ( $key ) {
-                case 'price':
-                case 'weight_lb':
-                case 'roamer_efficiency':
-                case 'roamer_total_km':
-                    $formats[] = '%f';
-                    break;
-                case 'mileage_warranty':
-                case 'max_load_lb':
-                case 'efficiency_score':
-                case 'sort_order':
-                case 'roamer_vehicle_count':
-                    $formats[] = '%d';
-                    break;
-                default:
-                    $formats[] = '%s';
-                    break;
-            }
+        foreach ( array_keys( $data ) as $key ) {
+            $formats[] = self::column_format( $key );
         }
 
         $result = $wpdb->update( $table, $data, array( 'tire_id' => $tire_id ), $formats, array( '%s' ) );
@@ -809,7 +813,7 @@ class RTG_Database {
         global $wpdb;
         $table = self::tires_table();
 
-        $allowed_orderby = array( 'id', 'tire_id', 'brand', 'model', 'size', 'category', 'price', 'mileage_warranty', 'weight_lb', 'efficiency_score', 'efficiency_grade', 'load_index', 'slug' );
+        $allowed_orderby = array( 'id', 'tire_id', 'brand', 'model', 'size', 'category', 'price', 'mileage_warranty', 'weight_lb', 'load_index', 'slug' );
         if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
             $orderby = 'id';
         }
@@ -994,14 +998,13 @@ class RTG_Database {
     }
 
     /**
-     * Map a sort key to a SQL ORDER BY clause. Falls back to efficiency_score DESC.
+     * Map a sort key to a SQL ORDER BY clause. Falls back to real-world efficiency.
      *
      * @param string $sort Sort key.
      * @return string ORDER BY clause (no "ORDER BY" prefix).
      */
     private static function build_filter_sort_clause( $sort ) {
         $sort_map = array(
-            'efficiency_score'  => 'efficiency_score DESC',
             'price-asc'         => 'price ASC',
             'price-desc'        => 'price DESC',
             'warranty-desc'     => 'mileage_warranty DESC',
@@ -1009,10 +1012,10 @@ class RTG_Database {
             'newest'            => 'created_at DESC',
             'roamer-efficiency' => 'roamer_efficiency DESC',
         );
-        return $sort_map[ $sort ] ?? 'efficiency_score DESC';
+        return $sort_map[ $sort ] ?? 'roamer_efficiency DESC';
     }
 
-    public static function get_filtered_tires( $filters = array(), $sort = 'efficiency_score', $page = 1, $per_page = 12 ) {
+    public static function get_filtered_tires( $filters = array(), $sort = 'roamer-efficiency', $page = 1, $per_page = 12 ) {
         global $wpdb;
         $table = self::tires_table();
 
@@ -1078,7 +1081,6 @@ class RTG_Database {
             "SELECT
                 COUNT(*) as total_tires,
                 ROUND(AVG(CASE WHEN price > 0 THEN price ELSE NULL END), 2) as avg_price,
-                ROUND(AVG(CASE WHEN efficiency_score > 0 THEN efficiency_score ELSE NULL END), 0) as avg_efficiency,
                 MIN(CASE WHEN price > 0 THEN price ELSE NULL END) as min_price,
                 MAX(price) as max_price,
                 MIN(CASE WHEN weight_lb > 0 THEN weight_lb ELSE NULL END) as min_weight,
@@ -1124,16 +1126,6 @@ class RTG_Database {
              WHERE size != ''
              GROUP BY size
              ORDER BY count DESC",
-            ARRAY_A
-        );
-
-        // Efficiency grade distribution.
-        $stats['by_grade'] = $wpdb->get_results(
-            "SELECT efficiency_grade, COUNT(*) as count
-             FROM {$tires_table}
-             WHERE efficiency_grade != ''
-             GROUP BY efficiency_grade
-             ORDER BY FIELD(efficiency_grade, 'A', 'B', 'C', 'D', 'E', 'F')",
             ARRAY_A
         );
 
@@ -1248,140 +1240,6 @@ class RTG_Database {
         $result = array_keys( $tags );
         sort( $result );
         return $result;
-    }
-
-    // --- Efficiency Calculation ---
-
-    /**
-     * Calculate efficiency score and grade from tire data.
-     *
-     * Replicates the Google Sheet formula: weighted combination of
-     * width, weight, tread depth, load range, speed rating, UTQG,
-     * category, and 3PMS certification.
-     *
-     * @param array $data Tire data array.
-     * @return array ['efficiency_score' => int, 'efficiency_grade' => string]
-     */
-    public static function calculate_efficiency( $data ) {
-        // Width score: extract width from size (e.g., "275/60R20" → 275).
-        // Missing data defaults to 0.5 (neutral).
-        $width_val = 0;
-        $size = $data['size'] ?? '';
-        if ( ! empty( $size ) && strpos( $size, '/' ) !== false ) {
-            $width_val = floatval( substr( $size, 0, strpos( $size, '/' ) ) );
-        }
-        $width_score = $width_val > 0 ? ( 305 - $width_val ) / 50 : 0.5;
-
-        // Weight score. Missing data defaults to 0.5 (neutral).
-        $weight = floatval( $data['weight_lb'] ?? 0 );
-        $weight_score = $weight > 0 ? ( 75 - $weight ) / 50 : 0.5;
-
-        // Tread score: extract numerator from tread (e.g., "10/32" → 10).
-        // Missing data defaults to 0.5 (neutral).
-        $tread_val = 0;
-        $tread = $data['tread'] ?? '';
-        if ( ! empty( $tread ) && strpos( $tread, '/' ) !== false ) {
-            $tread_val = floatval( substr( $tread, 0, strpos( $tread, '/' ) ) );
-        }
-        $tread_score = $tread_val > 0 ? ( 20 - $tread_val ) / 11 : 0.5;
-
-        // Load range score.
-        $load_range = strtoupper( trim( $data['load_range'] ?? '' ) );
-        $load_scores = array( 'SL' => 1, 'HL' => 0.9, 'XL' => 0.9, 'RF' => 0.7, 'D' => 0.3, 'E' => 0, 'F' => 0 );
-        $load_score = isset( $load_scores[ $load_range ] ) ? $load_scores[ $load_range ] : 0.5;
-
-        // Speed rating score (first character).
-        $speed_raw = trim( $data['speed_rating'] ?? '' );
-        $speed_char = ! empty( $speed_raw ) ? strtoupper( substr( $speed_raw, 0, 1 ) ) : '';
-        $speed_scores = array( 'P' => 1, 'Q' => 0.95, 'R' => 0.9, 'S' => 0.85, 'T' => 0.8, 'H' => 0.7, 'V' => 0.6, 'Y' => 0.4 );
-        $speed_score = ! empty( $speed_char ) && isset( $speed_scores[ $speed_char ] ) ? $speed_scores[ $speed_char ] : 0.5;
-
-        // UTQG score (first number from e.g., "620 A B").
-        $utqg_val = 0;
-        $utqg = trim( $data['utqg'] ?? '' );
-        if ( ! empty( $utqg ) ) {
-            $parts = explode( ' ', $utqg );
-            $utqg_val = intval( $parts[0] );
-        }
-        $utqg_score = $utqg_val === 0 ? 0.5 : ( $utqg_val - 420 ) / 400;
-
-        // Category score.
-        $category = $data['category'] ?? '';
-        $cat_scores = array(
-            'All-Season'    => 1,
-            'Performance'   => 1,
-            'Highway'       => 1,
-            'All-Terrain'   => 0.5,
-            'Rugged Terrain' => 0.25,
-            'Mud-Terrain'   => 0,
-            'Winter'        => 0,
-        );
-        $cat_score = isset( $cat_scores[ $category ] ) ? $cat_scores[ $category ] : 0.5;
-
-        // 3PMS score (No = better for efficiency).
-        $pms_score = ( $data['three_pms'] ?? 'No' ) === 'No' ? 1 : 0;
-
-        // Weighted total (weights sum to 1.0).
-        $total = (
-            $weight_score * 0.26 +
-            $tread_score  * 0.16 +
-            $load_score   * 0.16 +
-            $speed_score  * 0.10 +
-            $utqg_score   * 0.10 +
-            $cat_score    * 0.10 +
-            $pms_score    * 0.08 +
-            $width_score  * 0.04
-        );
-
-        // Clamp to 0–100.
-        $score = max( 0, min( 100, (int) round( $total * 100 ) ) );
-
-        // Determine grade.
-        if ( $score >= 80 ) {
-            $grade = 'A';
-        } elseif ( $score >= 65 ) {
-            $grade = 'B';
-        } elseif ( $score >= 50 ) {
-            $grade = 'C';
-        } elseif ( $score >= 35 ) {
-            $grade = 'D';
-        } else {
-            $grade = 'F';
-        }
-
-        return array(
-            'efficiency_score' => $score,
-            'efficiency_grade' => $grade,
-        );
-    }
-
-    /**
-     * Recalculate efficiency score and grade for all tires.
-     *
-     * Useful when the algorithm changes or data gets out of sync.
-     *
-     * @return int Number of tires updated.
-     */
-    public static function recalculate_all_efficiency() {
-        $tires = self::get_all_tires();
-        $count = 0;
-
-        foreach ( $tires as $tire ) {
-            $efficiency = self::calculate_efficiency( $tire );
-            if (
-                (int) $tire['efficiency_score'] !== $efficiency['efficiency_score'] ||
-                $tire['efficiency_grade'] !== $efficiency['efficiency_grade']
-            ) {
-                self::update_tire( $tire['tire_id'], array(
-                    'efficiency_score' => $efficiency['efficiency_score'],
-                    'efficiency_grade' => $efficiency['efficiency_grade'],
-                ) );
-                $count++;
-            }
-        }
-
-        self::flush_cache();
-        return $count;
     }
 
     // --- Ratings ---

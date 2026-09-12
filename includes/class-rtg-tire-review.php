@@ -80,7 +80,7 @@ class RTG_Tire_Review {
                 'size'     => $row[1],
                 'category' => $row[5],
                 'image'    => $row[19],
-                'slug'     => $row[28] ?? '',
+                'slug'     => $row[26] ?? '',
             );
         }
 
