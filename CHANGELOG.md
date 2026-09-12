@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.7.1] - 2026-09-12
+
+### Changed
+- **The 3PMS and OEM pills explain themselves without the (i) buttons.** The two info buttons were the only things in the filter row that were not pills, sat outside the pill they explained, and added two tab stops. Each pill now leads with a glyph that carries the meaning (the sidewall's three-peak mountain-snowflake mark for 3PMS, a badge for factory fit; inline SVG in `frontend/templates/tire-guide.php`, muted at rest and accent when on or hovered), and the full sentence is a tooltip (`.rtg-fchip-tip`, `role="tooltip"`) shown on hover under `@media (hover: hover)` and on keyboard focus via `:has(> .rtg-fchip:focus-visible)`, so it does not linger after a mouse click; the pill's `aria-describedby` points at it, so assistive tech gets the description either way. In the phone sheet the tooltip is off and a one-line subtitle (`.rtg-fchip-sub`: "Certified for severe snow", "Fitted by Rivian at the factory") sits under the label beside a 20px glyph. The `.info-tooltip-trigger` buttons and their `rtg-fchip-info` styles are gone from the bar; the tooltip modal keys `3PMS Filter` and `OEM Filter` in `tooltips.js` stay for anything else that uses them.
+
+### Tests
+- `npm test`, `php -l` and the contract checks pass; the headless run covers the tooltip appearing on hover and on keyboard focus, hiding after the pointer leaves, and the sheet showing the subtitles with the tooltip off, alongside the 2.7.0 filter bar round trip.
+
 ## [2.7.0] - 2026-09-12
 
 ### Changed

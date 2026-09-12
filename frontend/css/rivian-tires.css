@@ -259,8 +259,67 @@
 .rtg-fchip-toggle[aria-pressed="true"] .rtg-fchip-check {
   display: inline-flex;
 }
-.rtg-fchip-info {
-  flex-shrink: 0;
+/* The glyph says what the pill is for: the sidewall's mountain-snowflake
+   mark for 3PMS, a badge for factory fit. The full sentence is a tooltip
+   on hover and keyboard focus (also the button's accessible description);
+   the phone sheet shows a short subtitle instead. */
+.rtg-fchip-glyph {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  color: var(--rtg-text-muted);
+  transition: color .15s;
+}
+.rtg-fchip-glyph svg {
+  width: 100%;
+  height: 100%;
+}
+.rtg-fitem.is-active .rtg-fchip-glyph,
+.rtg-fchip:hover .rtg-fchip-glyph {
+  color: var(--rtg-accent);
+}
+.rtg-fchip-text {
+  display: inline-flex;
+  align-items: center;
+}
+.rtg-fchip-sub {
+  display: none;
+}
+.rtg-fchip-tip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  width: 280px;
+  max-width: calc(100vw - 32px);
+  padding: 12px 14px;
+  box-sizing: border-box;
+  background: var(--rtg-bg-card);
+  border: 1px solid var(--rtg-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--rtg-text-primary);
+  white-space: normal;
+  pointer-events: none;
+}
+.rtg-fchip-tip strong {
+  color: var(--rtg-text-heading);
+}
+@media (hover: hover) {
+  .rtg-fitem-toggle:hover > .rtg-fchip-tip {
+    display: block;
+    animation: fadeIn 0.15s ease;
+  }
+}
+/* Keyboard focus only: after a mouse click the pill keeps focus, and the
+   tip would otherwise sit there until the pointer moved on. */
+.rtg-fitem-toggle:has(> .rtg-fchip:focus-visible) > .rtg-fchip-tip {
+  display: block;
 }
 
 /* Popover */
@@ -650,14 +709,34 @@ body.rtg-sheet-open {
     align-items: center;
     gap: 10px;
   }
-  .is-sheet .rtg-fchip-info {
-    order: -1;
+  .is-sheet .rtg-fchip-tip {
+    display: none !important;
+  }
+  .is-sheet .rtg-fchip-glyph {
+    width: 20px;
+    height: 20px;
+    margin-right: 2px;
+  }
+  .is-sheet .rtg-fchip-text {
+    flex: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    text-align: left;
+  }
+  .is-sheet .rtg-fchip-sub {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--rtg-text-muted);
   }
   .is-sheet .rtg-fchip-toggle {
     flex: 1;
     height: auto;
     min-height: 44px;
     padding: 0;
+    gap: 10px;
     background: none;
     border: none;
     border-radius: 0;
