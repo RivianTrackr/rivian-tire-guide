@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 27;
+    const DB_VERSION = 28;
 
     public static function activate() {
         self::create_tables();
@@ -256,6 +256,7 @@ class RTG_Activator {
             25 => 'migrate_25_add_review_detail_columns',
             26 => 'migrate_26_add_wheel_source',
             27 => 'migrate_27_drop_efficiency_score',
+            28 => 'migrate_28_hide_uncovered_brands',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -740,6 +741,31 @@ class RTG_Activator {
             if ( in_array( $col, $cols, true ) ) {
                 $wpdb->query( "ALTER TABLE {$table} DROP COLUMN {$col}" );
             }
+        }
+    }
+
+    /**
+     * Migration 28 (2.6.1): the discovery queue lists only brands on the list.
+     *
+     * The brand policy gains "hide", and it becomes the policy: an uncovered
+     * brand is never stored by the sweep, and the rows earlier sweeps stored
+     * for such brands go now, so the queue is right today rather than after
+     * the next nightly run. Imported rows stay; they are guide tires.
+     */
+    private static function migrate_28_hide_uncovered_brands() {
+        global $wpdb;
+
+        $settings = get_option( 'rtg_settings', array() );
+        if ( ! is_array( $settings ) ) {
+            $settings = array();
+        }
+        $settings['catalog_brand_policy'] = RTG_Tire_Qualifier::BRAND_POLICY_HIDE;
+        update_option( 'rtg_settings', $settings );
+
+        $candidates = $wpdb->prefix . 'rtg_tire_candidates';
+        $exists     = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $candidates ) );
+        if ( $exists === $candidates ) {
+            RTG_Candidates::purge_uncovered_brands( RTG_Admin::get_dropdown_options( 'brands' ) );
         }
     }
 }

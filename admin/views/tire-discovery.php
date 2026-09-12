@@ -317,13 +317,27 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                 <?php endif; ?>
 
                 <?php
-                $pruned_total = intval( $stats['pruned']['off_fitment'] ?? 0 ) + intval( $stats['pruned']['stale'] ?? 0 );
+                $pruned_total    = intval( $stats['pruned']['off_fitment'] ?? 0 ) + intval( $stats['pruned']['stale'] ?? 0 );
+                $pruned_brands   = intval( $stats['pruned']['uncovered_brand'] ?? 0 );
+                $hidden_this_run = intval( $stats['hidden'] ?? 0 );
                 ?>
                 <?php if ( $pruned_total > 0 ) : ?>
                     <p class="rtg-help">
                         Pruned <?php echo esc_html( number_format( $pruned_total ) ); ?> near misses
                         (<?php echo esc_html( number_format( intval( $stats['pruned']['off_fitment'] ?? 0 ) ) ); ?> off-fitment,
                         <?php echo esc_html( number_format( intval( $stats['pruned']['stale'] ?? 0 ) ) ); ?> unseen 60+ days).
+                    </p>
+                <?php endif; ?>
+
+                <?php if ( $pruned_brands > 0 || $hidden_this_run > 0 ) : ?>
+                    <p class="rtg-help">
+                        Brands outside your list:
+                        <?php if ( $hidden_this_run > 0 ) : ?>
+                            <?php echo esc_html( number_format( $hidden_this_run ) ); ?> listing<?php echo 1 === $hidden_this_run ? '' : 's'; ?> seen and not stored<?php echo $pruned_brands > 0 ? ',' : '.'; ?>
+                        <?php endif; ?>
+                        <?php if ( $pruned_brands > 0 ) : ?>
+                            <?php echo esc_html( number_format( $pruned_brands ) ); ?> older row<?php echo 1 === $pruned_brands ? '' : 's'; ?> removed.
+                        <?php endif; ?>
                     </p>
                 <?php endif; ?>
 
@@ -435,7 +449,7 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
         </div>
     </form>
 
-    <?php if ( RTG_Candidates::STATUS_NEW === $status_filter && $uncovered_brand_total > 0 ) : ?>
+    <?php if ( RTG_Candidates::STATUS_NEW === $status_filter && $uncovered_brand_total > 0 && RTG_Tire_Qualifier::BRAND_POLICY_HIDE !== $brand_policy ) : ?>
         <div class="rtg-notice rtg-notice-info">
             <span>
                 <strong><?php echo esc_html( number_format( $uncovered_brand_total ) ); ?></strong> of the
@@ -1010,12 +1024,16 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                     </div>
                     <p class="rtg-field-description">
                         Retailer catalogs carry far more brands than the guide covers, and most of a first
-                        run is usually marques you would never list. <strong>Surface them, flagged</strong> keeps
-                        everything reviewable but marks an uncovered brand, so a newcomer worth covering
-                        still reaches you. <strong>File them under Near misses</strong> keeps the queue
-                        tight, at the cost of never seeing a new brand until you add it to the list.
+                        run is usually marques you would never list. <strong>Do not list them</strong> keeps
+                        the queue to the brands in your list: an uncovered brand is never stored, and any
+                        row it left earlier is removed on the next run. <strong>File them under Near misses</strong>
+                        keeps them out of the review queue but readable. <strong>Surface them, flagged</strong>
+                        shows everything, marking an uncovered brand, so a newcomer worth covering still reaches you.
                     </p>
                     <select name="catalog_brand_policy" id="catalog_brand_policy" class="rtg-input-medium">
+                        <option value="<?php echo esc_attr( RTG_Tire_Qualifier::BRAND_POLICY_HIDE ); ?>" <?php selected( $brand_policy, RTG_Tire_Qualifier::BRAND_POLICY_HIDE ); ?>>
+                            Do not list them
+                        </option>
                         <option value="<?php echo esc_attr( RTG_Tire_Qualifier::BRAND_POLICY_WARN ); ?>" <?php selected( $brand_policy, RTG_Tire_Qualifier::BRAND_POLICY_WARN ); ?>>
                             Surface them, flagged
                         </option>

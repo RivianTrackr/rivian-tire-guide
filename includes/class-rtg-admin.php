@@ -1299,6 +1299,7 @@ class RTG_Admin {
 
         $posted_policy = sanitize_text_field( wp_unslash( $_POST['catalog_brand_policy'] ?? '' ) );
         $settings['catalog_brand_policy'] = in_array( $posted_policy, array(
+            RTG_Tire_Qualifier::BRAND_POLICY_HIDE,
             RTG_Tire_Qualifier::BRAND_POLICY_OFF,
             RTG_Tire_Qualifier::BRAND_POLICY_WARN,
             RTG_Tire_Qualifier::BRAND_POLICY_REJECT,

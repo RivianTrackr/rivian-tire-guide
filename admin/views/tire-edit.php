@@ -182,6 +182,8 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
 
         <div class="rtg-edit-grid">
 
+            <div class="rtg-edit-col">
+
             <!-- Identity -->
             <div class="rtg-card">
                 <div class="rtg-card-header">
@@ -249,6 +251,134 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                     </div>
                 </div>
             </div>
+
+            <!-- Pricing & Links -->
+            <div class="rtg-card">
+                <div class="rtg-card-header">
+                    <h2>Pricing &amp; Links</h2>
+                </div>
+                <div class="rtg-card-body">
+                    <div class="rtg-field-row">
+                        <div class="rtg-field-label-row">
+                            <label class="rtg-field-label" for="price">Price ($)</label>
+                        </div>
+                        <input type="number" id="price" name="price" value="<?php echo esc_attr( $v['price'] ); ?>" step="0.01" min="0" class="rtg-input-small">
+                    </div>
+                    <div class="rtg-field-row">
+                        <div class="rtg-field-label-row">
+                            <label class="rtg-field-label" for="mileage_warranty">Mileage Warranty</label>
+                        </div>
+                        <input type="number" id="mileage_warranty" name="mileage_warranty" value="<?php echo esc_attr( $v['mileage_warranty'] ); ?>" min="0" step="1000">
+                    </div>
+                    <div class="rtg-field-row">
+                        <div class="rtg-field-label-row">
+                            <label class="rtg-field-label" for="link">Affiliate Link</label>
+                        </div>
+                        <input type="url" id="link" name="link" value="<?php echo esc_attr( $v['link'] ); ?>" class="rtg-input-wide">
+                    </div>
+                    <div class="rtg-field-row">
+                        <div class="rtg-field-label-row">
+                            <label class="rtg-field-label" for="bundle_link">Bundle Link</label>
+                        </div>
+                        <p class="rtg-field-description">Optional link to a set-of-four or bundle offer. Shown on the Affiliate Links page alongside the purchase link.</p>
+                        <input type="url" id="bundle_link" name="bundle_link" value="<?php echo esc_attr( $v['bundle_link'] ); ?>" class="rtg-input-wide">
+                    </div>
+                    <div class="rtg-field-row">
+                        <div class="rtg-field-label-row">
+                            <label class="rtg-field-label" for="review_link">Review Link</label>
+                        </div>
+                        <p class="rtg-field-description">Link to your article or video review (YouTube, RivianTrackr, etc.).</p>
+                        <input type="url" id="review_link" name="review_link" value="<?php echo esc_attr( $v['review_link'] ); ?>" class="rtg-input-wide">
+                    </div>
+                    <div class="rtg-field-row">
+                        <div class="rtg-field-label-row">
+                            <label class="rtg-field-label" for="image">Image URL</label>
+                        </div>
+                        <?php
+                        $image_prefix = 'https://riviantrackr.com/assets/tire-guide/images/';
+                        // The addon shows the path, not the host: the host is
+                        // the same for every tire and only pushes the field off
+                        // the edge of the card.
+                        $image_prefix_short = preg_replace( '#^https?://[^/]+#', '…', $image_prefix );
+                        $image_display = $v['image'];
+                        // Strip the prefix for display so users only see the filename.
+                        if ( ! empty( $image_display ) && strpos( $image_display, $image_prefix ) === 0 ) {
+                            $image_display = substr( $image_display, strlen( $image_prefix ) );
+                        }
+                        ?>
+                        <p class="rtg-field-description">A filename in the images folder, or a full URL. "Fetch from catalog" downloads the retailer's product photo into the folder for you.</p>
+                        <div class="rtg-input-group">
+                            <span class="rtg-input-group-addon" title="<?php echo esc_attr( $image_prefix ); ?>"><?php echo esc_html( $image_prefix_short ); ?></span>
+                            <input type="text" id="image" name="image" value="<?php echo esc_attr( $image_display ); ?>" class="rtg-input-wide" placeholder="filename.webp">
+                        </div>
+                        <input type="hidden" id="image_prefix" value="<?php echo esc_attr( $image_prefix ); ?>">
+                        <div class="rtg-field-inline">
+                            <button type="button" id="rtg-fetch-image-btn" class="rtg-btn rtg-btn-secondary rtg-btn-sm">
+                                <span class="dashicons dashicons-download"></span> Fetch from catalog
+                            </button>
+                            <span id="rtg-fetch-image-msg" class="rtg-inline-status"></span>
+                        </div>
+                        <script>
+                        jQuery(function ($) {
+                            $('#rtg-fetch-image-btn').on('click', function () {
+                                var $btn = $(this), $msg = $('#rtg-fetch-image-msg');
+                                $btn.prop('disabled', true);
+                                $msg.css('color', '').text('Fetching…');
+
+                                $.post(ajaxurl, {
+                                    action: 'rtg_fetch_tire_image',
+                                    nonce: '<?php echo esc_js( wp_create_nonce( 'rtg_admin_nonce' ) ); ?>',
+                                    brand: $('#brand').val() || '',
+                                    model: $('#model').val() || '',
+                                    size: $('#size').val() || '',
+                                    model_aliases: $('#model_aliases').val() || ''
+                                }, function (r) {
+                                    $btn.prop('disabled', false);
+                                    if (r && r.success) {
+                                        $('#image').val(r.data.filename);
+                                        $('#image-preview').attr('src', r.data.url);
+                                        $('#image-preview').closest('.rtg-image-preview, #image-preview-container').show();
+                                        $msg.css('color', 'var(--rtg-success, #34c759)')
+                                            .text(r.data.filename + ' saved to the images folder — save the tire to keep it.');
+                                    } else {
+                                        $msg.css('color', 'var(--rtg-error, #ff3b30)')
+                                            .text((r && r.data) ? r.data : 'The request failed.');
+                                    }
+                                }).fail(function () {
+                                    $btn.prop('disabled', false);
+                                    $msg.css('color', 'var(--rtg-error, #ff3b30)').text('The request failed.');
+                                });
+                            });
+                        });
+                        </script>
+                        <?php
+                        $full_image_url = $v['image'];
+                        ?>
+                        <?php if ( ! empty( $full_image_url ) ) : ?>
+                            <div class="rtg-image-preview">
+                                <img id="image-preview" src="<?php echo esc_url( $full_image_url ); ?>" alt="Preview">
+                            </div>
+                        <?php elseif ( '' !== $from_candidate_image ) : ?>
+                            <p class="rtg-help">
+                                The catalog has a product image for this tire. Leave this field blank and saving
+                                will download it into your images folder automatically &mdash; or type a filename
+                                to use your own.
+                            </p>
+                            <div class="rtg-image-preview">
+                                <img id="image-preview" src="<?php echo esc_url( $from_candidate_image ); ?>" alt="Catalog product image">
+                            </div>
+                        <?php else : ?>
+                            <div id="image-preview-container" class="rtg-image-preview" style="display:none;"><!-- toggled by admin-scripts.js -->
+                                <img id="image-preview" src="" alt="Preview">
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+
+            </div>
+
+            <div class="rtg-edit-col">
 
             <!-- Specifications -->
             <div class="rtg-card">
@@ -386,127 +516,6 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                 </div>
             </div>
 
-            <!-- Pricing & Links -->
-            <div class="rtg-card">
-                <div class="rtg-card-header">
-                    <h2>Pricing &amp; Links</h2>
-                </div>
-                <div class="rtg-card-body">
-                    <div class="rtg-field-row">
-                        <div class="rtg-field-label-row">
-                            <label class="rtg-field-label" for="price">Price ($)</label>
-                        </div>
-                        <input type="number" id="price" name="price" value="<?php echo esc_attr( $v['price'] ); ?>" step="0.01" min="0" class="rtg-input-small">
-                    </div>
-                    <div class="rtg-field-row">
-                        <div class="rtg-field-label-row">
-                            <label class="rtg-field-label" for="mileage_warranty">Mileage Warranty</label>
-                        </div>
-                        <input type="number" id="mileage_warranty" name="mileage_warranty" value="<?php echo esc_attr( $v['mileage_warranty'] ); ?>" min="0" step="1000">
-                    </div>
-                    <div class="rtg-field-row">
-                        <div class="rtg-field-label-row">
-                            <label class="rtg-field-label" for="link">Affiliate Link</label>
-                        </div>
-                        <input type="url" id="link" name="link" value="<?php echo esc_attr( $v['link'] ); ?>" class="rtg-input-wide">
-                    </div>
-                    <div class="rtg-field-row">
-                        <div class="rtg-field-label-row">
-                            <label class="rtg-field-label" for="bundle_link">Bundle Link</label>
-                        </div>
-                        <p class="rtg-field-description">Optional link to a set-of-four or bundle offer. Shown on the Affiliate Links page alongside the purchase link.</p>
-                        <input type="url" id="bundle_link" name="bundle_link" value="<?php echo esc_attr( $v['bundle_link'] ); ?>" class="rtg-input-wide">
-                    </div>
-                    <div class="rtg-field-row">
-                        <div class="rtg-field-label-row">
-                            <label class="rtg-field-label" for="review_link">Review Link</label>
-                        </div>
-                        <p class="rtg-field-description">Link to your article or video review (YouTube, RivianTrackr, etc.).</p>
-                        <input type="url" id="review_link" name="review_link" value="<?php echo esc_attr( $v['review_link'] ); ?>" class="rtg-input-wide">
-                    </div>
-                    <div class="rtg-field-row">
-                        <div class="rtg-field-label-row">
-                            <label class="rtg-field-label" for="image">Image URL</label>
-                        </div>
-                        <?php
-                        $image_prefix = 'https://riviantrackr.com/assets/tire-guide/images/';
-                        $image_display = $v['image'];
-                        // Strip the prefix for display so users only see the filename.
-                        if ( ! empty( $image_display ) && strpos( $image_display, $image_prefix ) === 0 ) {
-                            $image_display = substr( $image_display, strlen( $image_prefix ) );
-                        }
-                        ?>
-                        <p class="rtg-field-description">A filename in the images folder, or a full URL. "Fetch from catalog" downloads the retailer's product photo into the folder for you.</p>
-                        <div class="rtg-input-group">
-                            <span class="rtg-input-group-addon" title="<?php echo esc_attr( $image_prefix ); ?>"><?php echo esc_html( $image_prefix ); ?></span>
-                            <input type="text" id="image" name="image" value="<?php echo esc_attr( $image_display ); ?>" class="rtg-input-wide" placeholder="filename.webp">
-                        </div>
-                        <input type="hidden" id="image_prefix" value="<?php echo esc_attr( $image_prefix ); ?>">
-                        <p class="rtg-field-inline">
-                            <button type="button" id="rtg-fetch-image-btn" class="rtg-btn rtg-btn-secondary rtg-btn-sm">
-                                <i class="fa-solid fa-cloud-arrow-down"></i> Fetch from catalog
-                            </button>
-                            <span id="rtg-fetch-image-msg" class="rtg-inline-status"></span>
-                        </p>
-                        <script>
-                        jQuery(function ($) {
-                            $('#rtg-fetch-image-btn').on('click', function () {
-                                var $btn = $(this), $msg = $('#rtg-fetch-image-msg');
-                                $btn.prop('disabled', true);
-                                $msg.css('color', '').text('Fetching…');
-
-                                $.post(ajaxurl, {
-                                    action: 'rtg_fetch_tire_image',
-                                    nonce: '<?php echo esc_js( wp_create_nonce( 'rtg_admin_nonce' ) ); ?>',
-                                    brand: $('#brand').val() || '',
-                                    model: $('#model').val() || '',
-                                    size: $('#size').val() || '',
-                                    model_aliases: $('#model_aliases').val() || ''
-                                }, function (r) {
-                                    $btn.prop('disabled', false);
-                                    if (r && r.success) {
-                                        $('#image').val(r.data.filename);
-                                        $('#image-preview').attr('src', r.data.url);
-                                        $('#image-preview').closest('.rtg-image-preview, #image-preview-container').show();
-                                        $msg.css('color', 'var(--rtg-success, #34c759)')
-                                            .text(r.data.filename + ' saved to the images folder — save the tire to keep it.');
-                                    } else {
-                                        $msg.css('color', 'var(--rtg-error, #ff3b30)')
-                                            .text((r && r.data) ? r.data : 'The request failed.');
-                                    }
-                                }).fail(function () {
-                                    $btn.prop('disabled', false);
-                                    $msg.css('color', 'var(--rtg-error, #ff3b30)').text('The request failed.');
-                                });
-                            });
-                        });
-                        </script>
-                        <?php
-                        $full_image_url = $v['image'];
-                        ?>
-                        <?php if ( ! empty( $full_image_url ) ) : ?>
-                            <div class="rtg-image-preview">
-                                <img id="image-preview" src="<?php echo esc_url( $full_image_url ); ?>" alt="Preview">
-                            </div>
-                        <?php elseif ( '' !== $from_candidate_image ) : ?>
-                            <p class="rtg-help">
-                                <i class="fa-solid fa-cloud-arrow-down"></i>
-                                The catalog has a product image for this tire. Leave this field blank and saving
-                                will download it into your images folder automatically &mdash; or type a filename
-                                to use your own.
-                            </p>
-                            <div class="rtg-image-preview">
-                                <img id="image-preview" src="<?php echo esc_url( $from_candidate_image ); ?>" alt="Catalog product image">
-                            </div>
-                        <?php else : ?>
-                            <div id="image-preview-container" class="rtg-image-preview" style="display:none;"><!-- toggled by admin-scripts.js -->
-                                <img id="image-preview" src="" alt="Preview">
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-
             <!-- Classification -->
             <div class="rtg-card">
                 <div class="rtg-card-header">
@@ -598,6 +607,8 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                         <p class="rtg-empty-line">No Roamer data linked. Set a Roamer Tire ID above or run a sync from the <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-roamer-sync' ) ); ?>">Roamer Data</a> page.</p>
                     <?php endif; ?>
                 </div>
+            </div>
+
             </div>
 
         </div>

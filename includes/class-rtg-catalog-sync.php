@@ -196,6 +196,7 @@ class RTG_Catalog_Sync {
             'rejected'       => 0,
             'existing'       => 0,
             'newly_surfaced' => 0,
+            'hidden'         => 0,
             'sources'        => array(),
             'errors'         => array(),
         );
@@ -235,6 +236,10 @@ class RTG_Catalog_Sync {
                 $result    = $ingested['result'];
 
                 $stats['fetched']++;
+
+                if ( ! empty( $evaluated['hidden'] ) ) {
+                    $stats['hidden']++;
+                }
 
                 switch ( $result['status'] ) {
                     case RTG_Candidates::STATUS_NEW:
@@ -286,6 +291,13 @@ class RTG_Catalog_Sync {
         // Counted in the stats rather than silent, like everything else here.
         $stats['pruned'] = RTG_Candidates::prune( $sizes );
 
+        // Under the hide policy the queue only ever shows brands on the list.
+        // Rows from before the policy, or from a brand since taken off the
+        // list, go with this run.
+        if ( RTG_Tire_Qualifier::BRAND_POLICY_HIDE === ( $context['brand_policy'] ?? '' ) && ! empty( $context['brands'] ) ) {
+            $stats['pruned']['uncovered_brand'] = RTG_Candidates::purge_uncovered_brands( $context['brands'] );
+        }
+
         if ( ! empty( $stats['errors'] ) && 0 === $stats['fetched'] ) {
             $stats['status']  = 'error';
             $stats['message'] = $stats['errors'][0]['message'];
@@ -329,6 +341,21 @@ class RTG_Catalog_Sync {
     public static function ingest_product( $product, $slug, $label, $context, $guide_index, $variants = null ) {
         $evaluated = RTG_Tire_Qualifier::evaluate( $product, $context );
         $match_key = self::match_key( $evaluated['brand'], $evaluated['model'], $evaluated['size'] );
+
+        // A brand the guide does not cover, under the hide policy: judged,
+        // counted, never stored. There is no row for a person to review or a
+        // near miss to read, which is the point.
+        if ( ! empty( $evaluated['hidden'] ) ) {
+            return array(
+                'evaluated' => $evaluated,
+                'result'    => array(
+                    'id'             => 0,
+                    'is_new'         => false,
+                    'newly_surfaced' => false,
+                    'status'         => '',
+                ),
+            );
+        }
 
         $result = RTG_Candidates::upsert( array(
             'source'          => $slug,
