@@ -177,6 +177,11 @@
   flex: 1 1 auto;
   min-width: 0;
 }
+/* The body wraps the pills so the phone sheet can scroll them between a
+   fixed header and footer; in the row it is transparent to the flex layout. */
+.rtg-sheet-body {
+  display: contents;
+}
 .rtg-sheet-head,
 .rtg-sheet-foot,
 .rtg-filter-chips .rtg-fchip-all,
@@ -632,8 +637,7 @@ body.rtg-sheet-open {
     flex-wrap: nowrap;
     align-items: stretch;
     gap: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
+    overflow: hidden;
     background: var(--rtg-bg-card);
     border: 1px solid var(--rtg-border);
     border-bottom: none;
@@ -641,14 +645,26 @@ body.rtg-sheet-open {
     box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
     animation: rtgSheetUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
   }
+  /* Header and footer are fixed flex children; only the body scrolls. Sticky
+     children would do the same on paper, but iOS Safari paints them under
+     the positioned pills, so the footer sat on top of the last filter. */
+  .is-sheet .rtg-sheet-body {
+    display: block;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .is-sheet .rtg-sheet-body > .rtg-fitem:last-child {
+    border-bottom: none;
+  }
   .is-sheet .rtg-fchip-all {
     display: none;
   }
   .is-sheet .rtg-sheet-head {
     display: flex;
-    position: sticky;
-    top: 0;
-    z-index: 2;
+    flex-shrink: 0;
     align-items: center;
     justify-content: space-between;
     padding: 14px 20px;
@@ -779,9 +795,7 @@ body.rtg-sheet-open {
   }
   .is-sheet .rtg-sheet-foot {
     display: flex;
-    position: sticky;
-    bottom: 0;
-    z-index: 2;
+    flex-shrink: 0;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
