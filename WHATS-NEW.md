@@ -11,6 +11,10 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.6.0 - 2026-09-12
+
+- **Filter by load range.** A new Load Range menu sits beside Category. Pick SL, XL, C, D or E, or choose "XL or higher" to see, in one list, every tire that clears the R2's minimum. Each option shows how many tires it would leave, and the info button next to the menu explains what the ratings mean.
+
 ## 2.4.2 - 2026-09-10
 
 - **Size menu headings you can read on Windows.** The wheel-size headings in the size dropdown were showing up black on the dark menu in Chrome and Edge on Windows. They now match the rest of the menu everywhere.

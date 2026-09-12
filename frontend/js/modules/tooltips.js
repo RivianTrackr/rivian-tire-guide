@@ -32,6 +32,10 @@ export const TOOLTIP_DATA = {
     title: 'OEM Tire Filter',
     content: 'Filters for tires that come as Original Equipment from the factory on Rivian vehicles.'
   },
+  'Load Range Filter': {
+    title: 'Load Range',
+    content: 'Load range is the tire\'s construction rating, printed on the sidewall. From lightest to heaviest: SL (standard load), XL (extra load), then the light-truck ratings C, D and E. <br><br> The <strong>R2</strong> needs <strong>XL or higher</strong>. Pick "XL or higher" to see every tire that clears that bar in one list. The R1T and R1S take SL and up, and the guide checks each tire\'s load index against your Rivian separately.'
+  },
   'Real-World Efficiency': {
     title: 'Real-World Efficiency (mi/kWh)',
     content: 'This is real-world energy efficiency data collected from Rivian owners via <a href="https://rivianroamer.com/join?with=riviantrackr" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:underline;">Rivian Roamer</a>. It measures how many miles the vehicle travels per kilowatt-hour of battery energy while using these tires. <br><br> Higher values mean better range efficiency. The data is based on actual driving sessions and updates regularly.'

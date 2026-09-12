@@ -130,11 +130,6 @@
             var maxLoad = selected.data('max-load') || '';
             $('#max_load_lb').val(maxLoad);
         });
-
-        // (The real-time efficiency calculator was removed in 1.58.0 along
-        // with the edit form's efficiency card — the score still auto-
-        // calculates server-side on save; the metric is no longer surfaced
-        // in admin since it was retired from the frontend in 1.51.0.)
     });
 
 
@@ -412,7 +407,7 @@
             var stats = [
                 { label: 'Total Tires',       value: String(data.totalTires) },
                 { label: 'Avg Price',          value: '$' + (data.avgPrice > 0 ? Math.round(data.avgPrice).toLocaleString() : '—') },
-                { label: 'Avg Efficiency',     value: data.avgEfficiency + ' / 100' },
+                { label: 'Avg Owner Rating',   value: (data.avgRating > 0 ? data.avgRating + ' / 5' : '—') },
                 { label: 'Community Reviews',  value: String(data.totalReviews) },
             ];
 

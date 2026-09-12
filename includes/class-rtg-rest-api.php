@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Registers public read-only endpoints under the rtg/v1 namespace
  * for listing tires, fetching individual tire data, retrieving reviews,
- * and calculating efficiency scores.
+ * the catalog feed, the release notes and the advisor.
  *
  * @since 1.14.0
  */
@@ -134,18 +134,6 @@ class RTG_REST_API {
                 'permission_callback' => '__return_true',
             )
         );
-
-        // POST /wp-json/rtg/v1/efficiency — Calculate efficiency score.
-        register_rest_route(
-            self::NAMESPACE,
-            '/efficiency',
-            array(
-                'methods'             => WP_REST_Server::CREATABLE,
-                'callback'            => array( $this, 'calculate_efficiency' ),
-                'permission_callback' => '__return_true',
-                'args'                => $this->get_efficiency_params(),
-            )
-        );
     }
 
     // ------------------------------------------------------------------
@@ -213,8 +201,6 @@ class RTG_REST_API {
                 'image'             => $tire['image'],
                 'link'              => $tire['link'],
                 'review_link'       => $tire['review_link'],
-                'efficiency_score'     => floatval( $tire['efficiency_score'] ),
-                'efficiency_grade'    => $tire['efficiency_grade'],
                 'roamer_efficiency'        => floatval( $tire['roamer_efficiency'] ?? 0 ),
                 'roamer_total_miles'       => round( floatval( $tire['roamer_total_km'] ?? 0 ) * 0.621371, 1 ),
                 'roamer_vehicle_count'     => intval( $tire['roamer_vehicle_count'] ?? 0 ),
@@ -272,6 +258,11 @@ class RTG_REST_API {
             $filters['category'] = sanitize_text_field( $category );
         }
 
+        $load_range = $request->get_param( 'load_range' );
+        if ( ! empty( $load_range ) ) {
+            $filters['load_range'] = sanitize_text_field( $load_range );
+        }
+
         $three_pms = $request->get_param( 'three_pms' );
         if ( $three_pms ) {
             $filters['three_pms'] = true;
@@ -284,7 +275,6 @@ class RTG_REST_API {
         // Validate sort value.
         $allowed_sorts = array(
             'roamer-efficiency',
-            'efficiency_score',
             'price-asc',
             'price-desc',
             'warranty-desc',
@@ -418,49 +408,6 @@ class RTG_REST_API {
         return $response;
     }
 
-    /**
-     * POST /efficiency — Calculate an efficiency score from tire spec data.
-     *
-     * @param WP_REST_Request $request Full request object.
-     * @return WP_REST_Response
-     */
-    public function calculate_efficiency( WP_REST_Request $request ) {
-        $rate_check = $this->check_rate_limit( 'write', self::RATE_LIMIT_WRITE );
-        if ( is_wp_error( $rate_check ) ) {
-            return $rate_check;
-        }
-
-        $size = sanitize_text_field( $request->get_param( 'size' ) );
-        if ( empty( $size ) ) {
-            return new WP_Error(
-                'rtg_missing_param',
-                'The size parameter is required.',
-                array( 'status' => 400 )
-            );
-        }
-
-        $data = array(
-            'size'          => $size,
-            'weight_lb'     => floatval( $request->get_param( 'weight_lb' ) ),
-            'tread'         => sanitize_text_field( $request->get_param( 'tread' ) ),
-            'load_range'    => sanitize_text_field( $request->get_param( 'load_range' ) ),
-            'speed_rating'  => sanitize_text_field( $request->get_param( 'speed_rating' ) ),
-            'utqg'          => sanitize_text_field( $request->get_param( 'utqg' ) ),
-            'category'      => sanitize_text_field( $request->get_param( 'category' ) ),
-            'three_pms'     => sanitize_text_field( $request->get_param( 'three_pms' ) ),
-        );
-
-        $result = RTG_Database::calculate_efficiency( $data );
-
-        return new WP_REST_Response(
-            array(
-                'efficiency_score' => $result['efficiency_score'],
-                'efficiency_grade' => $result['efficiency_grade'],
-            ),
-            200
-        );
-    }
-
     // ------------------------------------------------------------------
     // Rate limiting
     // ------------------------------------------------------------------
@@ -558,6 +505,11 @@ class RTG_REST_API {
                 'type'              => 'string',
                 'sanitize_callback' => 'sanitize_text_field',
             ),
+            'load_range' => array(
+                'description'       => 'Filter by load range (SL, XL, C, D, E), or "xl+" for XL and above, the R2 minimum.',
+                'type'              => 'string',
+                'sanitize_callback' => 'sanitize_text_field',
+            ),
             'three_pms' => array(
                 'description'       => 'Filter to only 3-Peak Mountain Snowflake rated tires.',
                 'type'              => 'boolean',
@@ -569,7 +521,6 @@ class RTG_REST_API {
                 'default'           => 'roamer-efficiency',
                 'enum'              => array(
                     'roamer-efficiency',
-                    'efficiency_score',
                     'price-asc',
                     'price-desc',
                     'warranty-desc',
@@ -592,65 +543,6 @@ class RTG_REST_API {
                 'minimum'           => 1,
                 'maximum'           => 100,
                 'sanitize_callback' => 'absint',
-            ),
-        );
-    }
-
-    /**
-     * Get the parameter definitions for the efficiency calculation endpoint.
-     *
-     * @return array
-     */
-    private function get_efficiency_params() {
-        return array(
-            'size'         => array(
-                'description'       => 'Tire size string (e.g. 275/60R20).',
-                'type'              => 'string',
-                'default'           => '',
-                'sanitize_callback' => 'sanitize_text_field',
-            ),
-            'weight_lb'    => array(
-                'description'       => 'Tire weight in pounds.',
-                'type'              => 'number',
-                'default'           => 0,
-                'sanitize_callback' => 'floatval',
-            ),
-            'tread'        => array(
-                'description'       => 'Tread depth (e.g. 10/32).',
-                'type'              => 'string',
-                'default'           => '',
-                'sanitize_callback' => 'sanitize_text_field',
-            ),
-            'load_range'   => array(
-                'description'       => 'Load range rating (e.g. SL, XL, E).',
-                'type'              => 'string',
-                'default'           => '',
-                'sanitize_callback' => 'sanitize_text_field',
-            ),
-            'speed_rating' => array(
-                'description'       => 'Speed rating letter (e.g. T, H, V).',
-                'type'              => 'string',
-                'default'           => '',
-                'sanitize_callback' => 'sanitize_text_field',
-            ),
-            'utqg'         => array(
-                'description'       => 'UTQG rating string (e.g. 620 A B).',
-                'type'              => 'string',
-                'default'           => '',
-                'sanitize_callback' => 'sanitize_text_field',
-            ),
-            'category'     => array(
-                'description'       => 'Tire category (e.g. All-Season, All-Terrain, Winter).',
-                'type'              => 'string',
-                'default'           => '',
-                'sanitize_callback' => 'sanitize_text_field',
-            ),
-            'three_pms'    => array(
-                'description'       => '3-Peak Mountain Snowflake certification (Yes or No).',
-                'type'              => 'string',
-                'default'           => 'No',
-                'enum'              => array( 'Yes', 'No' ),
-                'sanitize_callback' => 'sanitize_text_field',
             ),
         );
     }

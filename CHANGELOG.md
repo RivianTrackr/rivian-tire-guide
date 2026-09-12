@@ -4,6 +4,20 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.6.0] - 2026-09-12
+
+### Added
+- **Load range filter on the guide.** A new dropdown beside Category lists the load ranges the catalog carries in sidewall order (SL, XL, C, D, E) and, because the R2 needs XL at minimum, an "XL or higher (R2 minimum)" choice that matches XL and every light-truck rating in one pick. Counts beside each option say how many tires it would leave, options with none step out like the other dropdowns, and the filter rides the URL (`?load_range=xl+`), the active-filter chips, the no-results suggestions, Clear all, the `[rivian_tire_guide load_range="xl+"]` shortcode attribute, the server-side AJAX listing (`load_range` on `rtg_get_tires`, `loadRanges` from `rtg_get_filter_options`) and the REST listing (`load_range` on `GET /rtg/v1/tires`). An info button on the dropdown explains the ratings and the R2 floor.
+  - The rules live once in `frontend/js/modules/load-range.js` (`loadRangeMatches()`, `loadRangeOptions()`, `loadRangeCounts()`, `XL_PLUS_SET`) and are mirrored in PHP as `RTG_Database::LOAD_RANGES_XL_PLUS` for the SQL `WHERE`; a comment on each names the other. `populateLoadRangeDropdown()` in `filters.js` fills the menu and records `state.VALID_LOAD_RANGES`; `optionLabel()` now honours a `data-label` so the synthetic option can be counted by value and read as a sentence.
+
+### Removed
+- **The calculated efficiency score and grade.** The formula-derived 0-100 score and A-F grade left the cards in 1.51.0 and the admin form in 1.58.0 but were still computed on every save and import, exposed on the REST feed and a `POST /rtg/v1/efficiency` endpoint, offered as a sort key, averaged on the dashboard and printed on the share image. All of it is gone: `RTG_Database::calculate_efficiency()` and `recalculate_all_efficiency()`, the admin "Recalculate efficiency" action and its notice, the `rtg_calculate_efficiency` AJAX handler, the REST endpoint and feed fields, the `efficiency_score` sort key everywhere (the server-side fallback sort is now real-world efficiency), the `by_grade` and `avg_efficiency` dashboard aggregates, the `.rtg-grade` admin styles and the grade table in `CLAUDE.md`. Migration 27 drops `efficiency_score`, `efficiency_grade` and `idx_efficiency` from `rtg_tires` (`DB_VERSION` 27). Real-world efficiency from Rivian Roamer is unrelated and untouched.
+  - **Frontend row layout change.** `RTG_Database::to_frontend_row()` no longer emits the two efficiency columns, so the positional row the guide, compare page and review page read shrinks from 32 to 30 entries and every index from review_link on shifts down by two. Updated in step: the destructuring in `cards.js`, `COL` in `compare.js`, the exempt-column list and minimum length in `validation.js`, the newest and real-world sorts in `filters.js`, the slug lookup in `ratings.js`, and `class-rtg-tire-review.php`.
+
+### Tests
+- New `tests/test-load-range.mjs` (in `npm test`): matching, sidewall order, option building including the XL-absent case, and counts.
+- `test-database.php` pins the frontend row at 30 columns and drops the efficiency calculation test; `test-activator.php`, `test-ajax.php`, `test-advisor.php` and `test-admin.php` fixtures no longer carry the columns, and the two CSV import tests assert on the fields the import actually writes.
+
 ## [2.5.0] - 2026-09-12
 
 ### Changed

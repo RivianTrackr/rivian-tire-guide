@@ -32,7 +32,6 @@ class RTG_Ajax {
      * dropdown is the canonical list of user-visible sorts.
      */
     const ALLOWED_SORTS = array(
-        'efficiency_score',
         'price-asc',
         'price-desc',
         'warranty-desc',
@@ -125,9 +124,6 @@ class RTG_Ajax {
 
         // Analytics: admin data endpoint.
         add_action( 'wp_ajax_rtg_get_analytics', array( $this, 'get_analytics' ) );
-
-        // Efficiency calculator — admin only.
-        add_action( 'wp_ajax_rtg_calculate_efficiency', array( $this, 'calculate_efficiency' ) );
 
         // Link health check — admin only.
         add_action( 'wp_ajax_rtg_check_links', array( $this, 'check_links' ) );
@@ -584,6 +580,7 @@ class RTG_Ajax {
             'size'         => sanitize_text_field( $_POST['size'] ?? '' ),
             'brand'        => sanitize_text_field( $_POST['brand'] ?? '' ),
             'category'     => sanitize_text_field( $_POST['category'] ?? '' ),
+            'load_range'   => sanitize_text_field( $_POST['load_range'] ?? '' ),
             'three_pms'    => ! empty( $_POST['three_pms'] ),
             'oem'          => ! empty( $_POST['oem'] ),
         );
@@ -637,6 +634,7 @@ class RTG_Ajax {
         $db_sizes   = $wpdb->get_col( "SELECT DISTINCT size FROM {$table} WHERE size != '' ORDER BY size ASC" );
         $brands     = $wpdb->get_col( "SELECT DISTINCT brand FROM {$table} WHERE brand != '' ORDER BY brand ASC" );
         $categories = $wpdb->get_col( "SELECT DISTINCT category FROM {$table} WHERE category != '' ORDER BY category ASC" );
+        $load_ranges = $wpdb->get_col( "SELECT DISTINCT UPPER(load_range) FROM {$table} WHERE load_range != ''" );
 
         // Merge admin-managed sizes with sizes found in the database.
         $admin_sizes = RTG_Admin::get_dropdown_options( 'sizes' );
@@ -647,6 +645,7 @@ class RTG_Ajax {
             'sizes'          => array_map( 'sanitize_text_field', array_values( $merged_sizes ) ),
             'brands'         => array_map( 'sanitize_text_field', $brands ),
             'categories'     => array_map( 'sanitize_text_field', $categories ),
+            'loadRanges'     => array_map( 'sanitize_text_field', $load_ranges ),
             'vehicleSizeMap' => RTG_Database::get_vehicle_size_map(),
             'thirdPartySizes' => RTG_Database::get_third_party_size_map(),
             'maxPrice'       => (float) $wpdb->get_var( "SELECT MAX(price) FROM {$table}" ),
@@ -767,36 +766,6 @@ class RTG_Ajax {
         RTG_Database::insert_search_event( $search_query, $filters_json, $sort_by, $result_count, $search_type );
 
         wp_send_json_success();
-    }
-
-    /**
-     * Calculate efficiency score and grade from tire spec data.
-     * Uses the canonical PHP formula — eliminates the need for a duplicate JS implementation.
-     * Admin-only endpoint for the tire edit form.
-     */
-    public function calculate_efficiency() {
-        if ( ! check_ajax_referer( 'rtg_admin_nonce', 'nonce', false ) ) {
-            wp_send_json_error( 'Security check failed.' );
-        }
-
-        if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( 'Unauthorized.' );
-        }
-
-        $data = array(
-            'size'         => sanitize_text_field( $_POST['size'] ?? '' ),
-            'weight_lb'    => floatval( $_POST['weight_lb'] ?? 0 ),
-            'tread'        => sanitize_text_field( $_POST['tread'] ?? '' ),
-            'load_range'   => sanitize_text_field( $_POST['load_range'] ?? '' ),
-            'speed_rating' => sanitize_text_field( $_POST['speed_rating'] ?? '' ),
-            'utqg'         => sanitize_text_field( $_POST['utqg'] ?? '' ),
-            'category'     => sanitize_text_field( $_POST['category'] ?? '' ),
-            'three_pms'    => sanitize_text_field( $_POST['three_pms'] ?? 'No' ),
-        );
-
-        $result = RTG_Database::calculate_efficiency( $data );
-
-        wp_send_json_success( $result );
     }
 
     /**

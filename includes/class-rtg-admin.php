@@ -486,7 +486,7 @@ class RTG_Admin {
             true
         );
 
-        // Localize admin nonce for AJAX endpoints (efficiency calculator, etc.).
+        // Localize admin nonce for the admin AJAX endpoints (image fetch, sync, discovery).
         wp_localize_script( 'rtg-admin-scripts', 'rtgAdmin', array(
             'ajaxurl' => admin_url( 'admin-ajax.php' ),
             'nonce'   => wp_create_nonce( 'rtg_admin_nonce' ),
@@ -615,11 +615,6 @@ class RTG_Admin {
         // Handle review moderation.
         if ( isset( $_GET['action'] ) && in_array( $_GET['action'], array( 'approve_review', 'reject_review' ), true ) && isset( $_GET['rating_id'] ) ) {
             $this->handle_review_status();
-        }
-
-        // Handle recalculate all efficiency scores.
-        if ( isset( $_GET['action'] ) && $_GET['action'] === 'recalculate_efficiency' ) {
-            $this->handle_recalculate_efficiency();
         }
 
         // Handle tire duplication.
@@ -925,11 +920,6 @@ class RTG_Admin {
                     : esc_url_raw( $candidate['image'] );
             }
         }
-
-        // Auto-calculate efficiency score and grade.
-        $efficiency = RTG_Database::calculate_efficiency( $data );
-        $data['efficiency_score'] = $efficiency['efficiency_score'];
-        $data['efficiency_grade'] = $efficiency['efficiency_grade'];
 
         // Validate tire_id.
         if ( empty( $data['tire_id'] ) ) {
@@ -1542,19 +1532,6 @@ class RTG_Admin {
         exit;
     }
 
-    private function handle_recalculate_efficiency() {
-        if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( 'Unauthorized' );
-        }
-
-        check_admin_referer( 'rtg_recalculate_efficiency' );
-
-        $count = RTG_Database::recalculate_all_efficiency();
-
-        wp_redirect( admin_url( 'admin.php?page=rtg-tires&message=recalculated&count=' . $count ) );
-        exit;
-    }
-
     // --- Wheel Handlers ---
 
     private function handle_wheel_save() {
@@ -1817,9 +1794,6 @@ class RTG_Admin {
 
             // Only write the columns the file actually carries — a column
             // absent from the header must not blank the stored value.
-            // Efficiency is derived from the stored row with the file's
-            // values merged over it, so a partial file can't zero the grade
-            // either.
             $partial = array_intersect_key( $data, $col_map );
             unset( $partial['tire_id'] );
 
@@ -1829,23 +1803,12 @@ class RTG_Admin {
             $slug = (string) ( $partial['slug'] ?? '' );
             unset( $partial['slug'] );
 
-            $existing = RTG_Database::get_tire( $data['tire_id'] );
-            $merged   = array_merge( is_array( $existing ) ? $existing : array(), $partial );
-
-            $efficiency = RTG_Database::calculate_efficiency( $merged );
-            $partial['efficiency_score'] = $efficiency['efficiency_score'];
-            $partial['efficiency_grade'] = $efficiency['efficiency_grade'];
-
             RTG_Database::update_tire( $data['tire_id'], $partial );
             if ( '' !== $slug ) {
                 RTG_Database::set_tire_slug( $data['tire_id'], $slug );
             }
             return 'updated';
         }
-
-        $efficiency = RTG_Database::calculate_efficiency( $data );
-        $data['efficiency_score'] = $efficiency['efficiency_score'];
-        $data['efficiency_grade'] = $efficiency['efficiency_grade'];
 
         $slug = (string) ( $data['slug'] ?? '' );
         unset( $data['slug'] );

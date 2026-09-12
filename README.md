@@ -12,6 +12,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Interactive Tire Cards** — Browse tires with real-time filtering by size, brand, category, price, weight, warranty, 3PMS, EV rated, and studded availability.
 - **Smart Search** — Fuzzy search with type-ahead suggestions for brands, models, categories, and sizes.
 - **Side-by-Side Comparison** — Select up to 4 tires and compare specs on a dedicated comparison page with best-value highlighting.
+- **Load Range Filter** — SL, XL, C, D, E, plus "XL or higher" in one pick, since the R2 needs XL at minimum. Counts beside each option say how many tires it would leave.
 - **Shareable Filtered Views** — All filter state persists in URL parameters (`?brand=Michelin&size=275/65R18`), enabling shareable links and browser back/forward navigation.
 - **Shareable Tire Links** — Direct links to individual tires with deep-link highlighting.
 - **Active Filter Chips** — Dismissible chips show active filters at a glance.
@@ -27,14 +28,10 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Review Moderation** — Admin approval queue with pending/approved/rejected status tabs. Admin-submitted reviews auto-approve; user and guest reviews default to pending.
 - **Email Notifications** — Admins receive styled HTML email notifications for new guest reviews. Reviewers receive approval notification emails.
 
-### Efficiency Scoring
-- **Proprietary Algorithm** — Weighted formula (0-100 score, A/B/C/D/F grade) estimating range-friendliness based on weight, tread depth, load range, speed rating, UTQG, category, width, and 3PMS certification.
-- **Single Source of Truth** — Calculation lives in `RTG_Database::calculate_efficiency()`. Admin form uses AJAX to call the PHP formula directly.
-
 ### Real-World Efficiency (Rivian Roamer)
 - **Live Data Sync** — Integrates real-world mi/kWh efficiency data from [Rivian Roamer](https://rivianroamer.com), collected from actual Rivian owner driving sessions. Syncs automatically every 5 minutes via WP-Cron.
 - **Admin Mapping** — Auto-matches tires by brand + model + size. Ambiguous matches (same tire, different load ratings) are flagged for manual review on the Roamer Data admin page. Multiple Roamer entries can be assigned to one tire with weighted-average efficiency.
-- **Tire Cards** — Blue mi/kWh pill badge displayed alongside the calculated efficiency badge, with its own info tooltip linking to Rivian Roamer.
+- **Tire Cards** — Blue mi/kWh pill badge with its own info tooltip linking to Rivian Roamer.
 - **Sort & Compare** — "Real-World Efficiency" sort option and comparison row in Performance section.
 - **Dashboard** — Roamer overview card (coverage, avg/best/worst mi/kWh, sessions, vehicles, last sync) and top 5 most efficient tires by real-world data.
 
@@ -56,9 +53,9 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Data Retention** — Configurable retention period (7-365 days) with daily WP-Cron cleanup.
 
 ### Admin
-- **Dashboard** — Overview cards (total tires, average price, efficiency, ratings), breakdowns by category/brand/size/grade, Rivian Roamer real-world efficiency overview and top 5 rankings, content health indicators (pending reviews, missing images/links). A quick-stats dashboard widget (with Roamer coverage) also appears on the main WordPress dashboard.
+- **Dashboard** — A "Needs attention" list first (failed runs, pending reviews, the discovery queue, broken or missing links, missing images), then overview tiles (tires, reviews, affiliate coverage, Roamer coverage, average price), breakdowns by category/brand/size, Rivian Roamer real-world efficiency overview and top 5 rankings. A quick-stats dashboard widget (with Roamer coverage) also appears on the main WordPress dashboard.
 - **Tire Management** — Full CRUD with search, filters, bulk actions, tire duplication, and tag suggestions.
-- **CSV Import/Export** — Bulk import with duplicate handling (skip/update), auto-generated IDs, auto-calculated efficiency, MIME validation, and full catalog export.
+- **CSV Import/Export** — Bulk import with duplicate handling (skip/update), auto-generated IDs, MIME validation, and full catalog export.
 - **Reviews Management** — Pending/approved/rejected tabs with approve, reject, and delete actions.
 - **Affiliate Links Dashboard** — Centralized view of all purchase and review links with link classification (affiliate vs. direct), filter tabs, and inline AJAX editing.
 - **Tire Discovery** — Review queue for tires found in affiliate catalogs (see Tire Discovery section above), with its own settings for the daily check, the digest email, and the minimum load index.
@@ -90,7 +87,6 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - `GET /wp-json/rtg/v1/tires` — Filtered, paginated tire listing.
 - `GET /wp-json/rtg/v1/tires/{tire_id}` — Single tire with ratings.
 - `GET /wp-json/rtg/v1/tires/{tire_id}/reviews` — Paginated reviews.
-- `POST /wp-json/rtg/v1/efficiency` — Calculate efficiency score from specs.
 - `GET /wp-json/rtg/v1/feed` — Full tire catalog JSON feed with ratings and Roamer real-world efficiency data.
 - `GET /wp-json/rtg/v1/whats-new` — The parsed release notes the guide's Changelog modal loads.
 - `POST /wp-json/rtg/v1/advise` — Help me choose: three picks with reasons and trade-offs.
@@ -132,7 +128,10 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 
 With pre-filter attributes:
 ```
-[rivian_tire_guide vehicle="R1" brand="Michelin" category="All-Season" size="275/65R20" sort="price-asc" 3pms="yes"]
+[rivian_tire_guide vehicle="R2" brand="Michelin" category="All-Season" size="245/60R18" load_range="xl+" sort="price-asc" 3pms="yes"]
+```
+
+`load_range` takes a rating (`SL`, `XL`, `C`, `D`, `E`) or `xl+` for XL and above, the R2's minimum. The same values work on the guide's URL (`?load_range=xl+`) and the REST listing.
 ```
 
 **User Reviews** — Display all reviews by a specific user (via `?reviewer=ID` URL param):
@@ -149,8 +148,7 @@ With pre-filter attributes:
 
 1. Go to **Tire Guide > Add New** in the WordPress admin.
 2. Fill in tire specifications (brand, model, size, price, weight, etc.).
-3. The efficiency score is calculated automatically via AJAX as you fill in specs.
-4. Tires appear in the frontend guide immediately.
+3. Tires appear in the frontend guide immediately.
 
 For bulk operations, use **Tire Guide > Tools** to import tires via CSV.
 
@@ -283,26 +281,7 @@ The plugin creates 6 tables (all prefixed with `wp_rtg_`):
 | `rtg_search_events` | Search, filter and advisor analytics |
 | `rtg_tire_candidates` | Tire Discovery review queue |
 
-Schema changes are managed via a numbered migration system (`rtg_db_version` option, currently v26).
-
-## Efficiency Score
-
-The efficiency score helps Rivian owners identify range-friendly tires using a weighted formula:
-
-| Factor | Weight | Better Score |
-|--------|--------|--------------|
-| Weight | 26% | Lighter tires |
-| Tread Depth | 16% | Shallower tread |
-| Load Range | 16% | SL > XL > D > E |
-| Speed Rating | 10% | Lower ratings (less rolling resistance) |
-| UTQG | 10% | Higher treadwear numbers |
-| Category | 10% | All-Season/Highway > All-Terrain > Mud |
-| 3PMS Certification | 8% | Non-winter tires |
-| Width | 4% | Narrower tires |
-
-**Grades:** A (80-100), B (65-79), C (50-64), D (35-49), F (0-19)
-
-> **Note:** This score is an estimate based on specifications, calibrated for both R1 and R2 tire ranges. It does not reflect real-world range testing and should not be used as a measure of tire quality or safety.
+Schema changes are managed via a numbered migration system (`rtg_db_version` option, currently v27).
 
 ## Development
 

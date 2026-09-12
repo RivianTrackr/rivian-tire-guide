@@ -14,6 +14,7 @@ import { isPreciseMatch } from './search.js';
 import { isServerSide, serverSideFilterAndRender } from './server.js';
 import { rememberVehicle, rememberedVehicle } from './vehicle-memory.js';
 import { thirdPartyEntry } from './fitment.js';
+import { XL_PLUS, loadRangeMatches, loadRangeOptions, loadRangeCounts } from './load-range.js';
 
 /** What a size that fits only on aftermarket wheels says after its name in the size menu. */
 export const THIRD_PARTY_SUFFIX = '3rd-party wheels';
@@ -256,6 +257,7 @@ function getFilteredIndexes(filters) {
 
     if (filters["3PMS"] && !safeString(row[9]).toLowerCase().includes("yes")) return false;
     if (filters["OEM"] && !safeString(row[17]).toLowerCase().includes("oem")) return false;
+    if (filters.LoadRange && !loadRangeMatches(row[13], filters.LoadRange)) return false;
 
     return true;
   });
@@ -421,7 +423,8 @@ export function filterAndRender() {
     Vehicle: vehicleVal && state.VALID_VEHICLES.includes(vehicleVal) ? vehicleVal : "",
     Size: filterSize?.value && state.VALID_SIZES.includes(filterSize.value) ? filterSize.value : "",
     Brand: filterBrand?.value && state.VALID_BRANDS.includes(filterBrand.value) ? filterBrand.value : "",
-    Category: filterCategory?.value && state.VALID_CATEGORIES.includes(filterCategory.value) ? filterCategory.value : ""
+    Category: filterCategory?.value && state.VALID_CATEGORIES.includes(filterCategory.value) ? filterCategory.value : "",
+    LoadRange: getLoadRangeFilterValue()
   };
 
   const sortOption = sortBy?.value && ALLOWED_SORT_OPTIONS.includes(sortBy.value) ? sortBy.value : "";
@@ -446,6 +449,7 @@ export function filterAndRender() {
   if (f.Size) activeFilters.size = f.Size;
   if (f.Brand) activeFilters.brand = f.Brand;
   if (f.Category) activeFilters.category = f.Category;
+  if (f.LoadRange) activeFilters.load_range = f.LoadRange;
   if (f["3PMS"]) activeFilters.three_pms = true;
   if (f["OEM"]) activeFilters.oem = true;
   if (f.PriceMax < priceCeiling) activeFilters.price_max = f.PriceMax;
@@ -531,13 +535,13 @@ function applySorting(sortOption) {
       state.filteredRows.sort((a, b) => validateNumeric(a[8], NUMERIC_BOUNDS.weight, 0) - validateNumeric(b[8], NUMERIC_BOUNDS.weight, 0));
       break;
     case "newest":
-      state.filteredRows.sort((a, b) => safeString(b[23]).localeCompare(safeString(a[23])));
+      state.filteredRows.sort((a, b) => safeString(b[21]).localeCompare(safeString(a[21])));
       break;
     case "roamer-efficiency":
     default:
       state.filteredRows.sort((a, b) => {
-        const aVal = parseFloat(a[24]) || 0;
-        const bVal = parseFloat(b[24]) || 0;
+        const aVal = parseFloat(a[22]) || 0;
+        const bVal = parseFloat(b[22]) || 0;
         // Tires without Roamer data go to bottom.
         if (aVal > 0 && bVal === 0) return -1;
         if (aVal === 0 && bVal > 0) return 1;
@@ -579,6 +583,7 @@ function getActiveFilterCount() {
   if (getDOMElement("filterSize")?.value) count++;
   if (getDOMElement("filterBrand")?.value) count++;
   if (getDOMElement("filterCategory")?.value) count++;
+  if (getDOMElement("filterLoadRange")?.value) count++;
   const priceEl = getDOMElement("priceMax");
   if (priceEl && parseInt(priceEl.value) < getPriceCeiling()) count++;
   const warrantyEl = getDOMElement("warrantyMin");
@@ -634,8 +639,16 @@ function getCurrentFilters() {
     Vehicle: getSelectedVehicle() && state.VALID_VEHICLES.includes(getSelectedVehicle()) ? getSelectedVehicle() : "",
     Size: filterSize?.value && state.VALID_SIZES.includes(filterSize.value) ? filterSize.value : "",
     Brand: filterBrand?.value && state.VALID_BRANDS.includes(filterBrand.value) ? filterBrand.value : "",
-    Category: filterCategory?.value && state.VALID_CATEGORIES.includes(filterCategory.value) ? filterCategory.value : ""
+    Category: filterCategory?.value && state.VALID_CATEGORIES.includes(filterCategory.value) ? filterCategory.value : "",
+    LoadRange: getLoadRangeFilterValue()
   };
+}
+
+/** The load range dropdown's value, only when it is one the catalog offers. */
+function getLoadRangeFilterValue() {
+  const el = getDOMElement("filterLoadRange");
+  const val = el?.value || "";
+  return val && state.VALID_LOAD_RANGES.includes(val) ? val : "";
 }
 
 function updateDropdownCounts() {
@@ -651,6 +664,14 @@ function updateDropdownCounts() {
   updateSelectCounts("filterSize", 1, { ...filters, Size: "" }, true);
   updateSelectCounts("filterBrand", 3, { ...filters, Brand: "" }, true);
   updateSelectCounts("filterCategory", 5, { ...filters, Category: "" }, true);
+
+  // "XL or higher" counts every qualifying rating, not a value of its own,
+  // so this dropdown counts through the load range rules.
+  const loadRangeSelect = getDOMElement("filterLoadRange");
+  if (loadRangeSelect) {
+    const rows = getFilteredIndexes({ ...filters, LoadRange: "" });
+    applyOptionCounts(loadRangeSelect, loadRangeCounts(rows.map(row => row[13])), true);
+  }
 }
 
 function updateSelectCounts(selectId, rowIndex, filtersExcludingSelf, hideEmpty = false) {
@@ -844,7 +865,7 @@ function clearDetached(select) {
  * render sets aside whatever is still empty, so this costs nothing.
  */
 export function restoreDetachedFilterOptions() {
-  ["filterSize", "filterBrand", "filterCategory"].forEach(id => {
+  ["filterSize", "filterBrand", "filterCategory", "filterLoadRange"].forEach(id => {
     const select = getDOMElement(id);
     if (!select) return;
 
@@ -880,6 +901,32 @@ export function populateDropdown(id, values) {
 }
 
 /**
+ * Fill the load range dropdown: the ratings the catalog has, in sidewall
+ * order, with "XL or higher" beside XL. Records the values the filter may
+ * take so a URL or shortcode value outside them is ignored.
+ *
+ * @param {string} id     The select's id.
+ * @param {Iterable<string>} values Load ranges as stored on the tires.
+ */
+export function populateLoadRangeDropdown(id, values) {
+  const select = getDOMElement(id);
+  if (!select) return;
+
+  clearDetached(select);
+  const options = loadRangeOptions(values);
+  options.forEach(({ value, label }) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    // Counts are keyed by value; the label is what the shopper reads.
+    option.dataset.baseText = value;
+    option.dataset.label = label;
+    select.appendChild(option);
+  });
+  state.VALID_LOAD_RANGES = options.map(o => o.value);
+}
+
+/**
  * A size's suffix in the size menu: "3rd-party wheels" when the pressed
  * vehicle takes it only on aftermarket wheels, '' otherwise (including with
  * no vehicle pressed, when 275/65R18 is a plain R1 size).
@@ -890,9 +937,13 @@ export function sizeOptionSuffix(size, vehicle) {
   return entry ? THIRD_PARTY_SUFFIX : '';
 }
 
-/** The label an option shows: its size, then its suffix when it has one. */
+/**
+ * The label an option shows: its own label when it has one (the load range
+ * menu's "XL or higher"), else its value, then its suffix when it has one.
+ */
 function optionLabel(opt, baseText) {
-  return opt.dataset.suffix ? `${baseText} · ${opt.dataset.suffix}` : baseText;
+  const text = opt.dataset.label || baseText;
+  return opt.dataset.suffix ? `${text} · ${opt.dataset.suffix}` : text;
 }
 
 export function populateSizeDropdownGrouped(id, sizesOrRows, vehicle = '') {
@@ -1022,6 +1073,7 @@ export function resetFilters() {
     { id: "filterSize", value: "" },
     { id: "filterBrand", value: "" },
     { id: "filterCategory", value: "" },
+    { id: "filterLoadRange", value: "" },
     { id: "priceMax", value: priceCeiling },
     { id: "warrantyMin", value: 0 },
     { id: "sortBy", value: "roamer-efficiency" }
@@ -1101,6 +1153,11 @@ export function renderActiveFilterChips() {
     chips.push({ label: "Category", value: categoryEl.value, clear: () => { categoryEl.value = ""; } });
   }
 
+  const loadRangeEl = getDOMElement("filterLoadRange");
+  if (loadRangeEl?.value) {
+    chips.push({ label: "Load Range", value: loadRangeEl.value === XL_PLUS ? "XL or higher" : loadRangeEl.value, clear: () => { loadRangeEl.value = ""; } });
+  }
+
   const priceEl = getDOMElement("priceMax");
   const priceVal = priceEl ? parseInt(priceEl.value) : 600;
   const priceCeil = priceEl ? (Number(priceEl.max) || 600) : 600;
@@ -1165,6 +1222,7 @@ export function renderSmartNoResults() {
   const sizeEl = getDOMElement("filterSize");
   const brandEl = getDOMElement("filterBrand");
   const categoryEl = getDOMElement("filterCategory");
+  const loadRangeEl = getDOMElement("filterLoadRange");
   const priceEl = getDOMElement("priceMax");
   const warrantyEl = getDOMElement("warrantyMin");
   const searchEl = getDOMElement("searchInput");
@@ -1174,6 +1232,7 @@ export function renderSmartNoResults() {
   if (sizeEl?.value) activeFilterNames.push("Size");
   if (brandEl?.value) activeFilterNames.push("Brand");
   if (categoryEl?.value) activeFilterNames.push("Category");
+  if (loadRangeEl?.value) activeFilterNames.push("Load Range");
   if (priceEl && parseInt(priceEl.value) < getPriceCeiling()) activeFilterNames.push("Price");
   if (warrantyEl && parseInt(warrantyEl.value) > 0) activeFilterNames.push("Warranty");
   if (getDOMElement("filter3pms")?.checked) activeFilterNames.push("3PMS");
@@ -1244,6 +1303,14 @@ export function renderSmartNoResults() {
       key: 'category',
       label: rtgIcon('tags', 14) + ' Show all categories',
       action: () => { categoryEl.value = ""; state.lastFilterState = null; rerender(); }
+    });
+  }
+
+  if (loadRangeEl?.value) {
+    suggestions.push({
+      key: 'load_range',
+      label: rtgIcon('weight-hanging', 14) + ' Show all load ranges',
+      action: () => { loadRangeEl.value = ""; state.lastFilterState = null; rerender(); }
     });
   }
 
@@ -1371,6 +1438,11 @@ export function updateURLFromFilters() {
     params.set("category", categoryVal);
   }
 
+  const loadRangeVal = getVal("filterLoadRange");
+  if (loadRangeVal && state.VALID_LOAD_RANGES.includes(loadRangeVal)) {
+    params.set("load_range", loadRangeVal);
+  }
+
   if (getChecked("filter3pms")) params.set("3pms", "1");
   if (getChecked("filterOEM")) params.set("oem", "1");
 
@@ -1461,6 +1533,10 @@ export function applyFiltersFromURL() {
   const category = sanitizeInput(params.get("category"));
   if (category && state.VALID_CATEGORIES.includes(category)) setVal("filterCategory", category);
   else if (restoring) setVal("filterCategory", "");
+
+  const loadRange = sanitizeInput(params.get("load_range"));
+  if (loadRange && state.VALID_LOAD_RANGES.includes(loadRange)) setVal("filterLoadRange", loadRange);
+  else if (restoring) setVal("filterLoadRange", "");
 
   setChecked("filter3pms", params.get("3pms"));
   setChecked("filterOEM", params.get("oem"));
@@ -1593,6 +1669,10 @@ export function applyShortcodePrefilters() {
   if (pf.category) {
     const el = document.getElementById('filterCategory');
     if (el) el.value = pf.category;
+  }
+  if (pf.load_range && state.VALID_LOAD_RANGES.includes(pf.load_range)) {
+    const el = document.getElementById('filterLoadRange');
+    if (el) el.value = pf.load_range;
   }
   if (pf.sort) {
     const el = document.getElementById('sortBy');

@@ -39,8 +39,6 @@ class Test_RTG_Database extends WP_UnitTestCase {
             'image'            => 'https://riviantrackr.com/images/tire.jpg',
             'bundle_link'      => '',
             'sort_order'       => 0,
-            'efficiency_score' => 75,
-            'efficiency_grade' => 'B',
         ), $overrides );
     }
 
@@ -128,7 +126,7 @@ class Test_RTG_Database extends WP_UnitTestCase {
         // Each row should be a numerically-indexed array of strings.
         $row = $tires[0];
         $this->assertIsArray( $row );
-        $this->assertGreaterThanOrEqual( 23, count( $row ) );
+        $this->assertCount( 30, $row, 'the frontend row layout is a fixed 30 columns' );
         foreach ( $row as $val ) {
             $this->assertIsString( $val );
         }
@@ -204,20 +202,6 @@ class Test_RTG_Database extends WP_UnitTestCase {
         // Should get fresh data, not cached.
         $after = RTG_Database::get_all_tires();
         $this->assertEquals( $count_before + 1, count( $after ) );
-    }
-
-    public function test_efficiency_calculation() {
-        $data = $this->sample_tire( array(
-            'weight_lb'  => 35,
-            'tread'      => '10/32',
-            'load_range' => 'SL',
-        ) );
-
-        $result = RTG_Database::calculate_efficiency( $data );
-        $this->assertArrayHasKey( 'efficiency_score', $result );
-        $this->assertArrayHasKey( 'efficiency_grade', $result );
-        $this->assertGreaterThan( 0, $result['efficiency_score'] );
-        $this->assertContains( $result['efficiency_grade'], array( 'A', 'B', 'C', 'D', 'F' ) );
     }
 
     public function test_bulk_delete_removes_ratings() {

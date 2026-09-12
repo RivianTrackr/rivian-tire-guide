@@ -49,16 +49,6 @@ no component library. Icons via Font Awesome 6. Modern CSS features assumed
 | Warning | —           | `#fff3cd`   | `#856404`  |
 | Info    | `#60a5fa`   | `#dbeafe`   | `#1e40af`  |
 
-**Grade scale (A–F data visualization)**
-
-| Grade | Color     | Text      |
-|-------|-----------|-----------|
-| A     | `#34c759` | white     |
-| B     | `#7dc734` | white     |
-| C     | `#facc15` | `#1d1d1f` |
-| D     | `#f97316` | white     |
-| F     | `#b91c1c` | white     |
-
 **OEM/featured gradient:** `linear-gradient(135deg, #047857, #10b981, #34d399)`
 
 ### Typography

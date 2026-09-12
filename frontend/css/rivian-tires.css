@@ -279,6 +279,28 @@
   appearance: none;
   transition: border-color .15s;
 }
+.filter-group-with-info {
+  position: relative;
+}
+.filter-group-with-info select {
+  padding-right: 56px;
+}
+.filter-group-with-info .filter-info-trigger {
+  position: absolute;
+  right: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 4px;
+  color: var(--rtg-text-muted);
+  cursor: pointer;
+  line-height: 1;
+}
+.filter-group-with-info .filter-info-trigger:hover,
+.filter-group-with-info .filter-info-trigger:focus-visible {
+  color: var(--rtg-accent);
+}
 .filter-group select:hover {
   border-color: var(--rtg-accent);
 }

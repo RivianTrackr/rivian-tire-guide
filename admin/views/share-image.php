@@ -15,7 +15,6 @@ $stats = RTG_Database::get_dashboard_stats();
 $core           = $stats['core'];
 $total_tires    = (int) ( $core['total_tires'] ?? 0 );
 $avg_price      = floatval( $core['avg_price'] ?? 0 );
-$avg_efficiency = (int) ( $core['avg_efficiency'] ?? 0 );
 $total_reviews  = (int) ( $stats['ratings']['total_ratings'] ?? 0 );
 $avg_rating     = floatval( $stats['ratings']['avg_rating'] ?? 0 );
 
@@ -102,7 +101,6 @@ $site_name = get_bloginfo( 'name' );
 window.rtgShareData = {
 	totalTires: <?php echo (int) $total_tires; ?>,
 	avgPrice: <?php echo round( $avg_price, 2 ); ?>,
-	avgEfficiency: <?php echo (int) $avg_efficiency; ?>,
 	totalReviews: <?php echo (int) $total_reviews; ?>,
 	avgRating: <?php echo round( $avg_rating, 1 ); ?>,
 	categories: <?php echo wp_json_encode( $categories ); ?>,

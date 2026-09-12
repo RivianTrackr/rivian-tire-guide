@@ -5,7 +5,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Display admin notices.
 $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) : '';
-$recalc_count = isset( $_GET['count'] ) ? intval( $_GET['count'] ) : 0;
 $notices = array(
     'added'        => array( 'success', 'Tire added successfully.' ),
     'updated'      => array( 'success', 'Tire updated successfully.' ),
@@ -14,7 +13,6 @@ $notices = array(
     'bulk_edited'  => array( 'success', 'Selected tires updated successfully.' ),
     'bulk_edit_empty' => array( 'error', 'No changes were entered — nothing was updated.' ),
     'duplicated'   => array( 'success', 'Tire duplicated successfully. You are now editing the copy.' ),
-    'recalculated' => array( 'success', 'Efficiency scores recalculated. ' . $recalc_count . ' tire(s) updated.' ),
     'error'        => array( 'error', 'An error occurred.' ),
 );
 
@@ -103,9 +101,6 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
             <p class="rtg-page-subtitle">Every tire in the guide. Search, filter, edit in place, or select several for a bulk change.</p>
         </div>
         <div class="rtg-page-actions">
-            <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=rtg-tires&action=recalculate_efficiency' ), 'rtg_recalculate_efficiency' ) ); ?>"
-               class="rtg-btn rtg-btn-secondary"
-               onclick="return confirm('Recalculate the efficiency score and grade for every tire from its stored specs?');">Recalculate efficiency</a>
             <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-import' ) ); ?>" class="rtg-btn rtg-btn-secondary">Import CSV</a>
             <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit' ) ); ?>" class="rtg-btn rtg-btn-primary">
                 <span class="dashicons dashicons-plus-alt2"></span> Add tire

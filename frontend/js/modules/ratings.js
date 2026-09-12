@@ -242,12 +242,12 @@ function deleteTireRating(tireId) {
 }
 
 // Resolve the canonical tire-page URL for a tire from the localized base +
-// the row's slug (index 28). Returns '' when either is unavailable.
+// the row's slug (index 26). Returns '' when either is unavailable.
 function tirePageUrlFor(tireId) {
   const base = (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.tirePageUrl) ? rtgData.settings.tirePageUrl : '';
   if (!base || !Array.isArray(state.allRows)) return '';
   const row = state.allRows.find(r => Array.isArray(r) && r[0] === tireId);
-  const slug = row && typeof row[28] === 'string' ? row[28].trim() : '';
+  const slug = row && typeof row[26] === 'string' ? row[26].trim() : '';
   return slug ? base + encodeURIComponent(slug) + '/' : '';
 }
 

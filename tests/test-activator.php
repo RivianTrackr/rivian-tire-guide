@@ -71,7 +71,7 @@ class Test_RTG_Activator extends WP_UnitTestCase {
             'id', 'tire_id', 'size', 'diameter', 'brand', 'model', 'category',
             'price', 'mileage_warranty', 'weight_lb', 'three_pms', 'tread',
             'load_index', 'max_load_lb', 'load_range', 'speed_rating', 'psi',
-            'utqg', 'tags', 'link', 'image', 'efficiency_score', 'efficiency_grade',
+            'utqg', 'tags', 'link', 'image',
             'bundle_link', 'sort_order', 'created_at', 'updated_at',
         );
 

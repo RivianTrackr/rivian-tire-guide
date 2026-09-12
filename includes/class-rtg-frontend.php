@@ -22,6 +22,7 @@ class RTG_Frontend {
             'size'     => '',
             'brand'    => '',
             'category' => '',
+            'load_range' => '',
             'sort'     => '',
             '3pms'     => '',
         ), $atts, 'rivian_tire_guide' );
@@ -152,8 +153,13 @@ class RTG_Frontend {
         if ( ! empty( $shortcode_atts['category'] ) ) {
             $prefilters['category'] = sanitize_text_field( $shortcode_atts['category'] );
         }
+        if ( ! empty( $shortcode_atts['load_range'] ) ) {
+            // "XL" or "xl+"; the guide ignores a value its catalog doesn't offer.
+            $lr = sanitize_text_field( $shortcode_atts['load_range'] );
+            $prefilters['load_range'] = RTG_Database::LOAD_RANGE_XL_PLUS === strtolower( $lr ) ? RTG_Database::LOAD_RANGE_XL_PLUS : strtoupper( $lr );
+        }
         if ( ! empty( $shortcode_atts['sort'] ) ) {
-            $allowed_sorts = array( 'efficiencyGrade', 'price-asc', 'price-desc', 'warranty-desc', 'weight-asc', 'newest', 'rating-desc', 'most-reviewed' );
+            $allowed_sorts = array( 'roamer-efficiency', 'price-asc', 'price-desc', 'warranty-desc', 'weight-asc', 'newest', 'rating-desc', 'most-reviewed' );
             $sort_val = sanitize_text_field( $shortcode_atts['sort'] );
             if ( in_array( $sort_val, $allowed_sorts, true ) ) {
                 $prefilters['sort'] = $sort_val;

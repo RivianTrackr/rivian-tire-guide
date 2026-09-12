@@ -1220,26 +1220,6 @@
     outline-offset: 2px;
 }
 
-/* Efficiency grade badges */
-.rtg-grade {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 28px;
-    padding: 4px 10px;
-    font-size: 13px;
-    font-weight: 700;
-    border-radius: var(--rtg-radius-badge);
-    color: var(--rtg-white);
-}
-
-.rtg-grade-a { background: #34c759; }
-.rtg-grade-b { background: #7dc734; }
-.rtg-grade-c { background: #facc15; color: #1d1d1f; }
-.rtg-grade-d { background: #f97316; }
-.rtg-grade-f { background: #b91c1c; }
-.rtg-grade-none { background: var(--rtg-bg-light); color: var(--rtg-text-muted); }
-
 /* Tag chips on the tire form: click to add or remove a tag. */
 .rtg-tag-chips {
     display: flex;

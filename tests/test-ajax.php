@@ -46,8 +46,6 @@ class Test_RTG_Ajax extends WP_Ajax_UnitTestCase {
             'image'            => 'https://riviantrackr.com/images/tire.jpg',
             'bundle_link'      => '',
             'sort_order'       => 0,
-            'efficiency_score' => 75,
-            'efficiency_grade' => 'B',
         ), $overrides );
     }
 

@@ -92,7 +92,7 @@ The 2.0 plan's Pillar 3, still entirely open. Listed in the order they compound.
 | ADM3 | **CSV import dry-run.** Parse, validate, and show a per-row insert / update / skip / error table before writing. | `class-rtg-admin.php` (`handle_csv_import`) |
 | ADM4 | **Bulk review moderation.** Checkbox + Approve / Reject / Delete selected, same pattern as tire bulk actions. | `admin/views/reviews-list.php` |
 | ADM5 | **Export reviews and analytics to CSV** with a date range. `fputcsv` exists only for tires. | `admin/views/analytics.php`, `reviews-list.php` |
-| ADM6 | **WP-CLI commands.** `wp rtg sync catalog|roamer|prices|links`, `wp rtg import <file> [--dry-run]`, `wp rtg recalc-efficiency`, `wp rtg cleanup-analytics`. Removes the browser-timeout budget dance and the 2 MB CSV cap for large operations. | new `includes/class-rtg-cli.php` |
+| ADM6 | **WP-CLI commands.** `wp rtg sync catalog|roamer|prices|links`, `wp rtg import <file> [--dry-run]`, `wp rtg cleanup-analytics`. Removes the browser-timeout budget dance and the 2 MB CSV cap for large operations. | new `includes/class-rtg-cli.php` |
 | ADM7 | **Capability split.** `manage_options` is hardcoded in ~25 places. `rtg_manage_tires` / `rtg_moderate_reviews` / `rtg_view_analytics` let an editor moderate without site-admin rights. | `class-rtg-admin.php` (`EDIT_CAPABILITY`) |
 | ADM8 | **Media library picker and bulk image upload.** Image is a bare text field behind a hardcoded prefix (H7). | `admin/views/tire-edit.php` |
 | ADM9 | **Notification recipients, test email, sent log.** Nine mailer paths hardcode `admin_email`. Recipient list, digest-vs-immediate per event, a "Send test" button, an in-admin log of what went out. | `class-rtg-mailer.php` |

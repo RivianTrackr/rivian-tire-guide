@@ -94,9 +94,9 @@ const COL = {
   price: 6, warranty: 7, weight: 8, threePms: 9, tread: 10,
   loadIndex: 11, maxLoad: 12, loadRange: 13, speedRating: 14,
   psi: 15, utqg: 16, tags: 17, link: 18, image: 19,
-  effScore: 20, effGrade: 21, reviewLink: 22, createdAt: 23,
-  roamerEfficiency: 24, roamerTotalKm: 25, roamerVehicleCount: 26, roamerVehicleBreakdown: 27,
-  slug: 28, priceSyncedAt: 29, updatedAt: 30, retailer: 31
+  reviewLink: 20, createdAt: 21,
+  roamerEfficiency: 22, roamerTotalKm: 23, roamerVehicleCount: 24, roamerVehicleBreakdown: 25,
+  slug: 26, priceSyncedAt: 27, updatedAt: 28, retailer: 29
 };
 
 /** Stored tags that mean nothing to a shopper. */

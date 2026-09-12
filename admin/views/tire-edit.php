@@ -37,8 +37,6 @@ $defaults = array(
     'link'             => '',
     'bundle_link'      => '',
     'image'            => '',
-    'efficiency_score' => '',
-    'efficiency_grade' => '',
     'review_link'      => '',
     'sort_order'       => 0,
 );
@@ -532,9 +530,6 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                         </div>
                         <?php endif; ?>
                     </div>
-                    <?php // Efficiency score/grade still auto-calculate on save (kept in the
-                          // DB for potential future use) but are no longer surfaced here —
-                          // the metric was removed from the frontend in 1.51.0. ?>
                     <input type="hidden" name="sort_order" value="<?php echo esc_attr( $v['sort_order'] ); ?>">
                 </div>
             </div>

@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 26;
+    const DB_VERSION = 27;
 
     public static function activate() {
         self::create_tables();
@@ -97,8 +97,6 @@ class RTG_Activator {
             link TEXT NOT NULL,
             image TEXT NOT NULL,
             slug VARCHAR(200) NOT NULL DEFAULT '',
-            efficiency_score INT UNSIGNED NOT NULL DEFAULT 0,
-            efficiency_grade CHAR(1) NOT NULL DEFAULT '',
             bundle_link TEXT NOT NULL,
             review_link TEXT NOT NULL,
             roamer_tire_id VARCHAR(100) NOT NULL DEFAULT '',
@@ -120,7 +118,6 @@ class RTG_Activator {
             KEY idx_price (price),
             KEY idx_warranty (mileage_warranty),
             KEY idx_weight (weight_lb),
-            KEY idx_efficiency (efficiency_score),
             KEY idx_roamer_tire_id (roamer_tire_id),
             KEY idx_slug (slug),
             KEY idx_roamer_efficiency (roamer_efficiency),
@@ -258,6 +255,7 @@ class RTG_Activator {
             24 => 'migrate_24_register_whats_new_route',
             25 => 'migrate_25_add_review_detail_columns',
             26 => 'migrate_26_add_wheel_source',
+            27 => 'migrate_27_drop_efficiency_score',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -718,5 +716,30 @@ class RTG_Activator {
      */
     private static function migrate_26_add_wheel_source() {
         // Columns added by dbDelta above.
+    }
+
+    /**
+     * Migration 27 (2.6.0): drop the calculated efficiency score and grade.
+     *
+     * The formula-derived 0-100 score and its A-F grade left the guide's
+     * cards in 1.51.0 and the admin form in 1.58.0; the columns kept being
+     * written on every save for nothing. Real-world efficiency from Rivian
+     * Roamer (roamer_efficiency) is unrelated and stays.
+     */
+    private static function migrate_27_drop_efficiency_score() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'rtg_tires';
+
+        $indexes = $wpdb->get_results( "SHOW INDEX FROM {$table} WHERE Key_name = 'idx_efficiency'" );
+        if ( ! empty( $indexes ) ) {
+            $wpdb->query( "ALTER TABLE {$table} DROP INDEX idx_efficiency" );
+        }
+
+        $cols = $wpdb->get_col( "SHOW COLUMNS FROM {$table}" );
+        foreach ( array( 'efficiency_score', 'efficiency_grade' ) as $col ) {
+            if ( in_array( $col, $cols, true ) ) {
+                $wpdb->query( "ALTER TABLE {$table} DROP COLUMN {$col}" );
+            }
+        }
     }
 }
