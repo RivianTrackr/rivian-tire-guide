@@ -35,7 +35,7 @@ $total = RTG_Database::get_tire_count();
     </div>
 <?php endif; ?>
 
-<div class="rtg-edit-grid">
+<div class="rtg-edit-grid is-stretch">
 
     <!-- Import -->
     <div class="rtg-card">

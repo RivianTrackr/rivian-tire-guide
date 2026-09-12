@@ -50,8 +50,15 @@ class RTG_Tire_Qualifier {
     /** Brand policy: an uncovered brand is filed as a near miss. */
     const BRAND_POLICY_REJECT = 'reject';
 
+    /**
+     * Brand policy: an uncovered brand is not listed at all. The sweep does
+     * not store it and any row it left earlier is removed, so the queue only
+     * ever shows brands on the guide's own list.
+     */
+    const BRAND_POLICY_HIDE = 'hide';
+
     /** Policy applied when the setting is unset. */
-    const DEFAULT_BRAND_POLICY = self::BRAND_POLICY_WARN;
+    const DEFAULT_BRAND_POLICY = self::BRAND_POLICY_HIDE;
 
     /**
      * Load index each Rivian platform requires.
@@ -423,6 +430,7 @@ class RTG_Tire_Qualifier {
      *     @type array $reasons   List of { code, label } disqualifying failures.
      *     @type array $warnings  List of { code, label } things to confirm.
      *     @type array $fits_vehicles Vehicles the tire is legal on, e.g. ["R1"].
+     *     @type bool  $hidden    Under the hide brand policy: not to be stored or listed.
      * }
      */
     public static function qualify( $specs, $context = null ) {
@@ -432,6 +440,7 @@ class RTG_Tire_Qualifier {
 
         $reasons  = array();
         $warnings = array();
+        $hidden   = false;
 
         // --- Fitment: size and load index, judged together per vehicle. ---
         //
@@ -692,7 +701,11 @@ class RTG_Tire_Qualifier {
                     'label' => sprintf( '%s is not a brand the guide covers', $brand ),
                 );
 
-                if ( self::BRAND_POLICY_REJECT === $policy ) {
+                if ( self::BRAND_POLICY_HIDE === $policy ) {
+                    // Rejected, and not worth a row: the sweep drops it.
+                    $reasons[] = $entry;
+                    $hidden    = true;
+                } elseif ( self::BRAND_POLICY_REJECT === $policy ) {
                     $reasons[] = $entry;
                 } else {
                     $warnings[] = $entry;
@@ -705,6 +718,7 @@ class RTG_Tire_Qualifier {
             'reasons'       => $reasons,
             'warnings'      => $warnings,
             'fits_vehicles' => empty( $reasons ) ? $fits : array(),
+            'hidden'        => $hidden,
         );
     }
 

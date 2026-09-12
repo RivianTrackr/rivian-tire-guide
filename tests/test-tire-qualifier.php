@@ -471,13 +471,64 @@ class Test_RTG_Tire_Qualifier extends WP_UnitTestCase {
     }
 
     /**
-     * An unset policy must not reject: a rule nobody configured should never
-     * silently hide tires.
+     * Under "hide", an uncovered brand is rejected and marked hidden, so the
+     * sweep never stores it. A covered brand is untouched.
      */
-    public function test_an_unset_policy_never_rejects() {
+    public function test_hide_policy_marks_an_uncovered_brand_hidden() {
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Dcenti DC88 A/T 275/60R20 115T', 'brand' => 'Dcenti' ),
+            $this->brand_context( RTG_Tire_Qualifier::BRAND_POLICY_HIDE )
+        );
+
+        $this->assertFalse( $result['qualifies'] );
+        $this->assertTrue( $result['hidden'] );
+        $this->assertContains( 'brand_not_covered', $this->codes( $result ) );
+
+        $covered = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Michelin Defender LTX M/S2 275/60R20 115T', 'brand' => 'Michelin' ),
+            $this->brand_context( RTG_Tire_Qualifier::BRAND_POLICY_HIDE )
+        );
+
+        $this->assertTrue( $covered['qualifies'] );
+        $this->assertFalse( $covered['hidden'] );
+    }
+
+    /**
+     * An unset policy takes the default, which is to hide uncovered brands:
+     * the queue lists only the brands on the guide's own list unless the
+     * site says otherwise. With no brand list at all the rule stays silent,
+     * so nothing is ever hidden by an empty settings read.
+     */
+    public function test_an_unset_policy_hides_uncovered_brands() {
         $context = $this->context();
         $context['brands'] = array( 'Michelin' );
         unset( $context['brand_policy'] );
+
+        $result = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Dcenti DC88 A/T 275/60R20 115T', 'brand' => 'Dcenti' ),
+            $context
+        );
+
+        $this->assertFalse( $result['qualifies'] );
+        $this->assertTrue( $result['hidden'] );
+
+        unset( $context['brands'] );
+        $silent = RTG_Tire_Qualifier::evaluate(
+            array( 'title' => 'Dcenti DC88 A/T 275/60R20 115T', 'brand' => 'Dcenti' ),
+            $context
+        );
+        $this->assertTrue( $silent['qualifies'] );
+        $this->assertFalse( $silent['hidden'] );
+    }
+
+    /**
+     * Kept from before the default changed: the body below is what the old
+     * "never rejects" test asserted, now against an explicit warn policy.
+     */
+    public function test_a_warn_policy_never_rejects() {
+        $context = $this->context();
+        $context['brands'] = array( 'Michelin' );
+        $context['brand_policy'] = RTG_Tire_Qualifier::BRAND_POLICY_WARN;
 
         $result = RTG_Tire_Qualifier::evaluate(
             array( 'title' => 'Dcenti DC88 A/T 275/60R20 115T', 'brand' => 'Dcenti' ),

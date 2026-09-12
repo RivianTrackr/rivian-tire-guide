@@ -4,6 +4,18 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.6.1] - 2026-09-12
+
+### Changed
+- **Tire Discovery lists only the brands on the list.** The brand policy gains a third option, `RTG_Tire_Qualifier::BRAND_POLICY_HIDE` ("Do not list them"), and it is now the default (`DEFAULT_BRAND_POLICY`). Under it `qualify()` still records the uncovered-brand reason but also returns `hidden => true`; `RTG_Catalog_Sync::ingest_product()` returns before the upsert for such a product, so no candidate row exists to review, file or count, and the run stats carry a `hidden` tally. After each run under this policy the sync calls the new `RTG_Candidates::purge_uncovered_brands()`, which deletes every non-imported row whose brand is not on the Settings brand list (imported rows are guide tires and stay), so rows stored before the policy, or from a brand since taken off the list, go on the next sweep; the count lands in `stats['pruned']['uncovered_brand']`. An empty brand list purges nothing, the same guard `prune()` has. Migration 28 (`DB_VERSION` 28) sets the policy to hide and runs the purge once on upgrade, so the queue is right today rather than after the next nightly run. The Discovery settings select lists the new option first with a rewritten description, the queue's "N of these are brands outside your list" notice is suppressed under hide (there are none), and the run summary reports how many listings were seen and not stored and how many older rows were removed. `save_catalog_settings_from_post()` accepts the new value.
+- **Tire form layout.** The edit form's cards were laid out in a two-column grid where each row waited for its tallest card, so Pricing & Links sat under a gap the height of Specifications. The cards now flow in two independent columns (`.rtg-edit-col`): Identity and Pricing & Links on the left, Specifications, Classification and Roamer on the right. Under 782px the columns stack into one. The "Fetch from catalog" button had a Font Awesome icon, which the admin does not load, so it rendered a blank box; it uses a dashicon like every other admin button, and the image URL prefix addon now shows the path with the host elided (full prefix on hover) so it no longer truncates mid-word.
+- **Tools page spacing.** The Import and Export cards stretch to the same height (`.rtg-edit-grid.is-stretch`), and the grid keeps a 20px margin below it so the CSV column reference no longer butts against the cards.
+
+### Tests
+- `tests/test-tire-qualifier.php`: the hide policy marks an uncovered brand hidden with the reason recorded; an unset policy hides by default; with no brand list nothing is hidden; an explicit warn policy never rejects.
+
+Nothing visible to owners: the discovery policy and the layout fixes are admin-side.
+
 ## [2.6.0] - 2026-09-12
 
 ### Added

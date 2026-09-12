@@ -713,6 +713,60 @@ class RTG_Candidates {
     }
 
     /**
+     * Remove every row from a brand the guide does not cover.
+     *
+     * The hide brand policy says such a tire is never listed. New ones are
+     * never stored; this clears the ones stored before the policy, and any
+     * left behind when a brand is taken off the list. Rows a person imported
+     * are kept: they are the guide's own tires now, whatever their brand.
+     *
+     * @param array $covered_brands The brand list from Settings.
+     * @return int Rows removed.
+     */
+    public static function purge_uncovered_brands( $covered_brands ) {
+        global $wpdb;
+        $table = self::table();
+
+        $known = array();
+        foreach ( (array) $covered_brands as $brand ) {
+            $key = RTG_Tire_Qualifier::normalize_brand( $brand );
+            if ( '' !== $key ) {
+                $known[ $key ] = true;
+            }
+        }
+
+        // An empty list would mean "every brand is uncovered": the same
+        // guard prune() has against a settings read coming back empty.
+        if ( empty( $known ) ) {
+            return 0;
+        }
+
+        $brands = $wpdb->get_col( $wpdb->prepare(
+            "SELECT DISTINCT brand FROM {$table} WHERE status != %s",
+            self::STATUS_IMPORTED
+        ) );
+
+        $removed = 0;
+        foreach ( (array) $brands as $brand ) {
+            if ( isset( $known[ RTG_Tire_Qualifier::normalize_brand( $brand ) ] ) ) {
+                continue;
+            }
+            $deleted = $wpdb->query( $wpdb->prepare(
+                "DELETE FROM {$table} WHERE brand = %s AND status != %s",
+                $brand,
+                self::STATUS_IMPORTED
+            ) );
+            $removed += false === $deleted ? 0 : intval( $deleted );
+        }
+
+        if ( $removed > 0 ) {
+            self::forget_matched_by_tire();
+        }
+
+        return $removed;
+    }
+
+    /**
      * Delete near misses that can never become anything else.
      *
      * The near-miss pile exists so "why was this rejected?" stays answerable,

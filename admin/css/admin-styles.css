@@ -2135,9 +2135,29 @@ a.rtg-stat-card:focus {
     grid-template-columns: 1fr 1fr;
     gap: 20px;
     align-items: start;
+    margin-bottom: 20px;
 }
 
 .rtg-edit-grid > .rtg-card {
+    margin-bottom: 0;
+}
+
+/* Two cards side by side that should read as one row: equal heights. */
+.rtg-edit-grid.is-stretch {
+    align-items: stretch;
+}
+
+/* A column of cards inside the grid. A card in one column never waits for
+   the tallest card in the other, which a plain two-column grid forces: the
+   third card lands under the taller of the first two, leaving a gap. */
+.rtg-edit-col {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+}
+
+.rtg-edit-col > .rtg-card {
     margin-bottom: 0;
 }
 
