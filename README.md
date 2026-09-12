@@ -33,7 +33,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 
 ### Real-World Efficiency (Rivian Roamer)
 - **Live Data Sync** — Integrates real-world mi/kWh efficiency data from [Rivian Roamer](https://rivianroamer.com), collected from actual Rivian owner driving sessions. Syncs automatically every 5 minutes via WP-Cron.
-- **Admin Mapping** — Auto-matches tires by brand + model + size. Ambiguous matches (same tire, different load ratings) are flagged for manual review on the Roamer Sync admin page. Multiple Roamer entries can be assigned to one tire with weighted-average efficiency.
+- **Admin Mapping** — Auto-matches tires by brand + model + size. Ambiguous matches (same tire, different load ratings) are flagged for manual review on the Roamer Data admin page. Multiple Roamer entries can be assigned to one tire with weighted-average efficiency.
 - **Tire Cards** — Blue mi/kWh pill badge displayed alongside the calculated efficiency badge, with its own info tooltip linking to Rivian Roamer.
 - **Sort & Compare** — "Real-World Efficiency" sort option and comparison row in Performance section.
 - **Dashboard** — Roamer overview card (coverage, avg/best/worst mi/kWh, sessions, vehicles, last sync) and top 5 most efficient tires by real-world data.
@@ -62,7 +62,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Reviews Management** — Pending/approved/rejected tabs with approve, reject, and delete actions.
 - **Affiliate Links Dashboard** — Centralized view of all purchase and review links with link classification (affiliate vs. direct), filter tabs, and inline AJAX editing.
 - **Tire Discovery** — Review queue for tires found in affiliate catalogs (see Tire Discovery section above), with its own settings for the daily check, the digest email, and the minimum load index.
-- **Stock Wheels** — Manage the wheel guide: name, stock and alternate sizes, image, vehicles, sort order, and whether the wheel is a Rivian factory wheel or a third-party setup with a one-sentence fitment note.
+- **Wheels** — Manage the wheel guide: name, stock and alternate sizes, image, vehicles, sort order, and whether the wheel is a Rivian factory wheel or a third-party setup with a one-sentence fitment note.
 - **Analytics** — Visual analytics with Chart.js (see Analytics section above).
 - **Settings** — Rows per page, compare slug, user reviews slug, server-side pagination toggle, theme colors (14 CSS custom properties), dropdown options (brands, sizes, categories, load ranges, speed ratings, size-to-diameter mapping, load index-to-lbs mapping), affiliate domains, and analytics retention.
 
@@ -152,11 +152,11 @@ With pre-filter attributes:
 3. The efficiency score is calculated automatically via AJAX as you fill in specs.
 4. Tires appear in the frontend guide immediately.
 
-For bulk operations, use **Tire Guide > Import / Export** to import tires via CSV.
+For bulk operations, use **Tire Guide > Tools** to import tires via CSV.
 
 ### Wheel Guide and Third-Party Sizes
 
-**Tire Guide > Stock Wheels** holds one row per wheel: a name, the stock tire size, alternate sizes, an image, the vehicles it fits, and a sort order. Every vehicle-to-size rule in the plugin is derived from these rows: the vehicle toggle, the size menu, the load-index fitment checks, the advisor's candidates, the discovery qualifier and the review page's vehicle switch. There is no separate size list to maintain.
+**Tire Guide > Wheels** holds one row per wheel: a name, the stock tire size, alternate sizes, an image, the vehicles it fits, and a sort order. Every vehicle-to-size rule in the plugin is derived from these rows: the vehicle toggle, the size menu, the load-index fitment checks, the advisor's candidates, the discovery qualifier and the review page's vehicle switch. There is no separate size list to maintain.
 
 To list a size Rivian never offered, add a wheel, set **Source** to *Third-party*, enter the size it is run with as its stock size (and any others as alternates), tick the vehicle, and write a **Fitment note** such as "Needs an 8.5-inch or wider wheel around ET35. Some owners report light rubbing at full lock." The note shows under the tire page's third-party notice, in the card's info tooltip, and on the wheel guide card. A size is treated as third-party for a vehicle only when no factory wheel for that vehicle lists it; a factory listing always wins. Add the size to the sizes list and the size-to-diameter map under **Settings > Dropdown Options** so the tire page can show its overall diameter.
 

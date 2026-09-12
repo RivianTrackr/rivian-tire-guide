@@ -153,7 +153,25 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
     <?php endif; ?>
 
     <div class="rtg-page-header">
-        <h1 class="rtg-page-title"><?php echo esc_html( $page_title ); ?></h1>
+        <div class="rtg-page-heading">
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires' ) ); ?>" class="rtg-breadcrumb"><span class="dashicons dashicons-arrow-left-alt2"></span> All tires</a>
+            <h1 class="rtg-page-title"><?php echo esc_html( $page_title ); ?></h1>
+            <?php if ( $is_edit ) : ?>
+                <p class="rtg-page-subtitle"><?php echo esc_html( trim( $v['brand'] . ' ' . $v['model'] ) ); ?><?php echo ! empty( $v['size'] ) ? ' · ' . esc_html( $v['size'] ) : ''; ?> · <span class="rtg-mono"><?php echo esc_html( $v['tire_id'] ); ?></span></p>
+            <?php else : ?>
+                <p class="rtg-page-subtitle">Brand and model are the only required fields. Everything else can be filled in later.</p>
+            <?php endif; ?>
+        </div>
+        <?php if ( $is_edit ) : ?>
+        <div class="rtg-page-actions">
+            <?php if ( ! empty( $v['slug'] ) ) : ?>
+                <a href="<?php echo esc_url( RTG_Tire_Page::tire_url( $v['slug'] ) ); ?>" target="_blank" rel="noopener noreferrer" class="rtg-btn rtg-btn-secondary">
+                    <span class="dashicons dashicons-external"></span> View page
+                </a>
+            <?php endif; ?>
+            <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=rtg-tires&action=duplicate&tire_id=' . rawurlencode( $v['tire_id'] ) ), 'rtg_duplicate_' . $v['tire_id'] ) ); ?>" class="rtg-btn rtg-btn-secondary">Duplicate</a>
+        </div>
+        <?php endif; ?>
     </div>
 
     <form method="post" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>">
@@ -194,7 +212,7 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                             <?php endif; ?>
                             Editing creates a 301 redirect from the old slug. Regenerates automatically when brand, model, or size change.
                         </p>
-                        <input type="text" id="slug" name="slug" value="<?php echo esc_attr( $v['slug'] ?? '' ); ?>" style="font-family:monospace;">
+                        <input type="text" id="slug" name="slug" value="<?php echo esc_attr( $v['slug'] ?? '' ); ?>" class="is-code">
                     </div>
                     <?php endif; ?>
                     <div class="rtg-field-row">
@@ -224,12 +242,12 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                         <div class="rtg-field-label-row">
                             <label class="rtg-field-label" for="model_aliases">Retailer also lists this as</label>
                         </div>
-                        <textarea id="model_aliases" name="model_aliases" rows="2" placeholder="Ridge Grappler LT"><?php echo esc_textarea( $v['model_aliases'] ?? '' ); ?></textarea>
-                        <p class="description">
+                        <p class="rtg-field-description">
                             One name per line. Retailers spell a model their own way, and matching, pricing and
-                            delisting all key on the model — an alias lets those accept the retailer's spelling
+                            delisting all key on the model. An alias lets those accept the retailer's spelling
                             without changing the name readers see.
                         </p>
+                        <textarea id="model_aliases" name="model_aliases" rows="2" placeholder="Ridge Grappler LT"><?php echo esc_textarea( $v['model_aliases'] ?? '' ); ?></textarea>
                     </div>
                 </div>
             </div>
@@ -263,7 +281,7 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                             <span class="rtg-badge rtg-badge-info">Auto-filled</span>
                         </div>
                         <p class="rtg-field-description">Auto-filled from the size selection. Configured in Settings &rarr; Size &rarr; Tire Diameter map.</p>
-                        <input type="text" id="diameter" name="diameter" value="<?php echo esc_attr( $v['diameter'] ); ?>" readonly style="background:#f5f5f7;color:#86868b;">
+                        <input type="text" id="diameter" name="diameter" value="<?php echo esc_attr( $v['diameter'] ); ?>" readonly>
                     </div>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">
@@ -319,7 +337,7 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                             <label class="rtg-field-label" for="max_load_lb">Max Load (lb)</label>
                             <span class="rtg-badge rtg-badge-info">Auto-filled</span>
                         </div>
-                        <input type="text" id="max_load_lb" name="max_load_lb" value="<?php echo esc_attr( $v['max_load_lb'] ); ?>" readonly style="background:#f5f5f7;color:#86868b;">
+                        <input type="text" id="max_load_lb" name="max_load_lb" value="<?php echo esc_attr( $v['max_load_lb'] ); ?>" readonly>
                     </div>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">
@@ -420,16 +438,17 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                             $image_display = substr( $image_display, strlen( $image_prefix ) );
                         }
                         ?>
-                        <div style="display:flex;align-items:center;gap:0;">
-                            <span style="background:#f5f5f7;border:1px solid var(--rtg-border,#d2d2d7);border-right:none;border-radius:8px 0 0 8px;padding:8px 10px;font-size:13px;color:#86868b;white-space:nowrap;"><?php echo esc_html( $image_prefix ); ?></span>
-                            <input type="text" id="image" name="image" value="<?php echo esc_attr( $image_display ); ?>" class="rtg-input-wide" style="border-radius:0 8px 8px 0;" placeholder="filename.webp">
+                        <p class="rtg-field-description">A filename in the images folder, or a full URL. "Fetch from catalog" downloads the retailer's product photo into the folder for you.</p>
+                        <div class="rtg-input-group">
+                            <span class="rtg-input-group-addon" title="<?php echo esc_attr( $image_prefix ); ?>"><?php echo esc_html( $image_prefix ); ?></span>
+                            <input type="text" id="image" name="image" value="<?php echo esc_attr( $image_display ); ?>" class="rtg-input-wide" placeholder="filename.webp">
                         </div>
                         <input type="hidden" id="image_prefix" value="<?php echo esc_attr( $image_prefix ); ?>">
-                        <p style="margin:8px 0 0;display:flex;align-items:center;gap:10px;">
-                            <button type="button" id="rtg-fetch-image-btn" class="rtg-btn rtg-btn-secondary">
+                        <p class="rtg-field-inline">
+                            <button type="button" id="rtg-fetch-image-btn" class="rtg-btn rtg-btn-secondary rtg-btn-sm">
                                 <i class="fa-solid fa-cloud-arrow-down"></i> Fetch from catalog
                             </button>
-                            <span id="rtg-fetch-image-msg" style="font-size:13px;"></span>
+                            <span id="rtg-fetch-image-msg" class="rtg-inline-status"></span>
                         </p>
                         <script>
                         jQuery(function ($) {
@@ -472,7 +491,7 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                                 <img id="image-preview" src="<?php echo esc_url( $full_image_url ); ?>" alt="Preview">
                             </div>
                         <?php elseif ( '' !== $from_candidate_image ) : ?>
-                            <p class="rtg-field-description" style="margin-top:8px;">
+                            <p class="rtg-help">
                                 <i class="fa-solid fa-cloud-arrow-down"></i>
                                 The catalog has a product image for this tire. Leave this field blank and saving
                                 will download it into your images folder automatically &mdash; or type a filename
@@ -482,7 +501,7 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                                 <img id="image-preview" src="<?php echo esc_url( $from_candidate_image ); ?>" alt="Catalog product image">
                             </div>
                         <?php else : ?>
-                            <div id="image-preview-container" class="rtg-image-preview" style="display:none;">
+                            <div id="image-preview-container" class="rtg-image-preview" style="display:none;"><!-- toggled by admin-scripts.js -->
                                 <img id="image-preview" src="" alt="Preview">
                             </div>
                         <?php endif; ?>
@@ -506,9 +525,9 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                         $existing_tags = RTG_Database::get_all_tags();
                         if ( ! empty( $existing_tags ) ) :
                         ?>
-                        <div id="rtg-tag-suggestions" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+                        <div id="rtg-tag-suggestions" class="rtg-tag-chips">
                             <?php foreach ( $existing_tags as $tag ) : ?>
-                                <button type="button" class="rtg-tag-suggestion" data-tag="<?php echo esc_attr( $tag ); ?>" style="background:#f5f5f7;border:1px solid var(--rtg-border,#d2d2d7);border-radius:12px;padding:4px 12px;font-size:12px;color:#1d1d1f;cursor:pointer;transition:background 0.15s;"><?php echo esc_html( $tag ); ?></button>
+                                <button type="button" class="rtg-tag-suggestion" data-tag="<?php echo esc_attr( $tag ); ?>" aria-pressed="false"><?php echo esc_html( $tag ); ?></button>
                             <?php endforeach; ?>
                         </div>
                         <?php endif; ?>
@@ -523,7 +542,7 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
             <!-- Roamer Real-World Data -->
             <div class="rtg-card">
                 <div class="rtg-card-header">
-                    <h2>Rivian Roamer — Real-World Data</h2>
+                    <h2>Rivian Roamer real-world data</h2>
                 </div>
                 <div class="rtg-card-body">
                     <div class="rtg-field-row">
@@ -547,58 +566,62 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                                 <label class="rtg-field-label">Real-World Efficiency</label>
                                 <span class="rtg-badge rtg-badge-info">From Roamer</span>
                             </div>
-                            <div style="display:flex;gap:24px;flex-wrap:wrap;margin-top:8px;">
+                            <div class="rtg-figure-row">
                                 <div>
-                                    <span style="font-size:24px;font-weight:700;color:#1d1d1f;"><?php echo esc_html( number_format( $r_eff, 2 ) ); ?></span>
-                                    <span style="font-size:14px;color:#86868b;">mi/kWh</span>
+                                    <span class="rtg-figure-value"><?php echo esc_html( number_format( $r_eff, 2 ) ); ?></span>
+                                    <span class="rtg-figure-unit">mi/kWh</span>
                                 </div>
                                 <div>
-                                    <span style="font-size:18px;font-weight:600;color:#1d1d1f;"><?php echo esc_html( number_format( $r_km * 0.621371, 0 ) ); ?></span>
-                                    <span style="font-size:14px;color:#86868b;">mi tracked</span>
+                                    <span class="rtg-figure-value is-secondary"><?php echo esc_html( number_format( $r_km * 0.621371, 0 ) ); ?></span>
+                                    <span class="rtg-figure-unit">mi tracked</span>
                                 </div>
                                 <div>
-                                    <span style="font-size:18px;font-weight:600;color:#1d1d1f;"><?php echo intval( $r_veh ); ?></span>
-                                    <span style="font-size:14px;color:#86868b;">vehicles</span>
+                                    <span class="rtg-figure-value is-secondary"><?php echo intval( $r_veh ); ?></span>
+                                    <span class="rtg-figure-unit">vehicles</span>
                                 </div>
                             </div>
                             <?php if ( ! empty( $r_bd ) && is_array( $r_bd ) ) : ?>
-                                <div style="margin-top:10px;">
-                                    <span style="font-size:12px;font-weight:600;color:#86868b;text-transform:uppercase;">Vehicle Breakdown</span>
-                                    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px;">
+                                <div class="rtg-field-inline">
+                                    <span class="rtg-meta-label">Vehicle breakdown</span>
+                                    <div class="rtg-badge-list">
                                         <?php foreach ( $r_bd as $entry ) :
                                             // Feed format: array of [name, count] pairs.
                                             if ( ! is_array( $entry ) || count( $entry ) < 2 ) continue;
                                             $drivetrain = $entry[0];
                                             $count      = $entry[1];
                                         ?>
-                                            <span style="font-size:13px;padding:2px 8px;background:rgba(59,130,246,0.1);border-radius:4px;color:#3b82f6;">
-                                                <?php echo esc_html( $drivetrain ); ?>: <?php echo intval( $count ); ?>
-                                            </span>
+                                            <span class="rtg-badge rtg-badge-info"><?php echo esc_html( $drivetrain ); ?>: <?php echo intval( $count ); ?></span>
                                         <?php endforeach; ?>
                                     </div>
                                 </div>
                             <?php endif; ?>
                             <?php if ( $r_synced ) : ?>
-                                <p style="margin-top:8px;font-size:12px;color:#86868b;">Last synced: <?php echo esc_html( $r_synced ); ?></p>
+                                <p class="rtg-help">Last synced <?php echo esc_html( $r_synced ); ?>.</p>
                             <?php endif; ?>
                         </div>
                     <?php else : ?>
-                        <p style="color:#86868b;margin-top:8px;">No Roamer data linked. Set a Roamer Tire ID above or run a sync from the <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-roamer-sync' ) ); ?>">Roamer Sync</a> page.</p>
+                        <p class="rtg-empty-line">No Roamer data linked. Set a Roamer Tire ID above or run a sync from the <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-roamer-sync' ) ); ?>">Roamer Data</a> page.</p>
                     <?php endif; ?>
                 </div>
             </div>
 
         </div>
 
-        <div class="rtg-footer-actions">
-            <button type="submit" class="rtg-btn rtg-btn-primary"><?php echo $is_edit ? 'Update Tire' : 'Add Tire'; ?></button>
+        <div class="rtg-footer-actions is-sticky">
+            <button type="submit" class="rtg-btn rtg-btn-primary"><?php echo $is_edit ? 'Save changes' : 'Add tire'; ?></button>
             <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires' ) ); ?>" class="rtg-btn rtg-btn-secondary">Cancel</a>
             <?php if ( 'duplicate_tire' === $message ) : ?>
-                <label style="display:inline-flex;align-items:center;gap:6px;margin-left:12px;font-size:13px;color:#6e6e73;">
+                <label class="rtg-choice rtg-small rtg-secondary">
                     <input type="checkbox" name="allow_duplicate" value="1">
-                    <?php echo $is_edit ? 'Save anyway' : 'Add anyway'; ?> &mdash; this is deliberately a separate entry
+                    <?php echo $is_edit ? 'Save anyway' : 'Add anyway'; ?>: this is deliberately a separate entry
                 </label>
             <?php endif; ?>
+            <span class="rtg-footer-end">
+                <span class="rtg-unsaved">Unsaved changes</span>
+                <?php if ( $is_edit ) : ?>
+                    <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=rtg-tires&action=delete&tire_id=' . rawurlencode( $v['tire_id'] ) ), 'rtg_delete_' . $v['tire_id'] ) ); ?>" class="rtg-btn rtg-btn-danger-quiet" onclick="return confirm('Delete this tire and its reviews? This cannot be undone.');">Delete tire</a>
+                <?php endif; ?>
+            </span>
         </div>
     </form>
 </div>

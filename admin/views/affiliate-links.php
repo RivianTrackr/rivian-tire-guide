@@ -109,56 +109,66 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
     <?php endif; ?>
 
     <div class="rtg-page-header">
-        <h1 class="rtg-page-title">Affiliate Links</h1>
+        <div class="rtg-page-heading">
+            <h1 class="rtg-page-title">Affiliate Links</h1>
+            <p class="rtg-page-subtitle">Every tire's purchase and review link in one place. Edit a row in place; the status updates as you save.</p>
+        </div>
+        <div class="rtg-page-actions">
+            <button type="button" id="rtg-check-links-btn" class="rtg-btn rtg-btn-secondary">Check links now</button>
+        </div>
     </div>
 
+    <?php $delisted_count = intval( $presence_counts[ RTG_Catalog_Presence::STATUS_DELISTED ] ); ?>
+
     <!-- Stats Grid -->
-    <div class="rtg-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
-        <div class="rtg-stat-card">
+    <div class="rtg-stats-grid is-compact">
+        <a class="rtg-stat-card" href="<?php echo esc_url( add_query_arg( array( 'page' => 'rtg-affiliate-links', 'link_filter' => 'all' ), admin_url( 'admin.php' ) ) ); ?>">
             <div class="rtg-stat-value"><?php echo esc_html( $counts['total'] ); ?></div>
-            <div class="rtg-stat-label">Total Tires</div>
-        </div>
-        <div class="rtg-stat-card">
-            <div class="rtg-stat-value" style="color: var(--rtg-success);"><?php echo esc_html( $total_affiliate ); ?></div>
-            <div class="rtg-stat-label">Affiliate Links</div>
-        </div>
-        <div class="rtg-stat-card">
-            <div class="rtg-stat-value" style="color: var(--rtg-warning-text);"><?php echo esc_html( $total_regular ); ?></div>
-            <div class="rtg-stat-label">Regular Links</div>
-        </div>
-        <div class="rtg-stat-card">
-            <div class="rtg-stat-value" style="color: var(--rtg-error);"><?php echo esc_html( $total_missing ); ?></div>
-            <div class="rtg-stat-label">Missing Links</div>
-        </div>
-        <div class="rtg-stat-card">
-            <div class="rtg-stat-value"><?php echo esc_html( $counts['has_review'] ); ?></div>
-            <div class="rtg-stat-label">Review Links</div>
-        </div>
-        <div class="rtg-stat-card">
-            <div class="rtg-stat-value" style="color: <?php echo $broken_count > 0 ? 'var(--rtg-error)' : 'var(--rtg-success)'; ?>;"><?php echo esc_html( $broken_count ); ?></div>
-            <div class="rtg-stat-label">Broken Links</div>
-        </div>
-        <div class="rtg-stat-card">
-            <div class="rtg-stat-value" style="color: <?php echo $presence_counts[ RTG_Catalog_Presence::STATUS_DELISTED ] > 0 ? 'var(--rtg-error)' : 'var(--rtg-success)'; ?>;"><?php echo esc_html( $presence_counts[ RTG_Catalog_Presence::STATUS_DELISTED ] ); ?></div>
+            <div class="rtg-stat-label">Tires</div>
+        </a>
+        <a class="rtg-stat-card is-success" href="<?php echo esc_url( add_query_arg( array( 'page' => 'rtg-affiliate-links', 'link_filter' => 'affiliate' ), admin_url( 'admin.php' ) ) ); ?>">
+            <div class="rtg-stat-value"><?php echo esc_html( $total_affiliate ); ?></div>
+            <div class="rtg-stat-label">Affiliate</div>
+        </a>
+        <a class="rtg-stat-card <?php echo $total_regular > 0 ? 'is-warning' : ''; ?>" href="<?php echo esc_url( add_query_arg( array( 'page' => 'rtg-affiliate-links', 'link_filter' => 'regular' ), admin_url( 'admin.php' ) ) ); ?>">
+            <div class="rtg-stat-value"><?php echo esc_html( $total_regular ); ?></div>
+            <div class="rtg-stat-label">Plain links</div>
+        </a>
+        <a class="rtg-stat-card <?php echo $total_missing > 0 ? 'is-error' : 'is-success'; ?>" href="<?php echo esc_url( add_query_arg( array( 'page' => 'rtg-affiliate-links', 'link_filter' => 'missing' ), admin_url( 'admin.php' ) ) ); ?>">
+            <div class="rtg-stat-value"><?php echo esc_html( $total_missing ); ?></div>
+            <div class="rtg-stat-label">Missing</div>
+        </a>
+        <a class="rtg-stat-card <?php echo $broken_count > 0 ? 'is-error' : 'is-success'; ?>" href="<?php echo esc_url( add_query_arg( array( 'page' => 'rtg-affiliate-links', 'link_filter' => 'broken' ), admin_url( 'admin.php' ) ) ); ?>">
+            <div class="rtg-stat-value"><?php echo esc_html( $broken_count ); ?></div>
+            <div class="rtg-stat-label">Broken</div>
+        </a>
+        <a class="rtg-stat-card <?php echo $delisted_count > 0 ? 'is-error' : 'is-success'; ?>" href="<?php echo esc_url( add_query_arg( array( 'page' => 'rtg-affiliate-links', 'link_filter' => 'delisted' ), admin_url( 'admin.php' ) ) ); ?>">
+            <div class="rtg-stat-value"><?php echo esc_html( $delisted_count ); ?></div>
             <div class="rtg-stat-label">Delisted</div>
-        </div>
+        </a>
+        <a class="rtg-stat-card" href="<?php echo esc_url( add_query_arg( array( 'page' => 'rtg-affiliate-links', 'link_filter' => 'no_review' ), admin_url( 'admin.php' ) ) ); ?>">
+            <div class="rtg-stat-value"><?php echo esc_html( $counts['has_review'] ); ?></div>
+            <div class="rtg-stat-label">Review links</div>
+        </a>
     </div>
 
     <?php $link_sync_results = RTG_Link_Sync::get_results(); ?>
     <?php if ( $link_sync_results && isset( $link_sync_results['outcomes'] ) ) : ?>
-        <div class="rtg-card" style="margin-top:16px;">
-            <div class="rtg-card-header">
-                <h2>Link Sync</h2>
+        <div class="rtg-card">
+            <div class="rtg-card-header is-split">
+                <div>
+                    <h2>Link sync</h2>
+                    <p>The daily run fills missing links and upgrades plain retailer links to tracked ones. Its rules live in <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-discovery#tab-settings' ) ); ?>">Tire Discovery settings</a>.</p>
+                </div>
+                <span class="rtg-muted rtg-small">Last run <?php echo esc_html( $link_sync_results['time'] ?? '' ); ?></span>
             </div>
             <div class="rtg-card-body">
-                <p class="description" style="max-width:860px;margin:0 0 12px;">
-                    Last run <strong><?php echo esc_html( $link_sync_results['time'] ?? '' ); ?></strong> &mdash;
-                    <strong style="color:var(--rtg-success);"><?php echo intval( $link_sync_results['set'] ?? 0 ); ?></strong> set,
-                    <strong style="color:var(--rtg-success);"><?php echo intval( $link_sync_results['upgraded'] ?? 0 ); ?></strong> upgraded,
-                    <strong style="color:var(--rtg-success);"><?php echo intval( $link_sync_results['replaced'] ?? 0 ); ?></strong> moved off delisted retailers,
-                    <?php echo intval( $link_sync_results['skipped'] ?? 0 ); ?> skipped with a reason.
-                    Rules live on the <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-discovery' ) ); ?>">Tire Discovery</a> settings.
-                </p>
+                <div class="rtg-kv-grid">
+                    <div><span class="rtg-kv-label">Set</span><div class="rtg-kv-value is-success"><?php echo intval( $link_sync_results['set'] ?? 0 ); ?></div></div>
+                    <div><span class="rtg-kv-label">Upgraded</span><div class="rtg-kv-value is-success"><?php echo intval( $link_sync_results['upgraded'] ?? 0 ); ?></div></div>
+                    <div><span class="rtg-kv-label">Moved off delisted</span><div class="rtg-kv-value is-success"><?php echo intval( $link_sync_results['replaced'] ?? 0 ); ?></div></div>
+                    <div><span class="rtg-kv-label">Skipped with a reason</span><div class="rtg-kv-value is-muted"><?php echo intval( $link_sync_results['skipped'] ?? 0 ); ?></div></div>
+                </div>
 
                 <?php
                 $link_sync_pending = array();
@@ -169,22 +179,24 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
                 }
                 ?>
                 <?php if ( ! empty( $link_sync_pending ) ) : ?>
-                    <details>
-                        <summary style="cursor:pointer;font-weight:600;">
-                            <?php echo count( $link_sync_pending ); ?> tire(s) link sync could not fix, and why
-                        </summary>
-                        <table class="rtg-table" style="margin-top:8px;">
-                            <thead><tr><th>Tire</th><th>Size</th><th>Reason</th></tr></thead>
-                            <tbody>
-                            <?php foreach ( $link_sync_pending as $outcome ) : ?>
-                                <tr>
-                                    <td><?php echo esc_html( trim( $outcome['brand'] . ' ' . $outcome['model'] ) ); ?></td>
-                                    <td style="font-family:var(--rtg-font-mono, monospace);"><?php echo esc_html( $outcome['size'] ); ?></td>
-                                    <td style="font-size:12px;color:var(--rtg-text-muted);"><?php echo esc_html( $outcome['label'] ); ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                    <details class="rtg-details">
+                        <summary><?php echo count( $link_sync_pending ); ?> tire<?php echo 1 === count( $link_sync_pending ) ? '' : 's'; ?> link sync could not fix, and why</summary>
+                        <div class="rtg-details-body">
+                            <div class="rtg-table-wrapper">
+                                <table class="rtg-table rtg-table-compact">
+                                    <thead><tr><th>Tire</th><th>Size</th><th>Reason</th></tr></thead>
+                                    <tbody>
+                                    <?php foreach ( $link_sync_pending as $outcome ) : ?>
+                                        <tr>
+                                            <td><?php echo esc_html( trim( $outcome['brand'] . ' ' . $outcome['model'] ) ); ?></td>
+                                            <td class="rtg-mono"><?php echo esc_html( $outcome['size'] ); ?></td>
+                                            <td class="rtg-muted rtg-small"><?php echo esc_html( $outcome['label'] ); ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </details>
                 <?php endif; ?>
             </div>
@@ -192,22 +204,22 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
     <?php endif; ?>
 
     <?php if ( $presence_counts[ RTG_Catalog_Presence::STATUS_DELISTED ] > 0 ) : ?>
-        <div class="rtg-notice rtg-notice-warning" style="margin-top:16px;">
+        <div class="rtg-notice rtg-notice-warning">
             <span>
-                <strong><?php echo esc_html( $presence_counts[ RTG_Catalog_Presence::STATUS_DELISTED ] ); ?>
-                tire(s) were dropped from the affiliate catalog</strong> &mdash; their links still resolve
-                but no longer earn or price. Filter by <strong>Delisted</strong> to see them.
+                <strong><?php echo esc_html( $delisted_count ); ?>
+                tire<?php echo 1 === $delisted_count ? ' was' : 's were'; ?> dropped from the affiliate catalog.</strong> The links still resolve
+                but no longer earn or price. <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'rtg-affiliate-links', 'link_filter' => 'delisted' ), admin_url( 'admin.php' ) ) ); ?>">Show them</a>.
             </span>
         </div>
     <?php endif; ?>
 
     <!-- Link Health Check -->
-    <div class="rtg-card" style="margin-bottom:20px;">
-        <div class="rtg-card-body" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;">
-            <div>
-                <strong>Link Health Check</strong>
+    <div class="rtg-card">
+        <div class="rtg-card-body">
+            <div class="rtg-health-strip">
+                <strong>Link health</strong>
                 <?php if ( $last_checked ) : ?>
-                    <span style="color:var(--rtg-text-muted);margin-left:8px;">Last checked: <?php echo esc_html( date( 'M j, Y g:i A', strtotime( $last_checked ) ) ); ?></span>
+                    <span class="rtg-muted">Last checked <?php echo esc_html( date( 'M j, Y g:i A', strtotime( $last_checked ) ) ); ?></span>
                     <?php
                     // The weekly run rotates through the catalog in batches;
                     // say so when the last run was one slice of it.
@@ -215,58 +227,62 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
                     $lc_all   = intval( $link_check_results['link_count'] ?? 0 );
                     if ( $lc_all > $lc_total && $lc_total > 0 ) :
                     ?>
-                        <span style="color:var(--rtg-text-muted);margin-left:8px;">(<?php echo esc_html( $lc_total ); ?> of <?php echo esc_html( $lc_all ); ?> links this run — the weekly check rotates through the rest)</span>
+                        <span class="rtg-muted">(<?php echo esc_html( $lc_total ); ?> of <?php echo esc_html( $lc_all ); ?> links this run, the weekly check rotates through the rest)</span>
                     <?php endif; ?>
                 <?php else : ?>
-                    <span style="color:var(--rtg-text-muted);margin-left:8px;">Never checked</span>
+                    <span class="rtg-muted">Never checked</span>
                 <?php endif; ?>
                 <?php if ( $broken_count > 0 ) : ?>
-                    <span style="color:var(--rtg-error);margin-left:8px;font-weight:600;"><?php echo esc_html( $broken_count ); ?> broken <?php echo $broken_count === 1 ? 'link' : 'links'; ?> found</span>
+                    <span class="rtg-badge rtg-badge-error"><?php echo esc_html( $broken_count ); ?> broken <?php echo $broken_count === 1 ? 'link' : 'links'; ?></span>
                 <?php elseif ( $last_checked ) : ?>
-                    <span style="color:var(--rtg-success);margin-left:8px;font-weight:600;">All links healthy</span>
+                    <span class="rtg-badge rtg-badge-success">All links healthy</span>
                 <?php endif; ?>
+                <span class="rtg-toolbar-spacer"></span>
+                <span class="rtg-muted rtg-small">A broken link lands on a retailer homepage instead of the product.</span>
             </div>
-            <button type="button" id="rtg-check-links-btn" class="rtg-btn rtg-btn-secondary">Check Links Now</button>
         </div>
-        <div id="rtg-link-check-progress" style="display:none;padding:0 16px 16px;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-                <span id="rtg-link-check-status" style="font-size:13px;color:var(--rtg-text-muted);">Preparing...</span>
-                <span id="rtg-link-check-count" style="font-size:13px;color:var(--rtg-text-muted);margin-left:auto;"></span>
+        <div id="rtg-link-check-progress" class="rtg-card-body" style="display:none;">
+            <div class="rtg-progress-meta">
+                <span id="rtg-link-check-status">Preparing...</span>
+                <span id="rtg-link-check-count"></span>
             </div>
-            <div style="width:100%;height:8px;background:var(--rtg-border, #2a3548);border-radius:4px;overflow:hidden;">
-                <div id="rtg-link-check-bar" style="width:0%;height:100%;background:var(--rtg-accent, #fba919);border-radius:4px;transition:width 0.3s ease;"></div>
+            <div class="rtg-progress">
+                <div id="rtg-link-check-bar" class="rtg-progress-bar"></div>
             </div>
         </div>
     </div>
 
-    <!-- Filter Tabs + Search -->
-    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:20px;">
+    <!-- Filter pills + search -->
+    <div class="rtg-pills">
         <?php
         $tabs = array(
-            'all'       => 'All (' . $counts['total'] . ')',
-            'affiliate' => 'Affiliate (' . $total_affiliate . ')',
-            'regular'   => 'Regular (' . $total_regular . ')',
-            'missing'   => 'Missing Link (' . $total_missing . ')',
-            'broken'    => 'Broken (' . $broken_count . ')',
-            'delisted'  => 'Delisted (' . $presence_counts[ RTG_Catalog_Presence::STATUS_DELISTED ] . ')',
-            'no_review' => 'No Review (' . $counts['missing_review'] . ')',
+            'all'       => array( 'All', $counts['total'] ),
+            'affiliate' => array( 'Affiliate', $total_affiliate ),
+            'regular'   => array( 'Plain link', $total_regular ),
+            'missing'   => array( 'Missing link', $total_missing ),
+            'broken'    => array( 'Broken', $broken_count ),
+            'delisted'  => array( 'Delisted', $delisted_count ),
+            'no_review' => array( 'No review link', $counts['missing_review'] ),
         );
-        foreach ( $tabs as $key => $label ) :
-            $url   = add_query_arg( array( 'page' => 'rtg-affiliate-links', 'link_filter' => $key ), admin_url( 'admin.php' ) );
-            $class = $link_filter === $key ? 'rtg-btn rtg-btn-primary' : 'rtg-btn rtg-btn-secondary';
+        foreach ( $tabs as $key => $tab ) :
+            $url = add_query_arg( array( 'page' => 'rtg-affiliate-links', 'link_filter' => $key ), admin_url( 'admin.php' ) );
+            $is_active = $link_filter === $key;
         ?>
-            <a href="<?php echo esc_url( $url ); ?>" class="<?php echo esc_attr( $class ); ?>" style="text-decoration:none;"><?php echo esc_html( $label ); ?></a>
+            <a href="<?php echo esc_url( $url ); ?>" class="rtg-pill <?php echo $is_active ? 'is-active' : ''; ?>" <?php echo $is_active ? 'aria-current="page"' : ''; ?>>
+                <?php echo esc_html( $tab[0] ); ?>
+                <span class="rtg-pill-count"><?php echo intval( $tab[1] ); ?></span>
+            </a>
         <?php endforeach; ?>
     </div>
 
-    <form method="get" style="margin-bottom:20px;">
+    <form method="get">
         <input type="hidden" name="page" value="rtg-affiliate-links">
         <input type="hidden" name="link_filter" value="<?php echo esc_attr( $link_filter ); ?>">
-        <div class="rtg-search-box" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-            <input type="search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="Search by brand, model, or tire ID..." style="min-width:280px;">
+        <div class="rtg-toolbar">
+            <input type="search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="Search by brand, model, or tire ID" aria-label="Search tires">
             <button type="submit" class="rtg-btn rtg-btn-secondary">Search</button>
             <?php if ( $search ) : ?>
-                <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'rtg-affiliate-links', 'link_filter' => $link_filter ), admin_url( 'admin.php' ) ) ); ?>" class="rtg-btn rtg-btn-secondary" style="text-decoration:none;">Clear</a>
+                <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'rtg-affiliate-links', 'link_filter' => $link_filter ), admin_url( 'admin.php' ) ) ); ?>" class="rtg-btn rtg-btn-ghost">Clear</a>
             <?php endif; ?>
         </div>
     </form>
@@ -282,11 +298,11 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
             <table class="rtg-table rtg-affiliate-table">
                 <thead>
                     <tr>
-                        <th style="width:180px;">Tire</th>
-                        <th style="width:90px;">Status</th>
-                        <th>Purchase Link</th>
-                        <th>Review Link</th>
-                        <th style="width:100px;">Actions</th>
+                        <th>Tire</th>
+                        <th>Status</th>
+                        <th>Purchase link</th>
+                        <th>Review link</th>
+                        <th class="is-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -330,19 +346,21 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
                         ?>
                             <tr data-tire-id="<?php echo esc_attr( $tire['tire_id'] ); ?>"<?php echo $is_broken ? ' data-broken="1"' : ''; ?>>
                                 <td>
-                                    <strong><?php echo esc_html( $tire['brand'] . ' ' . $tire['model'] ); ?></strong>
-                                    <div style="font-size:12px;color:var(--rtg-text-muted);"><?php echo esc_html( $tire['tire_id'] ); ?> &middot; <?php echo esc_html( $tire['size'] ); ?> &middot; <?php echo esc_html( $tire['category'] ); ?></div>
+                                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit&tire_id=' . rawurlencode( $tire['tire_id'] ) ) ); ?>" class="rtg-row-title"><?php echo esc_html( $tire['brand'] . ' ' . $tire['model'] ); ?></a>
+                                    <span class="rtg-row-meta"><?php echo esc_html( $tire['tire_id'] ); ?> &middot; <?php echo esc_html( $tire['size'] ); ?> &middot; <?php echo esc_html( $tire['category'] ); ?></span>
                                 </td>
                                 <td>
-                                    <span class="rtg-badge <?php echo esc_attr( $badge_class ); ?> rtg-link-status-badge"><?php echo esc_html( $badge_label ); ?></span>
-                                    <?php if ( $is_broken ) : ?>
-                                        <span class="rtg-badge rtg-badge-error rtg-broken-badge" title="<?php echo esc_attr( $broken_reason ); ?>" style="margin-top:4px;display:inline-block;background:#ef4444;color:#fff;font-size:11px;">Broken</span>
-                                    <?php endif; ?>
-                                    <?php if ( $is_delisted ) : ?>
-                                        <span class="rtg-badge" title="<?php echo esc_attr( $tire_presence['label'] ?? '' ); ?>" style="margin-top:4px;display:inline-block;background:#f97316;color:#fff;font-size:11px;">Delisted</span>
-                                    <?php elseif ( RTG_Catalog_Presence::STATUS_NEVER_LISTED === $presence_status ) : ?>
-                                        <span class="rtg-badge rtg-badge-muted" title="<?php echo esc_attr( $tire_presence['label'] ?? '' ); ?>" style="margin-top:4px;display:inline-block;font-size:11px;">Not in catalog</span>
-                                    <?php endif; ?>
+                                    <div class="rtg-status-stack">
+                                        <span class="rtg-badge <?php echo esc_attr( $badge_class ); ?> rtg-link-status-badge"><?php echo esc_html( $badge_label ); ?></span>
+                                        <?php if ( $is_broken ) : ?>
+                                            <span class="rtg-badge rtg-badge-error is-solid rtg-badge-sm rtg-broken-badge" title="<?php echo esc_attr( $broken_reason ); ?>">Broken</span>
+                                        <?php endif; ?>
+                                        <?php if ( $is_delisted ) : ?>
+                                            <span class="rtg-badge rtg-badge-warning is-solid rtg-badge-sm" title="<?php echo esc_attr( $tire_presence['label'] ?? '' ); ?>">Delisted</span>
+                                        <?php elseif ( RTG_Catalog_Presence::STATUS_NEVER_LISTED === $presence_status ) : ?>
+                                            <span class="rtg-badge rtg-badge-muted rtg-badge-sm" title="<?php echo esc_attr( $tire_presence['label'] ?? '' ); ?>">Not in catalog</span>
+                                        <?php endif; ?>
+                                    </div>
                                 </td>
                                 <td class="rtg-link-cell" data-field="link">
                                     <div class="rtg-link-display">
@@ -353,7 +371,7 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
                                         <?php endif; ?>
                                     </div>
                                     <div class="rtg-link-edit" style="display:none;">
-                                        <input type="url" class="rtg-link-input" value="<?php echo esc_attr( $tire['link'] ); ?>" placeholder="https://..." style="max-width:100%;width:100%;">
+                                        <input type="url" class="rtg-link-input" value="<?php echo esc_attr( $tire['link'] ); ?>" placeholder="https://..." aria-label="Purchase link">
                                     </div>
                                 </td>
                                 <td class="rtg-link-cell" data-field="review_link">
@@ -365,13 +383,15 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
                                         <?php endif; ?>
                                     </div>
                                     <div class="rtg-link-edit" style="display:none;">
-                                        <input type="url" class="rtg-link-input" value="<?php echo esc_attr( $tire['review_link'] ); ?>" placeholder="https://..." style="max-width:100%;width:100%;">
+                                        <input type="url" class="rtg-link-input" value="<?php echo esc_attr( $tire['review_link'] ); ?>" placeholder="https://..." aria-label="Review link">
                                     </div>
                                 </td>
-                                <td>
-                                    <button type="button" class="rtg-btn rtg-btn-secondary rtg-btn-edit-links" title="Edit links">Edit</button>
-                                    <button type="button" class="rtg-btn rtg-btn-primary rtg-btn-save-links" style="display:none;" title="Save links">Save</button>
-                                    <button type="button" class="rtg-btn rtg-btn-secondary rtg-btn-cancel-links" style="display:none;" title="Cancel editing">Cancel</button>
+                                <td class="is-right">
+                                    <div class="rtg-table-actions">
+                                        <button type="button" class="rtg-btn rtg-btn-secondary rtg-btn-sm rtg-btn-edit-links" title="Edit links">Edit</button>
+                                        <button type="button" class="rtg-btn rtg-btn-primary rtg-btn-sm rtg-btn-save-links" style="display:none;" title="Save links">Save</button>
+                                        <button type="button" class="rtg-btn rtg-btn-secondary rtg-btn-sm rtg-btn-cancel-links" style="display:none;" title="Cancel editing">Cancel</button>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -485,8 +505,8 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
                 $row.find('.rtg-btn-save-links, .rtg-btn-cancel-links').hide();
 
                 // Brief flash to confirm save.
-                $row.css('background', 'var(--rtg-success-light)');
-                setTimeout(function() { $row.css('background', ''); }, 800);
+                $row.addClass('is-flash');
+                setTimeout(function() { $row.removeClass('is-flash'); }, 800);
             } else {
                 alert('Error: ' + (response.data || 'Failed to save links.'));
             }
@@ -541,7 +561,7 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
         $.post(ajaxUrl, { action: 'rtg_check_links_start', nonce: nonce }, function(startResp) {
             if (!startResp.success) {
                 linkCheckRunning = false;
-                $btn.prop('disabled', false).text('Check Links Now');
+                $btn.prop('disabled', false).text('Check links now');
                 $progress.slideUp(200);
                 alert('Error: ' + (startResp.data || 'Could not fetch link list.'));
                 return;
@@ -555,7 +575,7 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
 
             if (total === 0) {
                 linkCheckRunning = false;
-                $btn.prop('disabled', false).text('Check Links Now');
+                $btn.prop('disabled', false).text('Check links now');
                 $progress.slideUp(200);
                 alert('No tires with purchase links to check.');
                 return;
@@ -577,18 +597,18 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
                         broken: allBroken
                     }, function() {
                         linkCheckRunning = false;
-                        $btn.prop('disabled', false).text('Check Links Now');
+                        $btn.prop('disabled', false).text('Check links now');
                         var brokenCount = allBroken.length;
                         if (brokenCount > 0) {
-                            $status.html('<span style="color:var(--rtg-error);font-weight:600;">Done — ' + brokenCount + ' broken link' + (brokenCount !== 1 ? 's' : '') + ' found</span>');
+                            $status.html('<span class="rtg-text-error rtg-strong">Done: ' + brokenCount + ' broken link' + (brokenCount !== 1 ? 's' : '') + ' found</span>');
                         } else {
-                            $status.html('<span style="color:var(--rtg-success);font-weight:600;">Done — all ' + checked + ' links healthy!</span>');
+                            $status.html('<span class="rtg-text-success rtg-strong">Done: all ' + checked + ' links healthy</span>');
                         }
                         setTimeout(function() { location.reload(); }, 1500);
                     }).fail(function() {
                         if (isUnloading) { return; }
                         linkCheckRunning = false;
-                        $btn.prop('disabled', false).text('Check Links Now');
+                        $btn.prop('disabled', false).text('Check links now');
                         $status.text('Error saving results.');
                     });
                     return;
@@ -624,7 +644,7 @@ $message = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) :
         }).fail(function() {
             if (isUnloading) { return; }
             linkCheckRunning = false;
-            $btn.prop('disabled', false).text('Check Links Now');
+            $btn.prop('disabled', false).text('Check links now');
             $progress.slideUp(200);
             alert('Network error. Please try again.');
         });

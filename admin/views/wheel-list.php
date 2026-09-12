@@ -24,23 +24,26 @@ $wheels = RTG_Database::get_all_wheels();
     <?php endif; ?>
 
     <div class="rtg-page-header">
-        <h1 class="rtg-page-title">Stock Wheels</h1>
-        <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-wheel-edit' ) ); ?>" class="rtg-page-title-action">Add New</a>
+        <div class="rtg-page-heading">
+            <h1 class="rtg-page-title">Wheels</h1>
+            <p class="rtg-page-subtitle">The wheels shown in the guide's wheel guide. Every vehicle-to-size rule in the plugin comes from these rows: the size menu, fitment checks, the advisor and discovery all read them.</p>
+        </div>
+        <div class="rtg-page-actions">
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-wheel-edit' ) ); ?>" class="rtg-btn rtg-btn-primary">
+                <span class="dashicons dashicons-plus-alt2"></span> Add wheel
+            </a>
+        </div>
     </div>
-
-    <p style="color: var(--rtg-text-secondary); font-size: 14px; margin-bottom: 20px;">
-        Manage the stock wheel configurations shown in the "Not sure which Rivian tire you need?" guide on the frontend.
-    </p>
 
     <div class="rtg-card">
         <div class="rtg-table-wrapper">
             <table class="rtg-table">
                 <thead>
                     <tr>
-                        <th class="column-image">Image</th>
+                        <th class="column-image"><span class="screen-reader-text">Image</span></th>
                         <th>Name</th>
-                        <th>Stock Size</th>
-                        <th>Alt Sizes</th>
+                        <th>Stock size</th>
+                        <th>Alternate sizes</th>
                         <th>Vehicles</th>
                         <th>Order</th>
                     </tr>
@@ -51,8 +54,8 @@ $wheels = RTG_Database::get_all_wheels();
                             <td colspan="6">
                                 <div class="rtg-empty-state">
                                     <span class="dashicons dashicons-car"></span>
-                                    <h3>No stock wheels configured</h3>
-                                    <p><a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-wheel-edit' ) ); ?>">Add your first wheel configuration</a>.</p>
+                                    <h3>No wheels yet</h3>
+                                    <p>Without a wheel the guide has no sizes to offer. <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-wheel-edit' ) ); ?>">Add the first wheel</a>.</p>
                                 </div>
                             </td>
                         </tr>
@@ -92,18 +95,21 @@ $wheels = RTG_Database::get_all_wheels();
                                         echo '<code>' . esc_html( $alt ) . '</code> ';
                                     }
                                     if ( empty( $alts ) ) {
-                                        echo '<span style="color: var(--rtg-text-muted);">&mdash;</span>';
+                                        echo '<span class="rtg-empty">&mdash;</span>';
                                     }
                                     ?>
                                 </td>
                                 <td>
                                     <?php
                                     $vehicles = array_filter( array_map( 'trim', explode( ',', $wheel['vehicles'] ) ) );
-                                    foreach ( $vehicles as $vehicle ) {
-                                        echo '<span class="rtg-badge rtg-badge-info" style="margin-right:4px;">' . esc_html( $vehicle ) . '</span>';
-                                    }
                                     if ( empty( $vehicles ) ) {
-                                        echo '<span style="color: var(--rtg-text-muted);">&mdash;</span>';
+                                        echo '<span class="rtg-empty">&mdash;</span>';
+                                    } else {
+                                        echo '<span class="rtg-badge-list">';
+                                        foreach ( $vehicles as $vehicle ) {
+                                            echo '<span class="rtg-badge rtg-badge-info">' . esc_html( $vehicle ) . '</span>';
+                                        }
+                                        echo '</span>';
                                     }
                                     ?>
                                 </td>

@@ -98,39 +98,47 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
     <?php endif; ?>
 
     <div class="rtg-page-header">
-        <h1 class="rtg-page-title">Tire Guide</h1>
-        <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit' ) ); ?>" class="rtg-page-title-action">Add New</a>
-        <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=rtg-tires&action=recalculate_efficiency' ), 'rtg_recalculate_efficiency' ) ); ?>"
-           class="rtg-page-title-action"
-           onclick="return confirm('Recalculate the efficiency score and grade for every tire from its stored specs?');">Recalculate Efficiency</a>
+        <div class="rtg-page-heading">
+            <h1 class="rtg-page-title">Tires</h1>
+            <p class="rtg-page-subtitle">Every tire in the guide. Search, filter, edit in place, or select several for a bulk change.</p>
+        </div>
+        <div class="rtg-page-actions">
+            <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=rtg-tires&action=recalculate_efficiency' ), 'rtg_recalculate_efficiency' ) ); ?>"
+               class="rtg-btn rtg-btn-secondary"
+               onclick="return confirm('Recalculate the efficiency score and grade for every tire from its stored specs?');">Recalculate efficiency</a>
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-import' ) ); ?>" class="rtg-btn rtg-btn-secondary">Import CSV</a>
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit' ) ); ?>" class="rtg-btn rtg-btn-primary">
+                <span class="dashicons dashicons-plus-alt2"></span> Add tire
+            </a>
+        </div>
     </div>
 
     <!-- Search & Filters -->
     <form method="get">
         <input type="hidden" name="page" value="rtg-tires">
-        <div class="rtg-search-box">
-            <input type="search" id="tire-search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="Search by brand, model, ID, or tags...">
-            <select name="filter_brand">
-                <option value="">All Brands</option>
+        <div class="rtg-toolbar">
+            <input type="search" id="tire-search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="Search by brand, model, ID, or tags" aria-label="Search tires">
+            <select name="filter_brand" aria-label="Brand">
+                <option value="">All brands</option>
                 <?php foreach ( $filter_brands as $b ) : ?>
                     <option value="<?php echo esc_attr( $b ); ?>" <?php selected( $admin_filters['brand'], $b ); ?>><?php echo esc_html( $b ); ?></option>
                 <?php endforeach; ?>
             </select>
-            <select name="filter_size">
-                <option value="">All Sizes</option>
+            <select name="filter_size" aria-label="Size">
+                <option value="">All sizes</option>
                 <?php foreach ( $filter_sizes as $sz ) : ?>
                     <option value="<?php echo esc_attr( $sz ); ?>" <?php selected( $admin_filters['size'], $sz ); ?>><?php echo esc_html( $sz ); ?></option>
                 <?php endforeach; ?>
             </select>
-            <select name="filter_category">
-                <option value="">All Categories</option>
+            <select name="filter_category" aria-label="Category">
+                <option value="">All categories</option>
                 <?php foreach ( $filter_categories as $cat ) : ?>
                     <option value="<?php echo esc_attr( $cat ); ?>" <?php selected( $admin_filters['category'], $cat ); ?>><?php echo esc_html( $cat ); ?></option>
                 <?php endforeach; ?>
             </select>
             <button type="submit" class="rtg-btn rtg-btn-secondary">Filter</button>
             <?php if ( $search || $admin_filters['brand'] || $admin_filters['size'] || $admin_filters['category'] ) : ?>
-                <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires' ) ); ?>" class="rtg-btn rtg-btn-secondary" style="text-decoration:none;">Clear</a>
+                <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires' ) ); ?>" class="rtg-btn rtg-btn-ghost">Clear</a>
             <?php endif; ?>
         </div>
     </form>
@@ -144,8 +152,8 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
             <!-- Table nav (top) -->
             <div class="rtg-tablenav rtg-tablenav-top">
                 <div class="rtg-bulk-actions">
-                    <select name="rtg_bulk_action">
-                        <option value="">Bulk Actions</option>
+                    <select name="rtg_bulk_action" aria-label="Bulk action">
+                        <option value="">Bulk actions</option>
                         <option value="bulk_edit">Edit</option>
                         <option value="delete">Delete</option>
                     </select>
@@ -173,7 +181,7 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
                     <thead>
                         <tr>
                             <th class="column-cb"><input type="checkbox" id="cb-select-all"></th>
-                            <th class="column-image">Image</th>
+                            <th class="column-image"><span class="screen-reader-text">Image</span></th>
                             <th class="sortable <?php echo $orderby === 'tire_id' ? 'sorted' : ''; ?>">
                                 <a href="<?php echo esc_url( $sort_url( 'tire_id' ) ); ?>">Tire ID<?php echo $sort_indicator( 'tire_id' ); ?></a>
                             </th>
@@ -204,10 +212,14 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
                                     <div class="rtg-empty-state">
                                         <span class="dashicons dashicons-car"></span>
                                         <h3>No tires found</h3>
-                                        <p>
-                                            <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-import' ) ); ?>">Import from CSV</a> or
-                                            <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit' ) ); ?>">add one manually</a>.
-                                        </p>
+                                        <?php if ( $search || $admin_filters['brand'] || $admin_filters['size'] || $admin_filters['category'] ) : ?>
+                                            <p>Nothing matches this search. <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tires' ) ); ?>">Clear the filters</a>.</p>
+                                        <?php else : ?>
+                                            <p>
+                                                <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-import' ) ); ?>">Import from CSV</a> or
+                                                <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit' ) ); ?>">add one manually</a>.
+                                            </p>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>
@@ -262,9 +274,9 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
                                     <td>$<?php echo esc_html( number_format( $tire['price'], 2 ) ); ?></td>
                                     <td>
                                         <?php if ( ! empty( $tire['slug'] ) ) : ?>
-                                            <a href="<?php echo esc_url( RTG_Tire_Page::tire_url( $tire['slug'] ) ); ?>" target="_blank" rel="noopener noreferrer" style="font-family:monospace;font-size:12px;"><?php echo esc_html( $tire['slug'] ); ?></a>
+                                            <a href="<?php echo esc_url( RTG_Tire_Page::tire_url( $tire['slug'] ) ); ?>" target="_blank" rel="noopener noreferrer" class="rtg-mono rtg-small"><?php echo esc_html( $tire['slug'] ); ?></a>
                                         <?php else : ?>
-                                            <span style="color:#86868b;">—</span>
+                                            <span class="rtg-empty">&mdash;</span>
                                         <?php endif; ?>
                                     </td>
                                     <td><?php echo esc_html( $tire['tags'] ); ?></td>

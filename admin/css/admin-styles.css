@@ -1,6 +1,10 @@
 /* ==========================================================================
    Rivian Tire Guide — Admin Design System
-   Apple/iOS-inspired design language
+   Apple/iOS-inspired design language (light theme)
+
+   One stylesheet for every Tire Guide admin screen. Views carry no inline
+   styles: anything a screen needs is a class here, so the pages stay
+   consistent with each other and a change lands everywhere at once.
    ========================================================================== */
 
 /* --- Design Tokens (CSS Custom Properties) --- */
@@ -15,38 +19,49 @@
     --rtg-text-muted: #86868b;
     --rtg-action-primary: #0071e3;
     --rtg-action-hover: #0077ed;
+    --rtg-action-light: #e8f1fd;
     --rtg-success: #34c759;
     --rtg-success-light: #d1f4e0;
     --rtg-success-text: #0a5e2a;
     --rtg-error: #ff3b30;
     --rtg-error-light: #ffe5e5;
     --rtg-error-text: #c41e3a;
+    --rtg-warning: #f59e0b;
     --rtg-warning-bg: #fff3cd;
     --rtg-warning-text: #856404;
+    --rtg-info: #60a5fa;
     --rtg-info-bg: #dbeafe;
     --rtg-info-text: #1e40af;
+    --rtg-purple: #7c3aed;
+    --rtg-purple-bg: #efeafb;
+    --rtg-purple-text: #5b3fc4;
+    --rtg-accent: #fba919;
     --rtg-border: #d2d2d7;
     --rtg-bg-light: #f5f5f7;
     --rtg-bg-hover: #e8e8ed;
     --rtg-divider: #f5f5f7;
     --rtg-white: #ffffff;
 
-    /* Spacing */
+    /* Radii */
     --rtg-radius-card: 12px;
     --rtg-radius-input: 8px;
     --rtg-radius-badge: 6px;
     --rtg-radius-pill: 4px;
     --rtg-radius-toggle: 34px;
+
+    /* Shadows */
+    --rtg-shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --rtg-shadow-floating: 0 -8px 25px rgba(0, 0, 0, 0.08);
+    --rtg-focus-ring: 0 0 0 3px rgba(0, 113, 227, 0.12);
 }
 
 /* ==========================================================================
    Base / Reset for RTG Admin Pages
    ========================================================================== */
 
-/* Override WordPress admin defaults within our wrap */
 .rtg-wrap {
     max-width: 1600px;
-    margin: 40px auto 20px;
+    margin: 32px auto 20px;
     padding: 0 20px;
     font-family: var(--rtg-font-stack);
     color: var(--rtg-text-primary);
@@ -60,46 +75,177 @@
     box-sizing: border-box;
 }
 
+/* Plain text links. Components that are links (buttons, pills, tabs, stat
+   tiles) set their own color and are left alone here. */
+.rtg-wrap a:not([class]),
+.rtg-wrap a.rtg-row-title,
+.rtg-wrap .rtg-help a,
+.rtg-wrap .rtg-card-header p a,
+.rtg-wrap .rtg-field-description a,
+.rtg-wrap .rtg-page-subtitle a {
+    color: var(--rtg-action-primary);
+}
+
+.rtg-wrap a:not([class]):hover,
+.rtg-wrap a:not([class]):focus {
+    color: var(--rtg-action-hover);
+}
+
+.rtg-wrap :focus-visible {
+    outline: 2px solid var(--rtg-action-primary);
+    outline-offset: 2px;
+}
+
+.rtg-wrap code,
+.rtg-wrap .rtg-mono {
+    font-family: var(--rtg-font-mono);
+    font-size: 0.92em;
+}
+
+.rtg-wrap code {
+    background: var(--rtg-bg-light);
+    padding: 2px 6px;
+    border-radius: var(--rtg-radius-pill);
+    color: var(--rtg-text-primary);
+}
+
+.rtg-wrap pre {
+    max-height: 320px;
+    overflow: auto;
+    padding: 10px 12px;
+    background: var(--rtg-bg-light);
+    border: 1px solid var(--rtg-border);
+    border-radius: var(--rtg-radius-badge);
+    font-family: var(--rtg-font-mono);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* Text utilities */
+.rtg-muted { color: var(--rtg-text-muted); }
+.rtg-secondary { color: var(--rtg-text-secondary); }
+.rtg-text-success { color: var(--rtg-success-text); }
+.rtg-text-error { color: var(--rtg-error-text); }
+.rtg-text-warning { color: var(--rtg-warning-text); }
+.rtg-text-info { color: var(--rtg-info-text); }
+.rtg-strong { font-weight: 600; }
+.rtg-small { font-size: 13px; }
+.rtg-nowrap { white-space: nowrap; }
+.rtg-right { text-align: right; }
+.rtg-tabular { font-variant-numeric: tabular-nums; }
+
+/* A short explanatory paragraph under a field or heading. */
+.rtg-help,
+.rtg-wrap p.description {
+    font-size: 13px;
+    color: var(--rtg-text-secondary);
+    line-height: 1.55;
+    margin: 6px 0 0;
+    max-width: 760px;
+}
+
+.rtg-help.is-lead {
+    font-size: 14px;
+    margin: 0 0 16px;
+}
+
 /* ==========================================================================
-   Page Title
+   Page Header
    ========================================================================== */
 
 .rtg-page-header {
     display: flex;
-    align-items: center;
-    gap: 16px;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px 24px;
     margin-bottom: 24px;
 }
 
+.rtg-page-heading {
+    min-width: 0;
+    flex: 1 1 320px;
+}
+
 .rtg-page-title {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 600;
     color: var(--rtg-text-primary);
     margin: 0;
     padding: 0;
     line-height: 1.2;
+    letter-spacing: -0.01em;
 }
 
+.rtg-page-subtitle {
+    font-size: 14px;
+    color: var(--rtg-text-secondary);
+    margin: 6px 0 0;
+    line-height: 1.5;
+    max-width: 760px;
+}
+
+.rtg-page-subtitle a {
+    text-decoration: none;
+}
+
+.rtg-page-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Backwards-compatible header action (primary look). */
 .rtg-page-title-action {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 16px;
+    padding: 9px 16px;
     font-size: 14px;
     font-weight: 500;
     color: var(--rtg-white);
     background: var(--rtg-action-primary);
-    border: none;
+    border: 1px solid transparent;
     border-radius: var(--rtg-radius-input);
     text-decoration: none;
     cursor: pointer;
     transition: background 0.2s;
+    line-height: 1.4;
 }
 
 .rtg-page-title-action:hover,
 .rtg-page-title-action:focus {
     background: var(--rtg-action-hover);
     color: var(--rtg-white);
+}
+
+.rtg-page-title-action.is-secondary {
+    background: var(--rtg-white);
+    color: var(--rtg-text-primary);
+    border-color: var(--rtg-border);
+}
+
+.rtg-page-title-action.is-secondary:hover,
+.rtg-page-title-action.is-secondary:focus {
+    background: var(--rtg-bg-light);
+    color: var(--rtg-text-primary);
+}
+
+/* A back link above the page title. */
+.rtg-breadcrumb {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--rtg-text-secondary);
+    text-decoration: none;
+    margin-bottom: 8px;
+}
+
+.rtg-breadcrumb:hover {
+    color: var(--rtg-action-primary);
 }
 
 /* ==========================================================================
@@ -115,30 +261,360 @@
 }
 
 .rtg-card-header {
-    padding: 20px 24px;
+    padding: 18px 24px;
     border-bottom: 1px solid var(--rtg-border);
 }
 
-.rtg-card-header h2 {
-    font-size: 20px;
+.rtg-card-header h2,
+.rtg-card-header h3 {
+    font-size: 17px;
     font-weight: 600;
     color: var(--rtg-text-primary);
     margin: 0;
     padding: 0;
+    line-height: 1.3;
 }
 
 .rtg-card-header p {
     font-size: 14px;
     color: var(--rtg-text-secondary);
     margin: 6px 0 0;
+    line-height: 1.5;
+    max-width: 820px;
+}
+
+/* Title on the left, controls on the right. */
+.rtg-card-header.is-split {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px 16px;
+}
+
+.rtg-card-header.is-split > div:first-child {
+    min-width: 0;
+}
+
+.rtg-card-header-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-left: auto;
 }
 
 .rtg-card-body {
     padding: 20px 24px;
 }
 
-.rtg-arrow-open {
+.rtg-card-body.is-flush {
+    padding: 0;
+}
+
+.rtg-card-body > :first-child {
+    margin-top: 0;
+}
+
+.rtg-card-body > :last-child {
+    margin-bottom: 0;
+}
+
+.rtg-card-body + .rtg-card-body {
+    border-top: 1px solid var(--rtg-divider);
+}
+
+.rtg-card.is-narrow {
+    max-width: 680px;
+}
+
+/* Collapsible card: the header is the toggle, the panel slides. */
+.rtg-card-toggle {
+    cursor: pointer;
+    user-select: none;
+}
+
+.rtg-card-toggle:hover {
+    background: #fafafa;
+}
+
+.rtg-card-toggle:focus-visible {
+    outline-offset: -2px;
+}
+
+.rtg-card-chevron {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: var(--rtg-text-muted);
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+}
+
+.rtg-arrow-open,
+.rtg-card-toggle[aria-expanded="true"] .rtg-card-chevron {
     transform: rotate(180deg);
+}
+
+.rtg-card-header .rtg-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 7px;
+    margin-left: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--rtg-text-secondary);
+    background: var(--rtg-bg-light);
+    border-radius: 11px;
+    vertical-align: middle;
+}
+
+/* Native disclosure inside a card body. */
+.rtg-details {
+    margin-top: 14px;
+    border: 1px solid var(--rtg-divider);
+    border-radius: var(--rtg-radius-input);
+    background: #fafafa;
+}
+
+.rtg-details > summary {
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rtg-details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.rtg-details > summary::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-right: 2px solid var(--rtg-text-muted);
+    border-bottom: 2px solid var(--rtg-text-muted);
+    transform: rotate(-45deg);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.rtg-details[open] > summary::before {
+    transform: rotate(45deg);
+}
+
+.rtg-details > summary:hover {
+    color: var(--rtg-action-primary);
+}
+
+.rtg-details-body {
+    padding: 0 16px 16px;
+}
+
+.rtg-details-body > :first-child {
+    margin-top: 0;
+}
+
+.rtg-details .rtg-table-wrapper {
+    background: var(--rtg-white);
+    border: 1px solid var(--rtg-divider);
+    border-radius: var(--rtg-radius-input);
+    margin-top: 10px;
+}
+
+/* ==========================================================================
+   Tabs (section navigation) and filter pills (status filters)
+   ========================================================================== */
+
+/* Underline tabs switch between sections of one page. Links or buttons. */
+.rtg-tabs {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    margin: 0 0 20px;
+    border-bottom: 1px solid var(--rtg-border);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.rtg-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.rtg-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    margin-bottom: -1px;
+    font-family: var(--rtg-font-stack);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--rtg-text-secondary);
+    background: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.rtg-tab:hover,
+.rtg-tab:focus {
+    color: var(--rtg-text-primary);
+}
+
+.rtg-tab:focus-visible {
+    outline-offset: -2px;
+    border-radius: 6px;
+}
+
+.rtg-tab.is-active {
+    color: var(--rtg-action-primary);
+    border-bottom-color: var(--rtg-action-primary);
+    font-weight: 600;
+}
+
+.rtg-tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 10px;
+    background: var(--rtg-bg-light);
+    color: var(--rtg-text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.rtg-tab.is-active .rtg-tab-count {
+    background: var(--rtg-action-primary);
+    color: var(--rtg-white);
+}
+
+.rtg-tab-count.is-alert {
+    background: var(--rtg-error);
+    color: var(--rtg-white);
+}
+
+.rtg-tab-panel[hidden] {
+    display: none !important;
+}
+
+/* Filter pills narrow a list by status. Always links, so they survive reload. */
+.rtg-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0 0 16px;
+}
+
+.rtg-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--rtg-text-secondary);
+    background: var(--rtg-white);
+    border: 1px solid var(--rtg-border);
+    border-radius: 20px;
+    text-decoration: none;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.rtg-pill:hover,
+.rtg-pill:focus {
+    color: var(--rtg-text-primary);
+    background: var(--rtg-bg-light);
+}
+
+.rtg-pill.is-active {
+    color: var(--rtg-white);
+    background: var(--rtg-text-primary);
+    border-color: var(--rtg-text-primary);
+}
+
+.rtg-pill-count {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--rtg-text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.rtg-pill.is-active .rtg-pill-count {
+    color: rgba(255, 255, 255, 0.75);
+}
+
+/* ==========================================================================
+   Toolbar (filters, search, bulk actions in one row)
+   ========================================================================== */
+
+.rtg-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 16px;
+}
+
+.rtg-toolbar.is-between {
+    justify-content: space-between;
+}
+
+.rtg-toolbar-label {
+    font-size: 13px;
+    color: var(--rtg-text-muted);
+    font-weight: 500;
+}
+
+.rtg-toolbar-note {
+    flex-basis: 100%;
+    font-size: 12px;
+    color: var(--rtg-text-muted);
+    margin: 0;
+}
+
+.rtg-toolbar-spacer {
+    flex: 1 1 auto;
+}
+
+.rtg-toolbar input[type="search"],
+.rtg-toolbar select,
+.rtg-toolbar .rtg-btn {
+    height: 40px;
+    line-height: normal;
+    font-size: 14px;
+}
+
+.rtg-toolbar input[type="search"] {
+    flex: 2 1 240px;
+    max-width: none;
+}
+
+.rtg-toolbar select {
+    flex: 1 1 150px;
+    width: auto;
+    max-width: 260px;
+}
+
+.rtg-toolbar .rtg-btn {
+    flex: 0 0 auto;
 }
 
 /* ==========================================================================
@@ -150,7 +626,16 @@
     border-bottom: 1px solid var(--rtg-divider);
 }
 
+.rtg-field-row:first-child {
+    padding-top: 4px;
+}
+
 .rtg-field-row:last-child {
+    border-bottom: none;
+    padding-bottom: 4px;
+}
+
+.rtg-field-row.is-plain {
     border-bottom: none;
 }
 
@@ -158,6 +643,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
     margin-bottom: 4px;
 }
 
@@ -175,14 +661,38 @@
     color: var(--rtg-text-secondary);
     margin: 2px 0 10px;
     line-height: 1.5;
+    max-width: 760px;
 }
 
-.rtg-field-description code {
+.rtg-field-description code,
+.rtg-help code {
     font-family: var(--rtg-font-mono);
     font-size: 13px;
     background: var(--rtg-bg-light);
     padding: 2px 8px;
     border-radius: var(--rtg-radius-pill);
+}
+
+/* Fields laid side by side inside one row. */
+.rtg-field-inline {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    margin-top: 8px;
+    font-size: 14px;
+}
+
+.rtg-field-inline label {
+    font-size: 14px;
+    color: var(--rtg-text-primary);
+}
+
+/* Two-column grid of fields. */
+.rtg-field-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 0 32px;
 }
 
 /* ==========================================================================
@@ -196,6 +706,7 @@
 .rtg-wrap input[type="url"],
 .rtg-wrap input[type="search"],
 .rtg-wrap input[type="email"],
+.rtg-wrap input[type="password"],
 .rtg-wrap textarea,
 .rtg-wrap select {
     padding: 10px 12px;
@@ -207,8 +718,22 @@
     border-radius: var(--rtg-radius-input);
     max-width: 400px;
     width: 100%;
+    line-height: 1.4;
+    min-height: 0;
+    box-shadow: none;
     transition: border-color 0.2s, box-shadow 0.2s;
     outline: none;
+}
+
+.rtg-wrap textarea {
+    resize: vertical;
+    line-height: 1.5;
+}
+
+.rtg-wrap textarea.is-code,
+.rtg-wrap input.is-code {
+    font-family: var(--rtg-font-mono);
+    font-size: 13px;
 }
 
 .rtg-wrap input[type="text"]:focus,
@@ -216,15 +741,17 @@
 .rtg-wrap input[type="url"]:focus,
 .rtg-wrap input[type="search"]:focus,
 .rtg-wrap input[type="email"]:focus,
+.rtg-wrap input[type="password"]:focus,
 .rtg-wrap textarea:focus,
 .rtg-wrap select:focus,
 .rtg-input:focus,
 .rtg-select:focus {
     border-color: var(--rtg-action-primary);
-    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
+    box-shadow: var(--rtg-focus-ring);
 }
 
-.rtg-wrap input[readonly] {
+.rtg-wrap input[readonly],
+.rtg-wrap input.is-readonly {
     background: var(--rtg-bg-light);
     color: var(--rtg-text-muted);
     cursor: not-allowed;
@@ -234,9 +761,85 @@
     max-width: 100%;
 }
 
+.rtg-input-medium {
+    max-width: 260px;
+}
+
 .rtg-input-small {
     max-width: 120px;
 }
+
+.rtg-wrap input[type="number"].rtg-input-tiny {
+    max-width: 88px;
+    padding-left: 10px;
+    padding-right: 6px;
+}
+
+.rtg-wrap input[type="color"] {
+    width: 40px;
+    height: 40px;
+    padding: 2px;
+    border: 1px solid var(--rtg-border);
+    border-radius: var(--rtg-radius-input);
+    background: var(--rtg-white);
+    cursor: pointer;
+}
+
+/* Prefix addon glued to an input. */
+.rtg-input-group {
+    display: flex;
+    align-items: stretch;
+    max-width: 100%;
+}
+
+.rtg-input-group-addon {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 12px;
+    font-size: 13px;
+    color: var(--rtg-text-muted);
+    background: var(--rtg-bg-light);
+    border: 1px solid var(--rtg-border);
+    border-right: none;
+    border-radius: var(--rtg-radius-input) 0 0 var(--rtg-radius-input);
+    white-space: nowrap;
+    max-width: 55%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rtg-wrap .rtg-input-group input {
+    border-radius: 0 var(--rtg-radius-input) var(--rtg-radius-input) 0;
+    max-width: none;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Field + button side by side, sharing height. */
+.rtg-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.rtg-input-row input {
+    flex: 1 1 260px;
+    max-width: none;
+}
+
+.rtg-input-row .rtg-btn {
+    flex: 0 0 auto;
+}
+
+/* Inline status text next to a button. */
+.rtg-inline-status {
+    font-size: 13px;
+    color: var(--rtg-text-secondary);
+}
+
+.rtg-inline-status.is-success { color: var(--rtg-success-text); }
+.rtg-inline-status.is-error { color: var(--rtg-error-text); }
 
 /* File input */
 .rtg-file-input-wrapper {
@@ -270,6 +873,70 @@
     background: var(--rtg-bg-hover);
 }
 
+/* Radio / checkbox lists */
+.rtg-choice-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.rtg-choice-list.is-inline {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+}
+
+.rtg-choice,
+.rtg-checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--rtg-text-primary);
+    cursor: pointer;
+}
+
+.rtg-choice input[type="checkbox"],
+.rtg-choice input[type="radio"],
+.rtg-checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--rtg-action-primary);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* Color field: swatch picker beside the hex value. */
+.rtg-color-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px 24px;
+}
+
+.rtg-color-field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--rtg-text-primary);
+    margin-bottom: 6px;
+}
+
+.rtg-color-field-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rtg-wrap .rtg-color-field input[type="text"] {
+    width: 104px;
+    font-family: var(--rtg-font-mono);
+    font-size: 13px;
+    padding: 8px 10px;
+    text-transform: lowercase;
+}
+
 /* ==========================================================================
    Buttons
    ========================================================================== */
@@ -277,6 +944,7 @@
 .rtg-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     padding: 8px 16px;
     font-size: 14px;
@@ -284,10 +952,30 @@
     font-family: var(--rtg-font-stack);
     border-radius: var(--rtg-radius-input);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.1s;
     text-decoration: none;
     line-height: 1.4;
-    border: none;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+.rtg-btn:active {
+    transform: scale(0.97);
+}
+
+.rtg-btn:disabled,
+.rtg-btn[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.rtg-btn .dashicons,
+.rtg-btn .fa-solid {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
 }
 
 .rtg-btn-primary {
@@ -302,14 +990,14 @@
 }
 
 .rtg-btn-secondary {
-    background: var(--rtg-bg-light);
+    background: var(--rtg-white);
     color: var(--rtg-text-primary);
-    border: 1px solid var(--rtg-border);
+    border-color: var(--rtg-border);
 }
 
 .rtg-btn-secondary:hover,
 .rtg-btn-secondary:focus {
-    background: var(--rtg-bg-hover);
+    background: var(--rtg-bg-light);
     color: var(--rtg-text-primary);
 }
 
@@ -324,6 +1012,64 @@
     color: var(--rtg-white);
 }
 
+/* Quiet destructive: reads as a secondary button until hovered. */
+.rtg-btn-danger-quiet {
+    background: var(--rtg-white);
+    color: var(--rtg-error-text);
+    border-color: var(--rtg-border);
+}
+
+.rtg-btn-danger-quiet:hover,
+.rtg-btn-danger-quiet:focus {
+    background: var(--rtg-error-light);
+    border-color: transparent;
+    color: var(--rtg-error-text);
+}
+
+/* Text-only button. */
+.rtg-btn-ghost {
+    background: transparent;
+    color: var(--rtg-action-primary);
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+.rtg-btn-ghost:hover,
+.rtg-btn-ghost:focus {
+    background: var(--rtg-action-light);
+    color: var(--rtg-action-hover);
+}
+
+.rtg-btn-sm {
+    padding: 5px 11px;
+    font-size: 13px;
+}
+
+.rtg-btn-xs {
+    padding: 2px 8px;
+    font-size: 11px;
+    border-radius: var(--rtg-radius-badge);
+}
+
+.rtg-btn-block {
+    width: 100%;
+}
+
+/* A cluster of small actions in a table cell. */
+.rtg-table-actions {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.rtg-table-actions.is-stacked {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
 /* ==========================================================================
    Badges
    ========================================================================== */
@@ -331,12 +1077,23 @@
 .rtg-badge {
     display: inline-flex;
     align-items: center;
+    gap: 4px;
     padding: 4px 10px;
     font-size: 12px;
     font-weight: 600;
     border-radius: var(--rtg-radius-badge);
     line-height: 1.3;
     white-space: nowrap;
+    vertical-align: middle;
+}
+
+.rtg-badge + .rtg-badge {
+    margin-left: 4px;
+}
+
+.rtg-badge-sm {
+    font-size: 11px;
+    padding: 2px 7px;
 }
 
 .rtg-badge-success {
@@ -349,9 +1106,20 @@
     color: var(--rtg-error-text);
 }
 
+.rtg-badge-error.is-solid,
+.rtg-broken-badge {
+    background: var(--rtg-error);
+    color: var(--rtg-white);
+}
+
 .rtg-badge-warning {
     background: var(--rtg-warning-bg);
     color: var(--rtg-warning-text);
+}
+
+.rtg-badge-warning.is-solid {
+    background: #f97316;
+    color: var(--rtg-white);
 }
 
 .rtg-badge-info {
@@ -366,23 +1134,50 @@
 
 /* A wheel Rivian never sold: the guide labels its sizes "3rd-party wheels". */
 .rtg-badge-third-party {
-    background: #efeafb;
-    color: #5b3fc4;
+    background: var(--rtg-purple-bg);
+    color: var(--rtg-purple-text);
     font-size: 11px;
     margin-left: 8px;
     vertical-align: middle;
 }
 
-/* Segmented radio control (wheel source). Pure CSS: the radio inside each
-   option is visually hidden and :has() paints the chosen option. */
+.rtg-badge-required {
+    background: var(--rtg-error-light);
+    color: var(--rtg-error-text);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: var(--rtg-radius-pill);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Vehicle chips in a list cell. */
+.rtg-badge-list {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.rtg-badge-list .rtg-badge {
+    margin-left: 0;
+}
+
+/* Segmented radio control. Pure CSS: the radio inside each option is
+   visually hidden and :has() paints the chosen option. Also used with
+   buttons (.is-active) for JS-driven controls such as the analytics period. */
 .rtg-segmented {
     display: inline-flex;
     gap: 0;
     padding: 4px;
     margin-top: 8px;
-    background: var(--rtg-bg-light, #f5f5f7);
+    background: var(--rtg-bg-light);
     border: 1px solid var(--rtg-border);
     border-radius: 10px;
+}
+
+.rtg-segmented.is-standalone {
+    margin-top: 0;
 }
 
 .rtg-segmented-option {
@@ -390,9 +1185,12 @@
     display: inline-flex;
     align-items: center;
     padding: 7px 16px;
+    font-family: var(--rtg-font-stack);
     font-size: 13px;
     font-weight: 600;
     color: var(--rtg-text-secondary);
+    background: transparent;
+    border: 0;
     border-radius: 7px;
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease;
@@ -410,8 +1208,9 @@
     border: 0;
 }
 
-.rtg-segmented-option:has(input:checked) {
-    background: #ffffff;
+.rtg-segmented-option:has(input:checked),
+.rtg-segmented-option.is-active {
+    background: var(--rtg-white);
     color: var(--rtg-text-primary);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
@@ -419,17 +1218,6 @@
 .rtg-segmented-option:has(input:focus-visible) {
     outline: 2px solid var(--rtg-action-primary);
     outline-offset: 2px;
-}
-
-.rtg-badge-required {
-    background: var(--rtg-error-light);
-    color: var(--rtg-error-text);
-    font-size: 11px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: var(--rtg-radius-pill);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
 }
 
 /* Efficiency grade badges */
@@ -452,6 +1240,43 @@
 .rtg-grade-f { background: #b91c1c; }
 .rtg-grade-none { background: var(--rtg-bg-light); color: var(--rtg-text-muted); }
 
+/* Tag chips on the tire form: click to add or remove a tag. */
+.rtg-tag-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.rtg-tag-chip,
+.rtg-tag-suggestion {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    font-family: var(--rtg-font-stack);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--rtg-text-primary);
+    background: var(--rtg-bg-light);
+    border: 1px solid var(--rtg-border);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.rtg-tag-chip:hover,
+.rtg-tag-suggestion:hover {
+    background: var(--rtg-bg-hover);
+}
+
+.rtg-tag-chip.is-selected,
+.rtg-tag-suggestion.is-selected {
+    background: var(--rtg-action-primary);
+    border-color: var(--rtg-action-primary);
+    color: var(--rtg-white);
+}
+
 /* ==========================================================================
    Notices
    ========================================================================== */
@@ -463,8 +1288,18 @@
     line-height: 1.5;
     margin-bottom: 20px;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 10px;
+}
+
+.rtg-notice > span:first-child,
+.rtg-notice > div:first-child {
+    flex: 1 1 auto;
+}
+
+.rtg-notice a {
+    color: inherit;
+    font-weight: 600;
 }
 
 .rtg-notice-success {
@@ -497,11 +1332,36 @@
     opacity: 0.6;
     padding: 0 4px;
     line-height: 1;
+    flex-shrink: 0;
 }
 
 .rtg-notice-dismiss:hover {
     opacity: 1;
 }
+
+/* Notices the page scripts insert after an AJAX call use WordPress's
+   .notice.inline markup; inside our wrap they take the same look as ours. */
+.rtg-wrap .notice.inline {
+    margin: 0 0 12px;
+    padding: 12px 16px;
+    border: 0;
+    border-radius: var(--rtg-radius-input);
+    box-shadow: none;
+    font-size: 14px;
+    line-height: 1.5;
+    background: var(--rtg-info-bg);
+    color: var(--rtg-info-text);
+}
+
+.rtg-wrap .notice.inline p {
+    margin: 0;
+    padding: 0;
+    font-size: 14px;
+}
+
+.rtg-wrap .notice.inline.notice-success { background: var(--rtg-success-light); color: var(--rtg-success-text); }
+.rtg-wrap .notice.inline.notice-error { background: var(--rtg-error-light); color: var(--rtg-error-text); }
+.rtg-wrap .notice.inline.notice-warning { background: var(--rtg-warning-bg); color: var(--rtg-warning-text); }
 
 /* ==========================================================================
    Toggle Switches (iOS-style)
@@ -520,6 +1380,7 @@
     opacity: 0;
     width: 0;
     height: 0;
+    margin: 0;
 }
 
 .rtg-toggle-track {
@@ -553,14 +1414,35 @@
     transform: translateX(20px);
 }
 
-.rtg-toggle input[type="checkbox"]:focus + .rtg-toggle-track {
-    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
+.rtg-toggle input[type="checkbox"]:focus-visible + .rtg-toggle-track {
+    box-shadow: var(--rtg-focus-ring);
 }
 
 .rtg-toggle-label {
     font-size: 15px;
     font-weight: 400;
     color: var(--rtg-text-primary);
+}
+
+/* Compact toggle for dense settings lists. */
+.rtg-toggle.is-small .rtg-toggle-track {
+    width: 44px;
+    height: 24px;
+}
+
+.rtg-toggle.is-small .rtg-toggle-track::after {
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+}
+
+.rtg-toggle.is-small input[type="checkbox"]:checked + .rtg-toggle-track::after {
+    transform: translateX(20px);
+}
+
+.rtg-toggle.is-small .rtg-toggle-label {
+    font-size: 14px;
 }
 
 /* ==========================================================================
@@ -626,12 +1508,31 @@
     margin-bottom: 20px;
 }
 
+.rtg-stats-grid.is-compact {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.rtg-stats-grid.is-flush {
+    margin-bottom: 0;
+}
+
 .rtg-stat-card {
     background: var(--rtg-white);
     border: 1px solid var(--rtg-border);
     border-radius: var(--rtg-radius-card);
     padding: 20px;
     text-align: center;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+a.rtg-stat-card:hover,
+a.rtg-stat-card:focus {
+    border-color: var(--rtg-action-primary);
+    background: #fafcff;
+    color: inherit;
 }
 
 .rtg-stat-value {
@@ -639,6 +1540,13 @@
     font-weight: 600;
     color: var(--rtg-text-primary);
     line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+}
+
+.rtg-stat-sub {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--rtg-text-muted);
 }
 
 .rtg-stat-label {
@@ -648,6 +1556,170 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-top: 6px;
+}
+
+.rtg-stat-card.is-success .rtg-stat-value { color: var(--rtg-success-text); }
+.rtg-stat-card.is-warning .rtg-stat-value { color: var(--rtg-warning-text); }
+.rtg-stat-card.is-error .rtg-stat-value { color: var(--rtg-error-text); }
+.rtg-stat-card.is-info .rtg-stat-value { color: var(--rtg-info-text); }
+.rtg-stat-card.is-muted .rtg-stat-value { color: var(--rtg-text-muted); }
+
+/* Small stat tiles inside a card body (no card-within-card border). */
+.rtg-stats-grid.is-inset {
+    gap: 8px;
+}
+
+.rtg-stats-grid.is-inset .rtg-stat-card {
+    background: var(--rtg-bg-light);
+    border-color: transparent;
+    padding: 14px 12px;
+}
+
+.rtg-stats-grid.is-inset .rtg-stat-value {
+    font-size: 22px;
+}
+
+.rtg-stats-grid.is-inset .rtg-stat-label {
+    font-size: 11px;
+}
+
+/* Key / value readout (status of a sync, a run, a connection). */
+.rtg-kv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 14px 20px;
+}
+
+.rtg-kv-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--rtg-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+}
+
+.rtg-kv-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--rtg-text-primary);
+    line-height: 1.3;
+    font-variant-numeric: tabular-nums;
+}
+
+.rtg-kv-value.is-success { color: var(--rtg-success-text); }
+.rtg-kv-value.is-error { color: var(--rtg-error-text); }
+.rtg-kv-value.is-warning { color: var(--rtg-warning-text); }
+.rtg-kv-value.is-info { color: var(--rtg-info-text); }
+.rtg-kv-value.is-muted { color: var(--rtg-text-muted); font-weight: 500; }
+
+.rtg-kv-note {
+    font-size: 12px;
+    color: var(--rtg-text-muted);
+    margin-top: 2px;
+}
+
+/* Two-tone split bar (search vs AI, and the like). */
+.rtg-split-bar {
+    display: flex;
+    height: 32px;
+    border-radius: var(--rtg-radius-input);
+    overflow: hidden;
+    background: var(--rtg-bg-light);
+}
+
+.rtg-split-bar-segment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--rtg-white);
+}
+
+.rtg-split-bar-segment.is-a { background: var(--rtg-purple); }
+.rtg-split-bar-segment.is-b { background: var(--rtg-accent); color: var(--rtg-text-primary); }
+
+.rtg-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    font-size: 14px;
+}
+
+.rtg-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rtg-legend-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.rtg-legend-swatch.is-a { background: var(--rtg-purple); }
+.rtg-legend-swatch.is-b { background: var(--rtg-accent); }
+
+.rtg-split-row {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.rtg-split-row > .rtg-split-bar-wrap {
+    flex: 1 1 200px;
+}
+
+/* Progress bar */
+.rtg-progress {
+    width: 100%;
+    height: 8px;
+    background: var(--rtg-bg-hover);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.rtg-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--rtg-action-primary);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.rtg-progress-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: var(--rtg-text-muted);
+}
+
+.rtg-progress-meta > :last-child {
+    margin-left: auto;
+}
+
+/* Spinner row while a request runs. */
+.rtg-spinner-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 0;
+    font-size: 14px;
+    color: var(--rtg-text-secondary);
+}
+
+.rtg-spinner-row .spinner {
+    float: none;
+    margin: 0;
 }
 
 /* ==========================================================================
@@ -667,8 +1739,8 @@
 .rtg-table thead th {
     background: var(--rtg-bg-light);
     padding: 12px 16px;
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 12px;
+    font-weight: 600;
     color: var(--rtg-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -685,11 +1757,20 @@
     border-radius: 0;
 }
 
+.rtg-table thead th.is-right,
+.rtg-table tbody td.is-right {
+    text-align: right;
+}
+
 .rtg-table tbody td {
     padding: 12px 16px;
     border-bottom: 1px solid var(--rtg-divider);
     color: var(--rtg-text-primary);
     vertical-align: middle;
+}
+
+.rtg-table tbody td.is-top {
+    vertical-align: top;
 }
 
 .rtg-table tbody tr:last-child td {
@@ -700,14 +1781,20 @@
     background: #fafafa;
 }
 
+.rtg-table tbody tr.is-flash td {
+    background: var(--rtg-success-light);
+}
+
 .rtg-table .column-cb {
     width: 40px;
     padding: 12px 8px 12px 16px;
 }
 
-.rtg-table .column-cb input[type="checkbox"] {
+.rtg-table .column-cb input[type="checkbox"],
+.rtg-table input[type="checkbox"] {
     width: 18px;
     height: 18px;
+    margin: 0;
     accent-color: var(--rtg-action-primary);
     cursor: pointer;
 }
@@ -722,25 +1809,62 @@
     object-fit: cover;
     border-radius: var(--rtg-radius-pill);
     background: var(--rtg-white);
+    display: block;
 }
 
 .rtg-table .tire-thumb-placeholder {
-    display: inline-block;
+    display: block;
     width: 50px;
     height: 35px;
     background: var(--rtg-bg-light);
     border-radius: var(--rtg-radius-pill);
 }
 
-.rtg-table .column-primary strong a {
+.rtg-table .column-primary strong a,
+.rtg-table .rtg-row-title {
     color: var(--rtg-action-primary);
     text-decoration: none;
     font-weight: 600;
 }
 
-.rtg-table .column-primary strong a:hover {
+.rtg-table .column-primary strong a:hover,
+.rtg-table .rtg-row-title:hover {
     color: var(--rtg-action-hover);
     text-decoration: underline;
+}
+
+.rtg-table .rtg-row-heading {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.rtg-table .rtg-row-meta {
+    display: block;
+    font-size: 12px;
+    color: var(--rtg-text-muted);
+    margin-top: 2px;
+}
+
+.rtg-table .rtg-row-note {
+    display: block;
+    font-size: 11px;
+    color: var(--rtg-text-muted);
+    margin-top: 4px;
+    line-height: 1.45;
+}
+
+.rtg-table .rtg-row-note.is-warning {
+    color: var(--rtg-warning-text);
+}
+
+.rtg-table .rtg-row-note a {
+    color: var(--rtg-action-primary);
+}
+
+.rtg-table .rtg-row-note ul {
+    margin: 6px 0 0;
+    padding-left: 16px;
 }
 
 .rtg-table .row-actions {
@@ -751,9 +1875,18 @@
     transition: opacity 0.15s;
 }
 
-.rtg-table tbody tr:hover .row-actions {
+.rtg-table tbody tr:hover .row-actions,
+.rtg-table tbody tr:focus-within .row-actions {
     visibility: visible;
     opacity: 1;
+}
+
+/* No hover on touch screens: the actions have to be visible. */
+@media (hover: none) {
+    .rtg-table .row-actions {
+        visibility: visible;
+        opacity: 1;
+    }
 }
 
 .rtg-table .row-actions a {
@@ -771,6 +1904,29 @@
 
 .rtg-table .row-actions .delete a:hover {
     color: #c41e3a;
+}
+
+.rtg-table td.rtg-mono,
+.rtg-table .rtg-mono {
+    font-family: var(--rtg-font-mono);
+    font-size: 13px;
+}
+
+.rtg-table td .rtg-empty {
+    color: var(--rtg-text-muted);
+}
+
+.rtg-table td.rtg-cell-clamp {
+    max-width: 340px;
+}
+
+.rtg-table .rtg-clamp {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    color: var(--rtg-text-secondary);
+    font-size: 13px;
 }
 
 /* Sortable headers */
@@ -791,15 +1947,62 @@
     color: var(--rtg-text-primary);
 }
 
+.rtg-table thead th .dashicons {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+}
+
 /* Compact table variant */
 .rtg-table-compact thead th {
     padding: 10px 12px;
-    font-size: 12px;
+    font-size: 11px;
 }
 
 .rtg-table-compact tbody td {
     padding: 8px 12px;
     font-size: 13px;
+}
+
+/* A short table inside a card body, not in a table wrapper. */
+.rtg-table.is-inset {
+    border: 1px solid var(--rtg-divider);
+    border-radius: var(--rtg-radius-input);
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+/* A one-line note above a table (a truncated view, a hint). */
+.rtg-table-note {
+    padding: 10px 16px;
+    font-size: 13px;
+    color: var(--rtg-text-muted);
+    border-bottom: 1px solid var(--rtg-border);
+}
+
+.rtg-table-footnote {
+    padding: 14px 24px;
+    font-size: 13px;
+    color: var(--rtg-text-secondary);
+    border-top: 1px solid var(--rtg-divider);
+}
+
+/* Star rating in a cell */
+.rtg-stars {
+    display: inline-flex;
+    gap: 0;
+    white-space: nowrap;
+}
+
+.rtg-stars .dashicons {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    color: var(--rtg-border);
+}
+
+.rtg-stars .dashicons.is-filled {
+    color: var(--rtg-warning);
 }
 
 /* ==========================================================================
@@ -810,7 +2013,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 24px;
+    padding: 14px 24px;
     gap: 16px;
     flex-wrap: wrap;
 }
@@ -819,16 +2022,28 @@
     border-bottom: 1px solid var(--rtg-divider);
 }
 
+.rtg-tablenav-bottom {
+    border-top: 1px solid var(--rtg-divider);
+}
+
 .rtg-bulk-actions {
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-.rtg-bulk-actions select {
-    padding: 6px 12px;
+.rtg-wrap .rtg-bulk-actions select {
+    padding: 6px 32px 6px 12px;
     font-size: 14px;
     max-width: 200px;
+    height: 36px;
+    line-height: normal;
+}
+
+.rtg-bulk-actions .rtg-btn {
+    height: 36px;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 .rtg-pagination {
@@ -837,6 +2052,7 @@
     gap: 12px;
     font-size: 14px;
     color: var(--rtg-text-secondary);
+    margin-left: auto;
 }
 
 .rtg-pagination-count {
@@ -861,7 +2077,7 @@
     font-size: 14px;
     border-radius: var(--rtg-radius-input);
     text-decoration: none;
-    transition: all 0.2s;
+    transition: background 0.2s;
 }
 
 .rtg-pagination-links a {
@@ -872,15 +2088,22 @@
 
 .rtg-pagination-links a:hover {
     background: var(--rtg-bg-hover);
+    color: var(--rtg-text-primary);
 }
 
-.rtg-pagination-links .current-page {
+.rtg-pagination-links .current-page,
+.rtg-pagination-links .is-current {
     font-weight: 600;
     color: var(--rtg-text-primary);
 }
 
+.rtg-pagination-links .is-current {
+    background: var(--rtg-text-primary);
+    color: var(--rtg-white);
+}
+
 /* ==========================================================================
-   Search Box
+   Search Box (legacy name; the toolbar is the same thing)
    ========================================================================== */
 
 .rtg-search-box {
@@ -888,22 +2111,22 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 /* One tidy row: the search field takes twice the share of a dropdown, all
    controls share the same height, and the base 400px input cap is lifted
    so widths are governed by the flex ratios instead. The height is pinned
-   explicitly because matching paddings is not enough — wp-admin's own
+   explicitly because matching paddings is not enough: wp-admin's own
    stylesheet forces line-height: 2 on selects, which inflates them past
    any button whose padding "matches". */
 .rtg-search-box input[type="search"],
 .rtg-search-box select,
 .rtg-search-box .rtg-btn {
-    height: 44px;
+    height: 40px;
     line-height: normal;
     box-sizing: border-box;
-    font-size: 15px;
+    font-size: 14px;
 }
 
 .rtg-search-box input[type="search"] {
@@ -931,19 +2154,72 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
+    align-items: start;
+}
+
+.rtg-edit-grid > .rtg-card {
+    margin-bottom: 0;
+}
+
+.rtg-edit-grid.is-single {
+    grid-template-columns: minmax(0, 720px);
 }
 
 /* ==========================================================================
-   Footer Actions
+   Footer Actions (form submit bar)
    ========================================================================== */
 
 .rtg-footer-actions {
-    margin-top: 32px;
-    padding-top: 24px;
+    margin-top: 24px;
+    padding-top: 20px;
     border-top: 1px solid var(--rtg-border);
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 12px;
+}
+
+/* Long forms: the submit bar stays in view while the page scrolls. */
+.rtg-footer-actions.is-sticky {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    margin: 24px -20px 0;
+    padding: 14px 20px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-top: 1px solid var(--rtg-border);
+    box-shadow: var(--rtg-shadow-floating);
+}
+
+.rtg-footer-actions .rtg-unsaved {
+    display: none;
+    font-size: 13px;
+    color: var(--rtg-warning-text);
+    align-items: center;
+    gap: 6px;
+}
+
+.rtg-footer-actions .rtg-unsaved::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--rtg-warning);
+}
+
+.rtg-footer-actions.has-changes .rtg-unsaved {
+    display: inline-flex;
+}
+
+.rtg-footer-actions .rtg-footer-end {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--rtg-text-secondary);
 }
 
 /* ==========================================================================
@@ -961,6 +2237,16 @@
     background: var(--rtg-white);
     border: 1px solid var(--rtg-border);
     padding: 4px;
+    display: block;
+}
+
+.rtg-canvas-preview {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--rtg-radius-input);
+    border: 1px solid var(--rtg-border);
+    margin-bottom: 20px;
 }
 
 /* ==========================================================================
@@ -999,26 +2285,38 @@
     padding: 60px 40px;
 }
 
-.rtg-empty-state .dashicons {
-    font-size: 64px;
-    width: 64px;
-    height: 64px;
-    opacity: 0.5;
-    color: var(--rtg-text-muted);
-    margin-bottom: 16px;
+.rtg-empty-state.is-compact {
+    padding: 32px 20px;
 }
 
+.rtg-empty-state .dashicons {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    opacity: 0.4;
+    color: var(--rtg-text-muted);
+    margin-bottom: 12px;
+}
+
+.rtg-empty-state h2,
 .rtg-empty-state h3 {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 600;
     color: var(--rtg-text-primary);
     margin: 0 0 8px;
 }
 
 .rtg-empty-state p {
-    font-size: 15px;
+    font-size: 14px;
     color: var(--rtg-text-secondary);
-    margin: 0 0 20px;
+    margin: 0 auto;
+    max-width: 500px;
+    line-height: 1.6;
+}
+
+.rtg-empty-state p + .rtg-btn,
+.rtg-empty-state p + p {
+    margin-top: 16px;
 }
 
 .rtg-empty-state a {
@@ -1030,32 +2328,58 @@
     text-decoration: underline;
 }
 
+/* Muted one-liner where a list would be. */
+.rtg-empty-line {
+    color: var(--rtg-text-muted);
+    font-size: 14px;
+    margin: 0;
+}
+
+.rtg-empty-line.is-padded {
+    padding: 16px 24px;
+}
+
+.rtg-toolbar.is-inset {
+    padding: 12px 24px 0;
+    margin: 0;
+}
+
+.rtg-notice.is-after {
+    margin: 16px 0 0;
+}
+
 /* ==========================================================================
    Small Labels / Meta
    ========================================================================== */
 
 .rtg-meta-label {
     font-size: 11px;
-    font-weight: 500;
+    font-weight: 600;
     color: var(--rtg-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
 
-/* ==========================================================================
-   Section title within card body (e.g., shortcode docs)
-   ========================================================================== */
+.rtg-group-label {
+    margin: 0 0 12px;
+    display: block;
+}
 
 .rtg-section-title {
-    font-size: 20px;
+    font-size: 17px;
     font-weight: 600;
     color: var(--rtg-text-primary);
     margin: 0 0 12px;
 }
 
-/* ==========================================================================
-   Divider
-   ========================================================================== */
+.rtg-subsection-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--rtg-text-primary);
+    margin: 28px 0 4px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rtg-divider);
+}
 
 .rtg-divider {
     border: none;
@@ -1063,208 +2387,30 @@
     margin: 24px 0;
 }
 
-/* ==========================================================================
-   Responsive Breakpoints
-   ========================================================================== */
-
-@media (max-width: 1024px) {
-    .rtg-wrap {
-        max-width: 100%;
-    }
-
-    .rtg-stats-grid {
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    }
+/* Big number + unit inline (Roamer readout on the tire form). */
+.rtg-figure-row {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-top: 8px;
 }
 
-@media (max-width: 782px) {
-    .rtg-wrap {
-        margin: 20px auto 10px;
-        padding: 0 12px;
-    }
-
-    .rtg-page-title {
-        font-size: 24px;
-    }
-
-    .rtg-card-header {
-        padding: 16px 18px;
-    }
-
-    .rtg-card-header h2 {
-        font-size: 18px;
-    }
-
-    .rtg-card-body {
-        padding: 16px 18px;
-    }
-
-    .rtg-field-row {
-        padding: 16px 0;
-    }
-
-    .rtg-field-label {
-        font-size: 14px;
-    }
-
-    .rtg-edit-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .rtg-stats-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .rtg-tablenav {
-        padding: 12px 18px;
-    }
-
-    .rtg-table thead th,
-    .rtg-table tbody td {
-        padding: 10px 12px;
-        font-size: 13px;
-    }
-
-    .rtg-search-box input[type="search"] {
-        min-width: 200px;
-    }
-}
-
-@media (max-width: 480px) {
-    .rtg-wrap {
-        padding: 0 8px;
-    }
-
-    .rtg-page-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-    }
-
-    .rtg-status-card {
-        flex-direction: column;
-        text-align: center;
-    }
-
-    .rtg-footer-actions {
-        flex-direction: column;
-    }
-
-    .rtg-footer-actions .rtg-btn {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .rtg-search-box {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .rtg-search-box input[type="search"] {
-        min-width: 100%;
-    }
-
-    .rtg-bulk-actions {
-        flex-wrap: wrap;
-    }
-
-    .rtg-tablenav {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .rtg-stats-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-}
-
-/* ==========================================================================
-   Utility: Hide WordPress default elements we replace
-   ========================================================================== */
-
-/* Hide default WP notices inside our wrap — we use custom ones */
-.rtg-wrap > .notice,
-.rtg-wrap > .updated,
-.rtg-wrap > .error {
-    display: none;
-}
-
-/* ==========================================================================
-   Checkbox styling
-   ========================================================================== */
-
-.rtg-checkbox-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 15px;
+.rtg-figure-value {
+    font-size: 22px;
+    font-weight: 700;
     color: var(--rtg-text-primary);
-    cursor: pointer;
+    font-variant-numeric: tabular-nums;
 }
 
-.rtg-checkbox-label input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    accent-color: var(--rtg-action-primary);
-    cursor: pointer;
+.rtg-figure-value.is-secondary {
+    font-size: 18px;
+    font-weight: 600;
 }
 
-/* ==========================================================================
-   Affiliate Links Dashboard
-   ========================================================================== */
-
-.rtg-affiliate-table .rtg-link-url {
-    color: var(--rtg-action-primary);
-    text-decoration: none;
-    font-size: 13px;
-    word-break: break-all;
-}
-
-.rtg-affiliate-table .rtg-link-url:hover {
-    text-decoration: underline;
-    color: var(--rtg-action-hover);
-}
-
-.rtg-affiliate-table .rtg-link-empty {
+.rtg-figure-unit {
     font-size: 13px;
     color: var(--rtg-text-muted);
-    font-style: italic;
-}
-
-.rtg-affiliate-table .rtg-link-cell {
-    min-width: 180px;
-}
-
-.rtg-affiliate-table .rtg-link-input {
-    font-size: 13px !important;
-    padding: 6px 10px !important;
-    max-width: 100% !important;
-}
-
-.rtg-affiliate-table .rtg-btn {
-    padding: 5px 12px;
-    font-size: 13px;
-}
-
-.rtg-affiliate-table .rtg-btn-save-links,
-.rtg-affiliate-table .rtg-btn-cancel-links {
-    margin-top: 4px;
-}
-
-.rtg-affiliate-table td {
-    vertical-align: top;
-    padding-top: 14px;
-    padding-bottom: 14px;
-}
-
-.rtg-affiliate-table tbody tr {
-    transition: background 0.3s ease;
-}
-
-@media (max-width: 1200px) {
-    .rtg-affiliate-table .rtg-link-cell {
-        min-width: 140px;
-    }
+    margin-left: 4px;
 }
 
 /* ==========================================================================
@@ -1276,6 +2422,73 @@
     grid-template-columns: 1fr 1fr;
     gap: 20px;
     margin-bottom: 20px;
+}
+
+.rtg-dashboard-grid > .rtg-card {
+    margin-bottom: 0;
+}
+
+.rtg-dashboard-grid.is-thirds {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/* Quick actions: link tiles under the header. */
+.rtg-quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.rtg-quick-action {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--rtg-white);
+    border: 1px solid var(--rtg-border);
+    border-radius: var(--rtg-radius-card);
+    text-decoration: none;
+    color: var(--rtg-text-primary);
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.rtg-quick-action:hover,
+.rtg-quick-action:focus {
+    border-color: var(--rtg-action-primary);
+    background: #fafcff;
+    color: var(--rtg-text-primary);
+}
+
+.rtg-quick-action-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--rtg-action-light);
+    color: var(--rtg-action-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.rtg-quick-action-icon .dashicons {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.rtg-quick-action strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.rtg-quick-action span:not(.rtg-quick-action-icon) {
+    display: block;
+    font-size: 12px;
+    color: var(--rtg-text-muted);
+    margin-top: 1px;
 }
 
 /* Horizontal bar chart */
@@ -1298,8 +2511,8 @@
 }
 
 .rtg-bar-label {
-    width: 180px;
-    min-width: 180px;
+    width: 160px;
+    min-width: 120px;
     font-size: 14px;
     font-weight: 500;
     color: var(--rtg-text-primary);
@@ -1310,7 +2523,7 @@
 
 .rtg-bar-track {
     flex: 1;
-    height: 24px;
+    height: 20px;
     background: var(--rtg-bg-light);
     border-radius: var(--rtg-radius-pill);
     overflow: hidden;
@@ -1414,19 +2627,27 @@
     color: var(--rtg-text-primary);
     white-space: nowrap;
     flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
 }
 
-/* Content health items */
+.rtg-mini-list-value.is-info { color: var(--rtg-info-text); }
+.rtg-mini-list-value.is-muted { color: var(--rtg-text-muted); font-weight: 400; font-size: 13px; }
+
+/* Attention / health items */
 .rtg-health-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 0;
+    gap: 14px;
+    padding: 14px 0;
     border-bottom: 1px solid var(--rtg-divider);
 }
 
 .rtg-health-item:last-child {
     border-bottom: none;
+}
+
+.rtg-health-item.is-ok {
+    opacity: 0.7;
 }
 
 .rtg-health-icon {
@@ -1438,6 +2659,12 @@
     justify-content: center;
     font-size: 18px;
     flex-shrink: 0;
+}
+
+.rtg-health-icon .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
 }
 
 .rtg-health-icon-warning {
@@ -1455,28 +2682,304 @@
     color: var(--rtg-success-text);
 }
 
+.rtg-health-icon-info {
+    background: var(--rtg-info-bg);
+    color: var(--rtg-info-text);
+}
+
 .rtg-health-content {
     flex: 1;
+    min-width: 0;
 }
 
 .rtg-health-content strong {
     font-size: 14px;
     color: var(--rtg-text-primary);
+    display: block;
 }
 
 .rtg-health-content p {
     font-size: 13px;
     color: var(--rtg-text-secondary);
     margin: 2px 0 0;
+    line-height: 1.45;
 }
 
 .rtg-health-action {
     flex-shrink: 0;
 }
 
+.rtg-all-clear {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+    color: var(--rtg-success-text);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* ==========================================================================
+   Affiliate Links Dashboard
+   ========================================================================== */
+
+.rtg-affiliate-table .rtg-link-url {
+    color: var(--rtg-action-primary);
+    text-decoration: none;
+    font-size: 13px;
+    word-break: break-all;
+}
+
+.rtg-affiliate-table .rtg-link-url:hover {
+    text-decoration: underline;
+    color: var(--rtg-action-hover);
+}
+
+.rtg-affiliate-table .rtg-link-empty {
+    font-size: 13px;
+    color: var(--rtg-text-muted);
+    font-style: italic;
+}
+
+.rtg-affiliate-table .rtg-link-cell {
+    min-width: 180px;
+}
+
+.rtg-wrap .rtg-affiliate-table .rtg-link-input {
+    font-size: 13px;
+    padding: 6px 10px;
+    max-width: 100%;
+    width: 100%;
+}
+
+.rtg-affiliate-table .rtg-btn {
+    padding: 5px 12px;
+    font-size: 13px;
+}
+
+.rtg-affiliate-table td {
+    vertical-align: top;
+    padding-top: 14px;
+    padding-bottom: 14px;
+}
+
+.rtg-affiliate-table .rtg-status-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.rtg-affiliate-table .rtg-status-stack .rtg-badge {
+    margin-left: 0;
+}
+
+.rtg-affiliate-table tbody tr {
+    transition: background 0.3s ease;
+}
+
+.rtg-link-edit[hidden] {
+    display: none;
+}
+
+/* Health strip above the links table. */
+.rtg-health-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    font-size: 14px;
+}
+
+.rtg-health-strip strong {
+    font-weight: 600;
+}
+
+@media (max-width: 1200px) {
+    .rtg-affiliate-table .rtg-link-cell {
+        min-width: 140px;
+    }
+}
+
+/* ==========================================================================
+   Utility: Hide WordPress default elements we replace
+   ========================================================================== */
+
+.rtg-wrap > .notice,
+.rtg-wrap > .updated,
+.rtg-wrap > .error {
+    display: none;
+}
+
+.rtg-hidden,
+.rtg-wrap [hidden] {
+    display: none !important;
+}
+
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
+
 @media (max-width: 1024px) {
-    .rtg-dashboard-grid {
+    .rtg-wrap {
+        max-width: 100%;
+    }
+
+    .rtg-stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+
+    .rtg-dashboard-grid,
+    .rtg-dashboard-grid.is-thirds {
         grid-template-columns: 1fr;
     }
 }
 
+@media (max-width: 782px) {
+    .rtg-wrap {
+        margin: 16px auto 10px;
+        padding: 0 12px;
+    }
+
+    .rtg-page-title {
+        font-size: 24px;
+    }
+
+    .rtg-page-actions {
+        width: 100%;
+    }
+
+    .rtg-page-actions .rtg-btn,
+    .rtg-page-actions .rtg-page-title-action {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+
+    .rtg-card-header {
+        padding: 14px 16px;
+    }
+
+    .rtg-card-header h2 {
+        font-size: 16px;
+    }
+
+    .rtg-card-body {
+        padding: 16px;
+    }
+
+    .rtg-field-row {
+        padding: 16px 0;
+    }
+
+    .rtg-field-label {
+        font-size: 14px;
+    }
+
+    .rtg-edit-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .rtg-stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .rtg-tablenav {
+        padding: 12px 16px;
+    }
+
+    .rtg-table thead th,
+    .rtg-table tbody td {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .rtg-search-box input[type="search"],
+    .rtg-toolbar input[type="search"] {
+        min-width: 200px;
+    }
+
+    .rtg-footer-actions.is-sticky {
+        margin-left: -12px;
+        margin-right: -12px;
+        padding: 12px;
+    }
+
+    .rtg-bar-label {
+        width: 110px;
+        min-width: 90px;
+    }
+}
+
+@media (max-width: 480px) {
+    .rtg-wrap {
+        padding: 0 8px;
+    }
+
+    .rtg-status-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .rtg-footer-actions .rtg-btn {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+
+    .rtg-footer-actions .rtg-footer-end {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .rtg-search-box,
+    .rtg-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .rtg-search-box input[type="search"],
+    .rtg-toolbar input[type="search"],
+    .rtg-toolbar select {
+        min-width: 100%;
+        max-width: 100%;
+    }
+
+    .rtg-bulk-actions {
+        flex-wrap: wrap;
+    }
+
+    .rtg-tablenav {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .rtg-pagination {
+        margin-left: 0;
+    }
+
+    .rtg-stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .rtg-health-item {
+        flex-wrap: wrap;
+    }
+
+    .rtg-health-action {
+        width: 100%;
+        padding-left: 50px;
+    }
+
+    .rtg-footer-actions.is-sticky {
+        margin-left: -8px;
+        margin-right: -8px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rtg-wrap *,
+    .rtg-wrap *::before,
+    .rtg-wrap *::after {
+        transition: none !important;
+        animation: none !important;
+    }
+}

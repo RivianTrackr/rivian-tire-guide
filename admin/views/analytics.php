@@ -7,15 +7,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 <div class="rtg-wrap">
 
     <div class="rtg-page-header">
-        <h1 class="rtg-page-title">Analytics</h1>
-    </div>
-
-    <!-- Period Selector -->
-    <div style="margin-bottom: 20px;">
-        <div class="rtg-filter-tabs">
-            <button type="button" class="rtg-filter-tab" data-period="7">7 Days</button>
-            <button type="button" class="rtg-filter-tab rtg-filter-tab-active" data-period="30">30 Days</button>
-            <button type="button" class="rtg-filter-tab" data-period="90">90 Days</button>
+        <div class="rtg-page-heading">
+            <h1 class="rtg-page-title">Analytics</h1>
+            <p class="rtg-page-subtitle">What shoppers click, search for and ask the advisor. Events are kept for the period set in <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-settings#tab-analytics' ) ); ?>">Settings</a>.</p>
+        </div>
+        <div class="rtg-page-actions">
+            <div class="rtg-segmented is-standalone" role="group" aria-label="Period">
+                <button type="button" class="rtg-segmented-option rtg-filter-tab" data-period="7">7 days</button>
+                <button type="button" class="rtg-segmented-option rtg-filter-tab is-active" data-period="30">30 days</button>
+                <button type="button" class="rtg-segmented-option rtg-filter-tab" data-period="90">90 days</button>
+            </div>
         </div>
     </div>
 
@@ -23,78 +24,76 @@ if ( ! defined( 'ABSPATH' ) ) {
     <div class="rtg-stats-grid" id="rtgAnalyticsSummary">
         <div class="rtg-stat-card">
             <div class="rtg-stat-value" id="statTotalClicks">-</div>
-            <div class="rtg-stat-label">Total Clicks</div>
+            <div class="rtg-stat-label">Clicks</div>
         </div>
         <div class="rtg-stat-card">
             <div class="rtg-stat-value" id="statUniqueClickers">-</div>
-            <div class="rtg-stat-label">Unique Visitors (Clicks)</div>
+            <div class="rtg-stat-label">Visitors who clicked</div>
         </div>
         <div class="rtg-stat-card">
             <div class="rtg-stat-value" id="statTotalSearches">-</div>
-            <div class="rtg-stat-label">Total Searches</div>
+            <div class="rtg-stat-label">Searches</div>
         </div>
         <div class="rtg-stat-card">
             <div class="rtg-stat-value" id="statTotalAiQueries">-</div>
-            <div class="rtg-stat-label">AI Queries</div>
+            <div class="rtg-stat-label">Advisor questions</div>
         </div>
         <div class="rtg-stat-card">
             <div class="rtg-stat-value" id="statUniqueSearchers">-</div>
-            <div class="rtg-stat-label">Unique Visitors (Search)</div>
+            <div class="rtg-stat-label">Visitors who searched</div>
         </div>
     </div>
 
     <!-- Click Breakdown Cards -->
-    <div class="rtg-stats-grid" id="rtgClickBreakdown" style="grid-template-columns: repeat(2, 1fr);">
+    <div class="rtg-stats-grid" id="rtgClickBreakdown">
         <div class="rtg-stat-card">
             <div class="rtg-stat-value" id="statPurchaseClicks">-</div>
-            <div class="rtg-stat-label">Purchase Clicks</div>
+            <div class="rtg-stat-label">Purchase clicks</div>
         </div>
         <div class="rtg-stat-card">
             <div class="rtg-stat-value" id="statReviewClicks">-</div>
-            <div class="rtg-stat-label">Review Clicks</div>
+            <div class="rtg-stat-label">Review clicks</div>
         </div>
     </div>
 
     <!-- Charts Row -->
     <div class="rtg-dashboard-grid">
         <div class="rtg-card">
-            <div class="rtg-card-header"><h2>Clicks Over Time</h2></div>
+            <div class="rtg-card-header"><h2>Clicks over time</h2></div>
             <div class="rtg-card-body">
                 <canvas id="chartClicksDaily" height="260"></canvas>
-                <p id="chartClicksEmpty" style="color: var(--rtg-text-muted); display: none;">No click data for this period.</p>
+                <p id="chartClicksEmpty" class="rtg-empty-line" style="display: none;">No click data for this period.</p>
             </div>
         </div>
         <div class="rtg-card">
-            <div class="rtg-card-header"><h2>Search Volume</h2></div>
+            <div class="rtg-card-header"><h2>Search volume</h2></div>
             <div class="rtg-card-body">
                 <canvas id="chartSearchesDaily" height="260"></canvas>
-                <p id="chartSearchesEmpty" style="color: var(--rtg-text-muted); display: none;">No search data for this period.</p>
+                <p id="chartSearchesEmpty" class="rtg-empty-line" style="display: none;">No search data for this period.</p>
             </div>
         </div>
     </div>
 
     <!-- Search vs AI Usage -->
-    <div class="rtg-dashboard-grid" style="grid-template-columns: 1fr;">
-        <div class="rtg-card">
-            <div class="rtg-card-header"><h2>Search vs AI Usage</h2></div>
+    <div class="rtg-card">
+            <div class="rtg-card-header"><h2>Search vs advisor</h2></div>
             <div class="rtg-card-body" id="searchVsAiContainer">
-                <p style="color: var(--rtg-text-muted);">Loading...</p>
+                <p class="rtg-empty-line">Loading...</p>
             </div>
         </div>
-    </div>
 
     <!-- Tables Row: Top Clicked + Top Searches -->
     <div class="rtg-dashboard-grid">
         <div class="rtg-card">
-            <div class="rtg-card-header"><h2>Most Clicked Tires</h2></div>
+            <div class="rtg-card-header"><h2>Most clicked tires</h2></div>
             <div class="rtg-card-body" id="topClickedContainer">
-                <p style="color: var(--rtg-text-muted);">Loading...</p>
+                <p class="rtg-empty-line">Loading...</p>
             </div>
         </div>
         <div class="rtg-card">
-            <div class="rtg-card-header"><h2>Top Search Queries</h2></div>
+            <div class="rtg-card-header"><h2>Top searches</h2></div>
             <div class="rtg-card-body" id="topSearchesContainer">
-                <p style="color: var(--rtg-text-muted);">Loading...</p>
+                <p class="rtg-empty-line">Loading...</p>
             </div>
         </div>
     </div>
@@ -103,31 +102,29 @@ if ( ! defined( 'ABSPATH' ) ) {
     <div class="rtg-dashboard-grid">
         <div class="rtg-card">
             <div class="rtg-card-header">
-                <h2>Top AI Queries</h2>
-                <p style="font-size: 13px; color: var(--rtg-text-muted); margin-top: 4px;">Most popular questions asked to the AI recommendation engine.</p>
+                <h2>Top advisor questions</h2>
+                <p>The questions shoppers ask "Help me choose" most often.</p>
             </div>
             <div class="rtg-card-body" id="topAiQueriesContainer">
-                <p style="color: var(--rtg-text-muted);">Loading...</p>
+                <p class="rtg-empty-line">Loading...</p>
             </div>
         </div>
         <div class="rtg-card">
             <div class="rtg-card-header">
-                <h2>Zero-Result Searches</h2>
-                <p style="font-size: 13px; color: var(--rtg-text-muted); margin-top: 4px;">Searches that returned no tires &mdash; potential unmet demand.</p>
+                <h2>Searches with no results</h2>
+                <p>Searches that returned no tires. Each one is a tire someone wanted and could not find.</p>
             </div>
             <div class="rtg-card-body" id="zeroResultsContainer">
-                <p style="color: var(--rtg-text-muted);">Loading...</p>
+                <p class="rtg-empty-line">Loading...</p>
             </div>
         </div>
     </div>
 
     <!-- Filter Usage -->
-    <div class="rtg-dashboard-grid" style="grid-template-columns: 1fr;">
-        <div class="rtg-card">
-            <div class="rtg-card-header"><h2>Most Used Filters</h2></div>
-            <div class="rtg-card-body" id="filterUsageContainer">
-                <p style="color: var(--rtg-text-muted);">Loading...</p>
-            </div>
+    <div class="rtg-card">
+        <div class="rtg-card-header"><h2>Most used filters</h2></div>
+        <div class="rtg-card-body" id="filterUsageContainer">
+            <p class="rtg-empty-line">Loading...</p>
         </div>
     </div>
 
@@ -139,6 +136,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (typeof rtgAnalytics === 'undefined') return;
 
+    if (typeof Chart === 'undefined') {
+        // The chart library comes from a CDN; when it is blocked the tables
+        // still load but the two charts cannot draw.
+        ['chartClicksEmpty', 'chartSearchesEmpty'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) {
+                el.textContent = 'The chart library could not be loaded, so this chart is unavailable. The figures below are unaffected.';
+                el.style.display = 'block';
+            }
+        });
+        ['chartClicksDaily', 'chartSearchesDaily'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+    }
+
     let currentPeriod = 30;
     let clicksChart = null;
     let searchesChart = null;
@@ -147,9 +160,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.rtg-filter-tab[data-period]').forEach(function(tab) {
         tab.addEventListener('click', function() {
             document.querySelectorAll('.rtg-filter-tab[data-period]').forEach(function(t) {
-                t.classList.remove('rtg-filter-tab-active');
+                t.classList.remove('is-active');
             });
-            tab.classList.add('rtg-filter-tab-active');
+            tab.classList.add('is-active');
             currentPeriod = parseInt(tab.dataset.period);
             loadAnalytics(currentPeriod);
         });
@@ -224,6 +237,8 @@ document.addEventListener('DOMContentLoaded', function() {
         var canvas = document.getElementById('chartClicksDaily');
         var emptyMsg = document.getElementById('chartClicksEmpty');
 
+        if (typeof Chart === 'undefined') return;
+
         if (!dailyData.length) {
             canvas.style.display = 'none';
             emptyMsg.style.display = 'block';
@@ -259,8 +274,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     {
                         label: 'Purchase',
                         data: purchaseData,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderColor: '#0071e3',
+                        backgroundColor: 'rgba(0, 113, 227, 0.1)',
                         fill: true,
                         tension: 0.3,
                     },
@@ -277,11 +292,11 @@ document.addEventListener('DOMContentLoaded', function() {
             options: {
                 responsive: true,
                 plugins: {
-                    legend: { position: 'bottom', labels: { color: '#8493a5' } },
+                    legend: { position: 'bottom', labels: { color: '#6e6e73' } },
                 },
                 scales: {
-                    x: { ticks: { color: '#8493a5' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                    y: { beginAtZero: true, ticks: { color: '#8493a5', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                    x: { ticks: { color: '#86868b' }, grid: { display: false } },
+                    y: { beginAtZero: true, ticks: { color: '#86868b', stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.06)' } },
                 },
             },
         });
@@ -290,6 +305,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderSearchesChart(dailyData) {
         var canvas = document.getElementById('chartSearchesDaily');
         var emptyMsg = document.getElementById('chartSearchesEmpty');
+
+        if (typeof Chart === 'undefined') return;
 
         if (!dailyData.length) {
             canvas.style.display = 'none';
@@ -326,8 +343,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     legend: { display: false },
                 },
                 scales: {
-                    x: { ticks: { color: '#8493a5' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                    y: { beginAtZero: true, ticks: { color: '#8493a5', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                    x: { ticks: { color: '#86868b' }, grid: { display: false } },
+                    y: { beginAtZero: true, ticks: { color: '#86868b', stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.06)' } },
                 },
             },
         });
@@ -338,36 +355,29 @@ document.addEventListener('DOMContentLoaded', function() {
         var total = totalSearches + totalAi;
 
         if (total === 0) {
-            container.innerHTML = '<p style="color: var(--rtg-text-muted);">No search or AI data for this period.</p>';
+            container.innerHTML = '<p class="rtg-empty-line">No search or advisor data for this period.</p>';
             return;
         }
 
         var searchPct = Math.round((totalSearches / total) * 100);
         var aiPct = 100 - searchPct;
 
-        var html = '<div style="display: flex; align-items: center; gap: 24px; flex-wrap: wrap;">';
+        var html = '<div class="rtg-split-row">';
 
         // Bar visualization
-        html += '<div style="flex: 1; min-width: 200px;">' +
-            '<div style="display: flex; height: 32px; border-radius: 8px; overflow: hidden; background: var(--rtg-bg-deep, #0c1620);">';
+        html += '<div class="rtg-split-bar-wrap"><div class="rtg-split-bar">';
         if (searchPct > 0) {
-            html += '<div style="width: ' + searchPct + '%; background: #a78bfa; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; min-width: 40px;">' + searchPct + '%</div>';
+            html += '<div class="rtg-split-bar-segment is-a" style="width: ' + searchPct + '%;">' + searchPct + '%</div>';
         }
         if (aiPct > 0) {
-            html += '<div style="width: ' + aiPct + '%; background: #fba919; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #1a1a1a; min-width: 40px;">' + aiPct + '%</div>';
+            html += '<div class="rtg-split-bar-segment is-b" style="width: ' + aiPct + '%;">' + aiPct + '%</div>';
         }
         html += '</div></div>';
 
         // Legend
-        html += '<div style="display: flex; gap: 20px;">' +
-            '<div style="display: flex; align-items: center; gap: 8px;">' +
-                '<span style="width: 12px; height: 12px; border-radius: 3px; background: #a78bfa; display: inline-block;"></span>' +
-                '<span style="color: var(--rtg-text-primary); font-size: 14px;">Search <strong>' + numberFormat(totalSearches) + '</strong></span>' +
-            '</div>' +
-            '<div style="display: flex; align-items: center; gap: 8px;">' +
-                '<span style="width: 12px; height: 12px; border-radius: 3px; background: #fba919; display: inline-block;"></span>' +
-                '<span style="color: var(--rtg-text-primary); font-size: 14px;">AI <strong>' + numberFormat(totalAi) + '</strong></span>' +
-            '</div>' +
+        html += '<div class="rtg-legend">' +
+            '<span class="rtg-legend-item"><span class="rtg-legend-swatch is-a"></span>Search <strong>' + numberFormat(totalSearches) + '</strong></span>' +
+            '<span class="rtg-legend-item"><span class="rtg-legend-swatch is-b"></span>Advisor <strong>' + numberFormat(totalAi) + '</strong></span>' +
         '</div>';
 
         html += '</div>';
@@ -377,7 +387,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderTopClicked(items) {
         var container = document.getElementById('topClickedContainer');
         if (!items.length) {
-            container.innerHTML = '<p style="color: var(--rtg-text-muted);">No click data yet.</p>';
+            container.innerHTML = '<p class="rtg-empty-line">No click data yet.</p>';
             return;
         }
 
@@ -401,7 +411,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderTopSearches(items) {
         var container = document.getElementById('topSearchesContainer');
         if (!items.length) {
-            container.innerHTML = '<p style="color: var(--rtg-text-muted);">No search data yet.</p>';
+            container.innerHTML = '<p class="rtg-empty-line">No search data yet.</p>';
             return;
         }
 
@@ -423,7 +433,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderTopAiQueries(items) {
         var container = document.getElementById('topAiQueriesContainer');
         if (!items.length) {
-            container.innerHTML = '<p style="color: var(--rtg-text-muted);">No AI queries yet.</p>';
+            container.innerHTML = '<p class="rtg-empty-line">No advisor questions yet.</p>';
             return;
         }
 
@@ -445,7 +455,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderZeroResults(items) {
         var container = document.getElementById('zeroResultsContainer');
         if (!items.length) {
-            container.innerHTML = '<p style="color: var(--rtg-text-muted);">No zero-result searches. All user searches are finding tires.</p>';
+            container.innerHTML = '<p class="rtg-empty-line">Every search found at least one tire.</p>';
             return;
         }
 
@@ -467,7 +477,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderFilterUsage(items) {
         var container = document.getElementById('filterUsageContainer');
         if (!items.length) {
-            container.innerHTML = '<p style="color: var(--rtg-text-muted);">No filter usage data yet.</p>';
+            container.innerHTML = '<p class="rtg-empty-line">No filter usage data yet.</p>';
             return;
         }
 
@@ -493,7 +503,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var sorted = Object.entries(filterCounts).sort(function(a, b) { return b[1] - a[1]; }).slice(0, 15);
 
         if (!sorted.length) {
-            container.innerHTML = '<p style="color: var(--rtg-text-muted);">No filter usage data yet.</p>';
+            container.innerHTML = '<p class="rtg-empty-line">No filter usage data yet.</p>';
             return;
         }
 
