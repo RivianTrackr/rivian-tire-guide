@@ -11,6 +11,16 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.7.0 - 2026-09-12
+
+The filter panel at the top of the guide was rebuilt to be quicker to read and quicker to use, on a phone especially.
+
+- **Filters are now pills, and a pill shows what it is set to.** Pick a size and the pill reads "Size 275/65R20" in orange, so you can see every active filter at a glance without scrolling. Tap a pill to change it; to clear one, open it again and choose All. The line under the pills tells you how many tires match, how many filters are on, and has one Clear all.
+- **Price and warranty have quick presets.** Under $250, $350 or $450, and 40k, 50k, 60k or 70k miles, beside the slider you already had.
+- **No more Search button.** Results update as you type. The field is bigger and the magnifier lives inside it.
+- **On a phone, one tap opens all the filters as a sheet.** Swipe the pill row sideways or tap Filters, set what you want with native pickers and switches, and tap "Show N tires". No more Show Filters accordion.
+- **Sort is labelled and sits beside the count**, with Write a review next to it.
+
 ## 2.4.2 - 2026-09-10
 
 - **Size menu headings you can read on Windows.** The wheel-size headings in the size dropdown were showing up black on the dark menu in Chrome and Edge on Windows. They now match the rest of the menu everywhere.

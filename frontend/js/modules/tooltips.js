@@ -84,51 +84,6 @@ export function createInfoTooltip(label, tooltipKey) {
   return container;
 }
 
-export function createFilterTooltip(labelText, tooltipKey) {
-  const container = document.createElement('div');
-  container.style.cssText = `display: flex; align-items: center; gap: 6px;`;
-
-  const label = document.createElement('span');
-  label.textContent = labelText;
-
-  const infoButton = document.createElement('button');
-  infoButton.innerHTML = '' + rtgIcon('circle-info', 14) + '';
-  infoButton.className = 'info-tooltip-trigger';
-  infoButton.dataset.tooltipKey = tooltipKey;
-  infoButton.setAttribute('aria-label', `More info about ${labelText}`);
-  infoButton.setAttribute('type', 'button');
-  infoButton.style.cssText = `
-    background: none;
-    border: none;
-    color: var(--rtg-text-muted);
-    font-size: 14px;
-    cursor: pointer;
-    padding: 2px;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-  `;
-
-  infoButton.addEventListener('mouseenter', () => {
-    infoButton.style.color = rtgColor('accent');
-    infoButton.style.backgroundColor = `color-mix(in srgb, ${rtgColor('accent')} 10%, transparent)`;
-  });
-
-  infoButton.addEventListener('mouseleave', () => {
-    infoButton.style.color = rtgColor('text-muted');
-    infoButton.style.backgroundColor = 'transparent';
-  });
-
-  container.appendChild(label);
-  container.appendChild(infoButton);
-
-  return container;
-}
-
 export function showTooltipModal(tooltipKey, triggerEl) {
   closeTooltipModal();
 

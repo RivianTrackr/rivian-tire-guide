@@ -6,118 +6,188 @@ if ( ! defined( 'ABSPATH' ) ) {
 $rtg_guide_settings   = get_option( 'rtg_settings', array() );
 $rtg_write_review_url = home_url( '/' . sanitize_title( $rtg_guide_settings['tire_review_slug'] ?? 'tire-review' ) . '/' );
 ?>
-<button id="toggleFilters" class="toggle-filters-btn" aria-expanded="false" aria-controls="mobileFilterContent">
-  <i class="fa-solid fa-sliders" aria-hidden="true"></i>&nbsp; Show Filters
-</button>
 <div id="filterTop"></div>
-<div class="filter-wrapper">
-  <div class="filter-header">
-    <span class="filter-header-title">
-      <i class="fa-solid fa-sliders" aria-hidden="true"></i>
-      Filter, Sort, and Compare
-    </span>
-    <div class="filter-header-actions">
-      <a class="rtg-write-review-btn" href="<?php echo esc_url( $rtg_write_review_url ); ?>" aria-label="Write a review">
-        <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i><span class="rtg-write-review-label">Write a Review</span>
-      </a>
-      <button class="rtg-clear-filters-btn" onclick="resetFilters()" type="button" aria-label="Clear all filters">
-        <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Clear All
-      </button>
-    </div>
-  </div>
+<div class="filter-wrapper" id="rtgFilterBar">
   <div class="filter-body">
-    <div class="rtg-search-section">
-      <div class="rtg-search-row">
-        <div class="search-container">
-          <label for="searchInput" class="screen-reader-text">Search tires</label>
-          <input id="searchInput" type="text" class="search-input" placeholder="Search tires..." maxlength="500" aria-label="Search tires" />
-        </div>
-        <button id="rtgSearchSubmit" class="rtg-search-btn" type="button" aria-label="Search tires">
-          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Search
-        </button>
-        <?php if ( RTG_Advisor::is_enabled() ) : ?>
-        <button id="rtgAdvisorOpen" class="rtg-advisor-btn" type="button">
-          <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Help me choose
-        </button>
-        <?php endif; ?>
+
+    <div class="rtg-search-row">
+      <div class="search-container">
+        <label for="searchInput" class="screen-reader-text">Search tires</label>
+        <i class="fa-solid fa-magnifying-glass rtg-search-icon" aria-hidden="true"></i>
+        <input id="searchInput" type="search" class="search-input" placeholder="Search by brand, model, or size" maxlength="500" aria-label="Search tires" autocomplete="off" />
       </div>
+      <?php if ( RTG_Advisor::is_enabled() ) : ?>
+      <button id="rtgAdvisorOpen" class="rtg-advisor-btn" type="button">
+        <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Help me choose
+      </button>
+      <?php endif; ?>
     </div>
-    <div id="mobileFilterContent" class="mobile-filter-content">
-      <div class="filter-container">
-        <div id="vehicleToggle" class="rtg-vehicle-toggle" role="radiogroup" aria-label="Filter by vehicle">
-          <button type="button" class="rtg-vehicle-btn active" data-vehicle="" aria-pressed="true">All</button>
+
+    <div class="rtg-filter-row">
+      <div id="vehicleToggle" class="rtg-vehicle-toggle" role="radiogroup" aria-label="Filter by vehicle">
+        <button type="button" class="rtg-vehicle-btn active" data-vehicle="" aria-pressed="true">All</button>
+      </div>
+      <span class="rtg-filter-divider" aria-hidden="true"></span>
+
+      <div class="rtg-filter-chips" id="rtgFilterChips">
+        <div class="rtg-sheet-head">
+          <span class="rtg-sheet-title">Filters</span>
+          <button type="button" class="rtg-sheet-close" data-sheet-close aria-label="Close filters"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
         </div>
-        <div class="filter-group">
-          <label for="filterSize" class="screen-reader-text">Filter by tire size</label>
-          <select id="filterSize" aria-label="Filter by tire size">
-            <option value="">All Sizes</option>
-          </select>
+
+        <button type="button" id="rtgAllFilters" class="rtg-fchip rtg-fchip-all" aria-haspopup="dialog" aria-expanded="false" aria-controls="rtgFilterChips">
+          <i class="fa-solid fa-sliders" aria-hidden="true"></i> Filters <span class="rtg-fchip-badge" hidden></span>
+        </button>
+
+        <div class="rtg-fitem" data-key="size">
+          <button type="button" class="rtg-fchip" data-pop aria-expanded="false" aria-controls="rtgPopSize">
+            <span class="rtg-fchip-label">Size</span><span class="rtg-fchip-value"></span>
+            <i class="fa-solid fa-chevron-down rtg-fchip-caret" aria-hidden="true"></i>
+          </button>
+          <div class="rtg-fpop" id="rtgPopSize">
+            <div class="rtg-fpop-head"><span>Tire size</span></div>
+            <div class="rtg-fopts" data-for="filterSize" role="listbox" aria-label="Tire size"></div>
+            <label for="filterSize" class="screen-reader-text">Filter by tire size</label>
+            <select id="filterSize" class="rtg-fselect" aria-label="Filter by tire size">
+              <option value="">All Sizes</option>
+            </select>
+          </div>
         </div>
-        <div class="filter-group">
-          <label for="filterBrand" class="screen-reader-text">Filter by brand</label>
-          <select id="filterBrand" aria-label="Filter by brand">
-            <option value="">All Brands</option>
-          </select>
+
+        <div class="rtg-fitem" data-key="brand">
+          <button type="button" class="rtg-fchip" data-pop aria-expanded="false" aria-controls="rtgPopBrand">
+            <span class="rtg-fchip-label">Brand</span><span class="rtg-fchip-value"></span>
+            <i class="fa-solid fa-chevron-down rtg-fchip-caret" aria-hidden="true"></i>
+          </button>
+          <div class="rtg-fpop" id="rtgPopBrand">
+            <div class="rtg-fpop-head"><span>Brand</span></div>
+            <div class="rtg-fopts" data-for="filterBrand" role="listbox" aria-label="Brand"></div>
+            <label for="filterBrand" class="screen-reader-text">Filter by brand</label>
+            <select id="filterBrand" class="rtg-fselect" aria-label="Filter by brand">
+              <option value="">All Brands</option>
+            </select>
+          </div>
         </div>
-        <div class="filter-group">
-          <label for="filterCategory" class="screen-reader-text">Filter by category</label>
-          <select id="filterCategory" aria-label="Filter by category">
-            <option value="">All Categories</option>
-          </select>
+
+        <div class="rtg-fitem" data-key="category">
+          <button type="button" class="rtg-fchip" data-pop aria-expanded="false" aria-controls="rtgPopCategory">
+            <span class="rtg-fchip-label">Category</span><span class="rtg-fchip-value"></span>
+            <i class="fa-solid fa-chevron-down rtg-fchip-caret" aria-hidden="true"></i>
+          </button>
+          <div class="rtg-fpop" id="rtgPopCategory">
+            <div class="rtg-fpop-head"><span>Category</span></div>
+            <div class="rtg-fopts" data-for="filterCategory" role="listbox" aria-label="Category"></div>
+            <label for="filterCategory" class="screen-reader-text">Filter by category</label>
+            <select id="filterCategory" class="rtg-fselect" aria-label="Filter by category">
+              <option value="">All Categories</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="rtg-fitem" data-key="price">
+          <button type="button" class="rtg-fchip" data-pop aria-expanded="false" aria-controls="rtgPopPrice">
+            <span class="rtg-fchip-label">Price</span><span class="rtg-fchip-value"></span>
+            <i class="fa-solid fa-chevron-down rtg-fchip-caret" aria-hidden="true"></i>
+          </button>
+          <div class="rtg-fpop" id="rtgPopPrice">
+            <div class="rtg-fpop-head"><label for="priceMax">Max price</label><span id="priceVal" class="rtg-fpop-val">&le; $600</span></div>
+            <input id="priceMax" class="range-slider" type="range" min="0" max="600" value="600" step="10" aria-label="Maximum Price"/>
+            <div class="rtg-fpresets" data-for="priceMax" data-kind="price">
+              <button type="button" class="rtg-fpreset" data-value="250">Under $250</button>
+              <button type="button" class="rtg-fpreset" data-value="350">Under $350</button>
+              <button type="button" class="rtg-fpreset" data-value="450">Under $450</button>
+              <button type="button" class="rtg-fpreset" data-value="max">Any</button>
+            </div>
+            <div class="rtg-fpop-foot">
+              <button type="button" class="rtg-fpop-reset" data-reset="priceMax">Reset</button>
+              <button type="button" class="rtg-fpop-done" data-pop-close>Done</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="rtg-fitem" data-key="warranty">
+          <button type="button" class="rtg-fchip" data-pop aria-expanded="false" aria-controls="rtgPopWarranty">
+            <span class="rtg-fchip-label">Warranty</span><span class="rtg-fchip-value"></span>
+            <i class="fa-solid fa-chevron-down rtg-fchip-caret" aria-hidden="true"></i>
+          </button>
+          <div class="rtg-fpop" id="rtgPopWarranty">
+            <div class="rtg-fpop-head"><label for="warrantyMin">Minimum mileage warranty</label><span id="warrantyVal" class="rtg-fpop-val">&ge; 0 miles</span></div>
+            <input id="warrantyMin" class="range-slider" type="range" min="0" max="80000" value="0" step="1000" aria-label="Minimum Warranty in miles"/>
+            <div class="rtg-fpresets" data-for="warrantyMin" data-kind="warranty">
+              <button type="button" class="rtg-fpreset" data-value="min">Any</button>
+              <button type="button" class="rtg-fpreset" data-value="40000">40k+</button>
+              <button type="button" class="rtg-fpreset" data-value="50000">50k+</button>
+              <button type="button" class="rtg-fpreset" data-value="60000">60k+</button>
+              <button type="button" class="rtg-fpreset" data-value="70000">70k+</button>
+            </div>
+            <div class="rtg-fpop-foot">
+              <button type="button" class="rtg-fpop-reset" data-reset="warrantyMin">Reset</button>
+              <button type="button" class="rtg-fpop-done" data-pop-close>Done</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="rtg-fitem rtg-fitem-toggle" data-key="3pms">
+          <button type="button" class="rtg-fchip rtg-fchip-toggle" data-toggle="filter3pms" aria-pressed="false">
+            <span class="rtg-fchip-label">3PMS</span>
+            <span class="rtg-fchip-check"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
+            <span class="rtg-fswitch" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="info-tooltip-trigger rtg-fchip-info" data-tooltip-key="3PMS Filter" aria-label="More info about 3PMS">
+            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+          </button>
+          <input type="checkbox" id="filter3pms" class="rtg-fcheckbox" aria-label="3PMS Rated" />
+        </div>
+
+        <div class="rtg-fitem rtg-fitem-toggle" data-key="oem">
+          <button type="button" class="rtg-fchip rtg-fchip-toggle" data-toggle="filterOEM" aria-pressed="false">
+            <span class="rtg-fchip-label">OEM</span>
+            <span class="rtg-fchip-check"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
+            <span class="rtg-fswitch" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="info-tooltip-trigger rtg-fchip-info" data-tooltip-key="OEM Filter" aria-label="More info about OEM">
+            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+          </button>
+          <input type="checkbox" id="filterOEM" class="rtg-fcheckbox" aria-label="OEM" />
+        </div>
+
+        <div class="rtg-sheet-foot">
+          <button type="button" class="rtg-sheet-clear" data-clear-all>Clear all</button>
+          <button type="button" class="rtg-sheet-done" data-sheet-close>Show <span id="rtgSheetCount">0</span> tires</button>
         </div>
       </div>
-      <div class="rtg-extended-filters">
-        <div class="filter-group slider-wrapper">
-          <label for="priceMax">Max Price: <span id="priceVal">&le; $600</span></label>
-          <input id="priceMax" class="range-slider" type="range" min="0" max="600" value="600" step="10" aria-label="Maximum Price"/>
-        </div>
-        <div class="filter-group slider-wrapper">
-          <label for="warrantyMin">Min Warranty: <span id="warrantyVal">&ge; 0 miles</span></label>
-          <input id="warrantyMin" class="range-slider" type="range" min="0" max="80000" value="0" step="1000" aria-label="Minimum Warranty in miles"/>
-        </div>
-        <div class="switch-label">
-          <span class="switch-text">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span>3PMS</span>
-              <button class="info-tooltip-trigger" data-tooltip-key="3PMS Filter">
-                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-              </button>
-            </div>
-          </span>
-          <input type="checkbox" id="filter3pms" aria-label="3PMS Rated" />
-          <span class="switch-slider" data-toggle-target="filter3pms"></span>
-        </div>
-        <div class="switch-label">
-          <span class="switch-text">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span>OEM</span>
-              <button class="info-tooltip-trigger" data-tooltip-key="OEM Filter">
-                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-              </button>
-            </div>
-          </span>
-          <input type="checkbox" id="filterOEM" aria-label="OEM"/>
-          <span class="switch-slider" data-toggle-target="filterOEM"></span>
-        </div>
-      </div>
+      <div class="rtg-sheet-backdrop" id="rtgSheetBackdrop" hidden></div>
     </div>
+
     <div class="sort-wrapper">
-      <span id="tireCount" class="tire-count" aria-live="polite">Showing 0 tires</span>
+      <div class="rtg-results-summary">
+        <span id="tireCount" class="tire-count" aria-live="polite">0 tires</span>
+        <span id="rtgFilterTally" class="rtg-filter-tally" hidden></span>
+        <button type="button" id="rtgClearAll" class="rtg-clear-filters-btn" data-clear-all hidden>
+          <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Clear all
+        </button>
+      </div>
       <div class="rtg-sort-actions">
-        <label for="sortBy" class="screen-reader-text">Sort tires by</label>
-        <select id="sortBy" aria-label="Sort tires by">
-        <option value="roamer-efficiency" selected>Real-World Efficiency</option>
-        <option value="most-reviewed">Most Reviewed</option>
-        <option value="newest">Newest Added</option>
-        <option value="price-asc">Price: Low → High</option>
-        <option value="price-desc">Price: High → Low</option>
-        <option value="rating-desc">Rating: High → Low</option>
-        <option value="warranty-desc">Warranty: High → Low</option>
-        <option value="weight-asc">Weight: Light → Heavy</option>
-      </select>
+        <a class="rtg-write-review-btn" href="<?php echo esc_url( $rtg_write_review_url ); ?>" aria-label="Write a review">
+          <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i><span class="rtg-write-review-label">Write a review</span>
+        </a>
+        <div class="rtg-sort">
+          <i class="fa-solid fa-arrow-down-wide-short" aria-hidden="true"></i>
+          <label for="sortBy" class="rtg-sort-label">Sort</label>
+          <select id="sortBy" aria-label="Sort tires by">
+            <option value="roamer-efficiency" selected>Real-World Efficiency</option>
+            <option value="most-reviewed">Most Reviewed</option>
+            <option value="newest">Newest Added</option>
+            <option value="price-asc">Price: Low → High</option>
+            <option value="price-desc">Price: High → Low</option>
+            <option value="rating-desc">Rating: High → Low</option>
+            <option value="warranty-desc">Warranty: High → Low</option>
+            <option value="weight-asc">Weight: Light → Heavy</option>
+          </select>
+          <i class="fa-solid fa-chevron-down rtg-sort-caret" aria-hidden="true"></i>
+        </div>
       </div>
     </div>
-    <div id="filterResultCount" class="filter-result-count" aria-live="polite"></div>
     <div id="rtgFilterNotice" class="rtg-filter-notice" role="status" aria-live="polite"></div>
   </div>
 </div>
@@ -247,7 +317,6 @@ if ( ! empty( $rtg_wheels ) ) :
   </div>
 </div>
 <?php endif; ?>
-<div id="activeFilters" class="active-filters" aria-label="Active filters" role="region"></div>
 <div id="tireSection">
   <div id="tireCards"></div>
 </div>

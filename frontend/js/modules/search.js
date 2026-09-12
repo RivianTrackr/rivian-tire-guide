@@ -3,10 +3,10 @@
 /**
  * Search box wiring and the precise-match rule the filter pipeline uses.
  *
- * The user types a query and explicitly clicks the "Search" button (or
- * presses Enter) to filter the local tire list. The index-building and
- * Levenshtein code that once backed typeahead suggestions was removed with
- * the suggestions themselves — nothing had read it since.
+ * The filter pipeline already runs as the visitor types (the entry point
+ * debounces the field's input event); Enter runs it at once. The index-
+ * building and Levenshtein code that once backed typeahead suggestions was
+ * removed with the suggestions themselves — nothing had read it since.
  */
 
 import { getDOMElement } from './helpers.js';
@@ -23,7 +23,6 @@ function executeLocalSearch() {
 // without leaking handlers (previous implementation cloned the input node,
 // orphaning references held elsewhere in the module cache).
 let searchKeydownHandler = null;
-let searchButtonHandler = null;
 
 export function initializeSmartSearch() {
   const searchInput = getDOMElement('searchInput');
@@ -32,16 +31,6 @@ export function initializeSmartSearch() {
   // Remove any previously attached listeners before re-binding.
   if (searchKeydownHandler) {
     searchInput.removeEventListener('keydown', searchKeydownHandler);
-  }
-
-  // Search button triggers local filter.
-  const searchBtn = document.getElementById('rtgSearchSubmit');
-  if (searchBtn) {
-    if (searchButtonHandler) {
-      searchBtn.removeEventListener('click', searchButtonHandler);
-    }
-    searchButtonHandler = () => executeLocalSearch();
-    searchBtn.addEventListener('click', searchButtonHandler);
   }
 
   // Enter key triggers local search.

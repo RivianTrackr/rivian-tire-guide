@@ -12,7 +12,7 @@ import { state, ROWS_PER_PAGE } from './modules/state.js';
 import { getDOMElement, debounce, rtgIcon } from './modules/helpers.js';
 import { VALIDATION_PATTERNS, validateAndSanitizeCSVRow } from './modules/validation.js';
 import { RTG_ANALYTICS } from './modules/analytics.js';
-import { showTooltipModal, createFilterTooltip } from './modules/tooltips.js';
+import { showTooltipModal } from './modules/tooltips.js';
 import { initializeSmartSearch } from './modules/search.js';
 import { openReviewModal, loadTireRatings } from './modules/ratings.js';
 import { renderCards } from './modules/cards.js';
@@ -22,12 +22,13 @@ import {
   populateDropdown, populateSizeDropdownGrouped,
   populateVehicleToggle, getSelectedVehicle, setActiveVehicle, cascadeVehicleToSizes,
   applyFiltersFromURL, applyCompareFromURL, applyTireDeepLink,
-  applyShortcodePrefilters, renderActiveFilterChips,
+  applyShortcodePrefilters,
   setUpdateCompareBar, adaptPriceSlider
 } from './modules/filters.js';
 import { isServerSide, fetchTiresFromServer, fetchDropdownOptions, serverSideFilterAndRender } from './modules/server.js';
 import { initWhatsNew } from './modules/whats-new.js';
 import { initAdvisor } from './modules/advisor.js';
+import { initFilterBar } from './modules/filter-bar.js';
 
 // Wire up the compare bar function to break the circular dependency
 setUpdateCompareBar(updateCompareBar);
@@ -71,6 +72,8 @@ function setupEventDelegation() {
   });
 
   document.addEventListener('mouseenter', function(e) {
+    // The pointer entering the window targets the document itself.
+    if (!(e.target instanceof Element)) return;
     const star = e.target.closest('.rating-stars.interactive .star');
     if (!star) return;
 
@@ -232,7 +235,7 @@ function initializeUI() {
 
     const countDisplay = getDOMElement("tireCount");
     if (countDisplay) {
-      countDisplay.textContent = `Showing ${state.filteredRows.length} tire${state.filteredRows.length !== 1 ? "s" : ""}`;
+      countDisplay.textContent = `${state.filteredRows.length} tire${state.filteredRows.length !== 1 ? "s" : ""}`;
     }
   }
 }
@@ -299,75 +302,14 @@ if (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.serve
   if (typeof tireRatingAjax !== 'undefined') {
     state.isLoggedIn = tireRatingAjax.is_logged_in === true || tireRatingAjax.is_logged_in === '1' || tireRatingAjax.is_logged_in === 1;
   }
+  initFilterBar({ onClearAll: resetFilters });
   initializeUI();
 } else {
   console.error('Tire guide data not available. Ensure the [rivian_tire_guide] shortcode is used.');
 }
 
-// --- DOMContentLoaded: tooltip setup, sort, mobile filter toggle ---
+// --- DOMContentLoaded: sort, tooltips, wheel drawer ---
 document.addEventListener("DOMContentLoaded", () => {
-  function updateFilterTooltipsDirectly() {
-    const switchLabels = document.querySelectorAll('.switch-label');
-
-    switchLabels.forEach(label => {
-      const input = label.querySelector('input[type="checkbox"]');
-      const switchText = label.querySelector('.switch-text');
-
-      if (input && switchText) {
-        const inputId = input.id;
-        let tooltipKey = null;
-        let labelText = '';
-
-        switch(inputId) {
-          case 'filter3pms':
-            tooltipKey = '3PMS Filter';
-            labelText = '3PMS';
-            break;
-          case 'filterOEM':
-            tooltipKey = 'OEM Filter';
-            labelText = 'OEM';
-            break;
-        }
-
-        if (tooltipKey) {
-          const newContent = createFilterTooltip(labelText, tooltipKey);
-          switchText.innerHTML = '';
-          switchText.appendChild(newContent);
-        }
-      }
-    });
-  }
-
-  function updateFilterTooltips() {
-    setTimeout(() => {
-      const tooltipConfig = [
-        { selector: 'filter3pms', label: '3PMS', key: '3PMS Filter' },
-        { selector: 'filterOEM', label: 'OEM', key: 'OEM Filter' },
-      ];
-
-      tooltipConfig.forEach(({ selector, label, key }) => {
-        const el = document.querySelector(`.switch-label:has(input#${selector}) .switch-text`);
-        if (el) {
-          const newContent = createFilterTooltip(label, key);
-          el.innerHTML = '';
-          el.appendChild(newContent);
-        } else {
-          const input = document.getElementById(selector);
-          if (input) {
-            const switchText = input.parentElement.querySelector('.switch-text');
-            if (switchText) {
-              const newContent = createFilterTooltip(label, key);
-              switchText.innerHTML = '';
-              switchText.appendChild(newContent);
-            }
-          }
-        }
-      });
-    }, 100);
-  }
-
-  updateFilterTooltipsDirectly();
-  updateFilterTooltips();
   initWhatsNew();
   initAdvisor();
 
@@ -386,40 +328,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const ssMode = isServerSide();
     sortDropdown.addEventListener("change", ssMode ? serverSideFilterAndRender : filterAndRender);
   }
-
-  const toggleBtn = getDOMElement("toggleFilters");
-  const filterContent = getDOMElement("mobileFilterContent");
-  if (toggleBtn && filterContent) {
-    toggleBtn.setAttribute('aria-expanded', 'false');
-    toggleBtn.setAttribute('aria-controls', 'mobileFilterContent');
-    toggleBtn.addEventListener("click", () => {
-      const isOpen = filterContent.classList.toggle("open");
-      toggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-      // Re-render badge with updated open/close text
-      const badge = toggleBtn.querySelector('.mobile-filter-badge');
-      const badgeHTML = badge ? ` <span class="mobile-filter-badge">${badge.textContent}</span>` : '';
-      toggleBtn.innerHTML = `<i class="fa-solid fa-sliders" aria-hidden="true"></i>&nbsp; ${isOpen ? "Hide" : "Show"} Filters${badgeHTML}`;
-
-      // Move keyboard focus into the drawer on open (WCAG 2.1 focus mgmt).
-      if (isOpen) {
-        const firstFocusable = filterContent.querySelector(
-          'select, input:not([type="hidden"]), button, [tabindex]:not([tabindex="-1"])'
-        );
-        if (firstFocusable && typeof firstFocusable.focus === 'function') {
-          firstFocusable.focus({ preventScroll: true });
-        }
-      }
-    });
-  }
-
-  // Wire switch-slider proxy clicks (keyboard + pointer) to their checkbox.
-  // Replaces legacy inline onclick= handlers for accessibility.
-  document.querySelectorAll('.switch-slider[data-toggle-target]').forEach(slider => {
-    const targetId = slider.dataset.toggleTarget;
-    const target = targetId ? document.getElementById(targetId) : null;
-    if (!target) return;
-    slider.addEventListener('click', () => target.click());
-  });
 
   const trigger = getDOMElement("wheelDrawerTrigger");
   const drawer = getDOMElement("wheelDrawer");

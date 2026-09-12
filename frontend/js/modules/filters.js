@@ -14,6 +14,7 @@ import { isPreciseMatch } from './search.js';
 import { isServerSide, serverSideFilterAndRender } from './server.js';
 import { rememberVehicle, rememberedVehicle } from './vehicle-memory.js';
 import { thirdPartyEntry } from './fitment.js';
+import { syncFilterBar } from './filter-bar.js';
 
 /** What a size that fits only on aftermarket wheels says after its name in the size menu. */
 export const THIRD_PARTY_SUFFIX = '3rd-party wheels';
@@ -550,7 +551,7 @@ function applySorting(sortOption) {
 function finishFilterAndRender() {
   const tireCountEl = getDOMElement("tireCount");
   if (tireCountEl) {
-    tireCountEl.textContent = `Showing ${state.filteredRows.length} tire${state.filteredRows.length === 1 ? "" : "s"}`;
+    tireCountEl.textContent = `${state.filteredRows.length} tire${state.filteredRows.length === 1 ? "" : "s"}`;
   }
   if (!state.initialRenderDone || state.restoringFromURL) {
     // Initial load and browser navigation restore the page number from the
@@ -565,52 +566,9 @@ function finishFilterAndRender() {
   }
   throttledRender();
   updateURLFromFilters();
-  renderActiveFilterChips();
-  updateFilterResultCount();
-  updateMobileFilterBadge();
+  syncFilterBar(state.filteredRows.length);
   updateDropdownCounts();
   state.restoringFromURL = false;
-}
-
-function getActiveFilterCount() {
-  let count = 0;
-  if (getDOMElement("searchInput")?.value?.trim()) count++;
-  if (getSelectedVehicle()) count++;
-  if (getDOMElement("filterSize")?.value) count++;
-  if (getDOMElement("filterBrand")?.value) count++;
-  if (getDOMElement("filterCategory")?.value) count++;
-  const priceEl = getDOMElement("priceMax");
-  if (priceEl && parseInt(priceEl.value) < getPriceCeiling()) count++;
-  const warrantyEl = getDOMElement("warrantyMin");
-  if (warrantyEl && parseInt(warrantyEl.value) > 0) count++;
-  if (getDOMElement("filter3pms")?.checked) count++;
-  if (getDOMElement("filterOEM")?.checked) count++;
-  return count;
-}
-
-function updateFilterResultCount() {
-  const el = getDOMElement("filterResultCount");
-  if (!el) return;
-  const count = getActiveFilterCount();
-  if (count > 0) {
-    el.textContent = `${state.filteredRows.length} tire${state.filteredRows.length === 1 ? "" : "s"} match${state.filteredRows.length === 1 ? "es" : ""} your filters`;
-    el.style.display = "block";
-  } else {
-    el.style.display = "none";
-  }
-}
-
-function updateMobileFilterBadge() {
-  const toggleBtn = getDOMElement("toggleFilters");
-  if (!toggleBtn) return;
-  const count = getActiveFilterCount();
-  const filterContent = getDOMElement("mobileFilterContent");
-  const isOpen = filterContent?.classList.contains("open");
-  if (count > 0) {
-    toggleBtn.innerHTML = `<i class="fa-solid fa-sliders" aria-hidden="true"></i>&nbsp; ${isOpen ? "Hide" : "Show"} Filters <span class="mobile-filter-badge">${count}</span>`;
-  } else {
-    toggleBtn.innerHTML = `<i class="fa-solid fa-sliders" aria-hidden="true"></i>&nbsp; ${isOpen ? "Hide" : "Show"} Filters`;
-  }
 }
 
 function getCurrentFilters() {
@@ -1067,92 +1025,6 @@ export function resetFilters() {
     filterAndRender();
   }
   history.replaceState(null, "", location.pathname);
-}
-
-/* === Active Filter Chips === */
-export function renderActiveFilterChips() {
-  const container = getDOMElement("activeFilters");
-  if (!container) return;
-
-  const chips = [];
-
-  const searchVal = getDOMElement("searchInput")?.value?.trim();
-  if (searchVal) {
-    chips.push({ label: "Search", value: searchVal, clear: () => { const el = getDOMElement("searchInput"); if (el) el.value = ""; delete state.domCache["searchInput"]; } });
-  }
-
-  const vehicleVal = getSelectedVehicle();
-  if (vehicleVal) {
-    chips.push({ label: "Vehicle", value: vehicleVal, clear: () => { setActiveVehicle(''); cascadeVehicleToSizes('', state.VALID_SIZES); } });
-  }
-
-  const sizeEl = getDOMElement("filterSize");
-  if (sizeEl?.value) {
-    chips.push({ label: "Size", value: sizeEl.value, clear: () => { sizeEl.value = ""; } });
-  }
-
-  const brandEl = getDOMElement("filterBrand");
-  if (brandEl?.value) {
-    chips.push({ label: "Brand", value: brandEl.value, clear: () => { brandEl.value = ""; } });
-  }
-
-  const categoryEl = getDOMElement("filterCategory");
-  if (categoryEl?.value) {
-    chips.push({ label: "Category", value: categoryEl.value, clear: () => { categoryEl.value = ""; } });
-  }
-
-  const priceEl = getDOMElement("priceMax");
-  const priceVal = priceEl ? parseInt(priceEl.value) : 600;
-  const priceCeil = priceEl ? (Number(priceEl.max) || 600) : 600;
-  if (priceVal < priceCeil) {
-    chips.push({ label: "Max Price", value: "\u2264 $" + priceVal, clear: () => { priceEl.value = priceCeil; const lbl = getDOMElement("priceVal"); if (lbl) lbl.textContent = "\u2264 $" + priceCeil; updateSliderBackground(priceEl); } });
-  }
-
-  const warrantyEl = getDOMElement("warrantyMin");
-  const warrantyVal = warrantyEl ? parseInt(warrantyEl.value) : 0;
-  if (warrantyVal > 0) {
-    chips.push({ label: "Min Warranty", value: "\u2265 " + Number(warrantyVal).toLocaleString() + " mi", clear: () => { warrantyEl.value = 0; const lbl = getDOMElement("warrantyVal"); if (lbl) lbl.textContent = "\u2265 0 miles"; updateSliderBackground(warrantyEl); } });
-  }
-
-  if (getDOMElement("filter3pms")?.checked) {
-    chips.push({ label: "3PMS", value: "Yes", clear: () => { getDOMElement("filter3pms").checked = false; } });
-  }
-  if (getDOMElement("filterOEM")?.checked) {
-    chips.push({ label: "OEM", value: "Yes", clear: () => { getDOMElement("filterOEM").checked = false; } });
-  }
-
-  container.innerHTML = "";
-
-  chips.forEach(chip => {
-    const el = document.createElement("span");
-    el.className = "filter-chip";
-
-    const label = document.createElement("span");
-    label.className = "filter-chip-label";
-    label.textContent = chip.label + ":";
-
-    const value = document.createElement("span");
-    value.textContent = chip.value;
-
-    const dismiss = document.createElement("button");
-    dismiss.className = "filter-chip-dismiss";
-    dismiss.setAttribute("aria-label", "Remove " + chip.label + " filter");
-    dismiss.innerHTML = rtgIcon('xmark', 12);
-    dismiss.addEventListener("click", () => {
-      chip.clear();
-      state.lastFilterState = null;
-      if (isServerSide()) {
-        serverSideFilterAndRender();
-      } else {
-        filterAndRender();
-      }
-    });
-
-    el.appendChild(label);
-    el.appendChild(value);
-    el.appendChild(dismiss);
-    container.appendChild(el);
-  });
 }
 
 export function renderSmartNoResults() {

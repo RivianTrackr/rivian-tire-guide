@@ -12,7 +12,8 @@ import { renderCards } from './cards.js';
 import { VALIDATION_PATTERNS } from './validation.js';
 import { loadTireRatings } from './ratings.js';
 import { rtgIcon } from './helpers.js';
-import { updateURLFromFilters, renderSmartNoResults, renderActiveFilterChips, applyFiltersFromURL, populateDropdown, getSelectedVehicle, populateVehicleToggle, adaptPriceSlider } from './filters.js';
+import { updateURLFromFilters, renderSmartNoResults, applyFiltersFromURL, populateDropdown, getSelectedVehicle, populateVehicleToggle, adaptPriceSlider } from './filters.js';
+import { syncFilterBar } from './filter-bar.js';
 
 export function isServerSide() {
   return state.serverSideMode && typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.ajaxurl;
@@ -96,8 +97,9 @@ export function fetchTiresFromServer(page) {
     state.currentPage = json.data.page || 1;
 
     if (tireCountEl) {
-      tireCountEl.textContent = `Showing ${state.serverSideTotal} tire${state.serverSideTotal === 1 ? '' : 's'}`;
+      tireCountEl.textContent = `${state.serverSideTotal} tire${state.serverSideTotal === 1 ? '' : 's'}`;
     }
+    syncFilterBar(state.serverSideTotal);
 
     renderCards(state.filteredRows);
 
@@ -279,5 +281,5 @@ export function serverSideFilterAndRender() {
   state.currentPage = 1;
   state.lastFilterState = null;
   fetchTiresFromServer(1);
-  renderActiveFilterChips();
+  syncFilterBar();
 }
