@@ -501,6 +501,32 @@ class RTG_Database {
     }
 
     /**
+     * The wpdb placeholder for a tires-table column.
+     *
+     * The one place the numeric columns are named, used by insert and update
+     * alike so the two can never disagree about a column's type.
+     *
+     * @param string $column Column name.
+     * @return string '%f', '%d' or '%s'.
+     */
+    private static function column_format( $column ) {
+        switch ( $column ) {
+            case 'price':
+            case 'weight_lb':
+            case 'roamer_efficiency':
+            case 'roamer_total_km':
+                return '%f';
+            case 'mileage_warranty':
+            case 'max_load_lb':
+            case 'sort_order':
+            case 'roamer_vehicle_count':
+                return '%d';
+            default:
+                return '%s';
+        }
+    }
+
+    /**
      * Insert a new tire into the database.
      *
      * @param array $data Tire data (keys match column names). Missing keys use defaults.
@@ -545,15 +571,14 @@ class RTG_Database {
 
         $data = wp_parse_args( $data, $defaults );
 
-        $formats = array(
-            '%s', '%s', '%s', '%s', '%s', '%s', '%s',
-            '%f', '%d', '%f',
-            '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s',
-            '%s', '%s',
-            '%d', '%s', '%s', '%s',
-            '%s', '%f', '%f', '%d', '%s', '%s',
-            '%d',
-        );
+        // Formats keyed by column, not by position. A positional list has to
+        // be kept in step with the defaults above by hand, and when two
+        // columns left in 2.6.0 the list was not: every format after them
+        // shifted by two, so bundle_link was written through %d as "0".
+        $formats = array();
+        foreach ( array_keys( $data ) as $key ) {
+            $formats[] = self::column_format( $key );
+        }
 
         $result = $wpdb->insert( $table, $data, $formats );
         if ( $result !== false ) {
@@ -603,24 +628,8 @@ class RTG_Database {
         }
 
         $formats = array();
-        foreach ( $data as $key => $value ) {
-            switch ( $key ) {
-                case 'price':
-                case 'weight_lb':
-                case 'roamer_efficiency':
-                case 'roamer_total_km':
-                    $formats[] = '%f';
-                    break;
-                case 'mileage_warranty':
-                case 'max_load_lb':
-                case 'sort_order':
-                case 'roamer_vehicle_count':
-                    $formats[] = '%d';
-                    break;
-                default:
-                    $formats[] = '%s';
-                    break;
-            }
+        foreach ( array_keys( $data ) as $key ) {
+            $formats[] = self::column_format( $key );
         }
 
         $result = $wpdb->update( $table, $data, array( 'tire_id' => $tire_id ), $formats, array( '%s' ) );
