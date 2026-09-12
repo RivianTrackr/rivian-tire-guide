@@ -128,26 +128,38 @@ $rtg_write_review_url = home_url( '/' . sanitize_title( $rtg_guide_settings['tir
         </div>
 
         <div class="rtg-fitem rtg-fitem-toggle" data-key="3pms">
-          <button type="button" class="rtg-fchip rtg-fchip-toggle" data-toggle="filter3pms" aria-pressed="false">
-            <span class="rtg-fchip-label">3PMS</span>
+          <button type="button" class="rtg-fchip rtg-fchip-toggle" data-toggle="filter3pms" aria-pressed="false" aria-describedby="rtgTip3pms">
+            <span class="rtg-fchip-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 19l4.5-7 2.5 4 2.5-4.5 2.5 4.5 2.5-4 4.5 7Z"></path><path d="M18 3v5M15.8 4.3l4.4 2.4M15.8 6.7l4.4-2.4"></path></svg>
+            </span>
+            <span class="rtg-fchip-text">
+              <span class="rtg-fchip-label">3PMS</span>
+              <span class="rtg-fchip-sub">Certified for severe snow</span>
+            </span>
             <span class="rtg-fchip-check"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
             <span class="rtg-fswitch" aria-hidden="true"></span>
           </button>
-          <button type="button" class="info-tooltip-trigger rtg-fchip-info" data-tooltip-key="3PMS Filter" aria-label="More info about 3PMS">
-            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-          </button>
+          <div class="rtg-fchip-tip" id="rtgTip3pms" role="tooltip">
+            <strong>3PMS</strong> Three-peak mountain snowflake: the tire meets winter traction requirements and is rated for severe snow. Look for the mountain-and-snowflake mark on the sidewall.
+          </div>
           <input type="checkbox" id="filter3pms" class="rtg-fcheckbox" aria-label="3PMS Rated" />
         </div>
 
         <div class="rtg-fitem rtg-fitem-toggle" data-key="oem">
-          <button type="button" class="rtg-fchip rtg-fchip-toggle" data-toggle="filterOEM" aria-pressed="false">
-            <span class="rtg-fchip-label">OEM</span>
+          <button type="button" class="rtg-fchip rtg-fchip-toggle" data-toggle="filterOEM" aria-pressed="false" aria-describedby="rtgTipOem">
+            <span class="rtg-fchip-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5l2.2 1.9 2.9-.4 1 2.8 2.6 1.4-.6 2.9 1.6 2.4-1.6 2.4.6 2.9-2.6 1.4-1 2.8-2.9-.4L12 21.5l-2.2-1.9-2.9.4-1-2.8-2.6-1.4.6-2.9L2.3 12l1.6-2.4-.6-2.9 2.6-1.4 1-2.8 2.9.4Z"></path><path d="m8.5 12 2.3 2.3L15.5 9.5"></path></svg>
+            </span>
+            <span class="rtg-fchip-text">
+              <span class="rtg-fchip-label">OEM</span>
+              <span class="rtg-fchip-sub">Fitted by Rivian at the factory</span>
+            </span>
             <span class="rtg-fchip-check"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
             <span class="rtg-fswitch" aria-hidden="true"></span>
           </button>
-          <button type="button" class="info-tooltip-trigger rtg-fchip-info" data-tooltip-key="OEM Filter" aria-label="More info about OEM">
-            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-          </button>
+          <div class="rtg-fchip-tip" id="rtgTipOem" role="tooltip">
+            <strong>OEM</strong> Original equipment: a tire Rivian fits at the factory. A safe default if you want exactly what the truck came with.
+          </div>
           <input type="checkbox" id="filterOEM" class="rtg-fcheckbox" aria-label="OEM" />
         </div>
 

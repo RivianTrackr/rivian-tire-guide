@@ -11,6 +11,10 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.7.1 - 2026-09-12
+
+- **The 3PMS and OEM filters lost their little (i) buttons.** Each pill now carries a small mark instead: the mountain-and-snowflake symbol you see on a winter-rated sidewall for 3PMS, and a badge for factory fit. Hover over the pill on a computer for the full explanation, and on a phone the filter sheet spells it out under each name.
+
 ## 2.7.0 - 2026-09-12
 
 The filter panel at the top of the guide was rebuilt to be quicker to read and quicker to use, on a phone especially.
