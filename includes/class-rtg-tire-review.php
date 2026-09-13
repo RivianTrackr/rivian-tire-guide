@@ -56,9 +56,18 @@ class RTG_Tire_Review {
             RTG_VERSION,
             true
         );
+        // The page's stylesheet (frontend/css/tire-review.css): the guide's
+        // tokens and components for this page's markup, built and cached
+        // like every other asset rather than printed inline.
+        wp_enqueue_style(
+            'rtg-tire-review',
+            RTG_PLUGIN_URL . 'frontend/css/tire-review' . $suffix . '.css',
+            array(),
+            RTG_VERSION
+        );
         wp_enqueue_script(
             'rtg-tire-review',
-            RTG_PLUGIN_URL . 'frontend/js/tire-review.js',
+            RTG_PLUGIN_URL . 'frontend/js/tire-review' . $suffix . '.js',
             array( 'rtg-shared' ),
             RTG_VERSION,
             true

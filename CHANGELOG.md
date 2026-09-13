@@ -4,6 +4,15 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.8.1] - 2026-09-13
+
+### Changed
+- **The Write a review page is on the guide's design language, in a stylesheet of its own.** Its ~660 lines of CSS were printed inline from `frontend/templates/tire-review.php` on every request; they are now `frontend/css/tire-review.css`, built and enqueued (with the script, now also built to `.min.js`) by `RTG_Tire_Review` like every other asset, with only the admin's color overrides left inline. In the move it was brought onto the guide's components: the search field is the guide's (input surface, 48px, 2px accent focus ring, the same placeholder color), the inputs and textarea share that ring and surface with a transparent resting border, every field is 16px on phones so iOS Safari stops zooming into it, the type scale is the design language's (32px/600 page title, 20px section titles, 15px/500 field labels with a 13px hint), the buttons are the guide's 44px primary and transparent secondary with a press scale, disabled at 0.5 and a focus ring, and the five-star group, links and breadcrumb gain focus rings. The stars keep the guide's glow (resting 35% at 1px/3px, hover 50% at 2px/6px) and, once a pick exists, hover previews in the same green rather than flipping to gold and back (`has-rating` on the star group from `updateStarDisplay()`); the detail-axis stars glow when set. The search dropdown highlights hover and keyboard focus with the guide's accent tint (it was the dropdown's own color, so nothing showed), takes the dropdown shadow from the table, and is a proper combobox (`role="combobox"`/`aria-expanded`/`aria-activedescendant` on the field, `role="listbox"`/`role="option"` in the list). The success panel is the empty-state shape in the success green, the same green as its toast. Off-palette colors are gone (`#f87171`, `#34d399`, the ad-hoc rgba dividers), the dead `.rv-guest-notice`, `.rv-email-note`, `.rv-stars-label` and `.rv-tire-category-legacy` rules with them. The page gains a reduced-motion block (and smooth scrolls that respect it), a print block, and the full screen-reader-only pattern; its two 640px blocks are one, plus a 480px block that stacks the success actions.
+- **The toast has its colors back.** `showToast()` appended its container to `document.body`, outside the wrapper that defines the tokens, so on the standalone route it drew a transparent box with a bare border. The container now lands inside `.rv-root` (it is fixed-position, so the spot is moot), the rules carry fallbacks, and the toast follows the design language's spec: 24px inset under the safe area, 380px max, 14px/20px padding, the toast shadow, the status in the border color.
+
+### Tests
+- `npm test`, `php -l` and the contract checks pass. The page was rendered standalone in headless Chromium at 390px and 1280px with stub data: landing with the vehicle switch and search dropdown, the form with a preselected tire and star, the toast, no horizontal overflow at 390px and no page errors.
+
 ## [2.8.0] - 2026-09-13
 
 ### Changed

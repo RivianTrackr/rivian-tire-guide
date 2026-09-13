@@ -27,6 +27,11 @@
   var POPULAR_MAX = 6;
 
   var config = window.rtgTireReview || {};
+
+  /** Smooth scrolling, unless the visitor asked for less motion. */
+  function scrollBehavior() {
+    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+  }
   var tires = config.tires || [];
   var isLoggedIn = config.is_logged_in === true || config.is_logged_in === '1' || config.is_logged_in === 1;
   var autoApprove = config.autoApprove === true || config.autoApprove === '1' || config.autoApprove === 1;
@@ -158,6 +163,8 @@
   }
 
   function updateStarDisplay() {
+    // With a pick made, a hover previews in the same green (see the CSS).
+    starsSelect.classList.toggle('has-rating', selectedRating > 0);
     var stars = starsSelect.querySelectorAll('.rv-star');
     for (var j = 0; j < stars.length; j++) {
       var idx = j + 1;
@@ -408,11 +415,15 @@
     if (results.length === 0) {
       dropdown.innerHTML = '<div class="rv-dropdown-empty">No tires found. Try a different search.</div>';
       dropdown.classList.add('open');
+      searchInput.setAttribute('aria-expanded', 'true');
       return;
     }
     results.forEach(function(tire) {
       var item = document.createElement('div');
       item.className = 'rv-dropdown-item';
+      item.setAttribute('role', 'option');
+      item.setAttribute('aria-selected', 'false');
+      item.id = 'rvOpt-' + String(tire.tire_id).replace(/[^A-Za-z0-9_-]/g, '');
       item.dataset.tireId = tire.tire_id;
       var thumb = document.createElement('div');
       thumb.className = 'rv-dropdown-thumb';
@@ -441,15 +452,27 @@
       dropdown.appendChild(item);
     });
     dropdown.classList.add('open');
+    searchInput.setAttribute('aria-expanded', 'true');
   }
 
   function updateFocus(items) {
-    for (var i = 0; i < items.length; i++) items[i].classList.toggle('focused', i === focusedIndex);
-    if (focusedIndex >= 0 && items[focusedIndex]) items[focusedIndex].scrollIntoView({ block: 'nearest' });
+    for (var i = 0; i < items.length; i++) {
+      var on = i === focusedIndex;
+      items[i].classList.toggle('focused', on);
+      items[i].setAttribute('aria-selected', on ? 'true' : 'false');
+    }
+    if (focusedIndex >= 0 && items[focusedIndex]) {
+      items[focusedIndex].scrollIntoView({ block: 'nearest' });
+      searchInput.setAttribute('aria-activedescendant', items[focusedIndex].id);
+    } else {
+      searchInput.removeAttribute('aria-activedescendant');
+    }
   }
 
   function closeDropdown() {
     dropdown.classList.remove('open');
+    searchInput.setAttribute('aria-expanded', 'false');
+    searchInput.removeAttribute('aria-activedescendant');
     focusedIndex = -1;
   }
 
@@ -500,7 +523,7 @@
     var u = new URL(window.location);
     u.searchParams.set('tire', tire.tire_id);
     window.history.replaceState({}, '', u);
-    tireCard.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    tireCard.scrollIntoView({ block: 'start', behavior: scrollBehavior() });
   }
 
   function loadTireRating(tireId) {
@@ -920,7 +943,7 @@
     }
     if (firstBad) {
       if (typeof firstBad.focus === 'function') firstBad.focus({ preventScroll: true });
-      firstBad.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      firstBad.scrollIntoView({ block: 'center', behavior: scrollBehavior() });
       return;
     }
 
@@ -1020,7 +1043,7 @@
     }
 
     successEl.classList.add('visible');
-    successEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    successEl.scrollIntoView({ block: 'start', behavior: scrollBehavior() });
     showToast(isPending ? 'Review submitted. We will email you when it is live.' : 'Your review is live.', isPending ? 'info' : 'success');
   }
 
@@ -1035,7 +1058,9 @@
     if (!container) {
       container = document.createElement('div');
       container.className = 'rv-toast-container';
-      document.body.appendChild(container);
+      // Inside the root, so the toast sees the page's tokens and the
+      // admin's color overrides; it is position: fixed, so the spot is moot.
+      (document.querySelector('.rv-root') || document.body).appendChild(container);
     }
     var toast = document.createElement('div');
     toast.className = 'rv-toast rv-toast-' + (type || 'success');
