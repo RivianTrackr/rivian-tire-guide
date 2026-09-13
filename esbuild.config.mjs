@@ -61,6 +61,14 @@ const builds = [
     minify: true,
     drop: ['console', 'debugger'],
   },
+  // --- Frontend JS (write a review page) ---
+  {
+    ...jsDefaults,
+    entryPoints: ['frontend/js/tire-review.js'],
+    outfile: 'frontend/js/tire-review.min.js',
+    minify: true,
+    drop: ['console', 'debugger'],
+  },
   // --- Frontend JS (user reviews) ---
   {
     ...jsDefaults,
@@ -79,6 +87,12 @@ const builds = [
   {
     entryPoints: ['frontend/css/rtg-dialog.css'],
     outfile: 'frontend/css/rtg-dialog.min.css',
+    minify: true,
+    bundle: false,
+  },
+  {
+    entryPoints: ['frontend/css/tire-review.css'],
+    outfile: 'frontend/css/tire-review.min.css',
     minify: true,
     bundle: false,
   },

@@ -11,6 +11,11 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.8.1 - 2026-09-13
+
+- **The Write a review page looks like the rest of the guide.** The search box and fields match the guide's, headings and labels are the guide's sizes, and buttons and stars show where your keyboard focus is. On an iPhone the fields no longer zoom in when you tap them, and search results highlight as you move through them.
+- **The confirmation after you post a review is readable again.** It had lost its background on the review page.
+
 ## 2.8.0 - 2026-09-13
 
 Every pop-up in the guide now looks and works the same way.
