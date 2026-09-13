@@ -11,6 +11,14 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.8.0 - 2026-09-13
+
+Every pop-up in the guide now looks and works the same way.
+
+- **One kind of pop-up, everywhere.** Filters on a phone, Help me choose, the Changelog, the little (i) notes and the photo viewer all share one design: the title on the left, a close button on the right, and the buttons pinned at the bottom. On a phone each one slides up from the bottom of the screen and keeps its buttons clear of the browser bar.
+- **The (i) notes on a tire's page match the guide.** They open in the same pop-up as the guide's, with a close button they did not have before.
+- **Tapping a star on a tire card takes you to the review page.** The tire and the star you tapped are already filled in, and the page has everything the old pop-up form lacked: detail ratings, your Rivian, and the miles on the set.
+
 ## 2.7.2 - 2026-09-12
 
 - **The phone filter sheet's buttons stay out of the way.** On iPhone, the Clear all and Show tires buttons sat on top of the mileage warranty slider and hid the 3PMS and OEM switches. The filters now scroll between the sheet's header and its buttons, so every filter is reachable.

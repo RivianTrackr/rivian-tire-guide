@@ -113,10 +113,17 @@ class RTG_Frontend {
 
         $suffix = self::asset_suffix();
 
+        // The dialog shell first, so the guide's own rules win any tie.
+        wp_enqueue_style(
+            'rtg-dialog',
+            RTG_PLUGIN_URL . 'frontend/css/rtg-dialog' . $suffix . '.css',
+            array(),
+            RTG_VERSION
+        );
         wp_enqueue_style(
             'rtg-styles',
             RTG_PLUGIN_URL . 'frontend/css/rivian-tires' . $suffix . '.css',
-            array(),
+            array( 'rtg-dialog' ),
             RTG_VERSION
         );
 
@@ -170,6 +177,8 @@ class RTG_Frontend {
                 'compareUrl'      => home_url( '/' . $compare_slug . '/' ),
                 'tirePageUrl'     => home_url( '/' . RTG_Tire_Page::slug_base() . '/' ),
                 'userReviewsUrl'  => home_url( '/' . sanitize_title( $user_reviews_slug ) . '/' ),
+                // A tapped star on a card opens the review page with the tire and star set.
+                'tireReviewUrl'   => home_url( '/' . sanitize_title( $settings['tire_review_slug'] ?? 'tire-review' ) . '/' ),
                 'serverSide'      => $server_side,
                 'ajaxurl'         => admin_url( 'admin-ajax.php' ),
                 'tireNonce'       => wp_create_nonce( 'rtg_tire_nonce' ),

@@ -180,7 +180,7 @@ function openSheet() {
   chips.setAttribute('aria-modal', 'true');
   chips.setAttribute('aria-label', 'Filters');
   if (backdrop) backdrop.hidden = false;
-  document.body.classList.add('rtg-sheet-open');
+  document.body.classList.add('rtg-dialog-open');
   const all = document.getElementById('rtgAllFilters');
   if (all) all.setAttribute('aria-expanded', 'true');
   const close = chips.querySelector('.rtg-sheet-close');
@@ -194,7 +194,7 @@ function closeSheet() {
   chips.removeAttribute('aria-modal');
   chips.removeAttribute('aria-label');
   if (backdrop) backdrop.hidden = true;
-  document.body.classList.remove('rtg-sheet-open');
+  document.body.classList.remove('rtg-dialog-open');
   const all = document.getElementById('rtgAllFilters');
   if (all) all.setAttribute('aria-expanded', 'false');
   if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus({ preventScroll: true });

@@ -447,7 +447,7 @@ export function createSingleCard(row) {
     } else {
       img.src = safeImage;
     }
-    img.onclick = () => openImageModal(safeImage, `${safeString(brand)} ${safeString(model)}`);
+    img.onclick = () => openImageModal(safeImage, `${safeString(brand)} ${safeString(model)}`, img);
 
     imageContainer.appendChild(img);
     card.appendChild(imageContainer);

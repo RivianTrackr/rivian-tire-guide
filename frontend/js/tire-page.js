@@ -5,7 +5,8 @@
  *
  * The page itself is fully server-rendered; this file reports CTA clicks to
  * the same analytics endpoint the guide uses (rtg_track_click) and powers
- * the (i) info modals on spec labels and the efficiency stat.
+ * the (i) info notes on spec labels and the efficiency stat, in the shared
+ * dialog shell (rtg-dialog.js).
  *
  * Click tracking uses sendBeacon so the request survives the navigation;
  * analytics is best-effort and must never break the page.
@@ -34,80 +35,38 @@ var RTG_TP_TOOLTIPS = {
 };
 
 (function () {
-  var activeOverlay = null;
-
-  function closeTooltip() {
-    if (activeOverlay) {
-      var overlay = activeOverlay;
-      activeOverlay = null;
-      overlay.remove();
-      document.body.style.overflow = '';
-      if (overlay._returnFocus && typeof overlay._returnFocus.focus === 'function') {
-        overlay._returnFocus.focus({ preventScroll: true });
-      }
-    }
-  }
+  // The (i) notes open in the shared dialog shell (rtg-dialog.js, the same
+  // module the guide bundle uses), so they look and behave like the guide's.
+  var active = null;
 
   function openTooltip(key, triggerEl) {
     var data = RTG_TP_TOOLTIPS[key];
-    if (!data) return;
-    closeTooltip();
+    if (!data || !window.RTG_DIALOG) return;
+    if (active) active.close();
 
     var extra = '';
     if (triggerEl && triggerEl.dataset && triggerEl.dataset.tooltipExtra) {
       extra = '<br><br><strong style="color:#60a5fa;">This tire:</strong> ' + triggerEl.dataset.tooltipExtra;
     }
 
-    var overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px);';
-    overlay.setAttribute('role', 'dialog');
-    overlay.setAttribute('aria-modal', 'true');
-    overlay.setAttribute('aria-label', data.title);
-
-    var modal = document.createElement('div');
-    modal.style.cssText = 'background:#16191e;border:1px solid #3a3e45;border-radius:12px;padding:20px;max-width:400px;width:100%;color:#ece9e4;box-shadow:0 10px 25px rgba(0,0,0,0.5);';
-
-    var title = document.createElement('h3');
-    title.textContent = data.title;
-    title.style.cssText = 'margin:0 0 12px;font-size:18px;font-weight:700;color:#fba919;';
-
-    var content = document.createElement('p');
-    content.innerHTML = data.content + extra;
-    content.style.cssText = 'margin:0 0 16px;line-height:1.5;font-size:14px;color:#ece9e4;';
-
-    var gotIt = document.createElement('button');
-    gotIt.type = 'button';
-    gotIt.textContent = 'Got it';
-    gotIt.style.cssText = 'background:#fba919;color:#15130e;border:none;padding:8px 16px;border-radius:6px;font-weight:600;cursor:pointer;font-size:14px;width:100%;';
-
-    modal.appendChild(title);
-    modal.appendChild(content);
-    modal.appendChild(gotIt);
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
-    document.body.style.overflow = 'hidden';
-
-    overlay._returnFocus = triggerEl;
-    activeOverlay = overlay;
-
-    gotIt.addEventListener('click', closeTooltip);
-    overlay.addEventListener('click', function (e) {
-      if (e.target === overlay) closeTooltip();
+    var dlg = window.RTG_DIALOG.openDialog({
+      title: data.title,
+      size: 'sm',
+      className: 'rtg-tooltip-dialog',
+      returnFocus: triggerEl,
+      onClose: function () { if (active === dlg) active = null; }
     });
-    gotIt.focus();
-  }
+    var text = document.createElement('p');
+    text.className = 'rtg-dialog-text';
+    text.innerHTML = data.content + extra;
+    dlg.body.appendChild(text);
 
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && activeOverlay) {
-      e.preventDefault();
-      closeTooltip();
-    } else if (e.key === 'Tab' && activeOverlay) {
-      // Single focusable element — keep focus on the button.
-      e.preventDefault();
-      var btn = activeOverlay.querySelector('button');
-      if (btn) btn.focus();
-    }
-  });
+    var gotIt = window.RTG_DIALOG.dialogButton('Got it', { primary: true });
+    gotIt.addEventListener('click', dlg.close);
+    dlg.footer.appendChild(gotIt);
+    gotIt.focus({ preventScroll: true });
+    active = dlg;
+  }
 
   document.addEventListener('click', function (e) {
     var trigger = e.target.closest ? e.target.closest('.info-tooltip-trigger') : null;

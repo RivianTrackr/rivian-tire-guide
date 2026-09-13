@@ -14,7 +14,7 @@ import { VALIDATION_PATTERNS, validateAndSanitizeCSVRow } from './modules/valida
 import { RTG_ANALYTICS } from './modules/analytics.js';
 import { showTooltipModal } from './modules/tooltips.js';
 import { initializeSmartSearch } from './modules/search.js';
-import { openReviewModal, loadTireRatings } from './modules/ratings.js';
+import { loadTireRatings } from './modules/ratings.js';
 import { renderCards } from './modules/cards.js';
 import { updateCompareBar, openComparison, clearCompare, setupCompareCheckboxes } from './modules/compare.js';
 import {
@@ -49,7 +49,7 @@ function setupEventDelegation() {
   if (state.eventDelegationSetup) return;
 
   document.addEventListener('click', function(e) {
-    // Star click -> open review modal
+    // Star click -> the review page
     const star = e.target.closest('.rating-stars.interactive .star');
     if (star) {
       const tireId = star.dataset.tireId;
@@ -62,13 +62,25 @@ function setupEventDelegation() {
         return;
       }
 
-      openReviewModal(tireId, rating);
+      // Reviews are written on the review page, with this tire and the
+      // tapped star already set. (The in-guide review modal went in 2.8.0.)
+      const settings = (typeof rtgData !== 'undefined' && rtgData.settings) ? rtgData.settings : {};
+      if (!settings.tireReviewUrl) {
+        console.error('Review page URL missing');
+        return;
+      }
+      let target;
+      try {
+        target = new URL(settings.tireReviewUrl, window.location.href);
+      } catch (err) {
+        console.error('Review page URL invalid');
+        return;
+      }
+      target.searchParams.set('tire', tireId);
+      target.searchParams.set('rating', String(rating));
+      window.location.assign(target.toString());
       return;
     }
-
-    // (The write-review pill and reviews drawer were removed in 1.55.2 /
-    // 1.56.0 — the review count now links to the tire page's reviews
-    // section, and review writing happens via the stars or review page.)
   });
 
   document.addEventListener('mouseenter', function(e) {

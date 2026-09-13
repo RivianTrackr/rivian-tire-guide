@@ -84,6 +84,12 @@
       var tire = findTireById(config.preselectedTire);
       if (tire) selectTire(tire);
     }
+    // The star tapped on a guide card, when the visitor came from one.
+    var preRating = parseInt(config.preselectedRating, 10);
+    if (preRating >= 1 && preRating <= 5) {
+      selectedRating = preRating;
+      updateStarDisplay();
+    }
 
     var changeBtn = $('rvChangeTire');
     if (changeBtn) changeBtn.addEventListener('click', function() { resetSelection(); searchInput.focus(); });
@@ -560,6 +566,7 @@
     clearForm();
     var u = new URL(window.location);
     u.searchParams.delete('tire');
+    u.searchParams.delete('rating');
     window.history.replaceState({}, '', u);
   }
 
