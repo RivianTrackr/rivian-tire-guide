@@ -22,7 +22,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 
 ### Ratings & Reviews
 - **Star Ratings** — SVG star ratings with half-star precision. Logged-in users rate tires 1-5 stars with keyboard navigation (arrow keys, Enter/Space). Users can delete their own ratings.
-- **Text Reviews** — Optional review title and body alongside star ratings, with a slide-in reviews drawer for each tire.
+- **Text Reviews** — Optional review title and body alongside star ratings, with six optional detail ratings, the vehicle and the miles on the set. Tapping a star on a guide card opens the review page with that tire and star already set.
 - **Guest Reviews** — Non-logged-in visitors can submit reviews with name and email. Includes honeypot spam prevention and IP-based rate limiting.
 - **Review Moderation** — Admin approval queue with pending/approved/rejected status tabs. Admin-submitted reviews auto-approve; user and guest reviews default to pending.
 - **Email Notifications** — Admins receive styled HTML email notifications for new guest reviews. Reviewers receive approval notification emails.
@@ -88,7 +88,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - `GET /wp-json/rtg/v1/tires/{tire_id}` — Single tire with ratings.
 - `GET /wp-json/rtg/v1/tires/{tire_id}/reviews` — Paginated reviews.
 - `GET /wp-json/rtg/v1/feed` — Full tire catalog JSON feed with ratings and Roamer real-world efficiency data.
-- `GET /wp-json/rtg/v1/whats-new` — The parsed release notes the guide's Changelog modal loads.
+- `GET /wp-json/rtg/v1/whats-new` — The parsed release notes the guide's Changelog dialog loads.
 - `POST /wp-json/rtg/v1/advise` — Help me choose: three picks with reasons and trade-offs.
 - `GET /wp-json/rtg/v1/tires/{tire_id}/review-summary` — "What owners say" for a tire page.
 - `GET /wp-json/rtg/v1/compare-summary?ids=a,b` — The compare page's plain-words paragraph.
@@ -165,7 +165,7 @@ Settings → AI Tire Advisor. Add an Anthropic API key (or define `RTG_ANTHROPIC
 
 ### What's New Page
 
-The plugin registers `/tire-guide/whats-new/`, rendered inside the theme from `WHATS-NEW.md` at the plugin root. Write that file for owners, not developers: one `## version - date` heading per release, an optional intro line, then bullets that open with a bold lead sentence. Skip releases with nothing visible. It is parsed once per plugin version (or file edit) and also served at `GET /wp-json/rtg/v1/whats-new` for the guide's modal.
+The plugin registers `/tire-guide/whats-new/`, rendered inside the theme from `WHATS-NEW.md` at the plugin root. Write that file for owners, not developers: one `## version - date` heading per release, an optional intro line, then bullets that open with a bold lead sentence. Skip releases with nothing visible. It is parsed once per plugin version (or file edit) and also served at `GET /wp-json/rtg/v1/whats-new` for the guide's Changelog dialog.
 
 ### Settings
 
@@ -247,12 +247,13 @@ rivian-tire-guide/
 │           ├── vehicle-memory.js    # Remembered vehicle toggle
 │           ├── compare.js           # Compare checkbox & bar
 │           ├── filters.js           # Filter UI, size menu, sorting, URL state
-│           ├── ratings.js           # Review modal & drawer
+│           ├── ratings.js           # Card ratings: loading, stars, posting
 │           ├── search.js            # Smart search autocomplete
 │           ├── server.js            # Server-side pagination
-│           ├── tooltips.js          # Info tooltips and their modal
-│           ├── image-modal.js       # Image lightbox
-│           ├── whats-new.js         # Changelog link + modal
+│           ├── tooltips.js          # Info (i) notes, in the dialog shell
+│           ├── image-modal.js       # Photo lightbox, in the dialog shell
+│           ├── dialog.js            # The dialog shell every dialog is built on
+│           ├── whats-new.js         # Changelog link + dialog
 │           └── advisor.js           # Help me choose dialog
 ├── tests/
 │   ├── bootstrap.php                # PHPUnit WordPress test bootstrap

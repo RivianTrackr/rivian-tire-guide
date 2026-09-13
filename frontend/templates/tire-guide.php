@@ -30,16 +30,16 @@ $rtg_write_review_url = home_url( '/' . sanitize_title( $rtg_guide_settings['tir
       <span class="rtg-filter-divider" aria-hidden="true"></span>
 
       <div class="rtg-filter-chips" id="rtgFilterChips">
-        <div class="rtg-sheet-head">
-          <span class="rtg-sheet-title">Filters</span>
-          <button type="button" class="rtg-sheet-close" data-sheet-close aria-label="Close filters"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+        <div class="rtg-sheet-head rtg-dialog-header">
+          <span class="rtg-sheet-title rtg-dialog-title">Filters</span>
+          <button type="button" class="rtg-sheet-close rtg-dialog-close" data-sheet-close aria-label="Close filters"></button>
         </div>
 
         <button type="button" id="rtgAllFilters" class="rtg-fchip rtg-fchip-all" aria-haspopup="dialog" aria-expanded="false" aria-controls="rtgFilterChips">
           <i class="fa-solid fa-sliders" aria-hidden="true"></i> Filters <span class="rtg-fchip-badge" hidden></span>
         </button>
 
-        <div class="rtg-sheet-body">
+        <div class="rtg-sheet-body rtg-dialog-body">
         <div class="rtg-fitem" data-key="size">
           <button type="button" class="rtg-fchip" data-pop aria-expanded="false" aria-controls="rtgPopSize">
             <span class="rtg-fchip-label">Size</span><span class="rtg-fchip-value"></span>
@@ -165,9 +165,9 @@ $rtg_write_review_url = home_url( '/' . sanitize_title( $rtg_guide_settings['tir
         </div>
         </div>
 
-        <div class="rtg-sheet-foot">
-          <button type="button" class="rtg-sheet-clear" data-clear-all>Clear all</button>
-          <button type="button" class="rtg-sheet-done" data-sheet-close>Show <span id="rtgSheetCount">0</span> tires</button>
+        <div class="rtg-sheet-foot rtg-dialog-footer">
+          <button type="button" class="rtg-sheet-clear rtg-dialog-btn" data-clear-all>Clear all</button>
+          <button type="button" class="rtg-sheet-done rtg-dialog-btn rtg-dialog-btn-primary" data-sheet-close>Show <span id="rtgSheetCount">0</span> tires</button>
         </div>
       </div>
       <div class="rtg-sheet-backdrop" id="rtgSheetBackdrop" hidden></div>
@@ -348,9 +348,4 @@ if ( ! empty( $rtg_wheels ) ) :
   <span id="compareCount" class="compare-count"></span>
   <button class="compare-bar-btn compare-bar-btn-go" onclick="openComparison()">Compare</button>
   <button class="compare-bar-btn compare-bar-btn-clear" onclick="clearCompare()">Clear</button>
-</div>
-<div id="imageModal" role="dialog" aria-label="Full size tire image" aria-modal="true">
-  <div class="modal-content">
-    <img id="modalImage" src="" alt="Full size tire image" />
-  </div>
 </div>

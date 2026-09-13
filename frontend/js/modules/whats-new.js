@@ -4,13 +4,15 @@
  * "What's new" — the owner-facing release notes, opened from the pill in
  * the filter header. The notes are loaded once from the REST endpoint
  * (already rendered to safe HTML by RTG_Whats_New, the same view the
- * standalone page draws from) and shown in a dialog built on the review
- * modal's shell: Escape closes, Tab is trapped, focus returns to the pill.
+ * standalone page draws from) and shown in the shared dialog shell:
+ * Escape closes, Tab is trapped, focus returns to the pill.
  *
  * A dot on the pill means the newest release is one this browser hasn't
  * opened yet. That's remembered in localStorage, the way the vehicle
  * toggle is: a preference of this browser, nothing the server needs.
  */
+
+import { openDialog } from './dialog.js';
 
 export const SEEN_STORAGE_KEY = 'rtg_seen_version';
 
@@ -117,82 +119,20 @@ export function renderReleases(container, releases) {
 }
 
 function openWhatsNew(trigger) {
-  const existing = document.getElementById('rtg-whats-new-modal');
-  if (existing) existing.remove();
-
-  const overlay = document.createElement('div');
-  overlay.id = 'rtg-whats-new-modal';
-  overlay.className = 'rtg-review-modal-overlay rtg-wn-overlay';
-  overlay.setAttribute('role', 'dialog');
-  overlay.setAttribute('aria-modal', 'true');
-  overlay.setAttribute('aria-labelledby', 'rtgWhatsNewTitle');
-
-  const modal = document.createElement('div');
-  modal.className = 'rtg-review-modal rtg-wn-modal';
-
-  const header = document.createElement('div');
-  header.className = 'rtg-review-modal-header';
-  const title = document.createElement('h3');
-  title.id = 'rtgWhatsNewTitle';
-  title.textContent = "Changelog";
-  const closeBtn = document.createElement('button');
-  closeBtn.type = 'button';
-  closeBtn.className = 'rtg-review-modal-close';
-  closeBtn.setAttribute('aria-label', 'Close');
-  closeBtn.innerHTML = '&times;';
-  header.appendChild(title);
-  header.appendChild(closeBtn);
-
-  const body = document.createElement('div');
-  body.className = 'rtg-wn-body';
+  const dlg = openDialog({
+    id: 'rtg-whats-new-modal',
+    title: 'Changelog',
+    titleId: 'rtgWhatsNewTitle',
+    size: 'lg',
+    bodyClass: 'rtg-wn-body',
+    returnFocus: trigger,
+  });
+  const overlay = dlg.overlay;
+  const body = dlg.body;
   const loading = document.createElement('p');
   loading.className = 'rtg-wn-loading';
   loading.textContent = 'Loading the latest changes…';
   body.appendChild(loading);
-
-  modal.appendChild(header);
-  modal.appendChild(body);
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-
-  requestAnimationFrame(() => overlay.classList.add('active'));
-  closeBtn.focus();
-
-  const returnFocusTo = trigger || document.activeElement;
-
-  function closeModal() {
-    overlay.classList.remove('active');
-    document.removeEventListener('keydown', modalKeydown);
-    setTimeout(() => overlay.remove(), 200);
-    if (returnFocusTo && typeof returnFocusTo.focus === 'function') {
-      returnFocusTo.focus({ preventScroll: true });
-    }
-  }
-
-  function modalKeydown(e) {
-    if (e.key === 'Escape') {
-      closeModal();
-      return;
-    }
-    if (e.key !== 'Tab') return;
-    const focusables = overlay.querySelectorAll('button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])');
-    if (!focusables.length) return;
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  }
-
-  closeBtn.addEventListener('click', closeModal);
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) closeModal();
-  });
-  document.addEventListener('keydown', modalKeydown);
 
   loadNotes().then(data => {
     if (!overlay.isConnected) return;

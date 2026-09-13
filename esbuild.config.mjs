@@ -22,6 +22,18 @@ const builds = [
     minify: true,
     drop: ['console', 'debugger'],
   },
+  // --- Frontend JS (dialog shell, standalone) — the same module the guide
+  // bundle imports, exposed as window.RTG_DIALOG for the tire page ---
+  {
+    ...jsDefaults,
+    bundle: true,
+    entryPoints: ['frontend/js/rtg-dialog.js'],
+    outfile: 'frontend/js/rtg-dialog.min.js',
+    format: 'iife',
+    globalName: 'RTG_DIALOG',
+    minify: true,
+    drop: ['console', 'debugger'],
+  },
   // --- Frontend JS (shared utilities) ---
   {
     ...jsDefaults,
@@ -61,6 +73,12 @@ const builds = [
   {
     entryPoints: ['frontend/css/rivian-tires.css'],
     outfile: 'frontend/css/rivian-tires.min.css',
+    minify: true,
+    bundle: false,
+  },
+  {
+    entryPoints: ['frontend/css/rtg-dialog.css'],
+    outfile: 'frontend/css/rtg-dialog.min.css',
     minify: true,
     bundle: false,
   },

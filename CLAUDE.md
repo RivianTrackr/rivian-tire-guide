@@ -65,7 +65,7 @@ Mono:  'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas,
 | Page title      | 32px   | 600    | line-height 1.2                       |
 | Stat value      | 28px   | 600    | line-height 1.2, tabular-nums        |
 | Section title   | 20px   | 600–700| —                                     |
-| Modal title     | 18px   | 700    | —                                     |
+| Dialog title    | 18px   | 700    | —                                     |
 | Subhead         | 16px   | 600–700| —                                     |
 | Field label     | 15px   | 500    | —                                     |
 | Body            | 14–15px| 400–500| line-height 1.4–1.6                   |
@@ -89,7 +89,7 @@ Antialiasing: `-webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: gra
 | Grid gap                   | 16–20px         |
 | Section margin-bottom      | 20–24px         |
 | Form field vertical rhythm | 20px padding-block |
-| Modal padding              | 16–24px         |
+| Dialog padding             | 16–20px         |
 | Toast padding              | 14px 20px       |
 | Inline element gap         | 6–8px           |
 | Action button padding      | 8–16px vert, 16–24px horiz |
@@ -104,8 +104,8 @@ Antialiasing: `-webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: gra
 | `sm`    | `6px`    | Badges, small buttons, review pills|
 | `md`    | `8px`    | Buttons, inputs, standard elements |
 | `lg`    | `10px`   | Filter sections, callouts, toasts  |
-| `xl`    | `12px`   | Cards, modals, floating bars       |
-| `2xl`   | `16px`   | Full modals, chips (pill-shaped)   |
+| `xl`    | `12px`   | Cards, lightbox photo, floating bars |
+| `2xl`   | `16px`   | Dialogs, chips (pill-shaped)       |
 | `pill`  | `20px`   | Filter chips, rounded pill shapes  |
 | `toggle`| `34px`   | iOS-style toggle tracks            |
 | `full`  | `9999px` | Range tracks, fully rounded        |
@@ -118,11 +118,11 @@ Antialiasing: `-webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: gra
 | Toggle dot        | `0 1px 3px rgba(0,0,0,0.15)`                | Toggle switch knob         |
 | Subtle            | `0 1px 3px rgba(0,0,0,0.2)`                 | Range thumb, small elevate |
 | Tooltip           | `0 4px 12px rgba(0,0,0,0.4)`                | Tooltip popover            |
-| Dropdown          | `0 8px 24px rgba(0,0,0,0.3)`                | Image modal                |
+| Dropdown          | `0 8px 24px rgba(0,0,0,0.3)`                | Filter popover             |
 | Floating          | `0 8px 25px rgba(0,0,0,0.4)`                | Sticky bottom bar          |
 | Toast             | `0 8px 30px rgba(0,0,0,0.4)`                | Toast notifications        |
-| Modal             | `0 25px 60px rgba(0,0,0,0.5)`               | Centered modals            |
-| Drawer            | `-10px 0 40px rgba(0,0,0,0.4)`              | Side drawer panel          |
+| Dialog            | `0 25px 60px rgba(0,0,0,0.5)`               | Centered dialogs           |
+| Sheet             | `0 -10px 40px rgba(0,0,0,0.4)`              | Phone bottom sheet         |
 | Focus ring (light)| `0 0 0 3px rgba(0,113,227,0.1)`             | Input focus (light theme)  |
 | Focus ring (dark) | `0 0 0 2px [accent]`                         | Input focus (dark theme)   |
 | Star glow         | `drop-shadow(0 1px 3px color-mix(in srgb, [color] 35%, transparent))` | Filled rating stars |
@@ -131,8 +131,8 @@ Antialiasing: `-webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: gra
 
 | Context         | Background                     | Backdrop filter |
 |-----------------|--------------------------------|-----------------|
-| Modal overlay   | `rgba(0, 0, 0, 0.6)`          | `blur(4px)`     |
-| Drawer overlay  | `rgba(0, 0, 0, 0.5)`          | `blur(4px)`     |
+| Dialog overlay  | `rgba(0, 0, 0, 0.6)`          | `blur(4px)`     |
+| Filter sheet backdrop | `rgba(0, 0, 0, 0.5)`    | `blur(4px)`     |
 | Image lightbox  | `rgba(0, 0, 0, 0.75)`         | `blur(4px)`     |
 | Floating bar    | card bg + border               | `blur(8px)`     |
 | Icon overlay    | `rgba(13, 15, 19, 0.55)`      | `blur(4px)`     |
@@ -144,7 +144,7 @@ Antialiasing: `-webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: gra
 |--------------|-----------------------|------------------------------------|
 | Small mobile | `max-width: 480px`    | Stack all, full-width buttons      |
 | Mobile       | `max-width: 600px`    | Single column, stacked filters     |
-| Mobile modal | `max-width: 640px`    | Full-screen sheet, safe-area inset |
+| Mobile dialog| `max-width: 640px`    | Bottom sheet, safe-area inset      |
 | Tablet       | `max-width: 782px`    | Reduced padding, 2-col stats grid  |
 | Desktop      | `min-width: 1024px`   | Full grid layouts (3-col cards)    |
 | Wide         | `max-width: 1200px`   | Table cell adjustments             |
@@ -161,7 +161,7 @@ Grid columns: `repeat(auto-fill, minmax(300px, 1fr))` general, `repeat(auto-fit,
 | `fast`   | 0.15s    | `ease`                           | Hover borders, color changes       |
 | `base`   | 0.2s     | `ease`                           | Buttons, inputs, backgrounds       |
 | `medium` | 0.25s    | `ease`                           | Chevron rotation, collapse         |
-| `slow`   | 0.3s     | `ease`                           | Drawers, modals, max-height toggle |
+| `slow`   | 0.3s     | `ease`                           | Max-height toggle, dialog exit     |
 | `sheet`  | 0.3s     | `cubic-bezier(0.32, 0.72, 0, 1)`| Mobile bottom sheet entry          |
 | `bar`    | 0.6s     | `ease`                           | Data bar fill width                |
 
@@ -174,7 +174,7 @@ Grid columns: `repeat(auto-fill, minmax(300px, 1fr))` general, `repeat(auto-fit,
 | `pulse`    | `2s ease-in-out infinite`             | Badge attention glow         |
 | `chipIn`   | `0.2s ease` scale(0.9→1) + fade      | Filter chip entry            |
 | `fadeIn`   | opacity 0→1                           | Generic reveal               |
-| `slideUp`  | translateY(20px)→0 + fade             | Modal/toast entry            |
+| `slideUp`  | translateY(20px)→0 + fade             | Dialog/toast entry           |
 | `highlight`| `2s ease` box-shadow accent glow      | Scroll-to target pulse       |
 
 ### Component Patterns
@@ -200,12 +200,25 @@ Dismiss button: 18px circle, border bg, hover red `#ee383a`.
 **Rating stars** — SVG layers (bg/fill/half). Empty: muted color at 0.35 opacity.
 Filled: accent + drop-shadow. Hover: `scale(1.15)`. Secondary color for user-contributed.
 
-**Modal** — Centered, max-width 520px, 16px border-radius, slide-up 20px entry.
-Mobile <640px: full-screen bottom sheet via `translateY(100%)`, 0px radius, safe-area padding,
-sticky header/footer, `cubic-bezier(0.32, 0.72, 0, 1)` entry.
+**Dialog** — One shell for every dialog (`frontend/css/rtg-dialog.css`,
+`openDialog()` in `frontend/js/modules/dialog.js`; the tire page loads it as
+`window.RTG_DIALOG`). Centered, max-width 520px (`--sm` 400, `--lg` 600,
+`--xl` 800), 16px radius, fade + 20px settle. Header: title left, 40px bordered
+close button with a drawn X at right. Body is the only scrolling region; footer
+holds the actions (secondary by default, `-primary` for the accent fill).
+z-index 100000; `body.rtg-dialog-open` locks the page. Mobile <640px: bottom
+sheet rounded at the top, content-sized up to 92dvh, `translateY(100%)` entry
+on `cubic-bezier(0.32, 0.72, 0, 1)`, safe-area padding under the footer,
+full-width 48px buttons. Never sticky header/footer: iOS Safari paints them
+under positioned siblings. The phone filter sheet carries the shell's classes.
+Lightbox mode: darker overlay, no header, floating close button, centered at
+every width.
 
-**Drawer** — Right-aligned, max-width 480px, `translateX(100%)` entry, border-left.
-Mobile: full width.
+**Dialog or page** — A page for anything with its own URL or a form worth
+keeping (tire page, compare, writing a review, Changelog page, a member's
+reviews). A dialog for a short interruption that hands the visitor back to
+where they were (filters on a phone, Help me choose, info notes, the lightbox,
+the Changelog quick view).
 
 **Toast** — Fixed top-right (24px inset), max-width 380px, slide-in from right,
 10px radius, elevated shadow. Status border-color indicates type.

@@ -323,6 +323,28 @@ foreach ( $rtg_tp_var_map as $rtg_tp_key => $rtg_tp_prop ) {
     }
 }
 
+// The dialog shell (rtg-dialog.css) reads the guide's own token names, so
+// the (i) notes get the same overrides under those names.
+$rtg_tp_dialog_map = array(
+    'accent'       => '--rtg-accent',
+    'accent_hover' => '--rtg-accent-hover',
+    'bg_card'      => '--rtg-bg-card',
+    'bg_deep'      => '--rtg-bg-deep',
+    'text_primary' => '--rtg-text-primary',
+    'text_heading' => '--rtg-text-heading',
+    'text_muted'   => '--rtg-text-muted',
+    'border'       => '--rtg-border',
+);
+$rtg_tp_dialog_vars = '';
+foreach ( $rtg_tp_dialog_map as $rtg_tp_key => $rtg_tp_prop ) {
+    if ( ! empty( $rtg_tp_theme[ $rtg_tp_key ] ) ) {
+        $rtg_tp_color = sanitize_hex_color( $rtg_tp_theme[ $rtg_tp_key ] );
+        if ( $rtg_tp_color ) {
+            $rtg_tp_dialog_vars .= $rtg_tp_prop . ':' . $rtg_tp_color . ';';
+        }
+    }
+}
+
 $breadcrumb_items = array(
     array( 'name' => 'Home', 'url' => home_url( '/' ) ),
     array( 'name' => 'Tire Guide', 'url' => $guide_url ),
@@ -436,6 +458,9 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
 }
 ?>
 <style>
+  <?php if ( $rtg_tp_dialog_vars ) : ?>
+  .rtg-dialog-overlay { <?php echo $rtg_tp_dialog_vars; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized hex above ?> }
+  <?php endif; ?>
   .rtg-tp {
     --rtg-tp-accent: #fba919;
     --rtg-tp-accent-hover: #ffbe4a;

@@ -122,10 +122,25 @@ class RTG_Tire_Page {
         $suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : (
             file_exists( RTG_PLUGIN_DIR . 'frontend/js/tire-page.min.js' ) ? '.min' : ''
         );
+        // The dialog shell the (i) notes open in: the same stylesheet and
+        // module the guide uses, so a note here matches a note there.
+        wp_enqueue_style(
+            'rtg-dialog',
+            RTG_PLUGIN_URL . 'frontend/css/rtg-dialog' . $suffix . '.css',
+            array(),
+            RTG_VERSION
+        );
+        wp_enqueue_script(
+            'rtg-dialog',
+            RTG_PLUGIN_URL . 'frontend/js/rtg-dialog' . $suffix . '.js',
+            array(),
+            RTG_VERSION,
+            true
+        );
         wp_enqueue_script(
             'rtg-tire-page',
             RTG_PLUGIN_URL . 'frontend/js/tire-page' . $suffix . '.js',
-            array(),
+            array( 'rtg-dialog' ),
             RTG_VERSION,
             true
         );

@@ -6,6 +6,7 @@
 
 import { state } from './state.js';
 import { rtgColor, rtgIcon, escapeHTML } from './helpers.js';
+import { openDialog, dialogButton } from './dialog.js';
 
 export const TOOLTIP_DATA = {
   'Load Index': {
@@ -102,195 +103,32 @@ export function showTooltipModal(tooltipKey, triggerEl) {
     extraContent += '<br><br><strong style="color:#a78bfa;">' + escapeHTML(who) + ':</strong> ' + escapeHTML(triggerEl.dataset.tooltipNote);
   }
 
-  const overlay = document.createElement('div');
-  overlay.className = 'tooltip-modal-overlay';
-  overlay.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    animation: fadeIn 0.2s ease;
-    backdrop-filter: blur(2px);
-  `;
+  const body = document.createElement('p');
+  body.className = 'rtg-dialog-text';
+  body.innerHTML = tooltipData.content + extraContent;
 
-  const modal = document.createElement('div');
-  modal.className = 'tooltip-modal';
-  modal.style.cssText = `
-    background: ${rtgColor('bg-primary')};
-    border-radius: 12px;
-    padding: 20px;
-    max-width: 400px;
-    width: 100%;
-    color: ${rtgColor('text-light')};
-    border: 1px solid #475569;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-    animation: slideUp 0.2s ease;
-    position: relative;
-  `;
-
-  const title = document.createElement('h3');
-  title.textContent = tooltipData.title;
-  title.style.cssText = `
-    margin: 0 0 12px 0;
-    font-size: 18px;
-    font-weight: 700;
-    color: ${rtgColor('accent')};
-  `;
-
-  const content = document.createElement('p');
-  content.innerHTML = tooltipData.content + extraContent;
-  content.style.cssText = `
-    margin: 0 0 16px 0;
-    line-height: 1.5;
-    font-size: 14px;
-    color: #e2e8f0;
-  `;
-
-  const closeButton = document.createElement('button');
-  closeButton.innerHTML = rtgIcon('xmark', 18);
-  closeButton.style.cssText = `
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    background: none;
-    border: none;
-    color: var(--rtg-text-muted);
-    font-size: 16px;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 4px;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-  `;
-
-  closeButton.addEventListener('mouseenter', () => {
-    closeButton.style.color = rtgColor('text-light');
-    closeButton.style.backgroundColor = 'rgba(148, 163, 184, 0.2)';
+  const dlg = openDialog({
+    title: tooltipData.title,
+    size: 'sm',
+    className: 'rtg-tooltip-dialog',
+    returnFocus: triggerEl,
+    onClose: () => {
+      if (state.activeTooltip === dlg.overlay) state.activeTooltip = null;
+    },
   });
+  dlg.body.appendChild(body);
+  const gotIt = dialogButton('Got it', { primary: true });
+  gotIt.addEventListener('click', dlg.close);
+  dlg.footer.appendChild(gotIt);
+  gotIt.focus({ preventScroll: true });
 
-  closeButton.addEventListener('mouseleave', () => {
-    closeButton.style.color = rtgColor('text-muted');
-    closeButton.style.backgroundColor = 'transparent';
-  });
-
-  const gotItButton = document.createElement('button');
-  gotItButton.textContent = 'Got it';
-  gotItButton.style.cssText = `
-    background: ${rtgColor('accent')};
-    color: #1a1a1a;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.2s ease;
-    width: 100%;
-  `;
-
-  gotItButton.addEventListener('mouseenter', () => {
-    gotItButton.style.backgroundColor = rtgColor('accent-hover');
-  });
-
-  gotItButton.addEventListener('mouseleave', () => {
-    gotItButton.style.backgroundColor = rtgColor('accent');
-  });
-
-  const closeModal = () => closeTooltipModal();
-  closeButton.addEventListener('click', closeModal);
-  gotItButton.addEventListener('click', closeModal);
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) closeModal();
-  });
-
-  // Escape closes; Tab is trapped inside the dialog (wraps at both ends),
-  // the same shape as the review modal. The one listener is removed by
-  // closeTooltipModal on every close path — the old Escape-only handler
-  // was removed only when Escape itself closed the modal, so "Got it" and
-  // the backdrop each leaked a document listener.
-  const modalKeydown = (e) => {
-    if (e.key === 'Escape') {
-      closeModal();
-      return;
-    }
-    if (e.key !== 'Tab') return;
-
-    const focusables = overlay.querySelectorAll(
-      'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
-    );
-    if (!focusables.length) return;
-
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  };
-  document.addEventListener('keydown', modalKeydown);
-  overlay._rtgKeydown = modalKeydown;
-
-  // Remember the opener so keyboard focus returns there on close.
-  overlay._rtgReturnFocus = triggerEl && typeof triggerEl.focus === 'function'
-    ? triggerEl
-    : document.activeElement;
-
-  modal.setAttribute('role', 'dialog');
-  modal.setAttribute('aria-modal', 'true');
-  modal.setAttribute('aria-label', tooltipData.title);
-  closeButton.setAttribute('aria-label', 'Close');
-
-  modal.appendChild(title);
-  modal.appendChild(content);
-  modal.appendChild(closeButton);
-  modal.appendChild(gotItButton);
-  overlay.appendChild(modal);
-
-  document.body.appendChild(overlay);
-  state.activeTooltip = overlay;
-
-  document.body.style.overflow = 'hidden';
-
-  gotItButton.focus();
+  state.activeTooltip = dlg.overlay;
 }
 
 export function closeTooltipModal() {
   const overlay = state.activeTooltip;
   if (!overlay) return;
-
-  // Detach now, not after the fade: a second open inside the 200 ms window
-  // must not find the old overlay still registered as active.
   state.activeTooltip = null;
-  if (overlay._rtgKeydown) {
-    document.removeEventListener('keydown', overlay._rtgKeydown);
-    overlay._rtgKeydown = null;
-  }
-
-  overlay.style.animation = 'fadeOut 0.2s ease';
-  setTimeout(() => {
-    if (overlay.parentNode) {
-      overlay.parentNode.removeChild(overlay);
-    }
-    document.body.style.overflow = '';
-  }, 200);
-
-  const returnFocusTo = overlay._rtgReturnFocus;
-  overlay._rtgReturnFocus = null;
-  if (returnFocusTo && typeof returnFocusTo.focus === 'function' && document.contains(returnFocusTo)) {
-    returnFocusTo.focus({ preventScroll: true });
-  }
+  if (overlay._rtgDialogClose) overlay._rtgDialogClose();
+  else overlay.remove();
 }

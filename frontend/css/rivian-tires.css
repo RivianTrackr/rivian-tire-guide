@@ -177,13 +177,15 @@
   flex: 1 1 auto;
   min-width: 0;
 }
-/* The body wraps the pills so the phone sheet can scroll them between a
-   fixed header and footer; in the row it is transparent to the flex layout. */
-.rtg-sheet-body {
+/* The sheet's header, body and footer carry the dialog shell's classes
+   (rtg-dialog.css), so on a phone the filters are the same sheet as every
+   other dialog. In the row the body is transparent to the flex layout and
+   the header and footer are not there at all. */
+.rtg-filter-chips:not(.is-sheet) .rtg-sheet-body {
   display: contents;
 }
-.rtg-sheet-head,
-.rtg-sheet-foot,
+.rtg-filter-chips:not(.is-sheet) .rtg-sheet-head,
+.rtg-filter-chips:not(.is-sheet) .rtg-sheet-foot,
 .rtg-filter-chips .rtg-fchip-all,
 .rtg-fswitch,
 .rtg-fselect,
@@ -546,16 +548,13 @@
 .rtg-sheet-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 8999;
+  z-index: 99999;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
 .rtg-sheet-backdrop[hidden] {
   display: none;
-}
-body.rtg-sheet-open {
-  overflow: hidden;
 }
 @keyframes chipIn {
   from { opacity: 0; transform: scale(0.9); }
@@ -629,8 +628,8 @@ body.rtg-sheet-open {
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 9000;
-    max-height: 88dvh;
+    z-index: 100000;
+    max-height: 92dvh;
     margin: 0;
     padding: 0;
     flex-direction: column;
@@ -645,16 +644,11 @@ body.rtg-sheet-open {
     box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
     animation: rtgSheetUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
   }
-  /* Header and footer are fixed flex children; only the body scrolls. Sticky
-     children would do the same on paper, but iOS Safari paints them under
-     the positioned pills, so the footer sat on top of the last filter. */
+  /* The shell's header and footer stay put and only the body scrolls; the
+     sections bring their own padding and dividers. */
   .is-sheet .rtg-sheet-body {
     display: block;
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
+    padding: 0;
   }
   .is-sheet .rtg-sheet-body > .rtg-fitem:last-child {
     border-bottom: none;
@@ -662,40 +656,11 @@ body.rtg-sheet-open {
   .is-sheet .rtg-fchip-all {
     display: none;
   }
-  .is-sheet .rtg-sheet-head {
-    display: flex;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 20px;
-    background: var(--rtg-bg-card);
-    border-bottom: 1px solid var(--rtg-border);
-  }
-  .rtg-sheet-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--rtg-text-heading);
-  }
-  .rtg-sheet-close {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    padding: 0;
-    margin: 0;
-    background: transparent;
-    border: 1px solid var(--rtg-border);
-    border-radius: 8px;
-    color: var(--rtg-text-primary);
-    font-size: 16px;
-    cursor: pointer;
-  }
   .is-sheet .rtg-fitem {
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
-    padding: 16px 20px;
+    padding: 16px;
     border-bottom: 1px solid var(--rtg-border);
   }
   .is-sheet .rtg-fchip[data-pop] {
@@ -793,46 +758,12 @@ body.rtg-sheet-open {
   .is-sheet .rtg-fchip-toggle[aria-pressed="true"] .rtg-fswitch::before {
     transform: translateX(20px);
   }
-  .is-sheet .rtg-sheet-foot {
-    display: flex;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 14px 20px calc(14px + env(safe-area-inset-bottom));
-    background: var(--rtg-bg-card);
-    border-top: 1px solid var(--rtg-border);
+  /* Clear all stays compact; Show N tires takes the rest of the row. */
+  .is-sheet .rtg-sheet-clear {
+    flex: 0 0 auto;
   }
-  .rtg-sheet-clear {
-    height: 44px;
-    padding: 0 16px;
-    margin: 0;
-    background: transparent;
-    border: 1px solid var(--rtg-border);
-    border-radius: 8px;
-    color: var(--rtg-text-primary);
-    font-family: inherit;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .rtg-sheet-clear:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  .rtg-sheet-done {
-    flex: 1;
-    height: 44px;
-    padding: 0 16px;
-    margin: 0;
-    background: var(--rtg-accent);
-    border: none;
-    border-radius: 8px;
-    color: #15130e;
-    font-family: inherit;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
+  .is-sheet .rtg-sheet-done {
+    flex: 1 1 auto;
   }
   .rtg-sort-actions {
     width: 100%;
@@ -942,8 +873,8 @@ input.range-slider::-moz-range-thumb:hover {
 
 /* === Help me choose (AI Tire Advisor) ===
    The button sits beside Search and is the one accent-filled control in
-   the filter panel: it is the door to the advisor. The dialog borrows the
-   review modal's shell; its form is three questions and its results are a
+   the filter panel: it is the door to the advisor. The dialog is the shared
+   dialog shell; its form is three questions and its results are a
    ranked list of picks with a reason and a trade-off each. */
 .rtg-advisor-btn {
   flex-shrink: 0 !important;
@@ -974,12 +905,6 @@ input.range-slider::-moz-range-thumb:hover {
   font-size: 13px !important;
   width: auto !important;
   color: inherit !important;
-}
-.rtg-adv-modal {
-  max-width: 800px;
-}
-.rtg-adv-body {
-  padding: 20px 24px;
 }
 .rtg-adv-q {
   margin-bottom: 20px;
@@ -1082,16 +1007,13 @@ input.range-slider::-moz-range-thumb:hover {
   background: color-mix(in srgb, var(--rtg-accent) 12%, var(--rtg-bg-deep));
   border-color: color-mix(in srgb, var(--rtg-accent) 45%, transparent);
 }
-.rtg-review-modal-footer.rtg-adv-footer {
-  display: flex;
+.rtg-adv-modal .rtg-dialog-footer {
   flex-direction: column;
   align-items: stretch;
   gap: 8px;
-  padding: 12px 24px;
 }
-.rtg-review-modal-footer.rtg-adv-footer[hidden],
 .rtg-adv-body > [hidden],
-.rtg-review-modal-header .rtg-adv-again[hidden] {
+.rtg-adv-again[hidden] {
   display: none !important;
 }
 .rtg-adv-status {
@@ -1129,24 +1051,15 @@ input.range-slider::-moz-range-thumb:hover {
 @keyframes rtg-adv-spin {
   to { transform: rotate(360deg); }
 }
+/* Start over sits in the shell's header, a smaller secondary button. */
 .rtg-adv-again {
-  height: 32px;
-  padding: 0 10px;
-  margin-left: auto;
-  margin-right: 12px;
+  height: 36px;
+  padding: 0 12px;
   font-size: 13px;
-  font-weight: 600;
   color: var(--rtg-text-muted);
-  background: transparent;
-  border: 1px solid var(--rtg-border);
-  border-radius: 8px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.15s ease;
 }
 .rtg-adv-again:hover {
   color: var(--rtg-accent);
-  border-color: var(--rtg-accent);
 }
 .rtg-adv-status {
   flex: 1;
@@ -1394,34 +1307,8 @@ input.range-slider::-moz-range-thumb:hover {
   100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rtg-accent) 0%, transparent); }
 }
 @media (max-width: 640px) {
-  .rtg-adv-body {
-    padding: 16px;
-    flex: 1;
-  }
-  .rtg-review-modal-footer.rtg-adv-footer {
-    position: sticky;
-    bottom: 0;
-    flex-direction: column;
-    gap: 8px;
-    padding: 10px 16px;
-    padding-bottom: max(10px, env(safe-area-inset-bottom));
-    background: var(--rtg-bg-card);
-  }
-  .rtg-adv-submit {
-    height: 48px;
-    font-size: 15px;
-  }
   .rtg-adv-action {
     height: 40px;
-  }
-  /* The header is row-reverse on phones: order -1 puts Start over at the right edge. */
-  .rtg-adv-again {
-    order: -1;
-    margin: 0;
-    height: 36px;
-  }
-  .rtg-adv-modal .rtg-review-modal-header h3 {
-    padding-right: 0;
   }
   .rtg-adv-seg {
     display: flex;
@@ -1457,8 +1344,8 @@ input.range-slider::-moz-range-thumb:hover {
 
 /* === What's new pill + modal ===
    The pill shares the Clear All button's size and sits left of it. A dot
-   means the newest release is one this browser hasn't opened; the modal
-   borrows the review modal's shell and adds the release list, which is the
+   means the newest release is one this browser hasn't opened; the dialog
+   is the shared dialog shell holding the release list, which is the
    same markup the /tire-guide/whats-new/ page renders. */
 .rtg-whats-new-btn {
   position: relative;
@@ -1506,11 +1393,7 @@ input.range-slider::-moz-range-thumb:hover {
   0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rtg-accent) 45%, transparent); }
   50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--rtg-accent) 0%, transparent); }
 }
-.rtg-wn-modal {
-  max-width: 600px;
-}
 .rtg-wn-body {
-  padding: 20px 24px;
   display: grid;
   gap: 12px;
 }
@@ -1625,32 +1508,6 @@ input.range-slider::-moz-range-thumb:hover {
 }
 .rtg-wn-page-link:hover {
   color: var(--rtg-accent);
-}
-.rtg-wn-done {
-  display: inline-flex;
-  align-items: center;
-  height: 40px;
-  padding: 0 18px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #15130e;
-  background: var(--rtg-accent);
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.1s ease;
-}
-.rtg-wn-done:hover {
-  background: var(--rtg-accent-hover);
-}
-.rtg-wn-done:active {
-  transform: scale(0.93);
-}
-@media (max-width: 640px) {
-  .rtg-wn-body {
-    padding: 16px;
-    flex: 1;
-  }
 }
 /* The footer's Changelog: a text link, not a button. The dot still rides
    it, so a new release shows there; .has-unseen from whats-new.js lights it. */
@@ -1775,69 +1632,6 @@ input.range-slider::-moz-range-thumb:hover {
 .info-tooltip-trigger:focus {
   color: var(--rtg-accent, #5ec095);
   background-color: color-mix(in srgb, var(--rtg-accent, #5ec095) 10%, transparent);
-}
-
-/* === Tooltips === */
-.tooltip-container {
-  position: relative;
-  display: inline-block;
-  margin-left: 6px;
-  font-size: 18px;
-  font-weight: 600;
-  color: #a6a39c;
-  cursor: pointer;
-}
-.tooltip-content {
-  visibility: hidden;
-  opacity: 0;
-  width: 320px;
-  background-color: var(--rtg-bg-primary);
-  color: #f9fafb;
-  text-align: left;
-  padding: 10px 12px;
-  border-radius: 8px;
-  position: absolute;
-  z-index: 999;
-  bottom: 125%;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 14px;
-  line-height: 1.4;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-  transition: opacity 0.2s ease;
-  pointer-events: none;
-  border: 1px solid var(--rtg-border);
-}
-.tooltip-container:hover .tooltip-content,
-.tooltip-container:focus-within .tooltip-content {
-  visibility: visible;
-  opacity: 1;
-  pointer-events: auto;
-}
-.tooltip-content::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-}
-.floating-tooltip {
-  background: var(--rtg-bg-primary);
-  color: #f9fafb;
-  text-align: left;
-  padding: 10px 12px;
-  border-radius: 8px;
-  font-size: 14px;
-  line-height: 1.4;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-  pointer-events: none;
-  z-index: 9999;
-  width: 320px;
-  border: 1px solid var(--rtg-border);
-  transition: opacity 0.2s ease;
-}
-.cursor-help {
-  cursor: help;
 }
 
 /* === Results line ===
@@ -2636,44 +2430,6 @@ input.range-slider::-moz-range-thumb:hover {
   color: #ee383a;
 }
 
-/* === Image Modal === */
-#imageModal {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  margin: 0 !important;
-  padding: 0 !important;
-  background: rgba(0, 0, 0, 0.75);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-  max-width: 100%;
-  backdrop-filter: blur(4px);
-}
-#imageModal img {
-  transition: transform 0.2s ease;
-}
-#imageModal img:hover {
-  transform: scale(1.02);
-}
-.modal-content {
-  background: white;
-  padding: 16px;
-  border-radius: 12px;
-  max-width: 90vw;
-  max-height: 90vh;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-}
-.modal-content img {
-  max-width: 100%;
-  max-height: 80vh;
-  display: block;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
 /* === Wheel Drawer Callout === */
 .rtg-wheel-callout {
   background: var(--rtg-bg-card);
@@ -3026,256 +2782,6 @@ input.range-slider::-moz-range-thumb:hover {
   cursor: default;
 }
 
-/* === Review Modal === */
-.rtg-review-modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 100000;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  padding: 16px;
-}
-.rtg-review-modal-overlay.active {
-  opacity: 1;
-}
-.rtg-review-modal {
-  background: var(--rtg-bg-card, #1e2126);
-  border: 1px solid var(--rtg-border, #23262c);
-  border-radius: 16px;
-  width: 100%;
-  max-width: 520px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
-  transform: translateY(20px);
-  transition: transform 0.2s ease;
-}
-.rtg-review-modal-overlay.active .rtg-review-modal {
-  transform: translateY(0);
-}
-.rtg-review-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px 12px;
-  border-bottom: 1px solid var(--rtg-border, #23262c);
-}
-.rtg-review-modal-header h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--rtg-text-heading, #ffffff);
-}
-.rtg-review-modal-close {
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: var(--rtg-text-muted, #99968f);
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-  transition: color 0.2s ease;
-}
-.rtg-review-modal-close:hover {
-  color: var(--rtg-text-light, #f6f4f0);
-}
-
-/* Modal star selector */
-.rtg-review-modal-stars {
-  padding: 16px 24px;
-  text-align: center;
-}
-.rtg-review-modal-stars label {
-  display: block;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--rtg-text-muted, #99968f);
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-.rtg-review-stars-select {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-}
-.rtg-review-star {
-  color: var(--rtg-star-empty-visible, #6f6e6b);
-  cursor: pointer;
-  transition: color 0.15s ease, transform 0.15s ease, filter 0.15s ease;
-  user-select: none;
-  display: inline-flex;
-  line-height: 0;
-}
-.rtg-review-star .star-bg {
-  opacity: 0.8;
-}
-.rtg-review-star .star-fill,
-.rtg-review-star .star-half {
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-.rtg-review-star.selected {
-  color: var(--rtg-star-user, #4ade80);
-  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--rtg-star-user, #4ade80) 40%, transparent));
-}
-.rtg-review-star.selected .star-fill {
-  opacity: 1;
-}
-.rtg-review-star.hovered {
-  color: var(--rtg-star-filled, #fba919);
-  transform: scale(1.15);
-}
-.rtg-review-star.hovered .star-fill {
-  opacity: 1;
-}
-.rtg-review-star:hover {
-  transform: scale(1.15);
-}
-.rtg-review-rating-text {
-  display: block;
-  margin-top: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--rtg-text-light, #f6f4f0);
-}
-
-/* Modal fields */
-.rtg-review-field {
-  padding: 0 24px 16px;
-}
-.rtg-review-field label {
-  display: block;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--rtg-text-muted, #99968f);
-  margin-bottom: 6px;
-}
-.rtg-review-input {
-  width: 100%;
-  padding: 10px 14px;
-  background: var(--rtg-bg-input, #15130e);
-  border: 1px solid var(--rtg-border, #23262c);
-  border-radius: 8px;
-  color: var(--rtg-text-primary, #e9e6e1);
-  font-size: 14px;
-  font-family: inherit;
-  transition: border-color 0.2s ease;
-  box-sizing: border-box;
-}
-.rtg-review-input:focus {
-  outline: none;
-  border-color: var(--rtg-accent, #fba919);
-}
-.rtg-review-textarea {
-  width: 100%;
-  padding: 10px 14px;
-  background: var(--rtg-bg-input, #15130e);
-  border: 1px solid var(--rtg-border, #23262c);
-  border-radius: 8px;
-  color: var(--rtg-text-primary, #e9e6e1);
-  font-size: 14px;
-  font-family: inherit;
-  resize: vertical;
-  min-height: 100px;
-  transition: border-color 0.2s ease;
-  box-sizing: border-box;
-}
-.rtg-review-textarea:focus {
-  outline: none;
-  border-color: var(--rtg-accent, #fba919);
-}
-.rtg-review-char-count {
-  text-align: right;
-  font-size: 12px;
-  color: var(--rtg-text-muted, #99968f);
-  margin-top: 4px;
-}
-.rtg-review-guest-notice {
-  font-size: 13px;
-  color: var(--rtg-text-muted, #99968f);
-  background: var(--rtg-bg-secondary, #121418);
-  border-radius: 6px;
-  padding: 10px 12px;
-  margin-top: 10px;
-  line-height: 1.4;
-}
-/* Modal footer */
-.rtg-review-modal-footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 16px 24px;
-  border-top: 1px solid var(--rtg-border, #23262c);
-}
-.rtg-review-error {
-  flex: 1;
-  font-size: 13px;
-  color: #ef4444;
-}
-.rtg-review-btn-cancel {
-  background: none;
-  border: 1px solid var(--rtg-border, #23262c);
-  border-radius: 8px;
-  padding: 10px 20px;
-  color: var(--rtg-text-light, #f6f4f0);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-}
-.rtg-review-btn-cancel:hover {
-  background: var(--rtg-bg-input, #15130e);
-}
-.rtg-review-btn-submit {
-  background: var(--rtg-accent, #fba919);
-  border: none;
-  border-radius: 8px;
-  padding: 10px 24px;
-  color: #15130e;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-}
-.rtg-review-btn-submit:hover {
-  background: var(--rtg-accent-hover, #4daa80);
-}
-.rtg-review-btn-submit:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-.rtg-review-btn-delete {
-  background: none;
-  border: 1px solid color-mix(in srgb, #ef4444 30%, transparent);
-  border-radius: 8px;
-  padding: 10px 16px;
-  color: var(--rtg-text-muted, #86868b);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-  margin-right: auto;
-}
-.rtg-review-btn-delete:hover {
-  color: #ef4444;
-  border-color: #ef4444;
-  background: color-mix(in srgb, #ef4444 8%, transparent);
-}
-.rtg-review-btn-delete:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 /* Reviews summary */
 .rtg-reviews-summary {
   display: flex;
@@ -3412,169 +2918,6 @@ a.rtg-review-card-title-link:hover {
   font-style: italic;
   color: var(--rtg-text-muted, #99968f);
 }
-
-/* Reviews pagination */
-/* Mobile responsive — full-screen takeover */
-@media (max-width: 640px) {
-  .rtg-review-modal-overlay {
-    align-items: flex-end;
-    padding: 0;
-    background: var(--rtg-bg-card, #1e2126);
-    backdrop-filter: none;
-  }
-  .rtg-review-modal {
-    max-width: 100%;
-    height: 100dvh;
-    max-height: 100dvh;
-    border-radius: 0;
-    border: none;
-    box-shadow: none;
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    transform: translateY(100%);
-    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-  }
-  .rtg-review-modal-overlay.active .rtg-review-modal {
-    transform: translateY(0);
-  }
-  .rtg-review-modal-header {
-    padding: max(16px, env(safe-area-inset-top)) 16px 12px;
-    flex-shrink: 0;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    background: var(--rtg-bg-card, #1e2126);
-    flex-direction: row-reverse;
-  }
-  .rtg-review-modal-header::before {
-    display: none;
-  }
-  .rtg-review-modal-header h3 {
-    font-size: 17px;
-    flex: 1;
-    text-align: center;
-    padding-right: 40px;
-  }
-  .rtg-review-modal-close {
-    width: 40px;
-    height: 40px;
-    font-size: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-  .rtg-review-modal-stars {
-    padding: 20px 16px;
-    flex-shrink: 0;
-  }
-  .rtg-review-star svg {
-    width: 40px;
-    height: 40px;
-  }
-  .rtg-review-stars-select {
-    gap: 14px;
-  }
-  .rtg-review-field {
-    padding: 0 16px 14px;
-  }
-  .rtg-review-input,
-  .rtg-review-textarea {
-    font-size: 16px;
-    padding: 14px;
-  }
-  .rtg-review-textarea {
-    min-height: 120px;
-  }
-  .rtg-review-modal-footer {
-    padding: 14px 16px;
-    padding-bottom: max(14px, env(safe-area-inset-bottom));
-    flex-shrink: 0;
-    position: sticky;
-    bottom: 0;
-    z-index: 1;
-    background: var(--rtg-bg-card, #1e2126);
-    border-top: 1px solid var(--rtg-border, #23262c);
-    flex-direction: column;
-    gap: 8px;
-  }
-  .rtg-review-btn-cancel {
-    display: none;
-  }
-  .rtg-review-btn-submit {
-    width: 100%;
-    padding: 14px;
-    font-size: 16px;
-    border-radius: 12px;
-  }
-  .rtg-review-error {
-    text-align: center;
-  }
-}
-
-/* === Toast Notifications === */
-.rtg-toast-container {
-  position: fixed;
-  top: 24px;
-  right: 24px;
-  z-index: 100001;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  pointer-events: none;
-}
-.rtg-toast {
-  pointer-events: auto;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 20px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #fff;
-  background: var(--rtg-bg-card, #1e2126);
-  border: 1px solid var(--rtg-border, #23262c);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-  transform: translateX(120%);
-  opacity: 0;
-  transition: transform 0.3s ease, opacity 0.3s ease;
-  max-width: 380px;
-  line-height: 1.4;
-}
-.rtg-toast.visible {
-  transform: translateX(0);
-  opacity: 1;
-}
-.rtg-toast-icon {
-  flex-shrink: 0;
-  font-size: 18px;
-}
-.rtg-toast.rtg-toast-success {
-  border-color: var(--rtg-accent, #fba919);
-}
-.rtg-toast.rtg-toast-success .rtg-toast-icon {
-  color: var(--rtg-accent, #fba919);
-}
-.rtg-toast.rtg-toast-info {
-  border-color: #60a5fa;
-}
-.rtg-toast.rtg-toast-info .rtg-toast-icon {
-  color: #60a5fa;
-}
-@media (max-width: 640px) {
-  .rtg-toast-container {
-    top: 12px;
-    right: 12px;
-    left: 12px;
-  }
-  .rtg-toast {
-    max-width: 100%;
-  }
-}
-
 
 /* === Animations === */
 @keyframes fadeIn {
@@ -3998,11 +3341,8 @@ a.rtg-user-review-tire-link:hover {
   .rtg-cards-loading {
     transition: none !important;
   }
-  .tooltip-modal-overlay,
-  .tooltip-modal,
-  .rtg-review-modal-overlay,
-  .rtg-review-modal,
-  .rtg-toast {
+  .rtg-dialog-overlay,
+  .rtg-dialog {
     animation: none !important;
     transition: none !important;
   }

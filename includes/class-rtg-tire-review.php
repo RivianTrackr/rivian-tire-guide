@@ -69,6 +69,11 @@ class RTG_Tire_Review {
         if ( $preselected && ! preg_match( '/^[A-Za-z0-9_-]+$/', $preselected ) ) {
             $preselected = '';
         }
+        // A star tapped on a guide card arrives as ?rating=1..5.
+        $preselected_rating = isset( $_GET['rating'] ) ? absint( $_GET['rating'] ) : 0;
+        if ( $preselected_rating < 1 || $preselected_rating > 5 ) {
+            $preselected_rating = 0;
+        }
 
         // Lightweight tire list with named keys for the review page JS.
         $review_tires = array();
@@ -96,6 +101,7 @@ class RTG_Tire_Review {
             // Back to this page after signing in, not the home page.
             'login_url'       => wp_login_url( home_url( '/' . $review_slug . '/' ) ),
             'preselectedTire' => $preselected,
+            'preselectedRating' => $preselected_rating,
             'tireGuideUrl'    => RTG_Tire_Page::guide_url(),
             // "See the tire page" after a submit: base + slug + '/'.
             'tirePageBase'    => home_url( '/' . RTG_Tire_Page::slug_base() . '/' ),

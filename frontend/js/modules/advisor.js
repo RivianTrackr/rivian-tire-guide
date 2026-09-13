@@ -10,8 +10,8 @@
  * API key the same route answers with the guide's own rules, so the button
  * works everywhere and says which it was.
  *
- * The dialog is built on the review modal's shell (Escape closes, Tab is
- * trapped, focus returns to the button). "Show in guide" applies the pick
+ * The dialog is the shared dialog shell (Escape closes, Tab is trapped,
+ * focus returns to the button). "Show in guide" applies the pick
  * to the live filters and scrolls to its card.
  */
 
@@ -22,6 +22,7 @@ import {
   filterAndRender, restoreDetachedFilterOptions
 } from './filters.js';
 import { isServerSide, serverSideFilterAndRender } from './server.js';
+import { openDialog } from './dialog.js';
 
 function settings() {
   const s = (typeof rtgData !== 'undefined' && rtgData.settings) ? rtgData.settings : {};
@@ -325,32 +326,28 @@ function showInGuide(tire, input) {
 }
 
 function openAdvisor(trigger) {
-  const existing = document.getElementById('rtg-advisor-modal');
-  if (existing) existing.remove();
-
-  const overlay = el('div', 'rtg-review-modal-overlay rtg-adv-overlay');
-  overlay.id = 'rtg-advisor-modal';
-  overlay.setAttribute('role', 'dialog');
-  overlay.setAttribute('aria-modal', 'true');
-  overlay.setAttribute('aria-labelledby', 'rtgAdvTitle');
-
-  const modal = el('div', 'rtg-review-modal rtg-adv-modal');
-  const header = el('div', 'rtg-review-modal-header');
-  const title = el('h3', '', 'Help me choose');
-  title.id = 'rtgAdvTitle';
-  const closeBtn = el('button', 'rtg-review-modal-close');
-  closeBtn.type = 'button';
-  closeBtn.setAttribute('aria-label', 'Close');
-  closeBtn.innerHTML = '&times;';
   // "Start over" lives in the header on the results view; the X closes.
-  const again = el('button', 'rtg-adv-again', 'Start over');
+  const again = el('button', 'rtg-dialog-btn rtg-adv-again', 'Start over');
   again.type = 'button';
   again.hidden = true;
-  header.appendChild(title);
-  header.appendChild(again);
-  header.appendChild(closeBtn);
 
-  const body = el('div', 'rtg-adv-body');
+  const dlg = openDialog({
+    id: 'rtg-advisor-modal',
+    title: 'Help me choose',
+    titleId: 'rtgAdvTitle',
+    size: 'xl',
+    className: 'rtg-adv-modal',
+    bodyClass: 'rtg-adv-body',
+    headerActions: [again],
+    returnFocus: trigger,
+    onClose: () => {
+      if (closeCurrent === dlg.close) closeCurrent = null;
+    },
+  });
+  const title = dlg.title;
+  const body = dlg.body;
+  const modal = dlg.body;
+
   const form = el('form', 'rtg-adv-form');
   form.noValidate = true;
   buildForm(form, { vehicle: getSelectedVehicle() });
@@ -362,10 +359,10 @@ function openAdvisor(trigger) {
 
   // The footer exists only for the question form: one button, plus an
   // error line above it when a request fails. The results have none.
-  const footer = el('div', 'rtg-review-modal-footer rtg-adv-footer');
-  const status = el('div', 'rtg-adv-status');
+  const footer = dlg.footer;
+  const status = el('div', 'rtg-dialog-status rtg-adv-status');
   status.setAttribute('role', 'status');
-  const submit = el('button', 'rtg-wn-done rtg-adv-submit');
+  const submit = el('button', 'rtg-dialog-btn rtg-dialog-btn-primary rtg-adv-submit');
   submit.type = 'submit';
   submit.setAttribute('form', 'rtgAdvForm');
   form.id = 'rtgAdvForm';
@@ -382,50 +379,8 @@ function openAdvisor(trigger) {
     submitLabel.textContent = busy ? 'Thinking…' : 'Find my tires';
   };
 
-  modal.appendChild(header);
-  modal.appendChild(body);
-  modal.appendChild(footer);
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-  requestAnimationFrame(() => overlay.classList.add('active'));
-
-  const returnFocusTo = trigger || document.activeElement;
-  function closeModal() {
-    overlay.classList.remove('active');
-    document.removeEventListener('keydown', modalKeydown);
-    setTimeout(() => overlay.remove(), 200);
-    closeCurrent = null;
-    if (returnFocusTo && typeof returnFocusTo.focus === 'function') {
-      returnFocusTo.focus({ preventScroll: true });
-    }
-  }
-  closeCurrent = closeModal;
-
-  function modalKeydown(e) {
-    if (e.key === 'Escape') {
-      closeModal();
-      return;
-    }
-    if (e.key !== 'Tab') return;
-    const focusables = overlay.querySelectorAll('button:not([disabled]):not([hidden]), select, textarea, a[href], [tabindex]:not([tabindex="-1"])');
-    if (!focusables.length) return;
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  }
-
-  closeBtn.addEventListener('click', closeModal);
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) closeModal();
-  });
-  document.addEventListener('keydown', modalKeydown);
-  const firstSeg = form.querySelector('.rtg-adv-seg-btn.is-active') || closeBtn;
+  closeCurrent = dlg.close;
+  const firstSeg = form.querySelector('.rtg-adv-seg-btn.is-active') || dlg.closeBtn;
   firstSeg.focus();
 
   again.addEventListener('click', () => {
