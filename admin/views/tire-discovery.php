@@ -486,15 +486,21 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                 <?php endif; ?>
                 <table class="rtg-table rtg-table-compact">
                     <thead>
+                        <?php
+                        // Set widths, so the data columns sit beside the tire
+                        // name instead of the name column soaking up the slack.
+                        // The rejected tab adds a Why not column, so the name
+                        // gives up some room to it there.
+                        $tire_width = RTG_Candidates::STATUS_REJECTED === $status_filter ? 'rtg-w-22' : 'rtg-w-30';
+                        ?>
                         <tr>
-                            <th>Tire</th>
-                            <th>Size</th>
-                            <th>Fits</th>
-                            <th>Load</th>
-                            <th>Speed</th>
-                            <th>Price</th>
-                            <th>Retailer</th>
-                            <th>First seen</th>
+                            <th class="<?php echo esc_attr( $tire_width ); ?>">Tire</th>
+                            <th class="rtg-w-9">Size</th>
+                            <th class="rtg-w-8">Fits</th>
+                            <th class="rtg-w-9">Load</th>
+                            <th class="rtg-w-9">Price</th>
+                            <th class="rtg-w-11">Retailer</th>
+                            <th class="rtg-w-11">First seen</th>
                             <?php if ( RTG_Candidates::STATUS_REJECTED === $status_filter ) : ?>
                                 <th>Why not</th>
                             <?php endif; ?>
@@ -644,8 +650,22 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 }
                                 ?>
                             </td>
-                            <td><?php echo esc_html( $candidate['load_index'] ?: '—' ); ?></td>
-                            <td><?php echo esc_html( $candidate['speed_rating'] ?: '—' ); ?></td>
+                            <td>
+                                <?php
+                                // Load index with the load range beside it, "126 (E)":
+                                // the range is what decides whether a tire is up to a
+                                // Rivian, so it rides with the number rather than the
+                                // speed rating taking a column of its own.
+                                if ( '' === (string) $candidate['load_index'] && '' === (string) $candidate['load_range'] ) {
+                                    echo '<span class="rtg-empty">—</span>';
+                                } else {
+                                    echo esc_html( $candidate['load_index'] ?: '—' );
+                                    if ( '' !== (string) $candidate['load_range'] ) {
+                                        echo ' <span class="rtg-muted">(' . esc_html( $candidate['load_range'] ) . ')</span>';
+                                    }
+                                }
+                                ?>
+                            </td>
                             <td><?php echo $candidate['price'] > 0 ? '$' . esc_html( number_format( $candidate['price'], 2 ) ) : '—'; ?></td>
                             <td><?php echo esc_html( $candidate['advertiser_name'] ?: $candidate['source'] ); ?></td>
                             <td title="<?php echo esc_attr( $candidate['first_seen_at'] ); ?>">
@@ -663,24 +683,28 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 </td>
                             <?php endif; ?>
                             <td class="is-right">
+                                <?php
+                                // Icon buttons, so a row stays one line tall. The
+                                // name of each rides in its title and aria-label.
+                                ?>
                                 <div class="rtg-table-actions">
                                 <?php if ( ! empty( $candidate['link'] ) ) : ?>
-                                    <a href="<?php echo esc_url( $candidate['link'] ); ?>" target="_blank" rel="noopener noreferrer nofollow" class="rtg-btn rtg-btn-secondary rtg-btn-sm">Listing</a>
+                                    <a href="<?php echo esc_url( $candidate['link'] ); ?>" target="_blank" rel="noopener noreferrer nofollow" class="rtg-btn rtg-btn-secondary rtg-btn-icon" title="Open listing" aria-label="Open listing"><span class="dashicons dashicons-external" aria-hidden="true"></span></a>
                                 <?php endif; ?>
 
                                 <?php if ( RTG_Candidates::STATUS_IMPORTED !== $status_filter
                                     && ( RTG_Candidates::STATUS_EXISTING !== $status_filter || $matched_by_name ) ) : ?>
-                                    <a href="<?php echo esc_url( $add_url ); ?>" class="rtg-btn rtg-btn-primary rtg-btn-sm">Add to guide</a>
+                                    <a href="<?php echo esc_url( $add_url ); ?>" class="rtg-btn rtg-btn-primary rtg-btn-icon" title="Add to guide" aria-label="Add to guide"><span class="dashicons dashicons-plus-alt2" aria-hidden="true"></span></a>
                                 <?php endif; ?>
 
                                 <?php if ( $imported_orphan ) : ?>
-                                    <button type="button" class="rtg-btn rtg-btn-secondary rtg-btn-sm rtg-candidate-action" data-status="<?php echo esc_attr( RTG_Candidates::STATUS_NEW ); ?>">Return to review</button>
+                                    <button type="button" class="rtg-btn rtg-btn-secondary rtg-btn-icon rtg-candidate-action" data-status="<?php echo esc_attr( RTG_Candidates::STATUS_NEW ); ?>" title="Return to review" aria-label="Return to review"><span class="dashicons dashicons-undo" aria-hidden="true"></span></button>
                                 <?php endif; ?>
 
                                 <?php if ( RTG_Candidates::STATUS_DISMISSED === $status_filter ) : ?>
-                                    <button type="button" class="rtg-btn rtg-btn-secondary rtg-btn-sm rtg-candidate-action" data-status="<?php echo esc_attr( RTG_Candidates::STATUS_NEW ); ?>">Restore</button>
+                                    <button type="button" class="rtg-btn rtg-btn-secondary rtg-btn-icon rtg-candidate-action" data-status="<?php echo esc_attr( RTG_Candidates::STATUS_NEW ); ?>" title="Restore" aria-label="Restore"><span class="dashicons dashicons-undo" aria-hidden="true"></span></button>
                                 <?php elseif ( RTG_Candidates::STATUS_IMPORTED !== $status_filter ) : ?>
-                                    <button type="button" class="rtg-btn rtg-btn-danger-quiet rtg-btn-sm rtg-candidate-action" data-status="<?php echo esc_attr( RTG_Candidates::STATUS_DISMISSED ); ?>">Dismiss</button>
+                                    <button type="button" class="rtg-btn rtg-btn-danger-quiet rtg-btn-icon rtg-candidate-action" data-status="<?php echo esc_attr( RTG_Candidates::STATUS_DISMISSED ); ?>" title="Dismiss" aria-label="Dismiss"><span class="dashicons dashicons-no-alt" aria-hidden="true"></span></button>
                                 <?php endif; ?>
                                 </div>
                             </td>

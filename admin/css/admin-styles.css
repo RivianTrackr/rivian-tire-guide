@@ -1055,6 +1055,15 @@
     width: 100%;
 }
 
+/* Icon-only button: a 30px square, the height of a small text button, so a
+   row of them stays one line tall. The name goes in title and aria-label. */
+.rtg-btn-icon {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    flex: 0 0 auto;
+}
+
 /* A cluster of small actions in a table cell. */
 .rtg-table-actions {
     display: inline-flex;
@@ -1932,6 +1941,14 @@ a.rtg-stat-card:focus {
     width: 14px;
     height: 14px;
 }
+
+/* Column widths. Set them on the headers of a table whose first column
+   would otherwise soak up every spare pixel and push the rest to the edge. */
+.rtg-table thead th.rtg-w-8 { width: 8%; }
+.rtg-table thead th.rtg-w-9 { width: 9%; }
+.rtg-table thead th.rtg-w-11 { width: 11%; }
+.rtg-table thead th.rtg-w-22 { width: 22%; }
+.rtg-table thead th.rtg-w-30 { width: 30%; }
 
 /* Compact table variant */
 .rtg-table-compact thead th {

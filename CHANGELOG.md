@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.8.2] - 2026-09-14
+
+### Changed
+- **The Tire Discovery queue reads as a table again.** Its Tire column had no width, so it soaked up every spare pixel of a 1600px card and pushed Size through First seen to the far edge, while the three text buttons wrapped every row to two lines. `admin/views/tire-discovery.php` now sets the column widths from the header (`rtg-w-*` classes in `admin/css/admin-styles.css`, the name at 30%, 22% on the Near misses tab where Why not needs the room), so the data columns sit beside the name at an even spacing. The row actions are icon buttons (`rtg-btn-icon`, a 30px square at the small button's height, the same secondary, primary and quiet-destructive fills as before; the name rides in `title` and `aria-label`): open listing, add to guide, dismiss, and the undo arrow for Restore and Return to review. Rows drop from two lines to one. Speed rating loses its column, and Load shows the load index with the load range beside it, "126 (E)", since the range is what decides whether a tire is up to a Rivian; the sync already recorded it on every candidate.
+
+Nothing visible to owners: this is the admin review queue.
+
+### Tests
+- `npm test`, `php -l` and the contract checks pass. The queue's table was rendered in headless Chromium at 1600px with sample rows: one line per row, the name column at 30%, the data columns evenly spaced, the merged Load cell, and the three icon buttons at 30px.
+
 ## [2.8.1] - 2026-09-13
 
 ### Changed
