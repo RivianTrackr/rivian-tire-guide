@@ -23,6 +23,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   load_range      string  Load range, when the source states one.
  *   speed_rating    string  Speed rating, when the source states one.
  *   price           float   Current price.
+ *   availability    string  Stock wording at the source ("in stock",
+ *                           "out of stock"), when the source states one.
  *   link            string  Affiliate-tracked product URL.
  *   image           string  Product image URL.
  *   advertiser_id   string  Retailer ID within the source network.

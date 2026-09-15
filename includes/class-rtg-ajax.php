@@ -1156,9 +1156,10 @@ class RTG_Ajax {
         }
 
         // Restoring puts a candidate back only if it would still qualify today;
-        // otherwise it belongs in the rejected view, not the review queue.
-        if ( RTG_Candidates::STATUS_NEW === $status && empty( $candidate['qualifies'] ) ) {
-            $status = RTG_Candidates::STATUS_REJECTED;
+        // otherwise it belongs in the rejected view, not the review queue, and
+        // one the retailer lists as out of stock belongs in the sold-out tab.
+        if ( RTG_Candidates::STATUS_NEW === $status ) {
+            $status = RTG_Candidates::compute_status( '', ! empty( $candidate['qualifies'] ), (string) ( $candidate['availability'] ?? '' ) );
         }
 
         if ( ! RTG_Candidates::set_status( $id, $status ) ) {

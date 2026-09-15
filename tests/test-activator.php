@@ -131,6 +131,43 @@ class Test_RTG_Activator extends WP_UnitTestCase {
     }
 
     /**
+     * Migration 29 fills the availability column from the product node every
+     * sweep stored beside the row, and moves a queued row the retailer
+     * called out of stock to the sold-out tab, so the queue is right on
+     * upgrade rather than after the next run. A human decision stays put.
+     */
+    public function test_availability_migration_backfills_from_the_stored_node() {
+        RTG_Activator::activate();
+
+        $base = array(
+            'source'        => 'cj',
+            'advertiser_id' => '1',
+            'brand'         => 'Nokian',
+            'model'         => 'Rockproof',
+            'size'          => '275/65R20',
+            'qualifies'     => 1,
+            'raw'           => array( '_source_node' => array( 'availability' => 'out of stock' ) ),
+        );
+        $queued    = RTG_Candidates::upsert( array_merge( $base, array( 'external_id' => 'MIG-1' ) ) );
+        $dismissed = RTG_Candidates::upsert( array_merge( $base, array( 'external_id' => 'MIG-2' ) ) );
+        RTG_Candidates::set_status( $dismissed['id'], RTG_Candidates::STATUS_DISMISSED );
+        $this->assertSame( RTG_Candidates::STATUS_NEW, $queued['status'], 'without the field mapped the row is queued' );
+
+        update_option( 'rtg_db_version', 28 );
+        RTG_Activator::maybe_upgrade();
+
+        $queued_now = RTG_Candidates::get( $queued['id'] );
+        $this->assertSame( 'out of stock', $queued_now['availability'] );
+        $this->assertSame( RTG_Candidates::STATUS_SOLD_OUT, $queued_now['status'] );
+
+        $dismissed_now = RTG_Candidates::get( $dismissed['id'] );
+        $this->assertSame( 'out of stock', $dismissed_now['availability'] );
+        $this->assertSame( RTG_Candidates::STATUS_DISMISSED, $dismissed_now['status'] );
+
+        $this->assertSame( RTG_Activator::DB_VERSION, (int) get_option( 'rtg_db_version' ) );
+    }
+
+    /**
      * Concurrent requests after an update all reach maybe_upgrade(); only
      * the one holding the lock migrates, the rest return without touching
      * the schema.

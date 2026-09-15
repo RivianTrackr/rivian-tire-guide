@@ -454,6 +454,93 @@ class Test_RTG_Catalog_Sync extends WP_UnitTestCase {
         $this->assertFalse( $result['newly_surfaced'] );
     }
 
+    // --- Stock ---
+
+    /**
+     * A qualifying tire the retailer cannot sell today is filed as sold out,
+     * not queued: there is nothing to review until it can be bought.
+     */
+    public function test_an_out_of_stock_tire_is_filed_as_sold_out_not_queued() {
+        $result = RTG_Candidates::upsert( $this->candidate( array( 'availability' => 'out of stock' ) ) );
+
+        $this->assertSame( RTG_Candidates::STATUS_SOLD_OUT, $result['status'] );
+        $this->assertFalse( $result['newly_surfaced'] );
+
+        $queue = RTG_Candidates::query( array( 'status' => RTG_Candidates::STATUS_NEW ) );
+        $this->assertSame( array(), wp_list_pluck( $queue, 'id' ) );
+
+        $stored = RTG_Candidates::get( $result['id'] );
+        $this->assertSame( 'out of stock', $stored['availability'] );
+
+        $counts = RTG_Candidates::get_counts();
+        $this->assertSame( 1, $counts[ RTG_Candidates::STATUS_SOLD_OUT ] );
+        $this->assertSame( 0, $counts[ RTG_Candidates::STATUS_NEW ] );
+    }
+
+    /**
+     * The retailer's wording is normalized, so a feed that says
+     * "Out_Of_Stock" files the same way as one that says "out of stock".
+     * Preorder and backorder can be ordered, so they are not sold out.
+     */
+    public function test_stock_wording_is_read_whatever_its_spelling() {
+        $this->assertTrue( RTG_Candidates::is_out_of_stock( 'Out_Of_Stock' ) );
+        $this->assertTrue( RTG_Candidates::is_out_of_stock( ' SOLD  OUT ' ) );
+        $this->assertFalse( RTG_Candidates::is_out_of_stock( 'in stock' ) );
+        $this->assertFalse( RTG_Candidates::is_out_of_stock( 'backorder' ) );
+        $this->assertFalse( RTG_Candidates::is_out_of_stock( '' ) );
+
+        $stored = RTG_Candidates::upsert( $this->candidate( array( 'availability' => 'Out_Of_Stock' ) ) );
+        $this->assertSame( RTG_Candidates::STATUS_SOLD_OUT, $stored['status'] );
+        $this->assertSame( 'out of stock', RTG_Candidates::get( $stored['id'] )['availability'] );
+    }
+
+    /**
+     * Back in stock, it surfaces as new and is announced like a first
+     * sighting, since nobody has been asked about it yet.
+     */
+    public function test_a_sold_out_tire_surfaces_when_it_is_back_in_stock() {
+        RTG_Candidates::upsert( $this->candidate( array( 'availability' => 'out of stock' ) ) );
+
+        $restocked = RTG_Candidates::upsert( $this->candidate( array( 'availability' => 'in stock' ) ) );
+
+        $this->assertSame( RTG_Candidates::STATUS_NEW, $restocked['status'] );
+        $this->assertTrue( $restocked['newly_surfaced'] );
+    }
+
+    /**
+     * Stock only matters for a tire that could be added: a near miss stays a
+     * near miss, and a guide tire stays "already in guide", whatever the
+     * shelf says.
+     */
+    public function test_stock_does_not_outrank_a_near_miss_or_a_guide_match() {
+        $near = RTG_Candidates::upsert( $this->candidate( array(
+            'external_id'  => 'OOS-1',
+            'qualifies'    => false,
+            'availability' => 'out of stock',
+        ) ) );
+        $this->assertSame( RTG_Candidates::STATUS_REJECTED, $near['status'] );
+
+        $owned = RTG_Candidates::upsert( $this->candidate( array(
+            'external_id'     => 'OOS-2',
+            'matched_tire_id' => 'tire42',
+            'availability'    => 'out of stock',
+        ) ) );
+        $this->assertSame( RTG_Candidates::STATUS_EXISTING, $owned['status'] );
+    }
+
+    /**
+     * A dismissal outranks stock like it outranks everything else a sweep
+     * concludes.
+     */
+    public function test_a_dismissed_tire_stays_dismissed_when_it_sells_out() {
+        $created = RTG_Candidates::upsert( $this->candidate() );
+        RTG_Candidates::set_status( $created['id'], RTG_Candidates::STATUS_DISMISSED );
+
+        $reseen = RTG_Candidates::upsert( $this->candidate( array( 'availability' => 'out of stock' ) ) );
+
+        $this->assertSame( RTG_Candidates::STATUS_DISMISSED, $reseen['status'] );
+    }
+
     /**
      * A product with no external ID can't be recognized on a later run, so it
      * is refused rather than stored as an unmatchable duplicate magnet.
@@ -532,6 +619,35 @@ class Test_RTG_Catalog_Sync extends WP_UnitTestCase {
         );
 
         $this->assertSame( 1, $restored );
+    }
+
+    /**
+     * The sold-out tab can be cleared in bulk like the queue, and a bulk
+     * restore from Dismissed files a still-out-of-stock row under Sold out
+     * rather than putting it back in the queue.
+     */
+    public function test_bulk_dismiss_and_restore_respect_stock() {
+        $sold_out = $this->seed_candidate( array( 'availability' => 'out of stock' ) );
+        $in_stock = $this->seed_candidate();
+        $this->assertSame( RTG_Candidates::STATUS_SOLD_OUT, $sold_out['status'] );
+
+        $dismissed = RTG_Candidates::bulk_set_status(
+            array( 'status' => RTG_Candidates::STATUS_SOLD_OUT, 'brand' => 'Winrun' ),
+            RTG_Candidates::STATUS_DISMISSED
+        );
+        $this->assertSame( 1, $dismissed );
+        $this->assertSame( RTG_Candidates::STATUS_DISMISSED, RTG_Candidates::get( $sold_out['id'] )['status'] );
+        $this->assertSame( RTG_Candidates::STATUS_NEW, RTG_Candidates::get( $in_stock['id'] )['status'] );
+
+        RTG_Candidates::set_status( $in_stock['id'], RTG_Candidates::STATUS_DISMISSED );
+        $restored = RTG_Candidates::bulk_set_status(
+            array( 'status' => RTG_Candidates::STATUS_DISMISSED, 'brand' => 'Winrun' ),
+            RTG_Candidates::STATUS_NEW
+        );
+
+        $this->assertSame( 2, $restored );
+        $this->assertSame( RTG_Candidates::STATUS_SOLD_OUT, RTG_Candidates::get( $sold_out['id'] )['status'] );
+        $this->assertSame( RTG_Candidates::STATUS_NEW, RTG_Candidates::get( $in_stock['id'] )['status'] );
     }
 
     /**
@@ -971,6 +1087,30 @@ class Test_RTG_Catalog_Sync extends WP_UnitTestCase {
 
         $old  = $this->seed_candidate( array( 'size' => '305/45R22', 'qualifies' => 0 ) );
         $new  = $this->seed_candidate( array( 'size' => '305/45R22', 'qualifies' => 0 ) );
+
+        $wpdb->update(
+            RTG_Candidates::table(),
+            array( 'last_seen_at' => gmdate( 'Y-m-d H:i:s', time() - 90 * DAY_IN_SECONDS ) ),
+            array( 'id' => $old['id'] )
+        );
+
+        $result = RTG_Candidates::prune( array( '305/45R22' ), 60 );
+
+        $this->assertSame( 1, $result['stale'] );
+        $this->assertNull( RTG_Candidates::get( $old['id'] ) );
+        $this->assertNotNull( RTG_Candidates::get( $new['id'] ) );
+    }
+
+    /**
+     * A sold-out listing the catalog itself dropped two months ago is not
+     * coming back into stock, so it goes with the stale near misses; one
+     * still in the feed waits.
+     */
+    public function test_prune_deletes_long_unseen_sold_out_rows() {
+        global $wpdb;
+
+        $old = $this->seed_candidate( array( 'availability' => 'out of stock' ) );
+        $new = $this->seed_candidate( array( 'availability' => 'out of stock' ) );
 
         $wpdb->update(
             RTG_Candidates::table(),

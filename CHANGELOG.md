@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.9.0] - 2026-09-15
+
+### Added
+- **Tire Discovery files out-of-stock tires under a Sold out tab instead of offering them for review.** The CJ query had asked for `availability` since the source shipped, but `map_product()` never kept it, so the review queue offered listings the retailer could not sell (SimpleTire's "Currently out of stock" page was the report). `RTG_Catalog_Source_CJ::map_product()` now maps it, the source contract in `class-rtg-catalog-source.php` documents it, and `RTG_Candidates` stores it in a new `availability` column, normalized by `normalize_availability()` (lower case, one space between words, so "Out_Of_Stock" and "out of stock" file the same way). `is_out_of_stock()` reads the wordings that mean it cannot be bought today (`OUT_OF_STOCK`: out of stock, sold out, unavailable, not available, discontinued; preorder and backorder can be ordered, so they are not). The status a sweep concludes is now one function, `compute_status()`, used by `upsert()`, `refresh_matches()`, `refresh_imported()` and the AJAX restore: a guide match first, then a near miss, then `STATUS_SOLD_OUT` for a qualifying listing that is out of stock, then new. A sold-out row that comes back in stock surfaces as new and counts as newly surfaced, so it reaches the digest like a first sighting; a dismissal outranks stock like everything else. `prune()` now retires sold-out rows on the same two rules as near misses (off-fitment, or unseen 60 days), `bulk_set_status()` can dismiss the sold-out tab and files a bulk-restored row that is still out of stock under Sold out rather than the queue, and the run stats carry a `sold_out` count. The discovery page gains the **Sold out** pill between Awaiting review and Near misses, a note on that tab saying what it holds and when a tire leaves it, the bulk dismiss button there, and an "out of stock" badge beside the retailer on every tab, so Already in guide shows which retailer has run dry. Migration 29 (`DB_VERSION` 29) adds the column and fills it from the product node every sweep already stored in `raw_json`, moving queued rows the retailer called out of stock to the sold-out tab on upgrade, so the queue is right today rather than after the next nightly run.
+
+Nothing visible to owners: this is the admin review queue.
+
+### Tests
+- `tests/test-catalog-source-cj.php`: the mapping keeps `availability`. `tests/test-catalog-sync.php`: an out-of-stock qualifying tire is filed sold out and not queued, with the counts to match; the wording is normalized and preorder/backorder are not sold out; a sold-out tire back in stock surfaces as new and newly surfaced; stock outranks neither a near miss nor a guide match; a dismissed tire stays dismissed when it sells out; bulk dismiss clears the sold-out tab and a bulk restore keeps a still-out-of-stock row out of the queue; prune retires long-unseen sold-out rows. `tests/test-activator.php`: migration 29 backfills the column from the stored node, moves a queued out-of-stock row to sold out and leaves a dismissed one alone. `npm test`, `php -l` and the contract checks pass locally; the PHPUnit suite runs in CI.
+
 ## [2.8.3] - 2026-09-15
 
 ### Changed

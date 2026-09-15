@@ -833,6 +833,9 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
             'price'           => floatval( self::pluck( $node, array(
                 'price.amount', 'price', 'salePrice.amount', 'salePrice', 'currentPrice',
             ), 0 ) ),
+            // Google-feed wording ("in stock", "out of stock", "preorder",
+            // "backorder"); the candidate store normalizes it.
+            'availability'    => (string) self::pluck( $node, array( 'availability', 'stockStatus', 'availabilityStatus' ) ),
             'link'            => $link,
             'image'           => (string) self::pluck( $node, array(
                 'imageLink', 'imageUrl', 'image', 'imageURL',

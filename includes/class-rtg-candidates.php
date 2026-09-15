@@ -25,6 +25,13 @@ class RTG_Candidates {
     /** Failed at least one qualification rule. Kept so near misses stay visible. */
     const STATUS_REJECTED = 'rejected';
 
+    /**
+     * Would qualify, but the retailer lists it as out of stock. Kept out of
+     * the review queue, under its own tab, until a sweep finds it back in
+     * stock; then it surfaces as new, announced like a first sighting.
+     */
+    const STATUS_SOLD_OUT = 'sold_out';
+
     /** Already matches a tire in the guide. */
     const STATUS_EXISTING = 'existing';
 
@@ -38,7 +45,65 @@ class RTG_Candidates {
      * Statuses a sync is allowed to overwrite. Anything else was set by a
      * person and outranks whatever this run concluded.
      */
-    const MACHINE_STATUSES = array( self::STATUS_NEW, self::STATUS_REJECTED, self::STATUS_EXISTING );
+    const MACHINE_STATUSES = array( self::STATUS_NEW, self::STATUS_SOLD_OUT, self::STATUS_REJECTED, self::STATUS_EXISTING );
+
+    /**
+     * Availability wordings, as normalize_availability() spells them, that
+     * mean the retailer cannot sell the tire today. Preorder and backorder
+     * are not here: those can be ordered.
+     */
+    const OUT_OF_STOCK = array( 'out of stock', 'outofstock', 'sold out', 'soldout', 'unavailable', 'not available', 'discontinued' );
+
+    /**
+     * One spelling for a retailer's stock wording: lower case, one space
+     * between words, so "Out_Of_Stock" and "out of stock" file the same way.
+     *
+     * @param string $value Wording as the source sent it.
+     * @return string Normalized wording, at most 30 characters.
+     */
+    public static function normalize_availability( $value ) {
+        $value = strtolower( trim( (string) $value ) );
+        $value = preg_replace( '/[\s_\-]+/', ' ', $value );
+
+        return substr( $value, 0, 30 );
+    }
+
+    /**
+     * @param string $availability Stock wording, raw or normalized.
+     * @return bool Whether the retailer says the tire cannot be bought today.
+     */
+    public static function is_out_of_stock( $availability ) {
+        return in_array( self::normalize_availability( $availability ), self::OUT_OF_STOCK, true );
+    }
+
+    /**
+     * The status a sweep concludes for a listing, before any human decision.
+     *
+     * Matching a guide tire settles it first, ahead of qualification. A
+     * product you already stock is "already in the guide" whatever the
+     * rules make of the listing's own wording; judging it first would file
+     * a tire you own under near misses because its listing happened to omit
+     * a load index, which is both untrue and unhelpful. A near miss comes
+     * next: stock only matters for a tire that could be added, and a near
+     * miss could not be whatever the shelf says, so what it fell short on is
+     * the useful thing to read. Of what is left, an out-of-stock listing is
+     * sold out and the rest are new.
+     *
+     * @param string $matched_tire_id Guide tire it matches, or ''.
+     * @param bool   $qualifies       Whether it passed the qualification rules.
+     * @param string $availability    Retailer's stock wording, or ''.
+     * @return string One of the machine statuses.
+     */
+    public static function compute_status( $matched_tire_id, $qualifies, $availability = '' ) {
+        if ( '' !== (string) $matched_tire_id ) {
+            return self::STATUS_EXISTING;
+        }
+        if ( empty( $qualifies ) ) {
+            return self::STATUS_REJECTED;
+        }
+
+        return self::is_out_of_stock( $availability ) ? self::STATUS_SOLD_OUT : self::STATUS_NEW;
+    }
 
     /**
      * @return string Fully-prefixed candidates table name.
@@ -80,19 +145,11 @@ class RTG_Candidates {
         $now = current_time( 'mysql' );
 
         // The status this run concludes, before human decisions are applied.
-        //
-        // Matching a guide tire settles it first, ahead of qualification. A
-        // product you already stock is "already in the guide" whatever the
-        // rules make of the listing's own wording; judging it first would file
-        // a tire you own under near misses because its listing happened to omit
-        // a load index, which is both untrue and unhelpful.
-        if ( ! empty( $row['matched_tire_id'] ) ) {
-            $computed_status = self::STATUS_EXISTING;
-        } elseif ( ! empty( $row['qualifies'] ) ) {
-            $computed_status = self::STATUS_NEW;
-        } else {
-            $computed_status = self::STATUS_REJECTED;
-        }
+        $computed_status = self::compute_status(
+            (string) ( $row['matched_tire_id'] ?? '' ),
+            ! empty( $row['qualifies'] ),
+            (string) ( $row['availability'] ?? '' )
+        );
 
         $existing = $wpdb->get_row(
             $wpdb->prepare(
@@ -116,6 +173,7 @@ class RTG_Candidates {
             'load_range'      => (string) ( $row['load_range'] ?? '' ),
             'speed_rating'    => (string) ( $row['speed_rating'] ?? '' ),
             'price'           => floatval( $row['price'] ?? 0 ),
+            'availability'    => self::normalize_availability( $row['availability'] ?? '' ),
             'link'            => (string) ( $row['link'] ?? '' ),
             'image'           => (string) ( $row['image'] ?? '' ),
             'match_key'       => (string) ( $row['match_key'] ?? '' ),
@@ -135,7 +193,7 @@ class RTG_Candidates {
         $formats = array(
             '%s', '%s', '%s', '%s',
             '%s', '%s', '%s', '%s', '%s', '%s',
-            '%f', '%s', '%s',
+            '%f', '%s', '%s', '%s',
             '%s', '%d', '%s', '%s', '%s',
             '%s', '%s',
         );
@@ -323,6 +381,7 @@ class RTG_Candidates {
 
         $counts = array(
             self::STATUS_NEW       => 0,
+            self::STATUS_SOLD_OUT  => 0,
             self::STATUS_REJECTED  => 0,
             self::STATUS_EXISTING  => 0,
             self::STATUS_DISMISSED => 0,
@@ -544,7 +603,7 @@ class RTG_Candidates {
         $table = self::table();
 
         $rows = $wpdb->get_results(
-            "SELECT id, match_key, matched_tire_id, status, qualifies, brand, model, size, load_index
+            "SELECT id, match_key, matched_tire_id, status, qualifies, availability, brand, model, size, load_index
              FROM {$table} WHERE match_key <> ''",
             ARRAY_A
         );
@@ -575,16 +634,9 @@ class RTG_Candidates {
             $formats = array( '%s' );
 
             if ( in_array( (string) $row['status'], self::MACHINE_STATUSES, true ) ) {
-                // Same precedence as a sweep: matching the guide settles the
-                // status ahead of whatever the rules made of the listing.
-                if ( '' !== $should ) {
-                    $data['status'] = self::STATUS_EXISTING;
-                } elseif ( ! empty( $row['qualifies'] ) ) {
-                    $data['status'] = self::STATUS_NEW;
-                } else {
-                    $data['status'] = self::STATUS_REJECTED;
-                }
-                $formats[] = '%s';
+                // Same precedence as a sweep.
+                $data['status'] = self::compute_status( $should, ! empty( $row['qualifies'] ), (string) ( $row['availability'] ?? '' ) );
+                $formats[]      = '%s';
             }
 
             $wpdb->update( $table, $data, array( 'id' => intval( $row['id'] ) ), $formats, array( '%d' ) );
@@ -655,7 +707,7 @@ class RTG_Candidates {
             self::table(),
             array(
                 'matched_tire_id' => '',
-                'status'          => ! empty( $row['qualifies'] ) ? self::STATUS_NEW : self::STATUS_REJECTED,
+                'status'          => self::compute_status( '', ! empty( $row['qualifies'] ), (string) ( $row['availability'] ?? '' ) ),
             ),
             array( 'id' => intval( $row['id'] ) ),
             array( '%s', '%s' ),
@@ -777,12 +829,14 @@ class RTG_Candidates {
      * catalog itself dropped. Deleting either costs nothing visible: if the
      * product reappears, the next sweep re-files it identically.
      *
-     * Only STATUS_REJECTED is ever touched. Dismissed and imported rows are
-     * human decisions and are the memory that stops things resurfacing; new
-     * rows are awaiting one.
+     * Only STATUS_REJECTED and STATUS_SOLD_OUT are ever touched. Dismissed
+     * and imported rows are human decisions and are the memory that stops
+     * things resurfacing; new rows are awaiting one. A sold-out row is
+     * waiting on the retailer, and one the catalog itself dropped two months
+     * ago is not coming back into stock.
      *
      * @param string[] $guide_sizes Canonical sizes the guide stocks.
-     * @param int      $stale_days  Days unseen before a rejected row goes.
+     * @param int      $stale_days  Days unseen before a rejected or sold-out row goes.
      * @return array { off_fitment: int, stale: int }
      */
     public static function prune( $guide_sizes, $stale_days = 60 ) {
@@ -811,8 +865,8 @@ class RTG_Candidates {
             $placeholders = implode( ',', array_fill( 0, count( $normalized ), '%s' ) );
 
             $off = $wpdb->query( $wpdb->prepare(
-                "DELETE FROM {$table} WHERE status = %s AND size NOT IN ( {$placeholders} )",
-                array_merge( array( self::STATUS_REJECTED ), $normalized )
+                "DELETE FROM {$table} WHERE status IN ( %s, %s ) AND size NOT IN ( {$placeholders} )",
+                array_merge( array( self::STATUS_REJECTED, self::STATUS_SOLD_OUT ), $normalized )
             ) );
 
             $out['off_fitment'] = false === $off ? 0 : intval( $off );
@@ -821,8 +875,9 @@ class RTG_Candidates {
         $cutoff = gmdate( 'Y-m-d H:i:s', time() - ( max( 1, intval( $stale_days ) ) * DAY_IN_SECONDS ) );
 
         $stale = $wpdb->query( $wpdb->prepare(
-            "DELETE FROM {$table} WHERE status = %s AND last_seen_at < %s",
+            "DELETE FROM {$table} WHERE status IN ( %s, %s ) AND last_seen_at < %s",
             self::STATUS_REJECTED,
+            self::STATUS_SOLD_OUT,
             $cutoff
         ) );
 
@@ -867,8 +922,10 @@ class RTG_Candidates {
      * Acts on the database query, not the visible page — "dismiss all
      * Winrun" means all of them, not the 200 the screen happened to show.
      * Restricted to moving rows out of (or back into) the queue: bulk can
-     * only write dismissed or new, and only over machine-held or dismissed
-     * rows, so it can never overwrite an imported row or invent a status.
+     * only write dismissed or new, and only over queue, sold-out or
+     * dismissed rows, so it can never overwrite an imported row or invent a
+     * status. A restored row the retailer still lists as out of stock lands
+     * in the sold-out tab, not the queue.
      *
      * @param array  $filter { status, brand, size, vehicle } — status required.
      * @param string $to     STATUS_DISMISSED or STATUS_NEW.
@@ -885,11 +942,23 @@ class RTG_Candidates {
 
         $from = (string) ( $filter['status'] ?? '' );
 
-        // Only queue rows and dismissed rows may move in bulk; everything
+        // Only queue, sold-out and dismissed rows may move in bulk; everything
         // else either belongs to the machine's own classification or records
         // an import, and neither is a bulk decision.
-        if ( ! in_array( $from, array( self::STATUS_NEW, self::STATUS_DISMISSED ), true ) || $from === $to ) {
+        $movable = self::STATUS_DISMISSED === $to
+            ? array( self::STATUS_NEW, self::STATUS_SOLD_OUT )
+            : array( self::STATUS_DISMISSED );
+        if ( ! in_array( $from, $movable, true ) ) {
             return 0;
+        }
+
+        if ( self::STATUS_NEW === $to ) {
+            $marks      = implode( ',', array_fill( 0, count( self::OUT_OF_STOCK ), '%s' ) );
+            $set        = "status = CASE WHEN availability IN ( {$marks} ) THEN %s ELSE %s END";
+            $set_params = array_merge( self::OUT_OF_STOCK, array( self::STATUS_SOLD_OUT, self::STATUS_NEW ) );
+        } else {
+            $set        = 'status = %s';
+            $set_params = array( $to );
         }
 
         $where  = array( 'status = %s' );
@@ -908,10 +977,10 @@ class RTG_Candidates {
             $params[] = $filter['vehicle'];
         }
 
-        array_unshift( $params, $to, current_time( 'mysql' ) );
+        $params = array_merge( $set_params, array( current_time( 'mysql' ) ), $params );
 
         $changed = $wpdb->query( $wpdb->prepare(
-            "UPDATE {$table} SET status = %s, reviewed_at = %s WHERE " . implode( ' AND ', $where ),
+            "UPDATE {$table} SET {$set}, reviewed_at = %s WHERE " . implode( ' AND ', $where ),
             $params
         ) );
 
@@ -932,6 +1001,7 @@ class RTG_Candidates {
 
         $allowed = array(
             self::STATUS_NEW,
+            self::STATUS_SOLD_OUT,
             self::STATUS_REJECTED,
             self::STATUS_EXISTING,
             self::STATUS_DISMISSED,
