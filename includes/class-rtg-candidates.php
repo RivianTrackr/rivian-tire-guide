@@ -443,7 +443,7 @@ class RTG_Candidates {
         $table = self::table();
 
         $rows = $wpdb->get_results(
-            "SELECT id, match_key, brand, model, size, load_index, price, link, image,
+            "SELECT id, match_key, brand, model, size, load_index, price, availability, link, image,
                     advertiser_id, advertiser_name, status, first_seen_at, last_seen_at
              FROM {$table} WHERE match_key <> ''",
             ARRAY_A

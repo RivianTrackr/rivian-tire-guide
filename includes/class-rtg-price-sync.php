@@ -16,6 +16,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * awkward: a CJ deep link goes to a tracking host with the real destination
  * buried in a query parameter, so the retailer is rarely just the hostname.
  *
+ * A listing the retailer calls out of stock is not a quote either: the
+ * reader cannot buy at that figure, so the guide keeps the price it had and
+ * the run says which retailer has run dry.
+ *
  * Everything not updated is reported with a reason rather than passed over, so
  * "why didn't this tire's price change?" is always answerable.
  *
@@ -263,8 +267,11 @@ class RTG_Price_Sync {
             return $no( 'link_not_priced', 'Purchase link points somewhere discovery does not price' );
         }
 
-        // Only the retailer the link leads to may set the price.
-        $quote = null;
+        // Only the retailer the link leads to may set the price, and only from
+        // a listing it can sell: an out-of-stock price is not one a reader
+        // can pay, so it is noted and passed over.
+        $quote        = null;
+        $out_of_stock = false;
         foreach ( (array) $candidates as $candidate ) {
             $advertiser = (string) ( $candidate['advertiser_name'] ?? '' );
 
@@ -277,6 +284,11 @@ class RTG_Price_Sync {
                 continue;
             }
 
+            if ( RTG_Candidates::is_out_of_stock( $candidate['availability'] ?? '' ) ) {
+                $out_of_stock = true;
+                continue;
+            }
+
             // Cheapest listing from that retailer, when it has several.
             if ( null === $quote || $price < $quote ) {
                 $quote = $price;
@@ -284,6 +296,10 @@ class RTG_Price_Sync {
         }
 
         if ( null === $quote ) {
+            if ( $out_of_stock ) {
+                return $no( 'retailer_out_of_stock', sprintf( '%s lists this tire as out of stock, so the price was left as it was', $retailer ), $retailer );
+            }
+
             return $no( 'retailer_not_carrying', sprintf( '%s is not currently listing this tire', $retailer ), $retailer );
         }
 
