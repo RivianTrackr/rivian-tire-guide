@@ -151,11 +151,15 @@
 }
 
 /* === Filter bar ===
-   The vehicle switch, then one chip per filter. A chip opens a popover
-   that holds the real control (the select, the slider); a set chip shows
-   its value in accent, so the row is its own summary. 3PMS and OEM are
-   press-to-toggle chips. Under 600px the row scrolls sideways and any
-   chip opens the whole set as a bottom sheet (filter-bar.js). */
+   The vehicle switch, then one chip per filter, on one line at every
+   width. A chip opens a popover that holds the real control (the select,
+   the slider); a set chip shows its value in accent, so the row is its
+   own summary. 3PMS and OEM are press-to-toggle chips. When the chips
+   outgrow the line they scroll sideways behind a fade at each edge
+   rather than wrapping under the vehicle switch; the popover and the
+   tooltip are fixed-position, placed by filter-bar.js, so the scrolling
+   row does not clip them. Under 600px the row bleeds to the screen edges
+   and any chip opens the whole set as a bottom sheet. */
 .rtg-filter-row {
   display: flex;
   align-items: center;
@@ -176,6 +180,58 @@
   gap: 8px;
   flex: 1 1 auto;
   min-width: 0;
+}
+@media (min-width: 601px) {
+  .rtg-filter-row {
+    flex-wrap: nowrap;
+  }
+  /* The 4px of padding and negative margin keep a chip's focus ring
+     inside the scrollport. A thin scrollbar for a mouse; none for touch,
+     where the fades and a swipe are enough. */
+  .rtg-filter-chips:not(.is-sheet) {
+    flex-wrap: nowrap;
+    padding: 4px;
+    margin: -4px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--rtg-border) transparent;
+  }
+  @media (pointer: coarse) {
+    .rtg-filter-chips:not(.is-sheet) {
+      scrollbar-width: none;
+    }
+    .rtg-filter-chips:not(.is-sheet)::-webkit-scrollbar {
+      display: none;
+    }
+  }
+  /* Edge fades: sticky flex items that ride the scrollport's edges and
+     take no room (the negative margin swallows their width and the gap).
+     filter-bar.js clears the one at an edge the row is already at. */
+  .rtg-filter-chips:not(.is-sheet)::before,
+  .rtg-filter-chips:not(.is-sheet)::after {
+    content: '';
+    position: sticky;
+    z-index: 1;
+    flex: 0 0 36px;
+    align-self: stretch;
+    pointer-events: none;
+    transition: opacity .15s ease;
+  }
+  .rtg-filter-chips:not(.is-sheet)::before {
+    left: 0;
+    margin-right: -44px;
+    background: linear-gradient(to right, var(--rtg-bg-card), transparent);
+  }
+  .rtg-filter-chips:not(.is-sheet)::after {
+    right: 0;
+    margin-left: -44px;
+    background: linear-gradient(to left, var(--rtg-bg-card), transparent);
+  }
+  .rtg-filter-chips.is-scroll-start::before,
+  .rtg-filter-chips.is-scroll-end::after {
+    opacity: 0;
+  }
 }
 /* The sheet's header, body and footer carry the dialog shell's classes
    (rtg-dialog.css), so on a phone the filters are the same sheet as every
@@ -294,10 +350,9 @@
 }
 .rtg-fchip-tip {
   display: none;
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
+  position: fixed;
+  top: 0;
+  left: 0;
   z-index: 40;
   width: 280px;
   max-width: calc(100vw - 32px);
@@ -329,11 +384,12 @@
   display: block;
 }
 
-/* Popover */
+/* Popover: fixed so the scrolling chip row cannot clip it; filter-bar.js
+   sets top and left from the chip on open, page scroll and resize. */
 .rtg-fpop {
   display: none;
-  position: absolute;
-  top: calc(100% + 8px);
+  position: fixed;
+  top: 0;
   left: 0;
   z-index: 40;
   width: 300px;
@@ -350,10 +406,6 @@
   flex-direction: column;
   gap: 12px;
   animation: fadeIn 0.15s ease;
-}
-.rtg-fitem.is-right > .rtg-fpop {
-  left: auto;
-  right: 0;
 }
 .rtg-fpop-head {
   display: flex;
@@ -565,7 +617,7 @@
   to { transform: translateY(0); }
 }
 
-/* Phone: a sideways-scrolling chip row, and the sheet. */
+/* Phone: the chip row bleeds to the screen edges, and the sheet. */
 @media (max-width: 600px) {
   .rtg-filter-row {
     gap: 12px;

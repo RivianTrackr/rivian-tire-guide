@@ -12,8 +12,12 @@
  *    current options at open time, so counts and vehicle cascades hold;
  *  - the price and warranty popovers carry presets beside the slider;
  *  - 3PMS and OEM are press-to-toggle chips over their checkboxes;
- *  - on a phone the chip row scrolls sideways, and any chip (or the
- *    "Filters" button) opens the whole set as a bottom sheet;
+ *  - the chip row is one line that scrolls sideways when the chips
+ *    outgrow it, with a fade at each edge that still has more; because
+ *    the row clips what overflows it, the popover and the toggle chips'
+ *    tooltip are fixed-position and placed here from the chip's rect;
+ *  - on a phone any chip (or the "Filters" button) opens the whole set
+ *    as a bottom sheet;
  *  - syncFilterBar() writes each chip's value, the filter tally and the
  *    Clear all button after every filter pass.
  *
@@ -42,11 +46,65 @@ function fire(el, type = 'input') {
 
 /* ---------- popovers ---------- */
 
+const EDGE = 12;
+
+/**
+ * Put a fixed-position box under a chip: left-aligned with it, flipped to
+ * its right edge when that would run past the viewport, and above it
+ * when there is no room below but more above. Returns the box's rect.
+ */
+function placeUnder(box, chip, gap) {
+  const r = chip.getBoundingClientRect();
+  box.style.maxHeight = '';
+  const w = box.offsetWidth;
+  const h = box.offsetHeight;
+  let left = r.left;
+  if (left + w > window.innerWidth - EDGE) left = r.right - w;
+  left = Math.max(EDGE, left);
+
+  const below = window.innerHeight - r.bottom - gap - EDGE;
+  const above = r.top - gap - EDGE;
+  let top;
+  if (h <= below || below >= above) {
+    top = r.bottom + gap;
+    if (h > below) box.style.maxHeight = `${Math.max(120, below)}px`;
+  } else {
+    top = Math.max(EDGE, r.top - gap - h);
+    if (h > above) box.style.maxHeight = `${Math.max(120, above)}px`;
+  }
+  box.style.left = `${Math.round(left)}px`;
+  box.style.top = `${Math.round(top)}px`;
+  return r;
+}
+
+function clearPlacement(box) {
+  box.style.left = '';
+  box.style.top = '';
+  box.style.maxHeight = '';
+}
+
+/** A chip scrolled out of the row has nothing on screen to hang from. */
+function chipInRow(rect) {
+  if (!chips) return true;
+  const c = chips.getBoundingClientRect();
+  return rect.right > c.left && rect.left < c.right;
+}
+
+function placePop() {
+  if (!openItem) return;
+  const chip = openItem.querySelector('.rtg-fchip[data-pop]');
+  const pop = openItem.querySelector('.rtg-fpop');
+  if (!chip || !pop) return;
+  if (!chipInRow(placeUnder(pop, chip, 8))) closeItem();
+}
+
 function closeItem(restoreFocus = false) {
   if (!openItem) return;
   const chip = openItem.querySelector('.rtg-fchip[data-pop]');
-  openItem.classList.remove('is-open', 'is-right');
+  const pop = openItem.querySelector('.rtg-fpop');
+  openItem.classList.remove('is-open');
   if (chip) chip.setAttribute('aria-expanded', 'false');
+  if (pop) clearPlacement(pop);
   const item = openItem;
   openItem = null;
   if (restoreFocus && chip) chip.focus({ preventScroll: true });
@@ -66,14 +124,37 @@ function openItemPop(item) {
   item.classList.add('is-open');
   chip.setAttribute('aria-expanded', 'true');
   openItem = item;
-
-  // Keep the popover on screen: flip to the chip's right edge if it would
-  // run past the viewport.
-  const rect = pop.getBoundingClientRect();
-  if (rect.right > window.innerWidth - 12) item.classList.add('is-right');
+  placePop();
 
   const first = pop.querySelector('.rtg-fopt[aria-selected="true"], .rtg-fopt, input[type="range"]');
   if (first) first.focus({ preventScroll: true });
+}
+
+/* ---------- the toggle chips' tooltip ---------- */
+
+/**
+ * The tip shows on hover and keyboard focus through CSS alone; this only
+ * puts it under the chip, centred, kept inside the viewport.
+ */
+function placeTip(item) {
+  const chip = item.querySelector('.rtg-fchip');
+  const tip = item.querySelector('.rtg-fchip-tip');
+  if (!chip || !tip || isSheetMode()) return;
+  const r = chip.getBoundingClientRect();
+  const w = Math.min(280, window.innerWidth - 32);
+  const left = Math.min(Math.max(16, r.left + r.width / 2 - w / 2), window.innerWidth - 16 - w);
+  tip.style.left = `${Math.round(left)}px`;
+  tip.style.top = `${Math.round(r.bottom + 8)}px`;
+}
+
+/* ---------- the row's scroll edges ---------- */
+
+/** Show a fade only at an edge that has more chips past it. */
+function syncScrollEdges() {
+  if (!chips || chips.classList.contains('is-sheet')) return;
+  const max = chips.scrollWidth - chips.clientWidth;
+  chips.classList.toggle('is-scroll-start', chips.scrollLeft <= 1);
+  chips.classList.toggle('is-scroll-end', chips.scrollLeft >= max - 1);
 }
 
 /**
@@ -300,7 +381,10 @@ export function syncFilterBar(total = null) {
   if (openItem) {
     const list = openItem.querySelector('.rtg-fopts');
     if (list) buildOptionList(list);
+    placePop();
   }
+  // A chip's width changes with its value, so the row's overflow may have.
+  syncScrollEdges();
 }
 
 /* ---------- wiring ---------- */
@@ -363,6 +447,20 @@ export function initFilterBar(options = {}) {
   window.matchMedia(SHEET_QUERY).addEventListener('change', (mq) => {
     if (!mq.matches) closeSheet();
     else closeItem();
+  });
+
+  // The popover and the tip are fixed, so they follow the chip through
+  // any scroll (the page's or the row's, hence capture) and a resize.
+  window.addEventListener('scroll', placePop, { capture: true, passive: true });
+  window.addEventListener('resize', () => { placePop(); syncScrollEdges(); });
+  if (chips) chips.addEventListener('scroll', syncScrollEdges, { passive: true });
+  bar.addEventListener('mouseover', (e) => {
+    const item = e.target.closest('.rtg-fitem-toggle');
+    if (item) placeTip(item);
+  });
+  bar.addEventListener('focusin', (e) => {
+    const item = e.target.closest('.rtg-fitem-toggle');
+    if (item) placeTip(item);
   });
 
   // The sliders' own handlers repaint the value; the chip follows.
