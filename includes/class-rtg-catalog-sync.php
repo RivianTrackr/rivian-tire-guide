@@ -193,6 +193,7 @@ class RTG_Catalog_Sync {
             'time'           => current_time( 'mysql' ),
             'fetched'        => 0,
             'qualified'      => 0,
+            'sold_out'       => 0,
             'rejected'       => 0,
             'existing'       => 0,
             'newly_surfaced' => 0,
@@ -248,6 +249,9 @@ class RTG_Catalog_Sync {
                         break;
                     case RTG_Candidates::STATUS_EXISTING:
                         $stats['existing']++;
+                        break;
+                    case RTG_Candidates::STATUS_SOLD_OUT:
+                        $stats['sold_out']++;
                         break;
                     case RTG_Candidates::STATUS_REJECTED:
                         $stats['rejected']++;
@@ -369,6 +373,7 @@ class RTG_Catalog_Sync {
             'load_range'      => $evaluated['load_range'],
             'speed_rating'    => $evaluated['speed_rating'],
             'price'           => $product['price'] ?? 0,
+            'availability'    => $product['availability'] ?? '',
             'link'            => $product['link'] ?? '',
             'image'           => $product['image'] ?? '',
             'match_key'       => $match_key,

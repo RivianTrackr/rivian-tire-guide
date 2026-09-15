@@ -122,6 +122,7 @@ class Test_RTG_Catalog_Source_CJ extends WP_UnitTestCase {
             'brand'          => 'Michelin',
             'link'           => 'https://www.tirerack.com/tires/tr-99',
             'imageLink'      => 'https://img.example/tr-99.jpg',
+            'availability'   => 'out of stock',
             'price'          => array( 'amount' => '289.99', 'currency' => 'USD' ),
         ) );
 
@@ -129,6 +130,7 @@ class Test_RTG_Catalog_Source_CJ extends WP_UnitTestCase {
         $this->assertSame( 'Michelin', $mapped['brand'] );
         $this->assertSame( 'Tire Rack', $mapped['advertiser_name'] );
         $this->assertSame( 'https://www.tirerack.com/tires/tr-99', $mapped['link'] );
+        $this->assertSame( 'out of stock', $mapped['availability'] );
         $this->assertEquals( 289.99, $mapped['price'] );
     }
 

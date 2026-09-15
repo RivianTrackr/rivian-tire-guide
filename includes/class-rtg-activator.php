@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 28;
+    const DB_VERSION = 29;
 
     public static function activate() {
         self::create_tables();
@@ -195,6 +195,7 @@ class RTG_Activator {
             load_range VARCHAR(10) NOT NULL DEFAULT '',
             speed_rating VARCHAR(20) NOT NULL DEFAULT '',
             price DECIMAL(8,2) NOT NULL DEFAULT 0,
+            availability VARCHAR(30) NOT NULL DEFAULT '',
             link TEXT NOT NULL,
             image TEXT NOT NULL,
             match_key VARCHAR(191) NOT NULL DEFAULT '',
@@ -257,6 +258,7 @@ class RTG_Activator {
             26 => 'migrate_26_add_wheel_source',
             27 => 'migrate_27_drop_efficiency_score',
             28 => 'migrate_28_hide_uncovered_brands',
+            29 => 'migrate_29_add_candidate_availability',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -504,6 +506,7 @@ class RTG_Activator {
                 load_range VARCHAR(10) NOT NULL DEFAULT '',
                 speed_rating VARCHAR(20) NOT NULL DEFAULT '',
                 price DECIMAL(8,2) NOT NULL DEFAULT 0,
+                availability VARCHAR(30) NOT NULL DEFAULT '',
                 link TEXT NOT NULL,
                 image TEXT NOT NULL,
                 match_key VARCHAR(191) NOT NULL DEFAULT '',
@@ -767,5 +770,70 @@ class RTG_Activator {
         if ( $exists === $candidates ) {
             RTG_Candidates::purge_uncovered_brands( RTG_Admin::get_dropdown_options( 'brands' ) );
         }
+    }
+
+    /**
+     * Migration 29 (2.9.0): candidates record the retailer's stock wording.
+     *
+     * The CJ query has asked for `availability` all along; nothing read it,
+     * so the review queue offered tires that could not be bought. Each
+     * candidate now carries it in a column of its own, and a qualifying
+     * listing the retailer calls out of stock is filed as sold out rather
+     * than awaiting review.
+     *
+     * Every sweep stored the untouched product node beside the row for
+     * exactly this kind of afterthought, so the column is filled from it
+     * here and the queue is right today rather than after the next nightly
+     * run. Rows already awaiting review move to the sold-out tab when their
+     * stored node says so; a human decision is left where it is.
+     */
+    private static function migrate_29_add_candidate_availability() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'rtg_tire_candidates';
+
+        $exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+        if ( $exists !== $table ) {
+            return;
+        }
+
+        $cols = $wpdb->get_col( "SHOW COLUMNS FROM {$table}" );
+        if ( ! in_array( 'availability', $cols, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table} ADD COLUMN availability VARCHAR(30) NOT NULL DEFAULT '' AFTER price" );
+        }
+
+        $last_id = 0;
+        do {
+            $rows = $wpdb->get_results( $wpdb->prepare(
+                "SELECT id, status, raw_json FROM {$table} WHERE id > %d AND raw_json LIKE %s ORDER BY id LIMIT 500",
+                $last_id,
+                '%availability%'
+            ), ARRAY_A );
+
+            foreach ( $rows ?: array() as $row ) {
+                $last_id = intval( $row['id'] );
+                $raw     = json_decode( (string) $row['raw_json'], true );
+                if ( ! is_array( $raw ) ) {
+                    continue;
+                }
+
+                $availability = RTG_Candidates::normalize_availability(
+                    $raw['availability'] ?? ( $raw['_source_node']['availability'] ?? '' )
+                );
+                if ( '' === $availability ) {
+                    continue;
+                }
+
+                $data    = array( 'availability' => $availability );
+                $formats = array( '%s' );
+                if ( RTG_Candidates::STATUS_NEW === (string) $row['status'] && RTG_Candidates::is_out_of_stock( $availability ) ) {
+                    $data['status'] = RTG_Candidates::STATUS_SOLD_OUT;
+                    $formats[]      = '%s';
+                }
+
+                $wpdb->update( $table, $data, array( 'id' => $last_id ), $formats, array( '%d' ) );
+            }
+        } while ( count( $rows ?: array() ) === 500 );
+
+        RTG_Candidates::forget_matched_by_tire();
     }
 }

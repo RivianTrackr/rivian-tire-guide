@@ -323,7 +323,7 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                 ?>
                 <?php if ( $pruned_total > 0 ) : ?>
                     <p class="rtg-help">
-                        Pruned <?php echo esc_html( number_format( $pruned_total ) ); ?> near misses
+                        Pruned <?php echo esc_html( number_format( $pruned_total ) ); ?> near misses and sold-out listings
                         (<?php echo esc_html( number_format( intval( $stats['pruned']['off_fitment'] ?? 0 ) ) ); ?> off-fitment,
                         <?php echo esc_html( number_format( intval( $stats['pruned']['stale'] ?? 0 ) ) ); ?> unseen 60+ days).
                     </p>
@@ -361,6 +361,7 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
         <?php
         $tabs = array(
             RTG_Candidates::STATUS_NEW       => 'Awaiting review',
+            RTG_Candidates::STATUS_SOLD_OUT  => 'Sold out',
             RTG_Candidates::STATUS_REJECTED  => 'Near misses',
             RTG_Candidates::STATUS_EXISTING  => 'Already in guide',
             RTG_Candidates::STATUS_DISMISSED => 'Dismissed',
@@ -426,15 +427,20 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
             </select>
             <button type="submit" class="rtg-btn rtg-btn-secondary">Filter</button>
 
-            <?php if ( in_array( $status_filter, array( RTG_Candidates::STATUS_NEW, RTG_Candidates::STATUS_DISMISSED ), true ) && ! empty( $candidates ) ) : ?>
+            <?php
+            // Bulk moves rows out of the queue or the sold-out tab, or back
+            // out of Dismissed; the other tabs are the machine's own filing.
+            $bulk_restores = RTG_Candidates::STATUS_DISMISSED === $status_filter;
+            if ( in_array( $status_filter, array( RTG_Candidates::STATUS_NEW, RTG_Candidates::STATUS_SOLD_OUT, RTG_Candidates::STATUS_DISMISSED ), true ) && ! empty( $candidates ) ) :
+            ?>
                 <span class="rtg-toolbar-spacer"></span>
-                <button type="button" id="rtg-bulk-candidates" class="rtg-btn <?php echo RTG_Candidates::STATUS_NEW === $status_filter ? 'rtg-btn-danger-quiet' : 'rtg-btn-secondary'; ?>"
+                <button type="button" id="rtg-bulk-candidates" class="rtg-btn <?php echo $bulk_restores ? 'rtg-btn-secondary' : 'rtg-btn-danger-quiet'; ?>"
                     data-status="<?php echo esc_attr( $status_filter ); ?>"
                     data-brand="<?php echo esc_attr( $brand_filter ); ?>"
                     data-size="<?php echo esc_attr( $size_filter ); ?>"
                     data-vehicle="<?php echo esc_attr( $vehicle_filter ); ?>"
-                    data-to="<?php echo esc_attr( RTG_Candidates::STATUS_NEW === $status_filter ? RTG_Candidates::STATUS_DISMISSED : RTG_Candidates::STATUS_NEW ); ?>">
-                    <?php echo RTG_Candidates::STATUS_NEW === $status_filter ? 'Dismiss everything this filter matches' : 'Restore everything this filter matches'; ?>
+                    data-to="<?php echo esc_attr( $bulk_restores ? RTG_Candidates::STATUS_NEW : RTG_Candidates::STATUS_DISMISSED ); ?>">
+                    <?php echo $bulk_restores ? 'Restore everything this filter matches' : 'Dismiss everything this filter matches'; ?>
                 </button>
             <?php endif; ?>
 
@@ -448,6 +454,16 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
             <?php endif; ?>
         </div>
     </form>
+
+    <?php if ( RTG_Candidates::STATUS_SOLD_OUT === $status_filter ) : ?>
+        <div class="rtg-notice rtg-notice-info">
+            <span>
+                These would be awaiting review, but the retailer lists each one as out of stock. A tire moves to
+                <strong>Awaiting review</strong> on the first nightly run that finds it back in stock, and one the
+                catalog drops for 60 days is removed. Add one now if you want it in the guide anyway.
+            </span>
+        </div>
+    <?php endif; ?>
 
     <?php if ( RTG_Candidates::STATUS_NEW === $status_filter && $uncovered_brand_total > 0 && RTG_Tire_Qualifier::BRAND_POLICY_HIDE !== $brand_policy ) : ?>
         <div class="rtg-notice rtg-notice-info">
@@ -667,7 +683,18 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                                 ?>
                             </td>
                             <td><?php echo $candidate['price'] > 0 ? '$' . esc_html( number_format( $candidate['price'], 2 ) ) : '—'; ?></td>
-                            <td><?php echo esc_html( $candidate['advertiser_name'] ?: $candidate['source'] ); ?></td>
+                            <td>
+                                <?php echo esc_html( $candidate['advertiser_name'] ?: $candidate['source'] ); ?>
+                                <?php
+                                // The retailer's own word on stock, on every tab:
+                                // on Already in guide it says which retailer has
+                                // run dry; on Sold out it is the reason the row
+                                // is here.
+                                if ( RTG_Candidates::is_out_of_stock( $candidate['availability'] ?? '' ) ) :
+                                ?>
+                                    <span class="rtg-badge rtg-badge-muted rtg-badge-sm">out of stock</span>
+                                <?php endif; ?>
+                            </td>
                             <td title="<?php echo esc_attr( $candidate['first_seen_at'] ); ?>">
                                 <?php echo esc_html( human_time_diff( strtotime( $candidate['first_seen_at'] ), current_time( 'timestamp' ) ) ); ?> ago
                             </td>
@@ -980,7 +1007,7 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
         <div class="rtg-card">
             <div class="rtg-card-header">
                 <h2>What qualifies</h2>
-                <p>Size, load index and load range are judged together, per vehicle: a tire has to be one of a platform's sizes, carry enough load for it, and be built to at least the platform's load range. A tire that clears no platform is filed under Near misses, naming what it fell short on.</p>
+                <p>Size, load index and load range are judged together, per vehicle: a tire has to be one of a platform's sizes, carry enough load for it, and be built to at least the platform's load range. A tire that clears no platform is filed under Near misses, naming what it fell short on. A tire that clears one but is out of stock at the retailer is filed under Sold out until it is back.</p>
             </div>
             <div class="rtg-card-body">
                 <div class="rtg-field-row">
