@@ -11,6 +11,10 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.8.3 - 2026-09-15
+
+- **The filter chips stay on one line.** On an iPad or a narrower browser window they no longer pile up under the vehicle switch and push the tires down the page. When they do not all fit, the row scrolls sideways, with a fade at the edge to show there is more, and each chip's menu opens right under it as before.
+
 ## 2.8.1 - 2026-09-13
 
 - **The Write a review page looks like the rest of the guide.** The search box and fields match the guide's, headings and labels are the guide's sizes, and buttons and stars show where your keyboard focus is. On an iPhone the fields no longer zoom in when you tap them, and search results highlight as you move through them.

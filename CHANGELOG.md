@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.8.3] - 2026-09-15
+
+### Changed
+- **The filter row is one line at every width; it scrolls sideways instead of wrapping.** On a tablet or a narrower desktop window the chip row could not fit beside the vehicle switch, so it dropped under it and then wrapped its own chips onto a second and third line, and the bar grew to three rows before the tires. `.rtg-filter-row` is now `nowrap` above 600px and `.rtg-filter-chips` is a horizontal scroller there (`overflow-x: auto`, 4px of padding and negative margin so a chip's focus ring stays inside the scrollport, a thin scrollbar for a mouse and none for a coarse pointer), the same treatment the row already had on phones. A 36px fade at each edge, sticky pseudo-elements that take no room, shows there is more that way; `syncScrollEdges()` in `frontend/js/modules/filter-bar.js` clears the fade at an edge the row is already at, on the row's scroll, on resize and after every `syncFilterBar()` since a chip's width changes with its value. A scroll container clips what overflows it, so the popover and the toggle chips' tooltip are now `position: fixed`: `placeUnder()` sets the popover's top and left from the chip's rect on open (flipped to the chip's right edge when it would run past the viewport, above the chip when there is no room below but more above, with a `max-height` when even that is short), `placePop()` re-runs it on page scroll, the row's scroll and resize, and closes the popover once its chip is scrolled out of the row; `placeTip()` centres the tooltip under its chip on `mouseover` and `focusin`, clamped to the viewport. The `is-right` class and its rule are gone. The phone sheet is unchanged: its rules set the popover back to `static`.
+
+### Tests
+- `npm test`, `php -l` and the contract checks pass. The bar was rendered in headless Chromium at 820px, 1024px and 1400px with sample options and four filters set: one line of chips beside the vehicle switch at every width, the row scrolling at 820px and 1024px with the right fade on and the left fade off until scrolled, both off at 1400px where everything fits, the Brand popover 8px under its chip and following a page scroll, the Warranty popover flipped to fit at the viewport's right edge after scrolling the row to its end, the OEM tooltip under its chip and inside the viewport, and no page errors. At 390px with touch the row still wraps under the switch and a chip still opens the sheet.
+
 ## [2.8.2] - 2026-09-14
 
 ### Changed
