@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.9.1] - 2026-09-15
+
+### Changed
+- **The price sync no longer takes a price from a listing the retailer calls out of stock.** `RTG_Candidates::get_by_match_key()` now carries `availability` on the rows the link and price syncs read, and `RTG_Price_Sync::decide()` passes over an out-of-stock listing from the linked retailer when picking the quote: the reader cannot buy at that figure, so the guide keeps the price it had. When every listing from that retailer is out of stock the outcome is the new `retailer_out_of_stock` ("X lists this tire as out of stock, so the price was left as it was"), which the "whose price was not refreshed" table on the discovery page shows; it is a different answer from `retailer_not_carrying`. A retailer with one listing in stock and a cheaper one sold out prices from the one in stock, and stock at the other retailer changes nothing, since only the linked retailer ever sets the price.
+
+Nothing visible to owners: a guide price stops moving on a listing nobody could buy, which reads the same as before.
+
+### Tests
+- `tests/test-price-sync.php`: an out-of-stock listing does not set the price and reports `retailer_out_of_stock` with the retailer named; the in-stock listing prices over a cheaper sold-out one at the same retailer; stock at the other retailer is ignored. `npm test`, `php -l` and the contract checks pass locally; the PHPUnit suite runs in CI.
+
 ## [2.9.0] - 2026-09-15
 
 ### Added

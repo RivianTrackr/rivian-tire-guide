@@ -15,8 +15,8 @@ class Test_RTG_Price_Sync extends WP_UnitTestCase {
     /**
      * Build a candidate row as the sync would see it.
      */
-    private function candidate( $advertiser, $price ) {
-        return array( 'advertiser_name' => $advertiser, 'price' => $price );
+    private function candidate( $advertiser, $price, $availability = '' ) {
+        return array( 'advertiser_name' => $advertiser, 'price' => $price, 'availability' => $availability );
     }
 
     // --- Link resolution ---
@@ -251,6 +251,59 @@ class Test_RTG_Price_Sync extends WP_UnitTestCase {
         );
 
         $this->assertSame( 'retailer_not_carrying', $decision['code'] );
+    }
+
+    // --- Stock ---
+
+    /**
+     * A listing the retailer calls out of stock is not a quote: the reader
+     * cannot buy at that figure. The guide keeps its price and the run says
+     * which retailer has run dry, which is a different answer from "not
+     * listing it".
+     */
+    public function test_an_out_of_stock_listing_does_not_set_the_price() {
+        $decision = RTG_Price_Sync::decide(
+            array( 'link' => 'https://www.tirerack.com/tires/x', 'price' => 300.00 ),
+            array( $this->candidate( 'Tire Rack', 249.99, 'out of stock' ) )
+        );
+
+        $this->assertFalse( $decision['update'] );
+        $this->assertSame( 'retailer_out_of_stock', $decision['code'] );
+        $this->assertSame( 'Tire Rack', $decision['retailer'] );
+    }
+
+    /**
+     * With one listing in stock and a cheaper one sold out at the same
+     * retailer, the price is the one a reader can actually pay.
+     */
+    public function test_prices_from_the_listing_that_is_in_stock() {
+        $decision = RTG_Price_Sync::decide(
+            array( 'link' => 'https://www.tirerack.com/tires/x', 'price' => 300.00 ),
+            array(
+                $this->candidate( 'Tire Rack', 249.99, 'out of stock' ),
+                $this->candidate( 'Tire Rack', 289.99, 'in stock' ),
+            )
+        );
+
+        $this->assertTrue( $decision['update'] );
+        $this->assertEquals( 289.99, round( $decision['price'], 2 ) );
+    }
+
+    /**
+     * The other retailer's stock is not this tire's business: a sold-out
+     * listing elsewhere neither prices the tire nor changes the outcome.
+     */
+    public function test_stock_at_the_other_retailer_is_ignored() {
+        $decision = RTG_Price_Sync::decide(
+            array( 'link' => 'https://www.tirerack.com/tires/x', 'price' => 300.00 ),
+            array(
+                $this->candidate( 'SimpleTire', 199.99, 'out of stock' ),
+                $this->candidate( 'Tire Rack', 289.99 ),
+            )
+        );
+
+        $this->assertTrue( $decision['update'] );
+        $this->assertEquals( 289.99, round( $decision['price'], 2 ) );
     }
 
     /**
