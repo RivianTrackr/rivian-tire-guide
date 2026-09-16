@@ -126,7 +126,7 @@ class Test_RTG_Database extends WP_UnitTestCase {
         // Each row should be a numerically-indexed array of strings.
         $row = $tires[0];
         $this->assertIsArray( $row );
-        $this->assertCount( 30, $row, 'the frontend row layout is a fixed 30 columns' );
+        $this->assertCount( 34, $row, 'the frontend row layout is a fixed 34 columns' );
         foreach ( $row as $val ) {
             $this->assertIsString( $val );
         }
@@ -224,12 +224,13 @@ class Test_RTG_Database extends WP_UnitTestCase {
     // --- Frontend row format ---
 
     /**
-     * The JS reads fixed indexes up to row[29] (retailer label), so every
-     * producer of frontend rows must emit the same 30 columns.
+     * The JS reads fixed indexes up to row[33] (the other retailer's
+     * in-stock link), so every producer of frontend rows must emit the
+     * same 34 columns.
      * get_filtered_tires() once lagged at 28, which silently dropped the
      * tire-page links whenever server-side pagination was on.
      */
-    public function test_every_frontend_row_producer_emits_the_same_30_columns() {
+    public function test_every_frontend_row_producer_emits_the_same_34_columns() {
         RTG_Database::insert_tire( $this->sample_tire( array(
             'tire_id' => 'row-format-001',
             'brand'   => 'RowBrand',
@@ -254,11 +255,15 @@ class Test_RTG_Database extends WP_UnitTestCase {
                 }
             }
             $this->assertNotNull( $row, "$name should return the inserted tire" );
-            $this->assertCount( 30, $row, "$name row width" );
+            $this->assertCount( 34, $row, "$name row width" );
             $this->assertSame( $expected_slug, $row[26], "$name slug at index 26" );
             $this->assertSame( '', $row[27], "$name price_synced_at at index 27 (never synced)" );
             $this->assertMatchesRegularExpression( '/^\d{4}-\d{2}-\d{2} /', $row[28], "$name updated_at at index 28" );
             $this->assertSame( 'Tire Rack', $row[29], "$name retailer label at index 29" );
+            $this->assertSame( '', $row[30], "$name stock_status at index 30 (never checked)" );
+            $this->assertSame( '', $row[31], "$name stock_checked_at at index 31" );
+            $this->assertSame( '', $row[32], "$name stock_alt_retailer at index 32" );
+            $this->assertSame( '', $row[33], "$name stock_alt_link at index 33" );
         }
     }
 

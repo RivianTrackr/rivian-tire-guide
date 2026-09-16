@@ -73,6 +73,8 @@ class Test_RTG_Activator extends WP_UnitTestCase {
             'load_index', 'max_load_lb', 'load_range', 'speed_rating', 'psi',
             'utqg', 'tags', 'link', 'image',
             'bundle_link', 'sort_order', 'created_at', 'updated_at',
+            'price_source', 'price_synced_at',
+            'stock_status', 'stock_checked_at', 'stock_alt_retailer', 'stock_alt_link',
         );
 
         foreach ( $expected as $col ) {
@@ -164,6 +166,34 @@ class Test_RTG_Activator extends WP_UnitTestCase {
         $this->assertSame( 'out of stock', $dismissed_now['availability'] );
         $this->assertSame( RTG_Candidates::STATUS_DISMISSED, $dismissed_now['status'] );
 
+        $this->assertSame( RTG_Activator::DB_VERSION, (int) get_option( 'rtg_db_version' ) );
+    }
+
+    /**
+     * Migration 30 adds the stock columns to a tires table that predates
+     * them, and adds nothing to one that already has them.
+     */
+    public function test_stock_migration_adds_the_columns_once() {
+        RTG_Activator::activate();
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'rtg_tires';
+        foreach ( array( 'stock_status', 'stock_checked_at', 'stock_alt_retailer', 'stock_alt_link' ) as $col ) {
+            $wpdb->query( "ALTER TABLE {$table} DROP COLUMN {$col}" );
+        }
+        $this->assertNotContains( 'stock_status', $wpdb->get_col( "SHOW COLUMNS FROM {$table}" ) );
+
+        update_option( 'rtg_db_version', 29 );
+        RTG_Activator::maybe_upgrade();
+
+        $columns = $wpdb->get_col( "SHOW COLUMNS FROM {$table}" );
+        foreach ( array( 'stock_status', 'stock_checked_at', 'stock_alt_retailer', 'stock_alt_link' ) as $col ) {
+            $this->assertContains( $col, $columns, "Missing column: {$col}" );
+        }
+
+        update_option( 'rtg_db_version', 29 );
+        RTG_Activator::maybe_upgrade();
+        $this->assertCount( count( $columns ), $wpdb->get_col( "SHOW COLUMNS FROM {$table}" ), 'a second run adds nothing' );
         $this->assertSame( RTG_Activator::DB_VERSION, (int) get_option( 'rtg_db_version' ) );
     }
 

@@ -21,6 +21,13 @@ export const SET_QUANTITY = 4;
 export const AS_OF_MIN_DAYS = 30;
 
 /**
+ * Days a retailer's out-of-stock word stays worth showing. After that the
+ * note is withheld rather than shown stale. Mirrors
+ * RTG_Stock_Sync::FRESH_DAYS.
+ */
+export const STOCK_FRESH_DAYS = 3;
+
+/**
  * "$275" — a per-tire price to the dollar. The guide calls it an average,
  * so cents were false precision, and "$442.4" was worse than either.
  */
@@ -84,6 +91,39 @@ export function formatAsOf(date, now = new Date()) {
   const opts = { month: 'short', day: 'numeric' };
   if (date.getFullYear() !== now.getFullYear()) opts.year = 'numeric';
   return date.toLocaleDateString('en-US', opts);
+}
+
+/**
+ * What the card says about stock, if anything.
+ *
+ * Only a fresh out-of-stock verdict from the tire's own retailer earns a
+ * line; in stock is the normal state and says nothing, and a verdict older
+ * than the window is withheld. Mirrors RTG_Stock_Sync::note().
+ *
+ * @param {Object} tire       { stockStatus, stockCheckedAt, stockAltRetailer, stockAltLink, retailer }
+ * @param {number} freshDays  Days a check stays worth showing.
+ * @param {Date}   [now]
+ * @return {{show: boolean, label: string, title: string, altRetailer: string, altLink: string}}
+ */
+export function stockNote(tire, freshDays = STOCK_FRESH_DAYS, now = new Date()) {
+  const none = { show: false, label: '', title: '', altRetailer: '', altLink: '' };
+  if (!tire || tire.stockStatus !== 'out_of_stock') return none;
+
+  const checked = parseMysqlDate(tire.stockCheckedAt);
+  if (!checked) return none;
+
+  const days = parseInt(freshDays, 10);
+  const limit = Number.isFinite(days) && days > 0 ? days : STOCK_FRESH_DAYS;
+  if (now.getTime() - checked.getTime() > limit * 86400000) return none;
+
+  const retailer = typeof tire.retailer === 'string' ? tire.retailer.trim() : '';
+  return {
+    show: true,
+    label: 'Out of stock at ' + (retailer || 'the retailer'),
+    title: (retailer || 'The retailer') + ' listed this tire as out of stock when we checked on ' + formatAsOf(checked, now) + '.',
+    altRetailer: typeof tire.stockAltRetailer === 'string' ? tire.stockAltRetailer.trim() : '',
+    altLink: typeof tire.stockAltLink === 'string' ? tire.stockAltLink.trim() : '',
+  };
 }
 
 /**

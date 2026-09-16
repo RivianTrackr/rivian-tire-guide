@@ -5,7 +5,7 @@
  * Run with:  node tests/test-pricing.mjs
  */
 import assert from 'node:assert/strict';
-import { setPrice, formatSetPrice, formatWholePrice, parseMysqlDate, formatAsOf, priceFreshness, SET_QUANTITY, AS_OF_MIN_DAYS } from '../frontend/js/modules/pricing.js';
+import { setPrice, formatSetPrice, formatWholePrice, parseMysqlDate, formatAsOf, priceFreshness, stockNote, SET_QUANTITY, AS_OF_MIN_DAYS, STOCK_FRESH_DAYS } from '../frontend/js/modules/pricing.js';
 
 let failures = 0;
 function test(name, fn) {
@@ -108,6 +108,28 @@ test('nothing known, nothing said', () => {
   assert.equal(f.date, null);
 });
 test('tolerates a missing tire', () => assert.equal(priceFreshness(null, 90, now).label, ''));
+
+console.log('stockNote');
+{
+  const now = new Date(2026, 8, 16, 9);
+  const base = { stockStatus: 'out_of_stock', stockCheckedAt: '2026-09-15 03:00:00', stockAltRetailer: 'SimpleTire', stockAltLink: 'https://www.tkqlhce.com/click-2?url=b', retailer: 'Tire Rack' };
+  test('the window is three days, like the sync', () => assert.equal(STOCK_FRESH_DAYS, 3));
+  test('a fresh out-of-stock verdict names the retailer and the day', () => {
+    const note = stockNote(base, STOCK_FRESH_DAYS, now);
+    assert.equal(note.show, true);
+    assert.equal(note.label, 'Out of stock at Tire Rack');
+    assert.match(note.title, /Sep 15/);
+    assert.equal(note.altRetailer, 'SimpleTire');
+    assert.equal(note.altLink, 'https://www.tkqlhce.com/click-2?url=b');
+  });
+  test('in stock says nothing', () => assert.equal(stockNote({ ...base, stockStatus: 'in_stock' }, 3, now).show, false));
+  test('a verdict older than the window is withheld', () => {
+    assert.equal(stockNote({ ...base, stockCheckedAt: '2026-09-12 03:00:00' }, 3, now).show, false);
+    assert.equal(stockNote({ ...base, stockCheckedAt: '' }, 3, now).show, false);
+  });
+  test('no retailer name, no blame', () => assert.equal(stockNote({ ...base, retailer: '' }, 3, now).label, 'Out of stock at the retailer'));
+  test('a bad window falls back to the default', () => assert.equal(stockNote(base, 'x', now).show, true));
+}
 
 if (failures > 0) {
   console.log(`\n${failures} failure(s)`);

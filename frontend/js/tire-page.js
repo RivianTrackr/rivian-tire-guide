@@ -84,7 +84,8 @@ var RTG_TP_TOOLTIPS = {
   }
 
   document.addEventListener('click', function (e) {
-    var link = e.target.closest ? e.target.closest('.rtg-tp-cta-primary, .rtg-tp-review-link') : null;
+    // The other retailer's in-stock link is a purchase click like the main one.
+    var link = e.target.closest ? e.target.closest('.rtg-tp-cta-primary, .rtg-tp-cta-alt, .rtg-tp-review-link') : null;
     if (!link) {
       return;
     }

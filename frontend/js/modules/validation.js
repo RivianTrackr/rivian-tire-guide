@@ -220,7 +220,8 @@ export function validateAndSanitizeCSVRow(row) {
       //   26 slug — identifier, url-encoded at use.
       // 27 price_synced_at and 28 updated_at are MySQL datetimes (digits,
       // dashes, colons, a space): the strip below can't touch them.
-      if (i === 18 || i === 19 || i === 20 || i === 25 || i === 26) {
+      //   33 stock_alt_link — a tracked URL like 18, validated by safeLinkURL.
+      if (i === 18 || i === 19 || i === 20 || i === 25 || i === 26 || i === 33) {
         sanitized[i] = cell;
       } else {
         sanitized[i] = cell.replace(/[<>\"'&]/g, "").trim();

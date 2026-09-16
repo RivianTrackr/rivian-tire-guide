@@ -12,7 +12,7 @@ import { createRatingHTML } from './ratings.js';
 import { setupCompareCheckboxes } from './compare.js';
 import { openImageModal } from './image-modal.js';
 import { fitmentShortfalls, describeShortfalls, parseLoadIndex, thirdPartyFits, describeThirdPartyFits } from './fitment.js';
-import { formatSetPrice, formatWholePrice, priceFreshness, SET_QUANTITY } from './pricing.js';
+import { formatSetPrice, formatWholePrice, priceFreshness, stockNote, SET_QUANTITY } from './pricing.js';
 import { isLimitedSample } from './efficiency.js';
 
 /**
@@ -323,8 +323,14 @@ export function createSingleCard(row) {
     tread, loadIndex, maxLoad, loadRange, speed, psi, utqg, tags, link, image,
     reviewLink, /* createdAt */ ,
     roamerEfficiency, roamerTotalKm, roamerVehicleCount, roamerVehicleBreakdown, slug,
-    priceSyncedAt, updatedAt, retailer
+    priceSyncedAt, updatedAt, retailer,
+    stockStatus, stockCheckedAt, stockAltRetailer, stockAltLink
   ] = row;
+
+  // The linked retailer's fresh word that the tire cannot be bought, and
+  // the other retailer's in-stock listing when there is one.
+  const stockFreshDays = (typeof rtgData !== 'undefined' && rtgData.settings) ? rtgData.settings.stockFreshDays : undefined;
+  const stock = stockNote({ stockStatus, stockCheckedAt, stockAltRetailer, stockAltLink, retailer }, stockFreshDays);
 
   if (!VALIDATION_PATTERNS.tireId.test(tireId)) {
     console.error('Invalid tire ID in card creation:', tireId);
@@ -545,11 +551,19 @@ export function createSingleCard(row) {
       setLine.textContent = `${formatSetPrice(priceNum)} / set of ${SET_QUANTITY}`;
       priceStat.appendChild(setLine);
 
-      // When the price was last touched, and a nudge when that was long
-      // enough ago that it may no longer be what the retailer charges.
+      // Out of stock takes the note's line over the price's age: whether
+      // the figure is current matters less than whether it can be paid.
+      // Otherwise: when the price was last touched, and a nudge when that
+      // was long enough ago that it may no longer be what the retailer charges.
       const staleDays = (typeof rtgData !== 'undefined' && rtgData.settings) ? rtgData.settings.stalePriceDays : 0;
       const fresh = priceFreshness({ priceSyncedAt, updatedAt }, staleDays);
-      if (fresh.show) {
+      if (stock.show) {
+        const stockLine = document.createElement('div');
+        stockLine.className = 'tire-card-stat-meta tire-card-stock';
+        stockLine.textContent = stock.label;
+        stockLine.title = stock.title;
+        priceStat.appendChild(stockLine);
+      } else if (fresh.show) {
         const asOf = document.createElement('div');
         asOf.className = 'tire-card-stat-meta tire-card-price-asof' + (fresh.stale ? ' is-stale' : '');
         asOf.textContent = fresh.stale ? `${fresh.label} · may be outdated` : fresh.label;
@@ -798,7 +812,7 @@ export function createSingleCard(row) {
     viewButton.rel = 'noopener noreferrer';
     viewButton.className = 'tire-card-cta tire-card-cta-primary';
     // "View at Tire Rack": say where the click goes. The label is resolved
-    // server-side (RTG_Retailer) and rides the row at index 31.
+    // server-side (RTG_Retailer) and rides the row at index 29.
     const retailerName = safeString(retailer, 40);
     viewButton.textContent = retailerName ? `View at ${retailerName}` : 'View Tire';
     viewButton.insertAdjacentHTML('beforeend', '&nbsp;' + rtgIcon('arrow-up-right', 14));
@@ -814,6 +828,22 @@ export function createSingleCard(row) {
   // review link (was a second full-width button competing with the CTA).
   const linksRow = document.createElement('div');
   linksRow.className = 'tire-card-links';
+
+  // The other retailer, when the linked one is out of stock and it has the
+  // tire in stock on a tracked link: a way out, under the button it replaces
+  // nothing of.
+  const safeAltLink = stock.show && stock.altLink ? safeLinkURL(stock.altLink) : '';
+  if (safeAltLink && stock.altRetailer) {
+    const altLink = document.createElement('a');
+    altLink.className = 'tire-card-details-link tire-card-alt-link';
+    altLink.href = safeAltLink;
+    altLink.target = '_blank';
+    altLink.rel = 'noopener noreferrer';
+    altLink.innerHTML = rtgIcon('check', 12) + '&nbsp;';
+    altLink.appendChild(document.createTextNode(`In stock at ${safeString(stock.altRetailer, 40)}`));
+    altLink.insertAdjacentHTML('beforeend', '&nbsp;' + rtgIcon('arrow-up-right', 12));
+    linksRow.appendChild(altLink);
+  }
 
   if (tirePageUrl) {
     const detailsLink = document.createElement('a');
