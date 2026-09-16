@@ -11,6 +11,11 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.10.1 - 2026-09-16
+
+- **A link to a tire size opens on that size.** Sharing the guide with a size in the address, like the 275/65R20 Nexen list, reloaded on everything but the size. It holds now. If the guide had remembered a different Rivian for you, one that does not come in the linked size, the vehicle switch steps back to All for that visit and a short note under the filters says why. Your remembered vehicle is still there next time.
+- **The wheel-size headings in the Size menu are easier to spot.** The "18" wheels", "20" wheels" labels that group the sizes were small and grey and blended into the list. They are now bolder, brighter, with a line running across, and they stay put at the top while you scroll through a group.
+
 ## 2.10.0 - 2026-09-16
 
 - **The guide tells you when a tire is out of stock at its retailer.** When the store a tire's button goes to has listed it as out of stock in the last few days, an amber note says so under the price, on the card and on the tire page. The note names the store and, if you hover it, the day we checked. The tire stays in the guide and the button still works, since stock comes back and some stores take backorders.

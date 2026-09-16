@@ -82,6 +82,17 @@ export function announceFilterNotice(message, duration = 6000) {
 }
 
 /**
+ * Whether a vehicle's size menu would list this size.
+ *
+ * "All" (no vehicle) and a vehicle the guide has no fitments for take every
+ * size, since the cascade shows the whole list for both.
+ */
+export function vehicleTakesSize(vehicle, size) {
+  const sizes = vehicle ? state.vehicleSizeMap[vehicle] : null;
+  return !Array.isArray(sizes) || sizes.includes(size);
+}
+
+/**
  * Narrow the size list to the vehicle's fitments.
  *
  * @return {string} The size that was cleared because the vehicle doesn't
@@ -1272,6 +1283,22 @@ export function updateURLFromFilters() {
   }
 }
 
+/**
+ * A URL param that must be one of a known list: the value exactly as it came,
+ * or '' when it isn't listed.
+ *
+ * Nothing is stripped first. sanitizeInput() drops slashes, which turned
+ * `size=275/65R20` into `27565R20` before the list was consulted, so a shared
+ * link's size never survived a refresh. The list is the allowlist; a value
+ * that is on it is safe by construction.
+ */
+function listedParam(params, key, list) {
+  const raw = params.get(key);
+  if (typeof raw !== 'string') return '';
+  const value = raw.trim().slice(0, 100);
+  return value && Array.isArray(list) && list.includes(value) ? value : '';
+}
+
 export function applyFiltersFromURL() {
   // A brand set aside as empty can't be selected while it's out of the DOM,
   // so the whole list goes back before any value is restored — otherwise the
@@ -1303,8 +1330,10 @@ export function applyFiltersFromURL() {
   else if (restoring) setVal("searchInput", "");
 
   // Vehicle must be applied before size so the cascade narrows the size dropdown first.
-  const vehicleParam = sanitizeInput(params.get("vehicle"));
-  let vehicle = vehicleParam && state.VALID_VEHICLES.includes(vehicleParam) ? vehicleParam : '';
+  let vehicle = listedParam(params, "vehicle", state.VALID_VEHICLES);
+  const vehicleFromURL = !!vehicle;
+
+  const size = listedParam(params, "size", state.VALID_SIZES);
 
   // No vehicle in the URL on a fresh load: the one remembered from the last
   // visit, unless a shortcode prefilter already pressed one. Browser
@@ -1317,21 +1346,37 @@ export function applyFiltersFromURL() {
     }
   }
 
-  if (vehicle || restoring) {
-    setActiveVehicle(vehicle, !restoring);
+  // A link that names a size is asking for that size. When the vehicle it
+  // would be narrowed by came from memory or a shortcode rather than the
+  // link, and doesn't take that size, the link wins: the toggle steps back
+  // to "All" for this visit and says why. The remembered vehicle is left
+  // alone, so the next plain visit still opens on it. Without this, the
+  // cascade narrowed the menu before the size was restored, the select
+  // silently cleared, and a shared link opened on everything but its size.
+  let linkOverrodeVehicle = false;
+  if (size && !vehicleFromURL && !restoring) {
+    const pressed = vehicle || getSelectedVehicle();
+    if (pressed && !vehicleTakesSize(pressed, size)) {
+      vehicle = '';
+      linkOverrodeVehicle = true;
+      announceFilterNotice(`Showing all vehicles: the ${pressed} doesn't come in ${size}.`);
+    }
+  }
+
+  if (vehicle || restoring || linkOverrodeVehicle) {
+    setActiveVehicle(vehicle, !restoring && !linkOverrodeVehicle);
     cascadeVehicleToSizes(vehicle, state.VALID_SIZES);
   }
 
-  const size = sanitizeInput(params.get("size"));
-  if (size && state.VALID_SIZES.includes(size)) setVal("filterSize", size);
+  if (size) setVal("filterSize", size);
   else if (restoring) setVal("filterSize", "");
 
-  const brand = sanitizeInput(params.get("brand"));
-  if (brand && state.VALID_BRANDS.includes(brand)) setVal("filterBrand", brand);
+  const brand = listedParam(params, "brand", state.VALID_BRANDS);
+  if (brand) setVal("filterBrand", brand);
   else if (restoring) setVal("filterBrand", "");
 
-  const category = sanitizeInput(params.get("category"));
-  if (category && state.VALID_CATEGORIES.includes(category)) setVal("filterCategory", category);
+  const category = listedParam(params, "category", state.VALID_CATEGORIES);
+  if (category) setVal("filterCategory", category);
   else if (restoring) setVal("filterCategory", "");
 
 
