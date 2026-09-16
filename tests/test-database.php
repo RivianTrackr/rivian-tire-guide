@@ -126,7 +126,7 @@ class Test_RTG_Database extends WP_UnitTestCase {
         // Each row should be a numerically-indexed array of strings.
         $row = $tires[0];
         $this->assertIsArray( $row );
-        $this->assertCount( 30, $row, 'the frontend row layout is a fixed 30 columns' );
+        $this->assertCount( 34, $row, 'the frontend row layout is a fixed 34 columns' );
         foreach ( $row as $val ) {
             $this->assertIsString( $val );
         }

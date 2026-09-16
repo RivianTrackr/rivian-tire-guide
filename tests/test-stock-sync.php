@@ -170,7 +170,7 @@ class Test_RTG_Stock_Sync extends WP_UnitTestCase {
             'tire_id' => 'stock-001', 'brand' => 'Bridgestone', 'model' => 'Dueler', 'size' => '275/65R20',
             'link'    => 'https://www.tirerack.com/tires/x', 'price' => 385,
         ) );
-        $wpdb->update( RTG_Database::tires_table(), array( 'updated_at' => '2026-01-01 00:00:00' ), array( 'tire_id' => 'stock-001' ) );
+        $wpdb->update( $wpdb->prefix . 'rtg_tires', array( 'updated_at' => '2026-01-01 00:00:00' ), array( 'tire_id' => 'stock-001' ) );
 
         RTG_Database::update_stock_data( 'stock-001', array(
             'stock_status'       => RTG_Stock_Sync::OUT_OF_STOCK,
