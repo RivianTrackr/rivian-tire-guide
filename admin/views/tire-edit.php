@@ -263,6 +263,29 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                             <label class="rtg-field-label" for="price">Price ($)</label>
                         </div>
                         <input type="number" id="price" name="price" value="<?php echo esc_attr( $v['price'] ); ?>" step="0.01" min="0" class="rtg-input-small">
+                        <?php
+                        // What the nightly run last learned from the linked
+                        // retailer: where the price came from, and its stock.
+                        // Read-only; the save handler leaves these columns alone.
+                        $rtg_sync_readout = array();
+                        if ( ! empty( $v['price_source'] ) && ! empty( $v['price_synced_at'] ) ) {
+                            $rtg_sync_readout[] = 'Price synced from ' . $v['price_source'] . ' on ' . date_i18n( 'M j', strtotime( $v['price_synced_at'] ) );
+                        }
+                        if ( ! empty( $v['stock_status'] ) ) {
+                            $rtg_stock_line = ( RTG_Stock_Sync::OUT_OF_STOCK === $v['stock_status'] ? 'Out of stock' : 'In stock' )
+                                . ' at ' . ( RTG_Retailer::label( $v ) ?: 'the retailer' );
+                            if ( ! empty( $v['stock_checked_at'] ) ) {
+                                $rtg_stock_line .= ', checked ' . date_i18n( 'M j', strtotime( $v['stock_checked_at'] ) );
+                            }
+                            if ( ! empty( $v['stock_alt_retailer'] ) ) {
+                                $rtg_stock_line .= ' · in stock at ' . $v['stock_alt_retailer'];
+                            }
+                            $rtg_sync_readout[] = $rtg_stock_line;
+                        }
+                        if ( $rtg_sync_readout ) :
+                        ?>
+                        <p class="rtg-field-description"><?php echo esc_html( implode( ' · ', $rtg_sync_readout ) ); ?></p>
+                        <?php endif; ?>
                     </div>
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">

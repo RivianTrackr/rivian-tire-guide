@@ -194,6 +194,8 @@ class RTG_Frontend {
                 // warning and "price as of" hint are judged against.
                 'loadIndexFloors' => RTG_Fitment::floors(),
                 'stalePriceDays'  => RTG_Stale_Prices::stale_days(),
+                // How long a retailer's out-of-stock word stays worth saying.
+                'stockFreshDays'  => RTG_Stock_Sync::FRESH_DAYS,
                 // The "What's new" pill: where the notes live, the JSON the
                 // modal loads, and the newest version so the pill can show
                 // a dot until this browser has opened it.

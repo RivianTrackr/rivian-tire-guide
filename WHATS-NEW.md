@@ -11,6 +11,11 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.10.0 - 2026-09-16
+
+- **The guide tells you when a tire is out of stock at its retailer.** When the store a tire's button goes to has listed it as out of stock in the last few days, an amber note says so under the price, on the card and on the tire page. The note names the store and, if you hover it, the day we checked. The tire stays in the guide and the button still works, since stock comes back and some stores take backorders.
+- **And where it is in stock instead.** When the other store has the same tire in stock, a green "In stock at" link appears under the button so you can go straight there.
+
 ## 2.8.3 - 2026-09-15
 
 - **The filter chips stay on one line.** On an iPad or a narrower browser window they no longer pile up under the vehicle switch and push the tires down the page. When they do not all fit, the row scrolls sideways, with a fade at the edge to show there is more, and each chip's menu opens right under it as before.

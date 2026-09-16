@@ -116,8 +116,10 @@ function setupEventDelegation() {
   // was demoted from a .tire-card-cta-review button to a .tire-card-review-link
   // text link (1.55.2) — both classes are tracked for compatibility.
   document.addEventListener('click', function(e) {
+    // The other retailer's in-stock link (.tire-card-alt-link) is a
+    // purchase click like the main button.
     const link = e.target.closest(
-      '.tire-card-cta-primary, .tire-card-cta-review, .tire-card-review-link'
+      '.tire-card-cta-primary, .tire-card-alt-link, .tire-card-cta-review, .tire-card-review-link'
     );
     if (!link) return;
 

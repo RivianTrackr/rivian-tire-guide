@@ -313,6 +313,8 @@ class RTG_Catalog_Sync {
         // to learn what this run already knows.
         $stats['links']  = RTG_Link_Sync::run();
         $stats['prices'] = RTG_Price_Sync::run();
+        // Stock last, off the link this run settled on.
+        $stats['stock']  = RTG_Stock_Sync::run();
 
         update_option( self::STATS_OPTION, $stats, false );
 

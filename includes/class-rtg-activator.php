@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 29;
+    const DB_VERSION = 30;
 
     public static function activate() {
         self::create_tables();
@@ -107,6 +107,10 @@ class RTG_Activator {
             roamer_synced_at DATETIME NULL DEFAULT NULL,
             price_source VARCHAR(100) NOT NULL DEFAULT '',
             price_synced_at DATETIME NULL DEFAULT NULL,
+            stock_status VARCHAR(20) NOT NULL DEFAULT '',
+            stock_checked_at DATETIME NULL DEFAULT NULL,
+            stock_alt_retailer VARCHAR(100) NOT NULL DEFAULT '',
+            stock_alt_link TEXT,
             sort_order INT UNSIGNED NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -259,6 +263,7 @@ class RTG_Activator {
             27 => 'migrate_27_drop_efficiency_score',
             28 => 'migrate_28_hide_uncovered_brands',
             29 => 'migrate_29_add_candidate_availability',
+            30 => 'migrate_30_add_tire_stock',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -835,5 +840,34 @@ class RTG_Activator {
         } while ( count( $rows ?: array() ) === 500 );
 
         RTG_Candidates::forget_matched_by_tire();
+    }
+
+    /**
+     * Migration 30 (2.10.0): each tire records its linked retailer's stock.
+     *
+     * The nightly run projects the candidates' stock wording onto the guide:
+     * whether the retailer the tire links to can sell it, when that was
+     * checked, and the other retailer's in-stock tracked listing when it
+     * cannot. The columns fill on the next run; the page shows nothing
+     * until then, which is the honest state.
+     */
+    private static function migrate_30_add_tire_stock() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'rtg_tires';
+
+        $cols = $wpdb->get_col( "SHOW COLUMNS FROM {$table}" );
+
+        if ( ! in_array( 'stock_status', $cols, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table} ADD COLUMN stock_status VARCHAR(20) NOT NULL DEFAULT '' AFTER price_synced_at" );
+        }
+        if ( ! in_array( 'stock_checked_at', $cols, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table} ADD COLUMN stock_checked_at DATETIME NULL DEFAULT NULL AFTER stock_status" );
+        }
+        if ( ! in_array( 'stock_alt_retailer', $cols, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table} ADD COLUMN stock_alt_retailer VARCHAR(100) NOT NULL DEFAULT '' AFTER stock_checked_at" );
+        }
+        if ( ! in_array( 'stock_alt_link', $cols, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table} ADD COLUMN stock_alt_link TEXT AFTER stock_alt_retailer" );
+        }
     }
 }

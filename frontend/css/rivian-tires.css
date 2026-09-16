@@ -2021,6 +2021,22 @@ input.range-slider::-moz-range-thumb:hover {
 .tire-card-price-asof.is-stale {
   color: #f0b429;
 }
+/* The linked retailer's own word that the tire cannot be bought, in the
+   caution amber the stale-price note uses; it takes that note's line while
+   it applies. */
+.tire-card-stock {
+  margin-top: 1px;
+  color: #f0b429;
+  font-weight: 600;
+}
+/* The other retailer, in stock on a tracked link: the positive green, so
+   it reads as the way out beside the amber note. */
+.tire-card-details-link.tire-card-alt-link {
+  color: #4ade80;
+}
+.tire-card-details-link.tire-card-alt-link:hover {
+  color: #86efac;
+}
 
 /* Load-index fitment warning — the tire won't safely carry the vehicle. */
 .tire-card-fitment-slot[hidden] {
@@ -3373,6 +3389,7 @@ a.rtg-user-review-tire-link:hover {
 }
 .tire-card-cta:focus-visible,
 .tire-card-details-link:focus-visible,
+.tire-card-alt-link:focus-visible,
 .tire-card-review-link:focus-visible,
 .tire-card-model-link:focus-visible,
 .tire-card-tool-share:focus-visible,

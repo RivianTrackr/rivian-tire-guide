@@ -84,6 +84,9 @@ $rtg_tp_3p_names    = array_column( $rtg_tp_fit_3p, 'vehicle' );
 $rtg_tp_price     = (float) ( $tire['price'] ?? 0 );
 $rtg_tp_set_price = $rtg_tp_price > 0 ? (int) round( $rtg_tp_price * 4 ) : 0;
 $rtg_tp_freshness = RTG_Stale_Prices::freshness( $tire, current_time( 'timestamp' ), RTG_Stale_Prices::stale_days() );
+// The linked retailer's word on stock, when it is fresh and says the tire
+// cannot be bought; and the other retailer's in-stock listing, if any.
+$rtg_tp_stock = RTG_Stock_Sync::note( $tire, current_time( 'timestamp' ) );
 
 // Real-world efficiency and the sample behind it.
 $roamer_eff = (float) ( $tire['roamer_efficiency'] ?? 0 );
@@ -222,9 +225,20 @@ if ( false !== stripos( (string) ( $tire['tags'] ?? '' ), 'oem' ) ) {
 
 // --- Four key-stat tiles. Always four, so the row reads the same on every
 // tire; a missing value is a muted "Not listed" rather than a missing tile.
-$rtg_tp_price_note = '';
+$rtg_tp_price_note       = '';
+$rtg_tp_price_note_class = ! empty( $rtg_tp_freshness['stale'] ) ? 'is-stale' : '';
+$rtg_tp_price_note_title = ! empty( $rtg_tp_freshness['stale'] )
+    ? 'This price hasn\'t been updated in over ' . RTG_Stale_Prices::stale_days() . ' days. Check the retailer for the current price.'
+    : '';
 if ( $rtg_tp_price > 0 && ! empty( $rtg_tp_freshness['show'] ) ) {
     $rtg_tp_price_note = $rtg_tp_freshness['label'] . ( $rtg_tp_freshness['stale'] ? ' · may be outdated' : '' );
+}
+// Out of stock takes the note's line over the price's age: whether the
+// figure is current matters less than whether it can be paid at all.
+if ( ! empty( $rtg_tp_stock['show'] ) ) {
+    $rtg_tp_price_note       = $rtg_tp_stock['label'];
+    $rtg_tp_price_note_class = 'is-stale';
+    $rtg_tp_price_note_title = $rtg_tp_stock['title'];
 }
 $rtg_tp_load_meta = 'per-tire rating';
 if ( $rtg_tp_verdicts ) {
@@ -252,10 +266,8 @@ $rtg_tp_tiles = array(
         'meta'       => $rtg_tp_price > 0 ? 'per tire · $' . number_format( $rtg_tp_set_price ) . ' / set of 4' : 'check the retailer',
         'class'      => $rtg_tp_price > 0 ? '' : 'is-empty',
         'note'       => $rtg_tp_price_note,
-        'note_class' => ! empty( $rtg_tp_freshness['stale'] ) ? 'is-stale' : '',
-        'note_title' => ! empty( $rtg_tp_freshness['stale'] )
-            ? 'This price hasn\'t been updated in over ' . RTG_Stale_Prices::stale_days() . ' days. Check the retailer for the current price.'
-            : '',
+        'note_class' => $rtg_tp_price_note_class,
+        'note_title' => $rtg_tp_price_note_title,
     ),
     array(
         'label' => 'Mileage warranty',
@@ -620,6 +632,9 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
   .rtg-tp .rtg-tp-cta-secondary { background: transparent; color: var(--rtg-tp-text); border: 1px solid var(--rtg-tp-border); }
   .rtg-tp .rtg-tp-cta-secondary:hover { color: var(--rtg-tp-accent); border-color: color-mix(in srgb, var(--rtg-tp-accent) 45%, var(--rtg-tp-border)); }
   .rtg-tp .rtg-tp-cta-secondary.copied { color: #4ade80; border-color: color-mix(in srgb, #4ade80 45%, var(--rtg-tp-border)); }
+  /* The other retailer, in stock on a tracked link: the positive green, so it reads as the way out beside an out-of-stock note. */
+  .rtg-tp .rtg-tp-cta-alt { color: #4ade80; border-color: color-mix(in srgb, #4ade80 45%, var(--rtg-tp-border)); }
+  .rtg-tp .rtg-tp-cta-alt:hover { color: #86efac; border-color: color-mix(in srgb, #4ade80 70%, var(--rtg-tp-border)); background: color-mix(in srgb, #4ade80 8%, transparent); }
 
   /* --- Section titles --- */
   .rtg-tp h2.rtg-tp-section { font-size: 20px; font-weight: 700; color: var(--rtg-tp-heading); margin: 0; padding: 0; }
@@ -861,6 +876,11 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
       <div class="rtg-tp-ctas">
         <?php if ( $link ) : ?>
         <a class="rtg-tp-cta rtg-tp-cta-primary" href="<?php echo esc_url( $link ); ?>" target="_blank" rel="nofollow sponsored noopener"><?php echo $rtg_tp_retailer ? 'View at ' . esc_html( $rtg_tp_retailer ) : 'View Tire'; ?><i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i></a>
+        <?php endif; ?>
+        <?php if ( ! empty( $rtg_tp_stock['show'] ) && '' !== $rtg_tp_stock['alt_link'] && '' !== $rtg_tp_stock['alt_retailer'] ) : ?>
+        <a class="rtg-tp-cta rtg-tp-cta-secondary rtg-tp-cta-alt" href="<?php echo esc_url( $rtg_tp_stock['alt_link'] ); ?>" target="_blank" rel="nofollow sponsored noopener">
+          <i class="fa-solid fa-check" aria-hidden="true"></i><?php echo esc_html( 'In stock at ' . $rtg_tp_stock['alt_retailer'] ); ?><i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i>
+        </a>
         <?php endif; ?>
         <?php if ( $review_link_url ) : ?>
         <a class="rtg-tp-cta rtg-tp-cta-secondary rtg-tp-review-link" href="<?php echo esc_url( $review_link_url ); ?>" target="_blank" rel="noopener noreferrer">

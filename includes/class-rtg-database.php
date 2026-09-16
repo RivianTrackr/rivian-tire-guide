@@ -290,10 +290,12 @@ class RTG_Database {
      * Indexes 27 and 28 (price_synced_at, updated_at) feed the "price as of"
      * hint; the later of the two is when the price was last touched. Index
      * 29 is the retailer's display name for the "View at …" button, resolved
-     * here so the one hostname map lives in PHP.
+     * here so the one hostname map lives in PHP. Indexes 30 to 33 are the
+     * linked retailer's stock (status, when it was checked) and the other
+     * retailer's in-stock tracked listing (name, URL) from RTG_Stock_Sync.
      *
      * @param array $tire Tire row as associative array.
-     * @return array Numerically-indexed frontend row (30 elements).
+     * @return array Numerically-indexed frontend row (34 elements).
      */
     public static function to_frontend_row( $tire ) {
         return array(
@@ -327,6 +329,10 @@ class RTG_Database {
             (string) ( $tire['price_synced_at'] ?? '' ),
             (string) ( $tire['updated_at'] ?? '' ),
             RTG_Retailer::label( $tire ),
+            (string) ( $tire['stock_status'] ?? '' ),
+            (string) ( $tire['stock_checked_at'] ?? '' ),
+            (string) ( $tire['stock_alt_retailer'] ?? '' ),
+            (string) ( $tire['stock_alt_link'] ?? '' ),
         );
     }
 
@@ -672,6 +678,55 @@ class RTG_Database {
             'roamer_vehicle_count'     => '%d',
             'roamer_vehicle_breakdown' => '%s',
             'roamer_synced_at'         => '%s',
+        );
+
+        $sets   = array();
+        $values = array();
+        foreach ( $allowed as $col => $format ) {
+            if ( ! array_key_exists( $col, $data ) ) {
+                continue;
+            }
+            if ( null === $data[ $col ] ) {
+                $sets[] = "{$col} = NULL";
+            } else {
+                $sets[]   = "{$col} = {$format}";
+                $values[] = $data[ $col ];
+            }
+        }
+
+        if ( empty( $sets ) ) {
+            return 0;
+        }
+
+        $sets[]   = 'updated_at = updated_at';
+        $values[] = $tire_id;
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- column names and formats come from the $allowed whitelist above.
+        return $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET " . implode( ', ', $sets ) . ' WHERE tire_id = %s', ...$values ) );
+    }
+
+    /**
+     * Write the stock columns RTG_Stock_Sync keeps on a tire.
+     *
+     * Its own whitelist, like update_roamer_data(): a nightly stock check is
+     * not an edit, so updated_at is held where it was and a hand-typed
+     * price does not start looking freshly reviewed every morning. Does not
+     * flush the tire cache; the sync flushes once after its loop.
+     *
+     * @param string $tire_id Tire identifier.
+     * @param array  $data    Stock columns to write (others are ignored).
+     *                        A null value writes SQL NULL.
+     * @return int|false Rows updated, or false on error.
+     */
+    public static function update_stock_data( $tire_id, $data ) {
+        global $wpdb;
+        $table = self::tires_table();
+
+        $allowed = array(
+            'stock_status'       => '%s',
+            'stock_checked_at'   => '%s',
+            'stock_alt_retailer' => '%s',
+            'stock_alt_link'     => '%s',
         );
 
         $sets   = array();
