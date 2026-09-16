@@ -16,118 +16,10 @@
  * Exit code 0 = all tests passed, 1 = one or more failures.
  */
 
-// --- Minimal DOM ---------------------------------------------------------
-class FakeNode {
-  constructor(tagName) {
-    this.tagName = tagName;
-    this.dataset = {};
-    this.children = [];
-    this.parentNode = null;
-  }
-  remove() {
-    if (this.parentNode) {
-      const i = this.parentNode.children.indexOf(this);
-      if (i >= 0) this.parentNode.children.splice(i, 1);
-      this.parentNode = null;
-    }
-  }
-  insertBefore(node, ref) {
-    node.remove();
-    const i = ref ? this.children.indexOf(ref) : this.children.length;
-    this.children.splice(i < 0 ? this.children.length : i, 0, node);
-    node.parentNode = this;
-  }
-  appendChild(node) { this.insertBefore(node, null); }
-  set innerHTML(value) {
-    if (value !== '') throw new Error('the harness only models innerHTML = ""');
-    this.children.forEach(child => { child.parentNode = null; });
-    this.children = [];
-    this._value = '';
-  }
-  descendants() {
-    return this.children.flatMap(c => [c, ...c.descendants()]);
-  }
-  querySelectorAll(selector) {
-    const wanted = selector.split(',').map(s => s.trim().split(' ').pop().toUpperCase());
-    return this.descendants().filter(n => wanted.includes(n.tagName));
-  }
-  querySelector(selector) { return this.querySelectorAll(selector)[0] || null; }
-}
+// --- Minimal DOM: tests/lib/fake-dom.mjs ---------------------------------
+import { FakeSelect, installGlobals, makeChecker } from './lib/fake-dom.mjs';
 
-class FakeOption extends FakeNode {
-  constructor(value) {
-    super('OPTION');
-    this.value = value;
-    this.dataset = { baseText: value };
-    this.textContent = value;
-    this.hidden = false;
-    this.disabled = false;
-  }
-}
-
-class FakeGroup extends FakeNode {
-  constructor(label = '', values = []) {
-    super('OPTGROUP');
-    this.label = label;
-    this.value = '';
-    values.forEach(v => this.appendChild(new FakeOption(v)));
-  }
-}
-
-class FakeSelect extends FakeNode {
-  /**
-   * @param {Array<string|{label: string, values: string[]}>} entries
-   *   Plain values for a flat list, {label, values} for a grouped one.
-   */
-  constructor(entries) {
-    super('SELECT');
-    const placeholder = new FakeOption('');
-    placeholder.dataset = {};
-    this.appendChild(placeholder);
-    entries.forEach(entry => {
-      this.appendChild(typeof entry === 'string'
-        ? new FakeOption(entry)
-        : new FakeGroup(entry.label, entry.values));
-    });
-    this._value = '';
-  }
-  get options() { return this.querySelectorAll('option'); }
-  get value() { return this._value; }
-  set value(v) {
-    // Matches a real <select>: a value with no matching option clears it.
-    this._value = this.options.some(o => o.value === v) ? v : '';
-  }
-  /** What the popup would show, headings included. */
-  visible() {
-    return this.children.flatMap(node => node.tagName === 'OPTGROUP'
-      ? [`[${node.label}]`, ...node.children.map(o => o.textContent)]
-      : (node.value ? [node.textContent] : []));
-  }
-}
-
-// --- Globals the module graph touches at import time ---------------------
-const noop = () => {};
-globalThis.window = {
-  addEventListener: noop, removeEventListener: noop,
-  matchMedia: () => ({ matches: false }),
-  location: { search: '', pathname: '/', href: 'https://example.test/' },
-  innerWidth: 1280,
-  IntersectionObserver: undefined,
-};
-globalThis.document = {
-  addEventListener: noop, removeEventListener: noop,
-  querySelector: () => null, querySelectorAll: () => [],
-  getElementById: () => null,
-  createElement: tag => {
-    if (tag === 'option') return new FakeOption('');
-    if (tag === 'optgroup') return new FakeGroup();
-    return { style: {}, dataset: {}, classList: { add: noop, remove: noop, toggle: noop }, appendChild: noop, addEventListener: noop, setAttribute: noop };
-  },
-  dispatchEvent: noop,
-};
-Object.defineProperty(globalThis, 'navigator', { value: { userAgent: 'node' }, configurable: true });
-globalThis.rtgData = { settings: {} };
-globalThis.CSS = { escape: s => s };
+installGlobals();
 
 const filters = await import('../frontend/js/modules/filters.js');
 const { state } = await import('../frontend/js/modules/state.js');
@@ -140,13 +32,7 @@ const categorySelect = new FakeSelect(['All-Season', 'All-Terrain']);
 state.domCache.filterBrand = brandSelect;
 state.domCache.filterCategory = categorySelect;
 
-let fail = 0;
-const check = (label, expected, actual) => {
-  const e = JSON.stringify(expected), a = JSON.stringify(actual);
-  if (e === a) { console.log(`  ok   ${label}`); return; }
-  fail++;
-  console.log(`  FAIL ${label}\n       expected: ${e}\n       actual:   ${a}`);
-};
+const { check, failed } = makeChecker();
 
 const { applyOptionCounts, restoreDetachedFilterOptions } = filters;
 const counts = m => new Map(Object.entries(m));
@@ -240,5 +126,5 @@ stale.children[1].hidden = true;
 applyOptionCounts(stale, counts({ Michelin: 2 }), true);
 check('hidden flag cleared', false, stale.children[1].hidden);
 
-console.log(fail ? `\n${fail} FAILED` : "\nall passed");
-process.exit(fail ? 1 : 0);
+console.log(failed() ? `\n${failed()} FAILED` : "\nall passed");
+process.exit(failed() ? 1 : 0);

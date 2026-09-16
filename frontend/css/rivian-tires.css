@@ -475,15 +475,36 @@
   font-weight: 600;
   color: var(--rtg-text-muted);
 }
+/* A wheel-diameter heading in the size menu. It reads as a section divider:
+   full text color at the small-meta size, a rule running out to the right
+   edge, and sticky over the popover's background so the group an owner is
+   scrolling through stays named. At the muted 11px it sat between the sizes
+   like one more row and got lost. */
 .rtg-fopt-group {
-  padding: 10px 10px 4px;
-  font-size: 11px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 2px;
+  padding: 6px 10px 4px;
+  background: var(--rtg-bg-card);
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
-  color: var(--rtg-text-muted);
+  color: var(--rtg-text-heading);
+  white-space: nowrap;
+}
+.rtg-fopt-group::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rtg-border);
 }
 .rtg-fopt-group:first-child {
+  margin-top: 0;
   padding-top: 2px;
 }
 /* Presets beside a slider */

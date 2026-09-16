@@ -4,6 +4,17 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.10.1] - 2026-09-16
+
+### Fixed
+- **A shared link's size survives a refresh.** `?size=275%2F65R20&brand=Nexen` reloaded as `?brand=Nexen`, for two reasons. First, `applyFiltersFromURL()` ran every list-bound param through `sanitizeInput()`, which strips slashes, so the size was compared to the list as `27565R20`, never matched, and was dropped on every load since the sanitizer shipped. A new `listedParam()` in `filters.js` reads `vehicle`, `size`, `brand` and `category` as they came and accepts a value only when it is exactly on the corresponding allowlist (`VALID_SIZES` and the others); the list is the validation, so nothing needs stripping first, and a category with a slash restores too. Second, the vehicle remembered from the last visit was pressed and cascaded into the size menu before the size was restored, so when that vehicle didn't take the linked size (an R2 owner opening an R1 275/65R20 link) the option wasn't in the select and setting it cleared the filter silently. `applyFiltersFromURL()` now checks the candidate vehicle against the size with the new `vehicleTakesSize()` when the vehicle came from memory, a shortcode or an earlier pass rather than the URL: the link wins, the toggle steps back to All for this visit without touching the remembered vehicle, and `announceFilterNotice()` says why ("Showing all vehicles: the R2 doesn't come in 275/65R20."). A vehicle named in the URL is the link's own ask and still narrows the menu as before, and browser navigation still trusts the URL alone.
+
+### Changed
+- **The wheel-diameter headings in the size menu read as section dividers.** `.rtg-fopt-group` in `rivian-tires.css` was 11px muted uppercase with no rule, so "18" Wheels" sat between the sizes like one more row and got lost. It is now 13px heading-colored text with a rule running to the right edge, spaced from the group above it, and sticky over the popover background while the list scrolls, so the group an owner is looking through stays named. The native select the phone sheet uses is unchanged.
+
+### Tests
+- `tests/lib/fake-dom.mjs` (new): the mini-DOM `tests/test-dropdown-options.mjs` built inline, shared, with a vehicle toggle button and a localStorage the URL test needs. `tests/test-url-filters.mjs` (new, in `npm test`): a size and a category with a slash come back from the URL and unlisted values don't; the link's size wins over a remembered vehicle that doesn't take it, with the notice and the memory intact; a size the remembered vehicle takes keeps the vehicle; a link without a size still opens on the remembered vehicle; a vehicle named in the link stays and is remembered; a vehicle pressed by an earlier pass steps back or stays by the same rule; browser navigation restores the size with no vehicle and no notice; `vehicleTakesSize()` for All and for a vehicle with no fitments on file. Nine of those checks fail on the previous `filters.js`. `npm test`, `php -l` and the contract checks pass locally; the PHPUnit suite runs in CI.
+
 ## [2.10.0] - 2026-09-16
 
 ### Added
