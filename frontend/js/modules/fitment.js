@@ -179,3 +179,51 @@ export function describeThirdPartyFits(size, fits) {
   const on = rim ? `3rd-party ${rim}" wheels` : '3rd-party wheels';
   return `Fits ${who} on ${on} only. Not a factory size, so fitment may vary.`;
 }
+
+/**
+ * Both figures of a load index as the sidewall prints them.
+ *
+ * An LT tire carries two: "126/123" is the single-tire rating and the rating
+ * per tire when two are mounted side by side. parseLoadIndex() keeps the
+ * first for the fitment rule; the card shows both so the two builds of one
+ * model stop reading as a duplicate one digit apart.
+ *
+ * @param {*} raw The stored load_index value.
+ * @return {{single: number, dual: number}} Each 0 when the value has none.
+ */
+export function loadIndexPair(raw) {
+  const single = parseLoadIndex(raw);
+  if (!single) return { single: 0, dual: 0 };
+  const match = String(raw).match(/\d{2,3}\s*\/\s*(\d{2,3})/);
+  const dual = match ? parseInt(match[1], 10) : 0;
+  return { single, dual: dual >= 60 && dual <= 200 ? dual : 0 };
+}
+
+/**
+ * What a load range letter means, in the words a sidewall uses.
+ *
+ * Mirrors RTG_Tire_Qualifier::LOAD_RANGE_ORDER: SL, XL and HL are passenger
+ * constructions, C through F are light-truck ones and carry a ply rating.
+ * RF (reinforced) is the European spelling of XL. The card prints the code
+ * and the note, and tags the size LT for a light-truck range because the
+ * stored size has its LT prefix stripped (normalize_size()).
+ *
+ * @param {*} raw The stored load_range value.
+ * @return {{code: string, note: string, isLT: boolean}} Empty code when unknown.
+ */
+export function describeLoadRange(raw) {
+  const RANGES = {
+    SL: { note: 'standard load', isLT: false },
+    XL: { note: 'extra load', isLT: false },
+    HL: { note: 'high load', isLT: false },
+    C: { note: '6-ply rated', isLT: true },
+    D: { note: '8-ply rated', isLT: true },
+    E: { note: '10-ply rated', isLT: true },
+    F: { note: '12-ply rated', isLT: true },
+  };
+  let code = String(raw === null || raw === undefined ? '' : raw).trim().toUpperCase();
+  if (code === 'RF') code = 'XL';
+  const entry = RANGES[code];
+  if (!entry) return { code: '', note: '', isLT: false };
+  return { code, note: entry.note, isLT: entry.isLT };
+}

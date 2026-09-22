@@ -11,6 +11,10 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.11.0 - 2026-09-22
+
+- **Tire cards now say which build a tire is.** Some tires come in the same size twice: a standard passenger version and a heavier light-truck (LT) version with a load range like C, D or E. The cards used to look identical apart from the load index, so it was easy to think the guide had a duplicate. Each card now has a Load Range row that spells the letter out ("E · 10-ply rated", "SL · standard load"), an LT tag in front of the size on light-truck builds, and both load index figures on LT tires, the way the sidewall prints them. The little info button next to Load Range explains what the letters mean and why an R2 needs XL or above.
+
 ## 2.10.1 - 2026-09-16
 
 - **A link to a tire size opens on that size.** Sharing the guide with a size in the address, like the 275/65R20 Nexen list, reloaded on everything but the size. It holds now. If the guide had remembered a different Rivian for you, one that does not come in the linked size, the vehicle switch steps back to All for that visit and a short note under the filters says why. Your remembered vehicle is still there next time.

@@ -10,7 +10,7 @@
  * Run with:  node tests/test-fitment.mjs
  */
 import assert from 'node:assert/strict';
-import { parseLoadIndex, fitmentShortfalls, describeShortfalls, thirdPartyEntry, thirdPartyFits, rimInches, describeThirdPartyFits } from '../frontend/js/modules/fitment.js';
+import { parseLoadIndex, loadIndexPair, describeLoadRange, fitmentShortfalls, describeShortfalls, thirdPartyEntry, thirdPartyFits, rimInches, describeThirdPartyFits } from '../frontend/js/modules/fitment.js';
 
 let failures = 0;
 function test(name, fn) {
@@ -89,10 +89,6 @@ test('nothing to say', () => {
   assert.equal(describeShortfalls('116', null), '');
 });
 
-if (failures > 0) {
-  console.log(`\n${failures} failure(s)`);
-  process.exit(1);
-}
 console.log('thirdPartyFits');
 const THIRD = { R2: { '245/60R18': { wheel: '18" aftermarket wheels', note: 'Needs an 8.5-inch or wider wheel.' } } };
 test('a listed size on a chosen vehicle is a third-party fit with its note', () => {
@@ -140,4 +136,39 @@ test('a size with no rim diameter drops the inches', () => {
 });
 test('nothing to say when nothing fits', () => assert.equal(describeThirdPartyFits('245/60R18', []), ''));
 
+console.log('loadIndexPair');
+test('an LT pair keeps both figures', () => assert.deepEqual(loadIndexPair('126/123S'), { single: 126, dual: 123 }));
+test('spaces around the slash are fine', () => assert.deepEqual(loadIndexPair('121 / 118'), { single: 121, dual: 118 }));
+test('a passenger tire has no dual figure', () => assert.deepEqual(loadIndexPair('116T'), { single: 116, dual: 0 }));
+test('an annotated value is not a pair', () => assert.deepEqual(loadIndexPair('116 (2756 lb)'), { single: 116, dual: 0 }));
+test('nothing parses to nothing', () => {
+  assert.deepEqual(loadIndexPair(''), { single: 0, dual: 0 });
+  assert.deepEqual(loadIndexPair(null), { single: 0, dual: 0 });
+});
+test('a dual figure outside the range is dropped', () => assert.deepEqual(loadIndexPair('126/9999'), { single: 126, dual: 0 }));
+
+console.log('describeLoadRange');
+test('passenger ranges are not LT', () => {
+  assert.deepEqual(describeLoadRange('SL'), { code: 'SL', note: 'standard load', isLT: false });
+  assert.deepEqual(describeLoadRange('XL'), { code: 'XL', note: 'extra load', isLT: false });
+  assert.deepEqual(describeLoadRange('HL'), { code: 'HL', note: 'high load', isLT: false });
+});
+test('light-truck ranges carry a ply rating and tag the size LT', () => {
+  assert.deepEqual(describeLoadRange('C'), { code: 'C', note: '6-ply rated', isLT: true });
+  assert.deepEqual(describeLoadRange('D'), { code: 'D', note: '8-ply rated', isLT: true });
+  assert.deepEqual(describeLoadRange('E'), { code: 'E', note: '10-ply rated', isLT: true });
+  assert.deepEqual(describeLoadRange('F'), { code: 'F', note: '12-ply rated', isLT: true });
+});
+test('case and whitespace are forgiven', () => assert.equal(describeLoadRange(' e ').code, 'E'));
+test('RF is judged as XL, as the qualifier does', () => assert.deepEqual(describeLoadRange('RF'), { code: 'XL', note: 'extra load', isLT: false }));
+test('a blank or unknown range says nothing', () => {
+  assert.deepEqual(describeLoadRange(''), { code: '', note: '', isLT: false });
+  assert.deepEqual(describeLoadRange(null), { code: '', note: '', isLT: false });
+  assert.deepEqual(describeLoadRange('LT'), { code: '', note: '', isLT: false });
+});
+
+if (failures > 0) {
+  console.log(`\n${failures} failure(s)`);
+  process.exit(1);
+}
 console.log('\nAll fitment tests passed');

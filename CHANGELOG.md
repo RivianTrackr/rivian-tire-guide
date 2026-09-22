@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.11.0] - 2026-09-22
+
+### Added
+- **The card says which build of a tire it is: passenger or light-truck, and the load range.** One model in one size is often listed twice, as the SL/XL passenger build and the LT build with a load range of C to F. The card showed neither the load range nor the size's LT prefix (`RTG_Tire_Qualifier::normalize_size()` strips it so one size never splits in two), and it showed only the first figure parsed from the load index, so a 116T entry and a 126/123S load range E entry read as a duplicate one digit apart. `createSingleCard()` in `cards.js` now renders a Load Range row after Load Index ("E · 10-ply rated", "SL · standard load"; "Not listed" when the column is blank, like the other rows), shows both figures of an LT load index pair with the dual figure dimmed ("126 / 123 dual"), and tags the size LT in the caution amber when the load range is a light-truck one. Two pure helpers in `fitment.js` carry the reading: `loadIndexPair()` beside `parseLoadIndex()`, and `describeLoadRange()`, which mirrors the qualifier's `LOAD_RANGE_ORDER` and judges RF as XL as `load_range_rank()` does. A `Load Range` entry in `TOOLTIP_DATA` (`tooltips.js`) explains the letters and the ply ratings, so the row gets the same info button as Load Index. New `.tire-card-spec-tag` and `.tire-card-spec-dim` rules in `rivian-tires.css`, with print colors. The tire page's spec sheet already listed the load range; the compare page still shows the raw column.
+
+### Tests
+- `tests/test-fitment.mjs`: `loadIndexPair()` keeps both figures of an LT pair, tolerates spaces round the slash, gives no dual figure for a passenger tire or an annotated value, and drops an out-of-range dual; `describeLoadRange()` marks C to F as LT with their ply ratings, SL/XL/HL as passenger, forgives case and whitespace, reads RF as XL, and says nothing for a blank, null or unknown value. `npm test`, `php -l` and the contract checks pass locally; the PHPUnit suite runs in CI.
+
 ## [2.10.1] - 2026-09-16
 
 ### Fixed
