@@ -11,7 +11,7 @@ import { TOOLTIP_DATA, createInfoTooltip } from './tooltips.js';
 import { createRatingHTML } from './ratings.js';
 import { setupCompareCheckboxes } from './compare.js';
 import { openImageModal } from './image-modal.js';
-import { fitmentShortfalls, describeShortfalls, parseLoadIndex, thirdPartyFits, describeThirdPartyFits } from './fitment.js';
+import { fitmentShortfalls, describeShortfalls, parseLoadIndex, loadIndexPair, describeLoadRange, thirdPartyFits, describeThirdPartyFits } from './fitment.js';
 import { formatSetPrice, formatWholePrice, priceFreshness, stockNote, SET_QUANTITY } from './pricing.js';
 import { isLimitedSample } from './efficiency.js';
 
@@ -705,31 +705,44 @@ export function createSingleCard(row) {
   specsContainer.className = 'tire-card-specs';
 
   // Specs shown on the default card view — only the decision drivers.
-  // Category, Speed Rating, UTQG, tread depth, max load, load range, and
-  // max PSI are intentionally not on the card: they're secondary or cryptic
-  // when scanning a grid, and the full spec sheet lives one click away on
-  // the individual tire page (plus the compare page, admin form, and CSV
+  // Category, Speed Rating, UTQG, tread depth, max load and max PSI are
+  // intentionally not on the card: they're secondary or cryptic when
+  // scanning a grid, and the full spec sheet lives one click away on the
+  // individual tire page (plus the compare page, admin form, and CSV
   // import/export). Average Price moved up into the key-stats row. Load
   // Index is on the card (2.0.0): it is the one number that decides whether
   // a tire is safe on a Rivian, and the difference between a 113 and a 121
   // should be visible without opening the tire. The vehicle's minimum is
   // not repeated here; the fitment slot above the price flags a shortfall.
+  // Load Range joined it (2.11.0): one model in one size is often listed
+  // twice, as the passenger (SL/XL) build and the light-truck (C to F)
+  // build, and with the range hidden the two cards read as a duplicate.
+  // The size is stored without its LT prefix (normalize_size() strips it),
+  // so a light-truck range tags the size LT, and the load index shows both
+  // figures of an LT pair as the sidewall does.
   // Note: row values are strings, so "0" is truthy — compare the parsed
   // number instead, or missing data renders as "0 miles" / "0 lb".
   const warrantyNum = Number(validateNumeric(warranty, NUMERIC_BOUNDS.warranty, 0));
   const weightNum = Number(validateNumeric(weight, NUMERIC_BOUNDS.weight, 0));
   // 3PMS left the rows for the chips: a boolean that mostly read "No" was
   // spending a full row, and the tire page already shows it as a chip.
-  const loadNum = parseLoadIndex(loadIndex);
+  const loadPair = loadIndexPair(loadIndex);
+  const range = describeLoadRange(loadRange);
 
+  // A value is a string, or a list of [text, muted] parts when one piece of
+  // it should step back: the dual figure of an LT pair, the ply note.
+  const sizeText = `${safeString(size)} (${safeString(diameter)}${safeString(diameter) && !safeString(diameter).includes('"') ? '"' : ''})`;
   const specs = [
-    ['Size', `${safeString(size)} (${safeString(diameter)}${safeString(diameter) && !safeString(diameter).includes('"') ? '"' : ''})`],
-    ['Load Index', loadNum > 0 ? String(loadNum) : 'Not listed'],
+    ['Size', sizeText, range.isLT ? 'LT' : ''],
+    ['Load Index', loadPair.single > 0
+      ? (loadPair.dual > 0 ? [[String(loadPair.single), false], [` / ${loadPair.dual} dual`, true]] : String(loadPair.single))
+      : 'Not listed'],
+    ['Load Range', range.code ? [[range.code, false], [` \u00b7 ${range.note}`, true]] : 'Not listed'],
     ['Mileage Warranty', warrantyNum > 0 ? `${warrantyNum.toLocaleString()} miles` : 'Not listed'],
     ['Weight', weightNum > 0 ? `${weightNum} lb` : 'Not listed']
   ];
 
-  specs.forEach(([label, value]) => {
+  specs.forEach(([label, value, tag]) => {
     const specRow = document.createElement('div');
     specRow.className = 'tire-card-spec';
 
@@ -746,7 +759,24 @@ export function createSingleCard(row) {
 
     const valueEl = document.createElement('span');
     valueEl.className = 'tire-card-spec-value';
-    valueEl.textContent = value || '-';
+    if (tag) {
+      // The service type the stored size dropped: LT for a light-truck range.
+      const tagEl = document.createElement('span');
+      tagEl.className = 'tire-card-spec-tag';
+      tagEl.textContent = tag;
+      tagEl.title = 'Light-truck construction';
+      valueEl.appendChild(tagEl);
+    }
+    if (Array.isArray(value)) {
+      value.forEach(([text, muted]) => {
+        const part = document.createElement('span');
+        if (muted) part.className = 'tire-card-spec-dim';
+        part.textContent = text;
+        valueEl.appendChild(part);
+      });
+    } else {
+      valueEl.appendChild(document.createTextNode(value || '-'));
+    }
 
     specRow.appendChild(labelEl);
     specRow.appendChild(valueEl);
