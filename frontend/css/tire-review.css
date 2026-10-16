@@ -142,11 +142,12 @@
 .rv-dropdown-item.focused { background: color-mix(in srgb, var(--rtg-accent) 10%, transparent); }
 .rv-dropdown-item.focused .rv-dropdown-name { color: var(--rtg-accent); }
 .rv-dropdown-thumb {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   flex-shrink: 0;
   background: #fff;
-  border-radius: 6px;
+  border: 1px solid var(--rtg-border);
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -158,6 +159,14 @@
   object-fit: contain;
 }
 .rv-dropdown-text { flex: 1; min-width: 0; }
+.rv-dropdown-brand {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--rtg-accent);
+  line-height: 1.2;
+}
 .rv-dropdown-name {
   font-size: 14px;
   font-weight: 600;
@@ -520,17 +529,25 @@
 .rv-seg-btn:focus-visible { outline: 2px solid var(--rtg-accent); outline-offset: 2px; }
 .rv-seg-full { width: 100%; }
 .rv-seg-full .rv-seg-btn { flex: 1; text-align: center; padding-inline: 8px; }
-.rv-popular { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+/* The most-reviewed tires for the chosen Rivian: the tire page's card,
+   with the tire's header the way a member's reviews page shows it
+   (thumbnail on white, brand in accent caps, model, size and count). */
+.rv-popular { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .rv-popular:empty { display: none; }
-.rv-popular-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--rtg-bg-card); border: 1px solid var(--rtg-border); border-radius: 10px; cursor: pointer; text-align: left; font-family: inherit; color: inherit; transition: border-color 0.15s ease; min-height: 64px; }
-.rv-popular-item:hover { border-color: color-mix(in srgb, var(--rtg-accent) 50%, var(--rtg-border)); }
+.rv-popular-item { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--rtg-bg-card); border: 1px solid var(--rtg-border); border-radius: 12px; cursor: pointer; text-align: left; font-family: inherit; color: inherit; transition: border-color 0.15s ease; min-height: 86px; }
+.rv-popular-item:hover { border-color: color-mix(in srgb, var(--rtg-accent) 35%, var(--rtg-border)); }
 .rv-popular-item:focus-visible { outline: 2px solid var(--rtg-accent); outline-offset: 2px; }
-.rv-popular-thumb { width: 44px; height: 44px; flex-shrink: 0; background: #fff; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-.rv-popular-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
-.rv-popular-text { flex: 1; min-width: 0; }
-.rv-popular-name { font-size: 14px; font-weight: 600; color: var(--rtg-text-heading); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rv-popular-meta { font-size: 12px; color: var(--rtg-text-muted); }
-.rv-popular-cta { font-size: 13px; font-weight: 600; color: var(--rtg-accent); white-space: nowrap; }
+.rv-popular-item:active { transform: scale(0.99); }
+.rv-popular-thumb { width: 56px; height: 56px; flex-shrink: 0; background: #fff; border: 1px solid var(--rtg-border); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.rv-popular-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.rv-popular-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rv-popular-brand { font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--rtg-accent); line-height: 1.2; }
+.rv-popular-name { font-size: 16px; font-weight: 700; color: var(--rtg-text-heading); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.15s ease; }
+.rv-popular-meta { font-size: 13px; color: var(--rtg-text-muted); line-height: 1.3; }
+.rv-popular-cta { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--rtg-accent); white-space: nowrap; }
+.rv-popular-cta i { font-size: 11px; transition: transform 0.15s ease; }
+.rv-popular-item:hover .rv-popular-name { color: var(--rtg-accent); }
+.rv-popular-item:hover .rv-popular-cta i { transform: translateX(2px); }
 .rv-welcome { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 12px 14px; background: var(--rtg-bg-card); border: 1px dashed var(--rtg-border); border-radius: 10px; font-size: 13px; color: var(--rtg-text-muted); }
 .rv-welcome[hidden] { display: none; }
 .rv-welcome i { color: var(--rtg-text-muted); }
@@ -657,6 +674,9 @@
   .rv-tire-img { width: 90px; height: 90px; }
   .rv-tire-rating-row, .rv-tire-chips, .rv-tire-change { justify-content: center; }
   .rv-popular { grid-template-columns: 1fr; }
+  .rv-popular-item { padding: 12px 14px; min-height: 0; }
+  .rv-popular-thumb { width: 48px; height: 48px; }
+  .rv-popular-name { white-space: normal; }
   .rv-grid-2 { grid-template-columns: 1fr; }
   .rv-grid-2 .rv-field + .rv-field { margin-top: 14px; }
   .rv-section { padding: 16px; }

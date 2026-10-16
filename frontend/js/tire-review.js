@@ -351,11 +351,19 @@
         img.loading = 'lazy';
         thumb.appendChild(img);
       }
+      // Brand, model, then size and count: the tire page's card header,
+      // the same one a member's reviews page puts on each review.
       var text = document.createElement('div');
       text.className = 'rv-popular-text';
+      if (tire.brand) {
+        var brand = document.createElement('div');
+        brand.className = 'rv-popular-brand';
+        brand.textContent = tire.brand;
+        text.appendChild(brand);
+      }
       var name = document.createElement('div');
       name.className = 'rv-popular-name';
-      name.textContent = (tire.brand || '') + ' ' + (tire.model || '');
+      name.textContent = tire.model || tire.brand || tire.tire_id;
       var meta = document.createElement('div');
       meta.className = 'rv-popular-meta';
       meta.textContent = (tire.size || '') + (isThirdPartySize(tire.size, group) ? ' · 3rd-party wheels' : '') + ' · ' + (n ? n + ' review' + (n !== 1 ? 's' : '') : 'No reviews yet, be the first');
@@ -364,6 +372,10 @@
       var cta = document.createElement('span');
       cta.className = 'rv-popular-cta';
       cta.textContent = 'Review';
+      var chev = document.createElement('i');
+      chev.className = 'fa-solid fa-chevron-right';
+      chev.setAttribute('aria-hidden', 'true');
+      cta.appendChild(chev);
 
       item.appendChild(thumb);
       item.appendChild(text);
@@ -437,9 +449,15 @@
       }
       var text = document.createElement('div');
       text.className = 'rv-dropdown-text';
+      if (tire.brand) {
+        var brand = document.createElement('div');
+        brand.className = 'rv-dropdown-brand';
+        brand.textContent = tire.brand;
+        text.appendChild(brand);
+      }
       var name = document.createElement('div');
       name.className = 'rv-dropdown-name';
-      name.textContent = (tire.brand || '') + ' ' + (tire.model || '');
+      name.textContent = tire.model || tire.brand || tire.tire_id;
       var size = document.createElement('div');
       size.className = 'rv-dropdown-size';
       var n = reviewCounts[tire.tire_id] || 0;
