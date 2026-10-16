@@ -11,6 +11,10 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.13.3 - 2026-10-16
+
+- **The Changelog and Compare pages now match the rest of the guide.** Both open with the same breadcrumb, page title and spacing as a tire's page. The Changelog page lost its odd back arrow and sits at the site's normal width, and the Compare page's Share and Print buttons are the same size as the buttons everywhere else.
+
 ## 2.13.2 - 2026-10-16
 
 - **The search box on Review a Tire looks right again.** The magnifying glass was sitting on top of the placeholder text and the box had lost its fill. It is back to the guide's field, and the form's text boxes got the same protection.
