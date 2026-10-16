@@ -167,6 +167,9 @@ class RTG_Tire_Page {
                 rawurlencode( $tire['tire_id'] ),
                 home_url( '/' . sanitize_title( $settings['compare_slug'] ?? 'tire-compare' ) . '/' )
             ),
+            // A reviewer's name links to their other reviews; the feed appends
+            // ?reviewer=ID for members and leaves guests as plain text.
+            'userReviewsUrl' => RTG_Frontend::user_reviews_url(),
         ) );
 
         // Make the resolved tire available to the content partial + head callback.

@@ -11,6 +11,11 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.12.0 - 2026-10-16
+
+- **Your reviews, one tap away.** The user reviews page now knows who you are. Open it while signed in and it shows your own reviews under a "My reviews" heading, no ID in the address needed, which means the site can put a My Reviews link in its menu. Signed out, it asks you to sign in and brings you straight back.
+- **Reviewer names are links.** On a tire's page, the name on a member's review now opens everything else they have written, so when one owner's take on a tire sounds like your setup, you can see what they thought of the others. Guest reviews stay as plain names.
+
 ## 2.11.0 - 2026-09-22
 
 - **Tire cards now say which build a tire is.** Some tires come in the same size twice: a standard passenger version and a heavier light-truck (LT) version with a load range like C, D or E. The cards used to look identical apart from the load index, so it was easy to think the guide had a duplicate. Each card now has a Load Range row that spells the letter out ("E · 10-ply rated", "SL · standard load"), an LT tag in front of the size on light-truck builds, and both load index figures on LT tires, the way the sidewall prints them. The little info button next to Load Range explains what the letters mean and why an R2 needs XL or above.
