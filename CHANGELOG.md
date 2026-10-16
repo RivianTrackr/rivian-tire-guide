@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.13.2] - 2026-10-16
+
+### Fixed
+- **The review page's search box and form fields hold their own against the theme.** On the live site the search box on `/tire-review/` showed the magnifier on top of the placeholder with no field background: `.rv-search`, `.rv-input` and `.rv-textarea` in `tire-review.css` carried one class of weight, and the theme's `input[type="text"]` rules (one class plus an element) outweighed them, taking the left padding, the background, the height and the border. The rules are now written as `.rtg-embed.rv-root input.rv-search` (and the input and textarea likewise), which outweighs any theme rule short of an id, and they set `box-sizing`, `margin`, `appearance`, `box-shadow` and `line-height` explicitly so a theme has nothing left to add. The placeholder, focus, invalid and phone-size rules carry the same weight so they still win over the base rule.
+
+### Tests
+- `npm test`, `php -l` and the contract checks pass locally; the PHPUnit suite runs in CI.
+
 ## [2.13.1] - 2026-10-16
 
 ### Changed
