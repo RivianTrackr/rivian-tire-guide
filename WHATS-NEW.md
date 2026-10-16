@@ -11,6 +11,10 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.13.2 - 2026-10-16
+
+- **The search box on Review a Tire looks right again.** The magnifying glass was sitting on top of the placeholder text and the box had lost its fill. It is back to the guide's field, and the form's text boxes got the same protection.
+
 ## 2.13.1 - 2026-10-16
 
 - **The Review a Tire page matches too.** The tires listed under "start from your Rivian", and the matches as you type in the search box, now use the same card as a tire's page and the reviews page: the tire's photo on white, the brand in small caps above the model, the size and how many reviews it has, and a Review link with a chevron. Nothing about how you write a review changed.

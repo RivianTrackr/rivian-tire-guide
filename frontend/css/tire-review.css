@@ -90,9 +90,14 @@
   font-size: 16px;
   pointer-events: none;
 }
-.rv-search {
+/* Scoped to the root and the element: a theme styles `input[type="text"]`
+   with more weight than one class, and took the left padding (so the icon
+   sat on the placeholder), the background and the height with it. */
+.rtg-embed.rv-root input.rv-search {
+  box-sizing: border-box;
   width: 100%;
   height: 48px;
+  margin: 0;
   padding: 0 16px 0 44px;
   background: var(--rtg-bg-input);
   border: 2px solid transparent;
@@ -101,11 +106,15 @@
   font-size: 15px;
   font-weight: 500;
   font-family: inherit;
+  line-height: normal;
+  -webkit-appearance: none;
+  appearance: none;
+  box-shadow: none;
   transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.rv-search::placeholder { color: #a6a39c; }
-.rv-search::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
-.rv-search:focus {
+.rtg-embed.rv-root input.rv-search::placeholder { color: #a6a39c; opacity: 1; }
+.rtg-embed.rv-root input.rv-search::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
+.rtg-embed.rv-root input.rv-search:focus {
   outline: none;
   background: #1f2228;
   border-color: var(--rtg-accent);
@@ -360,9 +369,12 @@
   margin-bottom: 6px;
 }
 .rv-label-hint { font-size: 13px; font-weight: 500; color: var(--rtg-text-muted); }
-.rv-input,
-.rv-textarea {
+/* Same weight as the search box, for the same reason. */
+.rtg-embed.rv-root input.rv-input,
+.rtg-embed.rv-root textarea.rv-textarea {
+  box-sizing: border-box;
   width: 100%;
+  margin: 0;
   padding: 10px 14px;
   background: var(--rtg-bg-input);
   border: 1px solid transparent;
@@ -370,25 +382,29 @@
   color: var(--rtg-text-primary);
   font-size: 14px;
   font-family: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+  box-shadow: none;
   transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.rv-input { height: 44px; }
-.rv-textarea {
+.rtg-embed.rv-root input.rv-input { height: 44px; line-height: normal; }
+.rtg-embed.rv-root textarea.rv-textarea {
+  height: auto;
   resize: vertical;
   min-height: 120px;
   line-height: 1.5;
 }
-.rv-input::placeholder,
-.rv-textarea::placeholder { color: #a6a39c; }
-.rv-input:focus,
-.rv-textarea:focus {
+.rtg-embed.rv-root input.rv-input::placeholder,
+.rtg-embed.rv-root textarea.rv-textarea::placeholder { color: #a6a39c; opacity: 1; }
+.rtg-embed.rv-root input.rv-input:focus,
+.rtg-embed.rv-root textarea.rv-textarea:focus {
   outline: none;
   background: #1f2228;
   border-color: var(--rtg-accent);
   box-shadow: 0 0 0 2px var(--rtg-accent);
 }
-.rv-input.is-invalid,
-.rv-textarea.is-invalid { border-color: var(--rv-danger); }
+.rtg-embed.rv-root input.rv-input.is-invalid,
+.rtg-embed.rv-root textarea.rv-textarea.is-invalid { border-color: var(--rv-danger); }
 .rv-char-count {
   text-align: right;
   font-size: 12px;
@@ -669,7 +685,7 @@
   .rv-title { font-size: 26px; }
   .rv-subtitle { font-size: 14px; }
   /* 16px in every field: iOS Safari zooms into anything smaller. */
-  .rv-search, .rv-input, .rv-textarea { font-size: 16px; }
+  .rtg-embed.rv-root input.rv-search, .rtg-embed.rv-root input.rv-input, .rtg-embed.rv-root textarea.rv-textarea { font-size: 16px; }
   .rv-tire-card { flex-direction: column; text-align: center; padding: 16px; }
   .rv-tire-img { width: 90px; height: 90px; }
   .rv-tire-rating-row, .rv-tire-chips, .rv-tire-change { justify-content: center; }
