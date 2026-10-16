@@ -131,7 +131,7 @@ With pre-filter attributes:
 [rivian_tire_guide vehicle="R1" brand="Michelin" category="All-Season" size="275/65R20" sort="price-asc" 3pms="yes"]
 ```
 
-**User Reviews** — Display all reviews by a specific user (via `?reviewer=ID` URL param). Without the param the page shows the signed-in visitor's own reviews, so a "My reviews" menu item can link the page's bare URL (default `/user-reviews/`); signed-out visitors are asked to sign in. Member names on a tire page link here.
+**User Reviews** — Display all reviews by a specific user (via `?reviewer=ID` URL param). Without the param the page shows the signed-in visitor's own reviews, so a "My reviews" menu item can link the page's bare URL (default `/user-reviews/`); signed-out visitors are asked to sign in. Member names on a tire page link here. The page is styled like the tire page (breadcrumb, title, one card per review with the tire linked to its page) from its own stylesheet, `frontend/css/user-reviews.css`.
 ```
 [rivian_user_reviews]
 ```

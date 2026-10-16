@@ -66,46 +66,40 @@ class RTG_Frontend {
     private function enqueue_user_reviews_assets() {
         $suffix = self::asset_suffix();
 
+        // The page's own stylesheet (frontend/css/user-reviews.css): the
+        // guide's tokens and the tire page's components for this page's
+        // markup, built and cached like every other asset. The admin's color
+        // overrides land inline on .ur-root from the template.
         wp_enqueue_style(
-            'rtg-styles',
-            RTG_PLUGIN_URL . 'frontend/css/rivian-tires' . $suffix . '.css',
+            'rtg-user-reviews',
+            RTG_PLUGIN_URL . 'frontend/css/user-reviews' . $suffix . '.css',
             array(),
             RTG_VERSION
         );
 
         wp_enqueue_script(
             'rtg-user-reviews',
-            RTG_PLUGIN_URL . 'frontend/js/user-reviews.js',
+            RTG_PLUGIN_URL . 'frontend/js/user-reviews' . $suffix . '.js',
             array(),
             RTG_VERSION,
             true
         );
 
-        // Find the page containing the tire guide shortcode for the back link.
-        $tire_guide_url = home_url( '/' );
-        $guide_pages = get_posts( array(
-            'post_type'   => 'page',
-            'post_status' => 'publish',
-            's'           => '[rivian_tire_guide]',
-            'numberposts' => 1,
-            'fields'      => 'ids',
-        ) );
-        if ( ! empty( $guide_pages ) ) {
-            $tire_guide_url = get_permalink( $guide_pages[0] );
-        }
+        $settings = get_option( 'rtg_settings', array() );
 
         wp_localize_script( 'rtg-user-reviews', 'rtgUserReviews', array(
             'ajaxurl'       => admin_url( 'admin-ajax.php' ),
             'nonce'         => wp_create_nonce( 'tire_rating_nonce' ),
-            'tireGuideUrl'  => $tire_guide_url,
+            'tireGuideUrl'  => RTG_Tire_Page::guide_url(),
+            // A card's tire links to its page: base + slug + '/'.
+            'tirePageBase'  => home_url( '/' . RTG_Tire_Page::slug_base() . '/' ),
+            'tireReviewUrl' => home_url( '/' . sanitize_title( $settings['tire_review_slug'] ?? 'tire-review' ) . '/' ),
             // The bare page (no ?reviewer=) shows the signed-in visitor's own
             // reviews; a signed-out visitor is pointed at the login form and
             // comes back here.
             'currentUserId' => get_current_user_id(),
             'loginUrl'      => wp_login_url( self::user_reviews_url() ),
         ) );
-
-        $this->inject_theme_color_overrides();
     }
 
     public function maybe_enqueue_assets() {

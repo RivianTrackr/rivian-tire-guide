@@ -1,38 +1,43 @@
+/**
+ * A member's reviews (frontend/templates/user-reviews.php).
+ *
+ * ?reviewer=ID names a member. Without it the page is "My reviews": the
+ * signed-in visitor's own, so a menu item can link the bare page; a
+ * signed-out visitor is sent to log in and lands back here. Cards render
+ * the way a review reads on the tire page (stars, month, owner tags,
+ * title, words), with the tire on top as a link to its page.
+ */
 (function () {
   "use strict";
 
-  // Font Awesome icon helper.
-  function rtgIcon(name, size, cls) {
-    var faPrefix = 'fa-solid';
-    var faName = 'fa-' + name;
-    if (name === 'heart-outline') { faPrefix = 'fa-regular'; faName = 'fa-heart'; }
-    else if (name === 'arrow-up-right') { faName = 'fa-up-right-from-square'; }
-    else if (name === 'trash') { faName = 'fa-trash-can'; }
-    else if (name === 'share') { faName = 'fa-share-nodes'; }
-    var classStr = faPrefix + ' ' + faName;
-    if (cls) classStr += ' ' + cls;
-    var style = size ? ' style="font-size:' + size + 'px"' : '';
-    return '<i class="' + classStr + '"' + style + ' aria-hidden="true"></i>';
-  }
-
   var cfg = (typeof rtgUserReviews !== "undefined" && rtgUserReviews) || {};
-  var tireGuideUrl = cfg.tireGuideUrl || "";
   var currentUserId = parseInt(cfg.currentUserId, 10) || 0;
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-  // Render back link
-  var backContainer = document.getElementById("rtg-user-reviews-back");
-  if (backContainer && tireGuideUrl) {
-    var backLink = document.createElement("a");
-    backLink.href = tireGuideUrl;
-    backLink.className = "rtg-user-reviews-back-link";
-    backLink.innerHTML = rtgIcon('arrow-left', 14) + ' Back to Tire Guide';
-    backContainer.appendChild(backLink);
+  var listEl = document.getElementById("rtg-user-reviews-list");
+  var titleEl = document.getElementById("rtg-user-reviews-title");
+  var crumbEl = document.getElementById("rtg-user-reviews-crumb");
+  var countEl = document.getElementById("rtg-user-reviews-count");
+  var writeEl = document.getElementById("rtg-user-reviews-write");
+  var pagerEl = document.getElementById("rtg-user-reviews-pagination");
+  if (!listEl) return;
+
+  function icon(name, extra) {
+    var i = document.createElement('i');
+    i.className = 'fa-solid fa-' + name + (extra ? ' ' + extra : '');
+    i.setAttribute('aria-hidden', 'true');
+    return i;
   }
 
-  // ?reviewer=ID names a member. Without it the page is "my reviews": the
-  // signed-in visitor's own, so a menu item can link the bare page. A
-  // signed-out visitor is sent to log in and lands back here.
-  const params = new URLSearchParams(window.location.search);
+  function setHeading(text) {
+    if (titleEl) titleEl.textContent = text;
+    if (crumbEl) crumbEl.textContent = text;
+    document.title = text + ' — Rivian Tire Guide';
+  }
+
+  // --- Who --------------------------------------------------------------
+
+  var params = new URLSearchParams(window.location.search);
   var userId = parseInt(params.get("reviewer"), 10) || 0;
   var isOwn = false;
 
@@ -49,219 +54,313 @@
     isOwn = true;
   }
 
+  if (isOwn && writeEl) writeEl.hidden = false;
+
   if (!userId) {
-    var list0 = document.getElementById("rtg-user-reviews-list");
-    var title0 = document.getElementById("rtg-user-reviews-title");
-    if (title0) title0.textContent = "My reviews";
-    if (list0) {
-      list0.innerHTML = "";
-      var empty = document.createElement("div");
-      empty.className = "rtg-reviews-empty";
-      var heading = document.createElement("div");
-      heading.className = "rtg-reviews-empty-heading";
-      heading.textContent = "Sign in to see your reviews";
-      empty.appendChild(heading);
-      if (cfg.loginUrl) {
-        var p = document.createElement("p");
-        p.className = "rtg-reviews-empty-text";
-        var a = document.createElement("a");
-        a.href = cfg.loginUrl;
-        a.className = "rtg-user-reviews-signin";
-        a.innerHTML = rtgIcon('right-to-bracket', 14) + ' Sign in';
-        p.appendChild(a);
-        empty.appendChild(p);
-      }
-      list0.appendChild(empty);
-    }
+    setHeading("My reviews");
+    renderEmpty({
+      icon: 'user-lock',
+      heading: "Sign in to see your reviews",
+      text: "Your reviews are kept with your account. Sign in and they will be right here.",
+      ctaHref: cfg.loginUrl || '',
+      ctaIcon: 'right-to-bracket',
+      ctaLabel: 'Sign in',
+      ctaPrimary: true
+    });
     return;
   }
 
+  setHeading(isOwn ? "My reviews" : "Reviews");
   loadUserReviews(1);
 
+  // --- Load -------------------------------------------------------------
+
   function loadUserReviews(page) {
-    const list = document.getElementById("rtg-user-reviews-list");
-    if (!list) return;
+    listEl.setAttribute('aria-busy', 'true');
 
-    list.innerHTML = '<div class="rtg-reviews-loading">Loading reviews...</div>';
-
-    const fd = new FormData();
+    var fd = new FormData();
     fd.append("action", "rtg_get_user_reviews");
     fd.append("user_id", userId);
     fd.append("page", page);
-    if (rtgUserReviews.nonce) {
-      fd.append("nonce", rtgUserReviews.nonce);
-    }
+    if (cfg.nonce) fd.append("nonce", cfg.nonce);
 
-    fetch(rtgUserReviews.ajaxurl, { method: "POST", body: fd })
+    fetch(cfg.ajaxurl, { method: "POST", body: fd, credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        if (!data.success) {
-          list.innerHTML = '<div class="rtg-reviews-empty"><div class="rtg-reviews-empty-heading">Could not load reviews</div></div>';
+        listEl.removeAttribute('aria-busy');
+        if (!data || !data.success) {
+          renderEmpty({ icon: 'triangle-exclamation', heading: "Could not load reviews", text: "Something went wrong on our side. Reload the page to try again." });
           return;
         }
 
         var d = data.data;
+        setHeading(isOwn ? "My reviews" : "Reviews by " + (d.display_name || 'a member'));
 
-        // Update header
-        var titleEl = document.getElementById("rtg-user-reviews-title");
-        if (titleEl) titleEl.textContent = isOwn ? "My reviews" : "Reviews by " + d.display_name;
-
-        var countEl = document.getElementById("rtg-user-reviews-count");
-        if (countEl) countEl.textContent = d.total + " review" + (d.total !== 1 ? "s" : "");
+        var total = parseInt(d.total, 10) || 0;
+        if (countEl) {
+          countEl.textContent = total
+            ? (isOwn ? "You have written " : (d.display_name || 'This member') + " has written ")
+              + total + " review" + (total !== 1 ? "s" : "") + " on the guide."
+            : "";
+        }
 
         if (!d.reviews || !d.reviews.length) {
-          list.innerHTML = '<div class="rtg-reviews-empty"><div class="rtg-reviews-empty-icon">\u270D\uFE0F</div><div class="rtg-reviews-empty-heading">'
-            + (isOwn ? "You haven\u2019t written a review yet" : "No reviews yet") + '</div></div>';
+          if (pagerEl) pagerEl.innerHTML = "";
+          renderEmpty(isOwn
+            ? { icon: 'pen-to-square', heading: "You haven’t written a review yet", text: "Rate the tires you have driven on and help the next owner choose. Your reviews collect here.", ctaHref: writeEl ? writeEl.href : '', ctaIcon: 'pen', ctaLabel: 'Write a review', ctaPrimary: true }
+            : { icon: 'comment-slash', heading: "No reviews yet", text: "This member hasn’t published a review on the guide." });
           return;
         }
 
-        list.innerHTML = "";
-
+        listEl.innerHTML = "";
         d.reviews.forEach(function (review) {
-          list.appendChild(createUserReviewCard(review));
+          listEl.appendChild(renderReview(review));
         });
 
-        renderPagination(d.page, d.total_pages);
+        renderPagination(parseInt(d.page, 10) || 1, parseInt(d.total_pages, 10) || 1);
       })
       .catch(function () {
-        list.innerHTML = '<div class="rtg-reviews-empty"><div class="rtg-reviews-empty-heading">Failed to load reviews</div></div>';
+        listEl.removeAttribute('aria-busy');
+        renderEmpty({ icon: 'triangle-exclamation', heading: "Could not load reviews", text: "Check your connection and reload the page." });
       });
   }
 
-  function buildTireUrl(review) {
-    if (!tireGuideUrl || !review.tire_id) return "";
-    var url = new URL(tireGuideUrl);
-    url.searchParams.set("tire", review.tire_id);
-    return url.toString();
+  // --- Cards ------------------------------------------------------------
+
+  // The tire's own page by slug; the guide with ?tire= for a tire that
+  // has no slug yet.
+  function tireUrl(review) {
+    if (!review.tire_id) return "";
+    try {
+      if (review.slug && cfg.tirePageBase) {
+        return cfg.tirePageBase + encodeURIComponent(review.slug) + '/';
+      }
+      if (cfg.tireGuideUrl) {
+        var url = new URL(cfg.tireGuideUrl, window.location.href);
+        url.searchParams.set("tire", review.tire_id);
+        return url.toString();
+      }
+    } catch (e) { /* fall through */ }
+    return "";
   }
 
-  function createUserReviewCard(review) {
-    var card = document.createElement("div");
-    card.className = "rtg-review-card rtg-user-review-card";
+  function renderTire(review) {
+    var href = tireUrl(review);
+    var row = document.createElement(href ? 'a' : 'div');
+    row.className = 'ur-review-tire';
+    if (href) {
+      row.href = href;
+      row.setAttribute('aria-label', 'Open ' + ((review.brand || '') + ' ' + (review.model || '')).trim() + ' on the guide');
+    }
 
-    // Tire info header
-    var tireInfo = document.createElement("div");
-    tireInfo.className = "rtg-user-review-tire";
-
-    var tireUrl = buildTireUrl(review);
-
+    var thumb = document.createElement('span');
+    thumb.className = 'ur-review-tire-img';
+    thumb.setAttribute('aria-hidden', 'true');
     if (review.image) {
-      var img = document.createElement("img");
+      var img = document.createElement('img');
+      img.alt = '';
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      // A photo that fails to load gives way to the placeholder ring.
+      img.onerror = function () {
+        thumb.innerHTML = '';
+        thumb.appendChild(icon('circle-notch'));
+      };
       img.src = review.image;
-      img.alt = (review.brand || "") + " " + (review.model || "");
-      img.className = "rtg-user-review-tire-img";
-      img.loading = "lazy";
-      tireInfo.appendChild(img);
-    }
-
-    var tireLabel = (review.brand || "") + " " + (review.model || "");
-    if (tireUrl) {
-      var tireLink = document.createElement("a");
-      tireLink.href = tireUrl;
-      tireLink.className = "rtg-user-review-tire-name rtg-user-review-tire-link";
-      tireLink.textContent = tireLabel;
-      tireInfo.appendChild(tireLink);
+      thumb.appendChild(img);
     } else {
-      var tireName = document.createElement("span");
-      tireName.className = "rtg-user-review-tire-name";
-      tireName.textContent = tireLabel;
-      tireInfo.appendChild(tireName);
+      thumb.appendChild(icon('circle-notch'));
     }
+    row.appendChild(thumb);
 
-    card.appendChild(tireInfo);
+    var text = document.createElement('span');
+    text.className = 'ur-review-tire-text';
+    if (review.brand) {
+      var brand = document.createElement('span');
+      brand.className = 'ur-review-tire-brand';
+      brand.textContent = review.brand;
+      text.appendChild(brand);
+    }
+    var name = document.createElement('span');
+    name.className = 'ur-review-tire-name';
+    name.textContent = review.model || review.brand || review.tire_id;
+    text.appendChild(name);
+    if (review.size) {
+      var size = document.createElement('span');
+      size.className = 'ur-review-tire-size';
+      size.textContent = review.size;
+      text.appendChild(size);
+    }
+    row.appendChild(text);
 
-    // Rating + date row
-    var meta = document.createElement("div");
-    meta.className = "rtg-review-card-header";
+    if (href) row.appendChild(icon('chevron-right', 'ur-review-tire-go'));
+    return row;
+  }
 
-    var starsEl = document.createElement("span");
-    starsEl.className = "rtg-review-card-stars";
-    starsEl.innerHTML = renderStars(review.rating);
-    meta.appendChild(starsEl);
+  function renderStars(rating) {
+    var wrap = document.createElement('span');
+    wrap.className = 'ur-review-stars';
+    var visual = document.createElement('span');
+    visual.setAttribute('aria-hidden', 'true');
+    for (var i = 1; i <= 5; i++) {
+      var fill = rating >= i ? 'full' : (rating >= i - 0.5 ? 'half' : 'empty');
+      var star = document.createElement('span');
+      star.className = 'ur-star ur-star-' + fill;
+      star.textContent = '★';
+      visual.appendChild(star);
+    }
+    var sr = document.createElement('span');
+    sr.className = 'ur-sr-only';
+    sr.textContent = 'Rated ' + String(Math.round(rating * 10) / 10) + ' out of 5';
+    wrap.appendChild(visual);
+    wrap.appendChild(sr);
+    return wrap;
+  }
 
-    var dateEl = document.createElement("span");
-    dateEl.className = "rtg-review-date";
-    dateEl.textContent = formatDate(review.updated_at || review.created_at);
-    meta.appendChild(dateEl);
+  // "Aug 2026" from a MySQL datetime, read as text so the browser's time
+  // zone can't shift a review across a month boundary (as the tire page).
+  function formatMonth(value) {
+    var m = /^(\d{4})-(\d{2})/.exec(String(value || ''));
+    if (!m) return '';
+    var month = parseInt(m[2], 10);
+    if (month < 1 || month > 12) return '';
+    return MONTHS[month - 1] + ' ' + m[1];
+  }
 
-    card.appendChild(meta);
+  // Same tags the tire page shows under a reviewer's name.
+  function renderMeta(review) {
+    var tags = [];
+    if (review.is_owner && parseInt(review.is_owner, 10) === 1) {
+      var owner = document.createElement('span');
+      owner.className = 'ur-review-tag ur-review-owner';
+      owner.appendChild(icon('certificate'));
+      owner.appendChild(document.createTextNode('Verified owner'));
+      tags.push(owner);
+    }
+    if (review.vehicle) {
+      var veh = document.createElement('span');
+      veh.className = 'ur-review-tag';
+      veh.textContent = review.vehicle;
+      tags.push(veh);
+    }
+    var miles = parseInt(review.miles, 10) || 0;
+    if (miles > 0) {
+      var mi = document.createElement('span');
+      mi.className = 'ur-review-tag';
+      mi.textContent = miles.toLocaleString() + ' mi on this set';
+      tags.push(mi);
+    }
+    if (!tags.length) return null;
+    var wrap = document.createElement('div');
+    wrap.className = 'ur-review-meta';
+    tags.forEach(function (t) { wrap.appendChild(t); });
+    return wrap;
+  }
+
+  function renderReview(review) {
+    var card = document.createElement('article');
+    card.className = 'ur-review';
+
+    card.appendChild(renderTire(review));
+
+    var head = document.createElement('div');
+    head.className = 'ur-review-head';
+    head.appendChild(renderStars(parseFloat(review.rating) || 0));
+    var when = formatMonth(review.updated_at || review.created_at);
+    if (when) {
+      var date = document.createElement('span');
+      date.className = 'ur-review-date';
+      date.textContent = when;
+      head.appendChild(date);
+    }
+    card.appendChild(head);
+
+    var meta = renderMeta(review);
+    if (meta) card.appendChild(meta);
 
     if (review.review_title) {
-      if (tireUrl) {
-        var titleEl = document.createElement("a");
-        titleEl.href = tireUrl;
-        titleEl.className = "rtg-review-card-title rtg-review-card-title-link";
-        titleEl.textContent = review.review_title;
-      } else {
-        var titleEl = document.createElement("div");
-        titleEl.className = "rtg-review-card-title";
-        titleEl.textContent = review.review_title;
-      }
-      card.appendChild(titleEl);
+      var title = document.createElement('div');
+      title.className = 'ur-review-title';
+      title.textContent = review.review_title;
+      card.appendChild(title);
     }
-
-    var bodyEl = document.createElement("div");
-    bodyEl.className = "rtg-review-card-body";
-    bodyEl.textContent = review.review_text;
-    card.appendChild(bodyEl);
+    if (review.review_text) {
+      var body = document.createElement('div');
+      body.className = 'ur-review-body';
+      body.textContent = review.review_text;
+      card.appendChild(body);
+    } else if (!review.review_title) {
+      var only = document.createElement('p');
+      only.className = 'ur-review-rating-only';
+      only.textContent = 'Rating only, no written review.';
+      card.appendChild(only);
+    }
 
     return card;
   }
 
-  function renderStars(rating) {
-    var rounded = Math.round(rating);
-    var html = "";
-    for (var i = 1; i <= 5; i++) {
-      html += '<span class="rtg-mini-star' + (i <= rounded ? " filled" : "") + '">\u2605</span>';
+  // --- Empty state --------------------------------------------------------
+
+  function renderEmpty(opts) {
+    listEl.innerHTML = "";
+    var empty = document.createElement('div');
+    empty.className = 'ur-empty';
+    var ic = document.createElement('div');
+    ic.className = 'ur-empty-icon';
+    ic.appendChild(icon(opts.icon || 'comment'));
+    empty.appendChild(ic);
+    var heading = document.createElement('div');
+    heading.className = 'ur-empty-heading';
+    heading.textContent = opts.heading;
+    empty.appendChild(heading);
+    if (opts.text) {
+      var p = document.createElement('p');
+      p.className = 'ur-empty-text';
+      p.textContent = opts.text;
+      empty.appendChild(p);
     }
-    return html;
+    if (opts.ctaHref) {
+      var a = document.createElement('a');
+      a.className = 'ur-cta ' + (opts.ctaPrimary ? 'ur-cta-primary' : 'ur-cta-secondary');
+      a.href = opts.ctaHref;
+      if (opts.ctaIcon) a.appendChild(icon(opts.ctaIcon));
+      a.appendChild(document.createTextNode(' ' + opts.ctaLabel));
+      empty.appendChild(a);
+    }
+    listEl.appendChild(empty);
   }
 
-  function formatDate(dateStr) {
-    if (!dateStr) return "";
-    var normalized = dateStr.indexOf("T") === -1 && dateStr.indexOf("Z") === -1
-      ? dateStr.replace(" ", "T") + "Z"
-      : dateStr;
-    var date = new Date(normalized);
-    if (isNaN(date.getTime())) return dateStr;
-
-    var now = new Date();
-    var diffMs = now - date;
-    var diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return diffDays + " days ago";
-
-    return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
-  }
+  // --- Pagination -------------------------------------------------------
 
   function renderPagination(currentPage, totalPages) {
-    var container = document.getElementById("rtg-user-reviews-pagination");
-    if (!container) return;
-    container.innerHTML = "";
-
+    if (!pagerEl) return;
+    pagerEl.innerHTML = "";
     if (totalPages <= 1) return;
 
-    if (currentPage > 1) {
-      var prev = document.createElement("button");
-      prev.className = "rtg-pagination-btn";
-      prev.innerHTML = rtgIcon('chevron-left', 14) + ' Previous';
-      prev.addEventListener("click", function () { loadUserReviews(currentPage - 1); });
-      container.appendChild(prev);
+    function pageButton(label, iconName, target, iconFirst) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ur-cta ur-cta-secondary';
+      if (iconFirst) btn.appendChild(icon(iconName));
+      btn.appendChild(document.createTextNode((iconFirst ? ' ' : '') + label + (iconFirst ? '' : ' ')));
+      if (!iconFirst) btn.appendChild(icon(iconName));
+      if (target < 1 || target > totalPages) {
+        btn.disabled = true;
+      } else {
+        btn.addEventListener('click', function () {
+          loadUserReviews(target);
+          var top = listEl.getBoundingClientRect().top + window.pageYOffset - 80;
+          window.scrollTo({ top: top > 0 ? top : 0, behavior: 'smooth' });
+        });
+      }
+      return btn;
     }
 
-    var info = document.createElement("span");
-    info.className = "rtg-pagination-info";
+    pagerEl.appendChild(pageButton('Previous', 'chevron-left', currentPage - 1, true));
+    var info = document.createElement('span');
+    info.className = 'ur-pagination-info';
     info.textContent = "Page " + currentPage + " of " + totalPages;
-    container.appendChild(info);
-
-    if (currentPage < totalPages) {
-      var next = document.createElement("button");
-      next.className = "rtg-pagination-btn";
-      next.innerHTML = 'Next ' + rtgIcon('chevron-right', 14);
-      next.addEventListener("click", function () { loadUserReviews(currentPage + 1); });
-      container.appendChild(next);
-    }
+    pagerEl.appendChild(info);
+    pagerEl.appendChild(pageButton('Next', 'chevron-right', currentPage + 1, false));
   }
 })();

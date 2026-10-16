@@ -96,6 +96,12 @@ const builds = [
     minify: true,
     bundle: false,
   },
+  {
+    entryPoints: ['frontend/css/user-reviews.css'],
+    outfile: 'frontend/css/user-reviews.min.css',
+    minify: true,
+    bundle: false,
+  },
   // --- Admin JS ---
   {
     ...jsDefaults,

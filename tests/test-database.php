@@ -538,4 +538,35 @@ class Test_RTG_Database extends WP_UnitTestCase {
         $this->assertSame( array(), RTG_Database::get_similar_tires( array( 'tire_id' => 'x', 'size' => '' ) ) );
         $this->assertSame( array(), RTG_Database::get_other_sizes( array( 'tire_id' => 'x', 'brand' => '', 'model' => 'M' ) ) );
     }
+
+    /**
+     * A member's reviews page shows each review the way the tire page does:
+     * the owner tags ride the row, and the tire comes with its size and slug
+     * so the card can link to the tire's own page.
+     */
+    public function test_user_reviews_carry_details_and_the_tire_link() {
+        $tire_id = 'member-reviews-001';
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => $tire_id, 'brand' => 'Michelin', 'model' => 'Defender' ) ) );
+        $admin = $this->factory->user->create( array( 'role' => 'administrator' ) );
+
+        RTG_Database::set_rating( $tire_id, $admin, 5, 'Quiet', 'Body.', array(
+            'vehicle'  => 'r1t',
+            'miles'    => '12,000',
+            'is_owner' => '1',
+        ) );
+
+        $rows = RTG_Database::get_user_reviews( $admin );
+        $this->assertCount( 1, $rows );
+        $row = $rows[0];
+        $this->assertSame( 'R1T', $row['vehicle'] );
+        $this->assertSame( 12000, (int) $row['miles'] );
+        $this->assertSame( 1, (int) $row['is_owner'] );
+        $this->assertSame( 'Michelin', $row['brand'] );
+        $this->assertSame( 'Defender', $row['model'] );
+        $this->assertSame( '275/65R20', $row['size'] );
+        $tire = RTG_Database::get_tire( $tire_id );
+        $this->assertNotEmpty( $tire['slug'], 'the tire got a slug on insert' );
+        $this->assertSame( $tire['slug'], $row['slug'], 'the row carries the slug the tire page is served at' );
+        $this->assertSame( 1, RTG_Database::get_user_review_count( $admin ) );
+    }
 }

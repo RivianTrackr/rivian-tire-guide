@@ -2326,7 +2326,8 @@ class RTG_Database {
         return $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT r.id, r.tire_id, r.rating, r.review_title, r.review_text, r.created_at, r.updated_at,
-                        t.brand, t.model, t.image
+                        r.vehicle, r.miles, r.is_owner,
+                        t.brand, t.model, t.size, t.image, t.slug
                  FROM {$ratings_table} r
                  LEFT JOIN {$tires_table} t ON r.tire_id = t.tire_id
                  WHERE r.user_id = %d AND r.review_status = 'approved'

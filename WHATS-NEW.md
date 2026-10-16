@@ -11,6 +11,10 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.13.0 - 2026-10-16
+
+- **The reviews page looks like the rest of the guide.** My reviews, and any member's reviews you open from a tire page, now use the same layout as a tire's page: the breadcrumb and big title up top, a count of reviews under it, and each review on its own card with the tire's photo, name and size as a link straight to that tire's page. The stars, the month, and the Verified owner, vehicle and mileage tags look exactly as they do on a tire's page. Your own page gets a Write a review button, and an empty page tells you what to do next instead of leaving you with a blank list.
+
 ## 2.12.0 - 2026-10-16
 
 - **Your reviews, one tap away.** The user reviews page now knows who you are. Open it while signed in and it shows your own reviews under a "My reviews" heading, no ID in the address needed, which means the site can put a My Reviews link in its menu. Signed out, it asks you to sign in and brings you straight back.
