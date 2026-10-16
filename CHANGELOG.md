@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.13.0] - 2026-10-16
+
+### Changed
+- **The user reviews page is built like the tire page.** It was a bare list on the guide's old review-modal styles: a "Back to Tire Guide" link, a 22px heading, cards with a 48px thumbnail and a relative date, "Page 1 of 3" between two plain buttons, and the tire link went to the guide with `?tire=` rather than the tire's own page. It now carries the same shell as the review page and the tire page: breadcrumb (Home › Tire Guide › My reviews), 32px page title, a one-line count under it, and a "Write a review" button at the right for the signed-in visitor's own page. Each review is the tire page's review card with the tire on top: 56px thumbnail on white, brand in accent caps, model, size, and a chevron, the whole row one link to the tire's page by slug (the guide with `?tire=` only for a tire with no slug yet). Under it the tire page's stars (accent with the drop-shadow, the half-star gradient, the lifted empty color), the month the review was last touched, the owner tags (Verified owner, R1T, 12,000 mi on this set), then title and words; a rating with no words says so in a muted line. Loading shows three card-shaped shimmer placeholders instead of "Loading reviews..."; the empty states are the guide's centered ones with a large muted icon, a 20px heading and a line of explanation, with a primary "Write a review" when it is your own empty page and the sign-in button when you are signed out. Pagination uses the tire page's secondary buttons, disabled at either end, and scrolls back to the top of the list. The page gets its own stylesheet, `frontend/css/user-reviews.css` (new esbuild target, `.ur-*` classes on the guide's tokens, with the admin's color overrides inlined on `.ur-root` from the template like `tire-review.php` does), and no longer loads the whole guide stylesheet or the inline `:root` overrides; the old `.rtg-user-review*` rules left `rivian-tires.css` (the `.rtg-pagination-*` rules stay for the guide's own footer). `RTG_Frontend::enqueue_user_reviews_assets()` localizes `tirePageBase` and `tireReviewUrl` and reads the guide page through `RTG_Tire_Page::guide_url()` instead of its own query; the script ships minified (`user-reviews.min.js`, already built, now actually enqueued). `RTG_Database::get_user_reviews()` selects `vehicle`, `miles`, `is_owner`, `t.size` and `t.slug` so the card has what the tire page has. `user-reviews.js` is rewritten around DOM builders (no `innerHTML` with data) and sets the document title and the breadcrumb to match the heading.
+
+### Tests
+- `tests/test-database.php`: `get_user_reviews()` carries the owner tags and the tire's size and slug. `npm test`, `php -l` and the contract checks pass locally; the PHPUnit suite runs in CI.
+
 ## [2.12.0] - 2026-10-16
 
 ### Added

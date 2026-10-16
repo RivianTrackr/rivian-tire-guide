@@ -1,0 +1,273 @@
+/* === A member's reviews ===
+   The user reviews page (frontend/templates/user-reviews.php,
+   frontend/js/user-reviews.js): "My reviews" for the signed-in visitor, or
+   everything one member has written when their name is followed from a
+   tire page. It sits on the theme page like the tire page and the review
+   page do, on the guide's own tokens: the same breadcrumb, page title,
+   review card, stars, tags, buttons and empty state as the tire page,
+   written for this page's markup. The admin's color overrides land inline
+   on .ur-root from the template. */
+
+.ur-root {
+  --rtg-accent: #fba919;
+  --rtg-accent-hover: #ffbe4a;
+  --rtg-bg-primary: #16191e;
+  --rtg-bg-card: #16191e;
+  --rtg-bg-input: #3a3e45;
+  --rtg-bg-deep: #121418;
+  --rtg-text-primary: #ece9e4;
+  --rtg-text-light: #f6f4f0;
+  --rtg-text-muted: #a19e97;
+  --rtg-text-heading: #f6f4f0;
+  --rtg-border: #3a3e45;
+  --rtg-star-filled: #fba919;
+  --rtg-star-user: #4ade80;
+  --rtg-star-empty: #2c2f34;
+  /* Empty stars paint with this: the empty color lifted toward muted text (same mix as the guide). */
+  --rtg-star-empty-visible: color-mix(in srgb, var(--rtg-star-empty) 35%, var(--rtg-text-muted));
+  --ur-divider: color-mix(in srgb, var(--rtg-border) 55%, transparent);
+  --ur-positive: #4ade80;
+}
+
+.ur-root *, .ur-root *::before, .ur-root *::after { box-sizing: border-box; }
+
+.ur-root {
+  /* Inherit the theme font — matches the guide and the tire page. */
+  font-family: inherit;
+  /* No panel background and no width overrides: the theme's constrained
+     entry-content sizes this like every other piece of content. */
+  color: var(--rtg-text-primary);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.ur-root a { color: var(--rtg-accent); text-decoration: none; }
+.ur-root a:hover { color: var(--rtg-accent-hover); }
+.ur-root .ur-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+.ur-page { padding: 32px 0 80px; }
+
+/* --- Breadcrumb (the tire page's) --- */
+.ur-breadcrumb {
+  font-size: 13px;
+  color: var(--rtg-text-muted);
+  margin: 0 0 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.ur-breadcrumb a { color: var(--rtg-text-muted); }
+.ur-breadcrumb a:hover { color: var(--rtg-accent); }
+.ur-breadcrumb span[aria-current] { color: var(--rtg-text-primary); }
+
+/* --- Page head: title and count left, "Write a review" right --- */
+.ur-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 0 0 24px;
+}
+.ur-title {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+  color: var(--rtg-text-heading);
+  margin: 0 0 6px;
+}
+.ur-subtitle {
+  font-size: 15px;
+  color: var(--rtg-text-muted);
+  margin: 0;
+  min-height: 1.6em;
+}
+
+/* --- Buttons: the tire page's CTAs --- */
+.ur-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  line-height: 1.2;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.ur-cta i { font-size: 13px; }
+.ur-cta:active { transform: scale(0.97); }
+.ur-cta:focus-visible { outline: 2px solid var(--rtg-accent); outline-offset: 2px; }
+.ur-cta[hidden] { display: none; }
+/* Scoped under .ur-root so a button that is a link keeps its own color
+   over the page's link color. */
+.ur-root .ur-cta-primary { background: var(--rtg-accent); color: #15130e; border: 1px solid var(--rtg-accent); }
+.ur-root .ur-cta-primary:hover { background: var(--rtg-accent-hover); border-color: var(--rtg-accent-hover); color: #15130e; }
+.ur-root .ur-cta-secondary { background: transparent; color: var(--rtg-text-primary); border: 1px solid var(--rtg-border); }
+.ur-root .ur-cta-secondary:hover { color: var(--rtg-accent); border-color: color-mix(in srgb, var(--rtg-accent) 45%, var(--rtg-border)); }
+.ur-root .ur-cta[disabled] { opacity: 0.5; cursor: not-allowed; transform: none; }
+.ur-root .ur-cta[disabled]:hover { color: var(--rtg-text-primary); border-color: var(--rtg-border); }
+
+/* --- The list --- */
+.ur-list { display: flex; flex-direction: column; gap: 12px; }
+
+/* --- One review: the tire page's review card, with the tire on top --- */
+.ur-review {
+  background: var(--rtg-bg-card);
+  border: 1px solid var(--rtg-border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin: 0;
+  transition: border-color 0.15s ease;
+}
+.ur-review:hover { border-color: color-mix(in srgb, var(--rtg-accent) 35%, var(--rtg-border)); }
+
+/* The tire the review is about: thumbnail, brand, model and size, as one
+   link to its page. The row is the card's header, divided from the review. */
+.ur-root .ur-review-tire {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 12px;
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--ur-divider);
+  color: inherit;
+}
+.ur-review-tire-img {
+  flex: 0 0 56px;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid var(--rtg-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.ur-review-tire-img img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.ur-review-tire-img i { color: #86868b; font-size: 20px; }
+.ur-review-tire-text { min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; }
+.ur-review-tire-brand {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--rtg-accent);
+  line-height: 1.2;
+}
+.ur-review-tire-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--rtg-text-heading);
+  line-height: 1.25;
+  transition: color 0.15s ease;
+}
+.ur-review-tire-size { font-size: 13px; color: var(--rtg-text-muted); line-height: 1.3; }
+.ur-review-tire-go { flex: 0 0 auto; color: var(--rtg-text-muted); font-size: 13px; transition: color 0.15s ease, transform 0.15s ease; }
+a.ur-review-tire:hover .ur-review-tire-name { color: var(--rtg-accent); }
+a.ur-review-tire:hover .ur-review-tire-go { color: var(--rtg-accent); transform: translateX(2px); }
+a.ur-review-tire:focus-visible { outline: 2px solid var(--rtg-accent); outline-offset: 4px; border-radius: 8px; }
+
+/* Stars and the month, like the head of a review on the tire page. */
+.ur-review-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 6px; }
+.ur-review-stars { display: inline-flex; align-items: center; }
+.ur-star { font-size: 17px; line-height: 1; color: var(--rtg-star-empty-visible); }
+.ur-star-full { color: var(--rtg-star-filled); filter: drop-shadow(0 1px 3px color-mix(in srgb, var(--rtg-star-filled) 35%, transparent)); }
+.ur-star-half { background: linear-gradient(90deg, var(--rtg-star-filled) 50%, var(--rtg-star-empty-visible) 50%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ur-review-date { font-size: 12px; color: var(--rtg-text-muted); }
+
+/* What the reviewer told us: verified owner, which Rivian, miles on the set. */
+.ur-review-meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+.ur-review-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 5px 9px;
+  border-radius: 20px;
+  color: var(--rtg-text-muted);
+  background: var(--rtg-bg-deep);
+  border: 1px solid var(--ur-divider);
+}
+.ur-review-owner { color: var(--rtg-text-primary); background: color-mix(in srgb, #34d399 12%, var(--rtg-bg-deep)); border-color: color-mix(in srgb, #34d399 35%, transparent); }
+.ur-review-owner i { color: #34d399; font-size: 11px; }
+
+.ur-review-title { font-weight: 600; font-size: 15px; color: var(--rtg-text-heading); margin: 4px 0; }
+.ur-review-body { font-size: 14px; color: var(--rtg-text-primary); margin: 0; white-space: pre-wrap; word-break: break-word; }
+.ur-review-rating-only { font-size: 14px; color: var(--rtg-text-muted); font-style: italic; margin: 0; }
+
+/* --- Loading: three card-shaped placeholders with the guide's shimmer --- */
+.ur-skeleton {
+  background: var(--rtg-bg-card);
+  border: 1px solid var(--rtg-border);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.ur-skeleton-line {
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--rtg-bg-card) 0%, color-mix(in srgb, var(--rtg-text-muted) 8%, var(--rtg-bg-card)) 40%, color-mix(in srgb, var(--rtg-text-muted) 12%, var(--rtg-bg-card)) 50%, color-mix(in srgb, var(--rtg-text-muted) 8%, var(--rtg-bg-card)) 60%, var(--rtg-bg-card) 100%);
+  background-size: 200% 100%;
+  animation: ur-shimmer 1.5s ease-in-out infinite;
+}
+.ur-skeleton-line + .ur-skeleton-line { margin-top: 10px; }
+.ur-skeleton-tire { display: flex; align-items: center; gap: 14px; margin: 0 0 12px; padding: 0 0 12px; border-bottom: 1px solid var(--ur-divider); }
+.ur-skeleton-tire .ur-skeleton-line { flex: 1 1 auto; margin: 0; }
+.ur-skeleton-tire .ur-skeleton-thumb { flex: 0 0 56px; width: 56px; height: 56px; border-radius: 8px; }
+@keyframes ur-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* --- Empty states: the guide's, centered with a large muted icon --- */
+.ur-empty {
+  text-align: center;
+  padding: 60px 16px;
+  border: 1px dashed var(--rtg-border);
+  border-radius: 12px;
+}
+.ur-empty-icon { font-size: 48px; color: var(--rtg-text-muted); opacity: 0.5; margin: 0 0 16px; line-height: 1; }
+.ur-empty-heading { font-size: 20px; font-weight: 700; color: var(--rtg-text-heading); margin: 0 0 8px; }
+.ur-empty-text { font-size: 14px; color: var(--rtg-text-muted); line-height: 1.6; max-width: 500px; margin: 0 auto; }
+.ur-empty .ur-cta { margin-top: 20px; }
+
+/* --- Pagination --- */
+.ur-pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 24px 0 0; }
+.ur-pagination:empty { display: none; }
+.ur-pagination .ur-cta { min-height: 40px; padding: 8px 16px; font-size: 14px; }
+.ur-pagination-info { font-size: 14px; font-weight: 500; color: var(--rtg-text-primary); min-width: 90px; text-align: center; }
+
+/* --- Phones --- */
+@media (max-width: 600px) {
+  .ur-page { padding: 20px 0 60px; }
+  .ur-title { font-size: 26px; }
+  .ur-head { align-items: stretch; flex-direction: column; }
+  .ur-head .ur-cta { width: 100%; }
+  .ur-review { padding: 14px; }
+  .ur-review-tire-img { flex-basis: 48px; width: 48px; height: 48px; }
+  .ur-empty { padding: 40px 12px; }
+  .ur-empty .ur-cta { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ur-root * { transition: none !important; animation: none !important; }
+  .ur-skeleton-line { background: color-mix(in srgb, var(--rtg-text-muted) 10%, var(--rtg-bg-card)); }
+}
+
+@media print {
+  .ur-breadcrumb, .ur-head .ur-cta, .ur-pagination { display: none; }
+  .ur-root { color: #000; }
+  .ur-review { border-color: #999; background: #fff; }
+  .ur-review-tire-name, .ur-review-title, .ur-title { color: #000; }
+}
