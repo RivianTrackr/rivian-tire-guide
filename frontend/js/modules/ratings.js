@@ -6,6 +6,7 @@
  */
 
 import { state } from './state.js';
+import { setSavedIds } from './saved.js';
 import { starSVGMarkup } from './helpers.js';
 import { VALIDATION_PATTERNS, NUMERIC_BOUNDS, validateNumeric } from './validation.js';
 
@@ -79,6 +80,9 @@ export function loadTireRatings(tireIds) {
             state.userReviews = { ...state.userReviews, ...data.data.user_reviews };
           }
           state.isLoggedIn = data.data.is_logged_in === true || data.data.is_logged_in === '1' || data.data.is_logged_in === 1;
+          if (state.isLoggedIn && Array.isArray(data.data.saved_tire_ids)) {
+            setSavedIds(data.data.saved_tire_ids);
+          }
         }
         settleAll();
       })

@@ -29,6 +29,7 @@ import { isServerSide, fetchTiresFromServer, fetchDropdownOptions, serverSideFil
 import { initWhatsNew } from './modules/whats-new.js';
 import { initAdvisor } from './modules/advisor.js';
 import { initFilterBar } from './modules/filter-bar.js';
+import { initSaved, setOnChange as setSavedOnChange } from './modules/saved.js';
 
 // Wire up the compare bar function to break the circular dependency
 setUpdateCompareBar(updateCompareBar);
@@ -317,6 +318,10 @@ if (typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.serve
     state.isLoggedIn = tireRatingAjax.is_logged_in === true || tireRatingAjax.is_logged_in === '1' || tireRatingAjax.is_logged_in === 1;
   }
   initFilterBar({ onClearAll: resetFilters });
+  // Saved tires: the hearts and the "Saved" chip. When a tire leaves the
+  // list while the chip is on, the guide re-filters so the card goes too.
+  initSaved();
+  setSavedOnChange(() => { state.lastFilterState = null; filterAndRender(); });
   initializeUI();
 } else {
   console.error('Tire guide data not available. Ensure the [rivian_tire_guide] shortcode is used.');

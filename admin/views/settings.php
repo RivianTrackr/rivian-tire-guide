@@ -18,6 +18,7 @@ $cdn_prefix = $settings['cdn_prefix'] ?? '';
 $compare_slug = $settings['compare_slug'] ?? 'tire-compare';
 $user_reviews_slug = $settings['user_reviews_slug'] ?? 'user-reviews';
 $tire_review_slug = $settings['tire_review_slug'] ?? 'tire-review';
+$saved_tires_slug = $settings['saved_tires_slug'] ?? 'saved-tires';
 
 // Theme color defaults.
 $default_colors = array(
@@ -202,6 +203,13 @@ $retention_days = $settings['analytics_retention_days'] ?? 90;
                             </div>
                             <p class="rtg-field-description"><code><?php echo esc_html( home_url( '/' . $tire_review_slug . '/' ) ); ?></code></p>
                             <input type="text" id="tire_review_slug" name="tire_review_slug" value="<?php echo esc_attr( $tire_review_slug ); ?>" class="is-code">
+                        </div>
+                        <div class="rtg-field-row">
+                            <div class="rtg-field-label-row">
+                                <label class="rtg-field-label" for="saved_tires_slug">Saved tires page</label>
+                            </div>
+                            <p class="rtg-field-description">A member's saved tires. Served by the plugin, or by a page at this slug holding <code>[rivian_saved_tires]</code>. <code><?php echo esc_html( home_url( '/' . $saved_tires_slug . '/' ) ); ?></code></p>
+                            <input type="text" id="saved_tires_slug" name="saved_tires_slug" value="<?php echo esc_attr( $saved_tires_slug ); ?>" class="is-code">
                         </div>
                     </div>
                 </div>

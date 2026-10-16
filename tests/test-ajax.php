@@ -523,4 +523,87 @@ class Test_RTG_Ajax extends WP_Ajax_UnitTestCase {
         $this->assertSame( 'ai', $type );
         $_POST = array();
     }
+
+    // -------------------------------------------------------
+    // rtg_toggle_saved_tire / rtg_get_saved_tires
+    // -------------------------------------------------------
+
+    public function test_toggle_saved_tire_saves_then_removes_for_a_member() {
+        $user_id = $this->factory()->user->create( array( 'role' => 'subscriber' ) );
+        wp_set_current_user( $user_id );
+        $tire_id = 'saved-ajax-001';
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => $tire_id ) ) );
+
+        $_POST = array( 'nonce' => wp_create_nonce( 'tire_rating_nonce' ), 'tire_id' => $tire_id );
+        try { $this->_handleAjax( 'rtg_toggle_saved_tire' ); } catch ( WPAjaxDieContinueException $e ) {}
+        $r = json_decode( $this->_last_response, true );
+        $this->assertTrue( $r['success'] );
+        $this->assertTrue( $r['data']['saved'] );
+        $this->assertSame( 1, $r['data']['count'] );
+        $this->assertTrue( RTG_Database::is_tire_saved( $user_id, $tire_id ) );
+
+        $this->_last_response = '';
+        $_POST = array( 'nonce' => wp_create_nonce( 'tire_rating_nonce' ), 'tire_id' => $tire_id, 'saved' => '0' );
+        try { $this->_handleAjax( 'rtg_toggle_saved_tire' ); } catch ( WPAjaxDieContinueException $e ) {}
+        $r = json_decode( $this->_last_response, true );
+        $this->assertTrue( $r['success'] );
+        $this->assertFalse( $r['data']['saved'] );
+        $this->assertSame( 0, $r['data']['count'] );
+        $this->assertFalse( RTG_Database::is_tire_saved( $user_id, $tire_id ) );
+    }
+
+    public function test_toggle_saved_tire_refuses_a_guest_and_a_bad_nonce() {
+        wp_set_current_user( 0 );
+        $_POST = array( 'nonce' => wp_create_nonce( 'tire_rating_nonce' ), 'tire_id' => 'saved-ajax-002' );
+        // A guest never reaches the handler: the action has no nopriv hook,
+        // so admin-ajax stops with "0". Either way, nothing was saved.
+        try { $this->_handleAjax( 'rtg_toggle_saved_tire' ); } catch ( WPAjaxDieContinueException $e ) {} catch ( WPAjaxDieStopException $e ) {}
+        $r = json_decode( (string) $this->_last_response, true );
+        $this->assertTrue( ! is_array( $r ) || empty( $r['success'] ) );
+
+        $user_id = $this->factory()->user->create( array( 'role' => 'subscriber' ) );
+        wp_set_current_user( $user_id );
+        $this->_last_response = '';
+        $_POST = array( 'nonce' => 'wrong', 'tire_id' => 'saved-ajax-002' );
+        try { $this->_handleAjax( 'rtg_toggle_saved_tire' ); } catch ( WPAjaxDieContinueException $e ) {}
+        $r = json_decode( $this->_last_response, true );
+        $this->assertFalse( $r['success'] );
+    }
+
+    public function test_get_saved_tires_lists_the_member_shortlist_with_price_movement() {
+        $user_id = $this->factory()->user->create( array( 'role' => 'subscriber' ) );
+        wp_set_current_user( $user_id );
+        $tire_id = 'saved-ajax-003';
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => $tire_id, 'price' => 300, 'brand' => 'Michelin', 'model' => 'Defender' ) ) );
+        RTG_Database::save_tire( $user_id, $tire_id );
+        RTG_Database::update_tire( $tire_id, array( 'price' => 288 ) );
+
+        $_POST = array( 'nonce' => wp_create_nonce( 'tire_rating_nonce' ) );
+        try { $this->_handleAjax( 'rtg_get_saved_tires' ); } catch ( WPAjaxDieContinueException $e ) {}
+        $r = json_decode( $this->_last_response, true );
+        $this->assertTrue( $r['success'] );
+        $this->assertSame( 1, $r['data']['total'] );
+        $t = $r['data']['tires'][0];
+        $this->assertSame( $tire_id, $t['tire_id'] );
+        $this->assertSame( 'Michelin', $t['brand'] );
+        $this->assertSame( 288.0, (float) $t['price'] );
+        $this->assertSame( 300.0, (float) $t['price_at_save'] );
+        $this->assertNotEmpty( $t['saved_at'] );
+        $this->assertArrayHasKey( 'stock', $t );
+        $this->assertFalse( $t['stock']['show'] );
+    }
+
+    public function test_get_tire_ratings_carries_the_member_saved_ids() {
+        $user_id = $this->factory()->user->create( array( 'role' => 'subscriber' ) );
+        wp_set_current_user( $user_id );
+        $tire_id = 'saved-ajax-004';
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => $tire_id ) ) );
+        RTG_Database::save_tire( $user_id, $tire_id );
+
+        $_POST = array( 'nonce' => wp_create_nonce( 'tire_rating_nonce' ), 'tire_ids' => array( $tire_id ) );
+        try { $this->_handleAjax( 'get_tire_ratings' ); } catch ( WPAjaxDieContinueException $e ) {}
+        $r = json_decode( $this->_last_response, true );
+        $this->assertTrue( $r['success'] );
+        $this->assertSame( array( $tire_id ), $r['data']['saved_tire_ids'] );
+    }
 }

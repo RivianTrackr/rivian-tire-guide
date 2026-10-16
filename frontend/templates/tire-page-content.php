@@ -632,6 +632,10 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
   .rtg-tp .rtg-tp-cta-secondary { background: transparent; color: var(--rtg-tp-text); border: 1px solid var(--rtg-tp-border); }
   .rtg-tp .rtg-tp-cta-secondary:hover { color: var(--rtg-tp-accent); border-color: color-mix(in srgb, var(--rtg-tp-accent) 45%, var(--rtg-tp-border)); }
   .rtg-tp .rtg-tp-cta-secondary.copied { color: #4ade80; border-color: color-mix(in srgb, #4ade80 45%, var(--rtg-tp-border)); }
+  /* Saved: the heart fills and the button tints toward accent. */
+  .rtg-tp .rtg-tp-save.is-saved { color: var(--rtg-tp-accent); border-color: color-mix(in srgb, var(--rtg-tp-accent) 50%, var(--rtg-tp-border)); background: color-mix(in srgb, var(--rtg-tp-accent) 12%, var(--rtg-tp-deep)); }
+  .rtg-tp .rtg-tp-save.is-saved:hover { color: var(--rtg-tp-accent-hover); }
+  .rtg-tp .rtg-tp-save[disabled] { opacity: 0.6; cursor: wait; }
   /* The other retailer, in stock on a tracked link: the positive green, so it reads as the way out beside an out-of-stock note. */
   .rtg-tp .rtg-tp-cta-alt { color: #4ade80; border-color: color-mix(in srgb, #4ade80 45%, var(--rtg-tp-border)); }
   .rtg-tp .rtg-tp-cta-alt:hover { color: #86efac; border-color: color-mix(in srgb, #4ade80 70%, var(--rtg-tp-border)); background: color-mix(in srgb, #4ade80 8%, transparent); }
@@ -889,6 +893,10 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
           <i class="fa-solid <?php echo $review_is_video ? 'fa-circle-play' : 'fa-newspaper'; ?>" aria-hidden="true"></i><?php echo $review_is_video ? 'Watch Review' : 'Read Review'; ?>
         </a>
         <?php endif; ?>
+        <?php $rtg_tp_saved = is_user_logged_in() && RTG_Database::is_tire_saved( get_current_user_id(), $tire_id ); ?>
+        <button type="button" class="rtg-tp-cta rtg-tp-cta-secondary rtg-tp-save<?php echo $rtg_tp_saved ? ' is-saved' : ''; ?>" id="rtgTpSave" aria-pressed="<?php echo $rtg_tp_saved ? 'true' : 'false'; ?>">
+          <i class="<?php echo $rtg_tp_saved ? 'fa-solid' : 'fa-regular'; ?> fa-heart" aria-hidden="true"></i><span><?php echo $rtg_tp_saved ? 'Saved' : 'Save'; ?></span>
+        </button>
         <a class="rtg-tp-cta rtg-tp-cta-secondary" id="rtgTpCompare" href="<?php echo esc_url( $compare_url ); ?>">
           <i class="fa-solid fa-plus" aria-hidden="true"></i>Compare
         </a>

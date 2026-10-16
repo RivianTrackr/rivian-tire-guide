@@ -69,6 +69,14 @@ const builds = [
     minify: true,
     drop: ['console', 'debugger'],
   },
+  // --- Frontend JS (saved tires page) ---
+  {
+    ...jsDefaults,
+    entryPoints: ['frontend/js/saved-tires.js'],
+    outfile: 'frontend/js/saved-tires.min.js',
+    minify: true,
+    drop: ['console', 'debugger'],
+  },
   // --- Frontend JS (user reviews) ---
   {
     ...jsDefaults,
@@ -99,6 +107,12 @@ const builds = [
   {
     entryPoints: ['frontend/css/user-reviews.css'],
     outfile: 'frontend/css/user-reviews.min.css',
+    minify: true,
+    bundle: false,
+  },
+  {
+    entryPoints: ['frontend/css/saved-tires.css'],
+    outfile: 'frontend/css/saved-tires.min.css',
     minify: true,
     bundle: false,
   },

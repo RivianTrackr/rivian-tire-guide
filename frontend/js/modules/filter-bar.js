@@ -307,6 +307,7 @@ export function activeFilterCount() {
   if (warranty && Number(warranty.value) > 0) count++;
   if (getDOMElement('filter3pms')?.checked) count++;
   if (getDOMElement('filterOEM')?.checked) count++;
+  if (getDOMElement('filterSaved')?.checked) count++;
   return count;
 }
 

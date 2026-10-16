@@ -20,6 +20,8 @@ export const state = {
   userRatings: {},
   userReviews: {},
   isLoggedIn: false,
+  // The signed-in member's saved tire IDs (saved.js).
+  savedIds: new Set(),
 
   // Guest pending reviews (session-only, cleared on reload)
   guestPendingReviews: new Set(),

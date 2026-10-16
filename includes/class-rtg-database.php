@@ -17,6 +17,11 @@ class RTG_Database {
         return self::tires_table();
     }
 
+    private static function saved_tires_table() {
+        global $wpdb;
+        return $wpdb->prefix . 'rtg_saved_tires';
+    }
+
     private static function ratings_table() {
         global $wpdb;
         return $wpdb->prefix . 'rtg_ratings';
@@ -2763,5 +2768,142 @@ class RTG_Database {
             'deleted_clicks'   => (int) $deleted_clicks,
             'deleted_searches' => (int) $deleted_searches,
         );
+    }
+
+    /* ---------------------------------------------------------------------
+     * Saved tires (2.14.0)
+     *
+     * A member's shortlist: one row per member and tire, kept with the
+     * price on the day it was saved so the saved page can say "down $12
+     * since you saved it". Members only: a guest has no row to hang it on.
+     * ------------------------------------------------------------------ */
+
+    /**
+     * Save a tire for a member. Saving one already saved is a no-op that
+     * keeps the original date and price.
+     *
+     * @param int    $user_id WordPress user ID.
+     * @param string $tire_id Tire identifier (validated by the caller).
+     * @return bool True when the tire is saved after the call.
+     */
+    public static function save_tire( $user_id, $tire_id ) {
+        global $wpdb;
+        $user_id = absint( $user_id );
+        if ( ! $user_id || ! self::validate_tire_id( $tire_id ) ) {
+            return false;
+        }
+        $tire = self::get_tire( $tire_id );
+        if ( ! $tire ) {
+            return false;
+        }
+        if ( self::is_tire_saved( $user_id, $tire_id ) ) {
+            return true;
+        }
+        $ok = $wpdb->insert(
+            self::saved_tires_table(),
+            array(
+                'user_id'       => $user_id,
+                'tire_id'       => $tire_id,
+                'price_at_save' => (float) ( $tire['price'] ?? 0 ),
+                'created_at'    => current_time( 'mysql' ),
+            ),
+            array( '%d', '%s', '%f', '%s' )
+        );
+        return false !== $ok;
+    }
+
+    /**
+     * Take a tire off a member's list.
+     *
+     * @return bool True when a row was removed.
+     */
+    public static function unsave_tire( $user_id, $tire_id ) {
+        global $wpdb;
+        $user_id = absint( $user_id );
+        if ( ! $user_id || ! self::validate_tire_id( $tire_id ) ) {
+            return false;
+        }
+        $n = $wpdb->delete( self::saved_tires_table(), array( 'user_id' => $user_id, 'tire_id' => $tire_id ), array( '%d', '%s' ) );
+        return (int) $n > 0;
+    }
+
+    public static function is_tire_saved( $user_id, $tire_id ) {
+        global $wpdb;
+        $user_id = absint( $user_id );
+        if ( ! $user_id || ! self::validate_tire_id( $tire_id ) ) {
+            return false;
+        }
+        return (int) $wpdb->get_var( $wpdb->prepare(
+            'SELECT COUNT(*) FROM ' . self::saved_tires_table() . ' WHERE user_id = %d AND tire_id = %s',
+            $user_id,
+            $tire_id
+        ) ) > 0;
+    }
+
+    /**
+     * The tire IDs a member has saved, newest first. What the guide's cards
+     * and the "Saved" filter read.
+     *
+     * @return string[]
+     */
+    public static function get_saved_tire_ids( $user_id ) {
+        global $wpdb;
+        $user_id = absint( $user_id );
+        if ( ! $user_id ) {
+            return array();
+        }
+        $ids = $wpdb->get_col( $wpdb->prepare(
+            'SELECT tire_id FROM ' . self::saved_tires_table() . ' WHERE user_id = %d ORDER BY created_at DESC, id DESC',
+            $user_id
+        ) );
+        return array_values( array_map( 'strval', (array) $ids ) );
+    }
+
+    public static function get_saved_count( $user_id ) {
+        global $wpdb;
+        $user_id = absint( $user_id );
+        if ( ! $user_id ) {
+            return 0;
+        }
+        return (int) $wpdb->get_var( $wpdb->prepare(
+            'SELECT COUNT(*) FROM ' . self::saved_tires_table() . ' WHERE user_id = %d',
+            $user_id
+        ) );
+    }
+
+    /**
+     * A member's saved tires with what the saved page shows: the tire's
+     * current row, when it was saved, the price then, and its rating. A
+     * tire deleted from the guide drops out of the list (inner join).
+     *
+     * @return array[] Each: tire columns + saved_at, price_at_save, rating_average, rating_count.
+     */
+    public static function get_saved_tires( $user_id ) {
+        global $wpdb;
+        $user_id = absint( $user_id );
+        if ( ! $user_id ) {
+            return array();
+        }
+        $saved = self::saved_tires_table();
+        $tires = self::tires_table();
+        $rows  = $wpdb->get_results( $wpdb->prepare(
+            "SELECT t.*, s.created_at AS saved_at, s.price_at_save
+             FROM {$saved} s
+             INNER JOIN {$tires} t ON t.tire_id = s.tire_id
+             WHERE s.user_id = %d
+             ORDER BY s.created_at DESC, s.id DESC",
+            $user_id
+        ), ARRAY_A );
+        if ( empty( $rows ) ) {
+            return array();
+        }
+        $ratings = self::get_tire_ratings( array_column( $rows, 'tire_id' ) );
+        foreach ( $rows as &$row ) {
+            $r = $ratings[ $row['tire_id'] ] ?? array();
+            $row['rating_average'] = (float) ( $r['average'] ?? 0 );
+            $row['rating_count']   = (int) ( $r['count'] ?? 0 );
+            $row['review_count']   = (int) ( $r['review_count'] ?? 0 );
+        }
+        return $rows;
     }
 }

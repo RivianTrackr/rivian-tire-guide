@@ -170,6 +170,11 @@ class RTG_Tire_Page {
             // A reviewer's name links to their other reviews; the feed appends
             // ?reviewer=ID for members and leaves guests as plain text.
             'userReviewsUrl' => RTG_Frontend::user_reviews_url(),
+            // The Save button: where the list lives, who is asking, and
+            // where to sign in (returning here) when they are not.
+            'savedTiresUrl'  => RTG_Saved_Tires::url(),
+            'isLoggedIn'     => is_user_logged_in(),
+            'loginUrl'       => wp_login_url( $canonical ),
         ) );
 
         // Make the resolved tire available to the content partial + head callback.

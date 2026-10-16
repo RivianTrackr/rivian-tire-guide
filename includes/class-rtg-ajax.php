@@ -103,6 +103,11 @@ class RTG_Ajax {
         add_action( 'wp_ajax_rtg_get_user_reviews', array( $this, 'get_user_reviews' ) );
         add_action( 'wp_ajax_nopriv_rtg_get_user_reviews', array( $this, 'get_user_reviews' ) );
 
+        // Saved tires — members only (no nopriv): the heart on a card or a
+        // tire page, and the saved page's list.
+        add_action( 'wp_ajax_rtg_toggle_saved_tire', array( $this, 'toggle_saved_tire' ) );
+        add_action( 'wp_ajax_rtg_get_saved_tires', array( $this, 'get_saved_tires' ) );
+
         // Server-side filtered tire listing — public.
         add_action( 'wp_ajax_rtg_get_tires', array( $this, 'get_tires' ) );
         add_action( 'wp_ajax_nopriv_rtg_get_tires', array( $this, 'get_tires' ) );
@@ -193,10 +198,13 @@ class RTG_Ajax {
         }
 
         wp_send_json_success( array(
-            'ratings'      => $ratings,
-            'user_ratings' => $user_ratings,
-            'user_reviews' => $user_data ?? array(),
-            'is_logged_in' => is_user_logged_in(),
+            'ratings'        => $ratings,
+            'user_ratings'   => $user_ratings,
+            'user_reviews'   => $user_data ?? array(),
+            'is_logged_in'   => is_user_logged_in(),
+            // The member's saved tires ride along: this response is never
+            // page-cached, so the hearts are right even when the page was.
+            'saved_tire_ids' => is_user_logged_in() ? RTG_Database::get_saved_tire_ids( get_current_user_id() ) : array(),
         ) );
     }
 
@@ -553,6 +561,97 @@ class RTG_Ajax {
             'page'         => $page,
             'total_pages'  => ceil( $total / $per_page ),
             'display_name' => $user ? $user->display_name : 'Anonymous',
+        ) );
+    }
+
+    /**
+     * Save or unsave a tire for the signed-in member.
+     *
+     * POST tire_id, saved ("1" to save, "0" to remove; omitted = toggle).
+     * Answers the state after the call and the member's count, so the
+     * button and the "Saved" chip can repaint without a second request.
+     */
+    public function toggle_saved_tire() {
+        if ( ! check_ajax_referer( 'tire_rating_nonce', 'nonce', false ) ) {
+            wp_send_json_error( 'Security check failed.' );
+        }
+        if ( ! is_user_logged_in() ) {
+            wp_send_json_error( array( 'code' => 'login_required', 'message' => 'Sign in to save tires.' ) );
+        }
+
+        $user_id = get_current_user_id();
+        $tire_id = sanitize_text_field( wp_unslash( $_POST['tire_id'] ?? '' ) );
+        if ( ! RTG_Database::validate_tire_id( $tire_id ) ) {
+            wp_send_json_error( 'Invalid tire ID.' );
+        }
+
+        $want = isset( $_POST['saved'] )
+            ? ( '1' === (string) $_POST['saved'] )
+            : ! RTG_Database::is_tire_saved( $user_id, $tire_id );
+
+        if ( $want ) {
+            if ( ! RTG_Database::save_tire( $user_id, $tire_id ) ) {
+                wp_send_json_error( 'Tire not found.' );
+            }
+        } else {
+            RTG_Database::unsave_tire( $user_id, $tire_id );
+        }
+
+        wp_send_json_success( array(
+            'tire_id' => $tire_id,
+            'saved'   => $want,
+            'count'   => RTG_Database::get_saved_count( $user_id ),
+        ) );
+    }
+
+    /**
+     * The signed-in member's saved tires, shaped for the saved page.
+     */
+    public function get_saved_tires() {
+        if ( ! check_ajax_referer( 'tire_rating_nonce', 'nonce', false ) ) {
+            wp_send_json_error( 'Security check failed.' );
+        }
+        if ( ! is_user_logged_in() ) {
+            wp_send_json_error( array( 'code' => 'login_required', 'message' => 'Sign in to see your saved tires.' ) );
+        }
+
+        $user_id = get_current_user_id();
+        $now     = time();
+        $tires   = array();
+        foreach ( RTG_Database::get_saved_tires( $user_id ) as $row ) {
+            $stock = RTG_Stock_Sync::note( $row, $now );
+            $tires[] = array(
+                'tire_id'           => (string) $row['tire_id'],
+                'slug'              => (string) ( $row['slug'] ?? '' ),
+                'brand'             => (string) $row['brand'],
+                'model'             => (string) $row['model'],
+                'size'              => (string) $row['size'],
+                'category'          => (string) ( $row['category'] ?? '' ),
+                'image'             => (string) ( $row['image'] ?? '' ),
+                'price'             => (float) ( $row['price'] ?? 0 ),
+                'price_at_save'     => (float) ( $row['price_at_save'] ?? 0 ),
+                'saved_at'          => (string) $row['saved_at'],
+                'link'              => (string) ( $row['link'] ?? '' ),
+                'retailer'          => RTG_Retailer::label( $row ),
+                'three_pms'         => 'yes' === strtolower( (string) ( $row['three_pms'] ?? '' ) ),
+                'roamer_efficiency' => (float) ( $row['roamer_efficiency'] ?? 0 ),
+                'load_index'        => (string) ( $row['load_index'] ?? '' ),
+                'rating_average'    => (float) $row['rating_average'],
+                'rating_count'      => (int) $row['rating_count'],
+                'review_count'      => (int) $row['review_count'],
+                'stock'             => array(
+                    'show'         => (bool) $stock['show'],
+                    'label'        => (string) $stock['label'],
+                    'title'        => (string) $stock['title'],
+                    'alt_retailer' => (string) $stock['alt_retailer'],
+                    'alt_link'     => (string) $stock['alt_link'],
+                ),
+            );
+        }
+
+        wp_send_json_success( array(
+            'tires' => $tires,
+            'total' => count( $tires ),
         ) );
     }
 

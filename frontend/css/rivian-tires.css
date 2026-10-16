@@ -322,6 +322,26 @@
 .rtg-fchip-toggle[aria-pressed="true"] .rtg-fchip-check {
   display: inline-flex;
 }
+/* The Saved chip's count, and the dimmed chip when there is nothing to show. */
+.rtg-fchip-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--rtg-accent);
+  color: #15130e;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+.rtg-fchip-count[hidden] { display: none; }
+.rtg-fchip-toggle[aria-pressed="true"] .rtg-fchip-count { background: #15130e; color: var(--rtg-accent); }
+.rtg-fitem-saved.is-empty .rtg-fchip { opacity: 0.5; cursor: default; }
+.rtg-fitem-saved.is-empty .rtg-fchip:hover { border-color: var(--rtg-border); }
+.rtg-fitem-saved.is-empty .rtg-fchip:hover .rtg-fchip-glyph { color: var(--rtg-text-muted); }
 /* The glyph says what the pill is for: the sidewall's mountain-snowflake
    mark for 3PMS, a badge for factory fit. The full sentence is a tooltip
    on hover and keyboard focus (also the button's accessible description);
@@ -2250,6 +2270,18 @@ input.range-slider::-moz-range-thumb:hover {
   border-color: var(--rtg-accent);
   color: #15130e;
 }
+/* The heart: outline until saved, then filled on an accent tint. */
+.tire-card-tool-heart-on { display: none; }
+.tire-card-tool-save.is-saved .tire-card-tool-heart-off { display: none; }
+.tire-card-tool-save.is-saved .tire-card-tool-heart-on { display: inline; }
+.tire-card-tool-save.is-saved {
+  color: var(--rtg-accent);
+  border-color: color-mix(in srgb, var(--rtg-accent) 50%, var(--rtg-border));
+  background: color-mix(in srgb, var(--rtg-accent) 14%, var(--rtg-bg-deep));
+}
+.tire-card-tool-save.is-saved:hover {
+  color: var(--rtg-accent-hover);
+}
 @media screen and (max-width: 600px) {
   .tire-card-tool {
     width: 40px;
@@ -3141,6 +3173,43 @@ a.rtg-review-card-title-link:hover {
   .tire-card {
     transition: none;
   }
+}
+
+/* === Saved tires: the toast after a save, and the sign-in prompt's copy === */
+.rtg-save-toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 100001;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 380px;
+  padding: 14px 20px;
+  background: var(--rtg-bg-card, #16191e);
+  border: 1px solid var(--rtg-border, #3a3e45);
+  border-left: 3px solid var(--rtg-accent, #fba919);
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  color: var(--rtg-text-primary, #ece9e4);
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateX(24px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.rtg-save-toast.is-visible { opacity: 1; transform: translateX(0); }
+.rtg-save-toast-icon { color: var(--rtg-accent, #fba919); display: inline-flex; }
+.rtg-save-toast-text { flex: 1; }
+.rtg-save-toast-link { font-weight: 600; color: var(--rtg-accent, #fba919); text-decoration: none; white-space: nowrap; }
+.rtg-save-toast-link:hover { color: var(--rtg-accent-hover, #ffbe4a); text-decoration: underline; }
+.rtg-save-dialog-text { margin: 0; font-size: 14px; line-height: 1.6; color: var(--rtg-text-muted, #a19e97); }
+@media (max-width: 600px) {
+  .rtg-save-toast { top: auto; bottom: max(16px, env(safe-area-inset-bottom)); left: 16px; right: 16px; max-width: none; transform: translateY(16px); }
+  .rtg-save-toast.is-visible { transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rtg-save-toast { transition: none; }
 }
 
 /* === Pagination (guide footer; the user reviews page has its own stylesheet) === */
