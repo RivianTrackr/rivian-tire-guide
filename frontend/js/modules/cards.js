@@ -14,6 +14,7 @@ import { openImageModal } from './image-modal.js';
 import { fitmentShortfalls, describeShortfalls, parseLoadIndex, loadIndexPair, describeLoadRange, thirdPartyFits, describeThirdPartyFits } from './fitment.js';
 import { formatSetPrice, formatWholePrice, priceFreshness, stockNote, SET_QUANTITY } from './pricing.js';
 import { isLimitedSample } from './efficiency.js';
+import { createSaveTool } from './saved.js';
 
 /**
  * Stored tags that mean nothing to a shopper and never render as chips.
@@ -492,6 +493,8 @@ export function createSingleCard(row) {
   toolsEl.className = 'tire-card-tools';
   toolsEl.appendChild(compareOverlay);
   toolsEl.appendChild(shareBtn);
+  // The heart: a member's shortlist, in the row the card already has.
+  toolsEl.appendChild(createSaveTool(tireId, brand, model));
 
   titleRow.appendChild(titleEl);
   titleRow.appendChild(toolsEl);

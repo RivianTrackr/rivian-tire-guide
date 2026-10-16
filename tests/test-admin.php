@@ -179,6 +179,7 @@ class Test_RTG_Admin extends WP_UnitTestCase {
             'compare_slug'             => 'tire-compare',
             'user_reviews_slug'        => 'user-reviews',
             'tire_review_slug'         => 'tire-review',
+            'saved_tires_slug'         => 'saved-tires',
             'analytics_retention_days' => '90',
         ), $overrides );
     }

@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 30;
+    const DB_VERSION = 31;
 
     public static function activate() {
         self::create_tables();
@@ -56,6 +56,7 @@ class RTG_Activator {
         $click_events_table  = $wpdb->prefix . 'rtg_click_events';
         $search_events_table = $wpdb->prefix . 'rtg_search_events';
         $candidates_table    = $wpdb->prefix . 'rtg_tire_candidates';
+        $saved_table         = $wpdb->prefix . 'rtg_saved_tires';
 
         $sql = "CREATE TABLE {$wheels_table} (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -221,6 +222,21 @@ class RTG_Activator {
             KEY idx_fits_vehicles (fits_vehicles)
         ) $charset_collate;";
 
+        // Saved tires: one row per member and tire, with the price on the
+        // day they saved it so the saved page can say when it has dropped.
+        $sql .= "
+        CREATE TABLE {$saved_table} (
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            user_id BIGINT(20) UNSIGNED NOT NULL,
+            tire_id VARCHAR(50) NOT NULL,
+            price_at_save DECIMAL(10,2) NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            UNIQUE KEY user_tire (user_id, tire_id),
+            KEY idx_tire_id (tire_id),
+            KEY idx_user_id (user_id)
+        ) $charset_collate;";
+
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta( $sql );
     }
@@ -264,6 +280,7 @@ class RTG_Activator {
             28 => 'migrate_28_hide_uncovered_brands',
             29 => 'migrate_29_add_candidate_availability',
             30 => 'migrate_30_add_tire_stock',
+            31 => 'migrate_31_create_saved_tires_table',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -869,5 +886,15 @@ class RTG_Activator {
         if ( ! in_array( 'stock_alt_link', $cols, true ) ) {
             $wpdb->query( "ALTER TABLE {$table} ADD COLUMN stock_alt_link TEXT AFTER stock_alt_retailer" );
         }
+    }
+
+    /**
+     * Migration 31: saved tires (2.14.0). The table is created by dbDelta
+     * above; this marks the migration. Unrelated to the favorites table
+     * migration 7 once made and 1.90.0 removed: that one is still dropped
+     * by uninstall.php, this one is a new name with a price column.
+     */
+    private static function migrate_31_create_saved_tires_table() {
+        // Table created by dbDelta above.
     }
 }

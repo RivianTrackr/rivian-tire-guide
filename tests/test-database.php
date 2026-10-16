@@ -569,4 +569,47 @@ class Test_RTG_Database extends WP_UnitTestCase {
         $this->assertSame( $tire['slug'], $row['slug'], 'the row carries the slug the tire page is served at' );
         $this->assertSame( 1, RTG_Database::get_user_review_count( $admin ) );
     }
+
+    /**
+     * Saved tires: a member's shortlist. Saving keeps the price of the day,
+     * saving twice is one row, removing works, and a guest has no list.
+     */
+    public function test_saved_tires_save_list_and_remove() {
+        $a = 'saved-001';
+        $b = 'saved-002';
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => $a, 'price' => 289 ) ) );
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => $b, 'price' => 246, 'brand' => 'Nokian' ) ) );
+        $user = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+        $this->assertFalse( RTG_Database::is_tire_saved( $user, $a ) );
+        $this->assertSame( 0, RTG_Database::get_saved_count( $user ) );
+
+        $this->assertTrue( RTG_Database::save_tire( $user, $a ) );
+        $this->assertTrue( RTG_Database::save_tire( $user, $a ), 'saving again is a no-op, not an error' );
+        $this->assertTrue( RTG_Database::save_tire( $user, $b ) );
+        $this->assertTrue( RTG_Database::is_tire_saved( $user, $a ) );
+        $this->assertSame( 2, RTG_Database::get_saved_count( $user ) );
+        $this->assertSame( array( $b, $a ), RTG_Database::get_saved_tire_ids( $user ), 'newest first' );
+
+        // The price today rides with the price on the day of the save.
+        RTG_Database::update_tire( $a, array( 'price' => 277 ) );
+        $rows = RTG_Database::get_saved_tires( $user );
+        $this->assertCount( 2, $rows );
+        $row = $rows[1];
+        $this->assertSame( $a, $row['tire_id'] );
+        $this->assertSame( 289.0, (float) $row['price_at_save'] );
+        $this->assertSame( 277.0, (float) $row['price'] );
+        $this->assertNotEmpty( $row['saved_at'] );
+        $this->assertArrayHasKey( 'rating_average', $row );
+        $this->assertSame( 0, $row['rating_count'] );
+
+        $this->assertTrue( RTG_Database::unsave_tire( $user, $a ) );
+        $this->assertFalse( RTG_Database::unsave_tire( $user, $a ), 'nothing left to remove' );
+        $this->assertSame( array( $b ), RTG_Database::get_saved_tire_ids( $user ) );
+
+        // No member, no list; no tire, no save.
+        $this->assertFalse( RTG_Database::save_tire( 0, $a ) );
+        $this->assertFalse( RTG_Database::save_tire( $user, 'ghost-tire' ) );
+        $this->assertSame( array(), RTG_Database::get_saved_tire_ids( 0 ) );
+    }
 }

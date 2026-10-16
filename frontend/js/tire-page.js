@@ -171,6 +171,84 @@ var RTG_TP_TOOLTIPS = {
     });
   }
 
+  // --- Save -----------------------------------------------------------------
+  // The heart in the CTA row. Signed in: toggles the tire on the member's
+  // list and says so. Signed out: the dialog shell asks to sign in, with
+  // the tire on the login URL so the save completes on return.
+  var saveBtn = document.getElementById('rtgTpSave');
+  if (saveBtn) {
+    var paintSave = function (saved) {
+      var icon = saveBtn.querySelector('i');
+      var label = saveBtn.querySelector('span');
+      saveBtn.classList.toggle('is-saved', saved);
+      saveBtn.setAttribute('aria-pressed', saved ? 'true' : 'false');
+      if (icon) icon.className = (saved ? 'fa-solid' : 'fa-regular') + ' fa-heart';
+      if (label) label.textContent = saved ? 'Saved' : 'Save';
+    };
+    var openSaveSignIn = function () {
+      var dialog = window.RTG_DIALOG;
+      var back = new URL(window.location.href);
+      back.searchParams.set('rtg_save', cfg.tireId || '');
+      var login;
+      try {
+        login = new URL(cfg.loginUrl || '/wp-login.php', window.location.origin);
+        login.searchParams.set('redirect_to', back.toString());
+      } catch (e) {
+        login = { toString: function () { return cfg.loginUrl || '/wp-login.php'; } };
+      }
+      if (!dialog || typeof dialog.openDialog !== 'function') {
+        window.location.href = login.toString();
+        return;
+      }
+      var dlg = dialog.openDialog({ id: 'rtgSaveSignIn', title: 'Save this tire', size: 'sm', returnFocus: saveBtn });
+      var p = document.createElement('p');
+      p.className = 'rtg-save-dialog-text';
+      p.style.cssText = 'margin:0;font-size:14px;line-height:1.6;color:var(--rtg-tp-muted,#a19e97)';
+      p.textContent = 'Saved tires live with your RivianTrackr account, so they follow you from your phone to your desk. Sign in and this one is saved as soon as you land back here.';
+      dlg.body.appendChild(p);
+      var later = dialog.dialogButton('Not now');
+      later.addEventListener('click', function () { dlg.close(); });
+      dlg.footer.appendChild(later);
+      var signIn = document.createElement('a');
+      signIn.className = 'rtg-dialog-btn rtg-dialog-btn-primary';
+      signIn.innerHTML = '<i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> Sign in to save';
+      signIn.href = login.toString();
+      dlg.footer.appendChild(signIn);
+    };
+    var postSave = function (want) {
+      saveBtn.disabled = true;
+      var fd = new FormData();
+      fd.append('action', 'rtg_toggle_saved_tire');
+      fd.append('nonce', cfg.ratingNonce || '');
+      fd.append('tire_id', cfg.tireId || '');
+      fd.append('saved', want ? '1' : '0');
+      return fetch(cfg.ajaxurl, { method: 'POST', body: fd, credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          saveBtn.disabled = false;
+          if (!data || !data.success) {
+            if (data && data.data && data.data.code === 'login_required') openSaveSignIn();
+            return;
+          }
+          paintSave(!!data.data.saved);
+        })
+        .catch(function () { saveBtn.disabled = false; });
+    };
+    saveBtn.addEventListener('click', function () {
+      if (!cfg.isLoggedIn) { openSaveSignIn(); return; }
+      postSave(!saveBtn.classList.contains('is-saved'));
+    });
+    // Back from the login page with this tire to save.
+    try {
+      var here = new URL(window.location.href);
+      if (here.searchParams.get('rtg_save')) {
+        here.searchParams.delete('rtg_save');
+        window.history.replaceState(window.history.state, '', here.toString());
+        if (cfg.isLoggedIn && !saveBtn.classList.contains('is-saved')) postSave(true);
+      }
+    } catch (e) { /* leave the address as it is */ }
+  }
+
   // --- Reviews: sort, star filter, show more --------------------------------
   // The first page is server-rendered. Changing the sort or the star filter
   // fetches page 1 again and replaces the list; "Show more" appends the next

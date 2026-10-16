@@ -136,6 +136,11 @@ With pre-filter attributes:
 [rivian_user_reviews]
 ```
 
+**Saved Tires** — A signed-in member's shortlist (the heart on cards and tire pages). The plugin serves it at `/saved-tires/` (the slug is a setting) on its own, marked noindex; a published page at that slug with the shortcode takes over, so it can sit in a menu next to My Reviews:
+```
+[rivian_saved_tires]
+```
+
 **Write a Review** — The review page. The plugin serves it at `/tire-review/` (the slug is a setting) on its own, marked noindex. To control the page's SEO, create a WordPress page at that same slug with the shortcode in it: a published page at the review slug takes over from the built-in route, and your SEO plugin handles its title, description and indexing like any other page.
 ```
 [rivian_tire_review]

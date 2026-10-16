@@ -8,6 +8,7 @@ global $wpdb;
 $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}rtg_tires" );
 $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}rtg_ratings" );
 $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}rtg_favorites" );
+$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}rtg_saved_tires" );
 $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}rtg_click_events" );
 $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}rtg_search_events" );
 $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}rtg_tire_candidates" );

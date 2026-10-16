@@ -11,6 +11,14 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.14.0 - 2026-10-16
+
+Saved tires: a shortlist that follows your account.
+
+- **Tap the heart to save a tire.** Every tire card and tire page now has a heart next to Compare and Share. Tap it and the tire goes on your saved list, with a small note confirming it. Tap again to take it off. You need to be signed in: if you are not, the guide asks you to sign in and saves the tire the moment you land back.
+- **A Saved filter in the guide.** A new Saved pill in the filter row shows only the tires you saved, with a count, and every other filter still works on top of it.
+- **Your saved tires page.** Find it at /saved-tires/ and put it in the site menu next to My Reviews. Each saved tire shows its price today and how much it has moved since the day you saved it, its efficiency and rating, a button to the store, and a way to take it off the list. Two or more saved, and one tap compares them side by side.
+
 ## 2.13.3 - 2026-10-16
 
 - **The Changelog and Compare pages now match the rest of the guide.** Both open with the same breadcrumb, page title and spacing as a tire's page. The Changelog page lost its odd back arrow and sits at the site's normal width, and the Compare page's Share and Print buttons are the same size as the buttons everywhere else.

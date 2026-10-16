@@ -163,6 +163,25 @@ $rtg_write_review_url = home_url( '/' . sanitize_title( $rtg_guide_settings['tir
           </div>
           <input type="checkbox" id="filterOEM" class="rtg-fcheckbox" aria-label="OEM" />
         </div>
+
+        <div class="rtg-fitem rtg-fitem-toggle rtg-fitem-saved" data-key="saved">
+          <button type="button" class="rtg-fchip rtg-fchip-toggle" data-toggle="filterSaved" aria-pressed="false" aria-describedby="rtgTipSaved">
+            <span class="rtg-fchip-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+            </span>
+            <span class="rtg-fchip-text">
+              <span class="rtg-fchip-label">Saved</span>
+              <span class="rtg-fchip-sub">Tires you tapped the heart on</span>
+            </span>
+            <span class="rtg-fchip-count" hidden>0</span>
+            <span class="rtg-fchip-check"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
+            <span class="rtg-fswitch" aria-hidden="true"></span>
+          </button>
+          <div class="rtg-fchip-tip" id="rtgTipSaved" role="tooltip">
+            <strong>Saved</strong> Only the tires you saved with the heart. Saved tires live with your account, so sign in to see yours.
+          </div>
+          <input type="checkbox" id="filterSaved" class="rtg-fcheckbox" aria-label="Saved tires only" />
+        </div>
         </div>
 
         <div class="rtg-sheet-foot rtg-dialog-footer">

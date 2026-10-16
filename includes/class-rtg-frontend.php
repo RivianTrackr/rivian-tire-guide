@@ -196,6 +196,11 @@ class RTG_Frontend {
                 'compareUrl'      => home_url( '/' . $compare_slug . '/' ),
                 'tirePageUrl'     => home_url( '/' . RTG_Tire_Page::slug_base() . '/' ),
                 'userReviewsUrl'  => self::user_reviews_url(),
+                // Saved tires: where the list lives, and the member's IDs so
+                // the hearts paint on first render (refreshed from the
+                // ratings response in case this page came from a cache).
+                'savedTiresUrl'   => RTG_Saved_Tires::url(),
+                'savedTireIds'    => is_user_logged_in() ? RTG_Database::get_saved_tire_ids( get_current_user_id() ) : array(),
                 // A tapped star on a card opens the review page with the tire and star set.
                 'tireReviewUrl'   => home_url( '/' . sanitize_title( $settings['tire_review_slug'] ?? 'tire-review' ) . '/' ),
                 'serverSide'      => $server_side,

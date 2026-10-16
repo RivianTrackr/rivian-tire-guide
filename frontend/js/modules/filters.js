@@ -15,6 +15,7 @@ import { isServerSide, serverSideFilterAndRender } from './server.js';
 import { rememberVehicle, rememberedVehicle } from './vehicle-memory.js';
 import { thirdPartyEntry } from './fitment.js';
 import { syncFilterBar } from './filter-bar.js';
+import { isLoggedIn as isMember } from './saved.js';
 
 /** What a size that fits only on aftermarket wheels says after its name in the size menu. */
 export const THIRD_PARTY_SUFFIX = '3rd-party wheels';
@@ -268,6 +269,8 @@ function getFilteredIndexes(filters) {
 
     if (filters["3PMS"] && !safeString(row[9]).toLowerCase().includes("yes")) return false;
     if (filters["OEM"] && !safeString(row[17]).toLowerCase().includes("oem")) return false;
+    // The member's shortlist (saved.js keeps state.savedIds current).
+    if (filters["Saved"] && !state.savedIds.has(row[0])) return false;
 
     return true;
   });
@@ -412,6 +415,7 @@ export function filterAndRender() {
   const warrantyMin = getDOMElement("warrantyMin");
   const filter3pms = getDOMElement("filter3pms");
   const filterOEM = getDOMElement("filterOEM");
+  const filterSaved = getDOMElement("filterSaved");
   const filterSize = getDOMElement("filterSize");
   const filterBrand = getDOMElement("filterBrand");
   const filterCategory = getDOMElement("filterCategory");
@@ -430,6 +434,7 @@ export function filterAndRender() {
     WarrantyMin: warrantyVal,
     "3PMS": filter3pms?.checked || false,
     "OEM": filterOEM?.checked || false,
+    "Saved": filterSaved?.checked || false,
     Vehicle: vehicleVal && state.VALID_VEHICLES.includes(vehicleVal) ? vehicleVal : "",
     Size: filterSize?.value && state.VALID_SIZES.includes(filterSize.value) ? filterSize.value : "",
     Brand: filterBrand?.value && state.VALID_BRANDS.includes(filterBrand.value) ? filterBrand.value : "",
@@ -460,6 +465,7 @@ export function filterAndRender() {
   if (f.Category) activeFilters.category = f.Category;
   if (f["3PMS"]) activeFilters.three_pms = true;
   if (f["OEM"]) activeFilters.oem = true;
+  if (f["Saved"]) activeFilters.saved = true;
   if (f.PriceMax < priceCeiling) activeFilters.price_max = f.PriceMax;
   if (f.WarrantyMin > 0) activeFilters.warranty_min = f.WarrantyMin;
 
@@ -1001,7 +1007,7 @@ export function resetFilters() {
     if (el) el.value = value;
   });
 
-  const checkboxes = ["filter3pms", "filterOEM"];
+  const checkboxes = ["filter3pms", "filterOEM", "filterSaved"];
   checkboxes.forEach(id => {
     const el = getDOMElement(id);
     if (el) el.checked = false;
@@ -1256,6 +1262,7 @@ export function updateURLFromFilters() {
 
   if (getChecked("filter3pms")) params.set("3pms", "1");
   if (getChecked("filterOEM")) params.set("oem", "1");
+  if (getChecked("filterSaved")) params.set("saved", "1");
 
   const currentSort = getVal("sortBy");
   if (currentSort && ALLOWED_SORT_OPTIONS.includes(currentSort) && currentSort !== "roamer-efficiency") {
@@ -1382,6 +1389,9 @@ export function applyFiltersFromURL() {
 
   setChecked("filter3pms", params.get("3pms"));
   setChecked("filterOEM", params.get("oem"));
+  // Only a member has a list to show; a shared link's saved=1 is ignored
+  // for anyone else rather than emptying their guide.
+  setChecked("filterSaved", isMember() ? params.get("saved") : null);
 
   const sort = params.get("sort");
   if (sort && ALLOWED_SORT_OPTIONS.includes(sort)) setVal("sortBy", sort);
