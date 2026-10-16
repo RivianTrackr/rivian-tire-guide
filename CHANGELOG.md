@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.13.3] - 2026-10-16
+
+### Changed
+- **The Changelog and Compare pages carry the tire page's shell.** The last two pages that drifted from it. The Changelog page (`frontend/templates/whats-new.php`) had a "Back to the Tire Guide" arrow in place of a breadcrumb, a "Rivian Tire Guide" eyebrow no other page has, its own font stack and a 760px cap where every other page inherits the theme's font and width, and links that underlined on hover. It now opens with Home › Tire Guide › Changelog, the 32px semibold title and 15px lede at the tire page's spacing, inherits the theme's font, sits at the theme's content width with the pages' 32px/80px padding (20px/60px on phones), and its links shift to the accent hover color like the others; the eyebrow and back link are gone, and the release cards sit 12px apart like the review cards. The template takes the `.rtg-embed` hook the other pages carry. The Compare page (`frontend/templates/compare.php`) had a 28px bold title over a 14px subtitle hung on a negative margin, 24px page padding, 13px Share and Print buttons with no minimum height, and an empty-state icon in the border color. The title is now 32px semibold with the 15px lede under it (a rule keeps the gap when the content starts with something other than the lede), the page padding is 32px/80px, `.cmp-btn` is the tire page's 44px CTA (transparent, 15px, accent-tinted border on hover, press and focus ring), so Share, Print, "Pick from the guide" and "Browse Tires" all match, and the empty state uses the guide's 60px padding and muted icon at half opacity. Phones: 26px title, 20px/60px padding.
+
+### Tests
+- `npm test`, `php -l` and the contract checks pass locally; the PHPUnit suite runs in CI.
+
 ## [2.13.2] - 2026-10-16
 
 ### Fixed

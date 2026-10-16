@@ -87,23 +87,31 @@ $rtg_settings = get_option( 'rtg_settings', array() );
     .cmp-breadcrumb a:hover { color: var(--rtg-accent); }
     .cmp-breadcrumb span[aria-current] { color: var(--rtg-text-primary); }
     .cmp-topbar-actions { display: flex; gap: 8px; }
+    /* The tire page's CTA: 44px, 8px radius, accent on hover. */
     .cmp-btn {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 8px 14px;
+      justify-content: center;
+      gap: 7px;
+      min-height: 44px;
+      padding: 10px 20px;
       border-radius: 8px;
       border: 1px solid var(--rtg-border);
-      background: var(--rtg-bg-card);
+      background: transparent;
       color: var(--rtg-text-primary);
-      font-size: 13px;
+      font-size: 15px;
       font-weight: 600;
+      font-family: inherit;
+      line-height: 1.2;
       cursor: pointer;
-      transition: all .15s;
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
       text-decoration: none;
       white-space: nowrap;
     }
-    .cmp-btn:hover { border-color: var(--rtg-accent); color: var(--rtg-accent); }
+    .cmp-btn i { font-size: 13px; }
+    .cmp-btn:hover { color: var(--rtg-accent); border-color: color-mix(in srgb, var(--rtg-accent) 45%, var(--rtg-border)); }
+    .cmp-btn:active { transform: scale(0.97); }
+    .cmp-btn:focus-visible { outline: 2px solid var(--rtg-accent); outline-offset: 2px; }
     .cmp-btn-primary {
       background: var(--rtg-accent);
       border-color: var(--rtg-accent);
@@ -114,20 +122,22 @@ $rtg_settings = get_option( 'rtg_settings', array() );
     /* --- Page --- */
     /* No width/padding overrides: the .cmp-root wrapper is sized natively by
        the theme's constrained entry-content (gutters included). */
-    .cmp-page { padding: 24px 0 60px; }
+    .cmp-page { padding: 32px 0 80px; }
+    /* The tire page's title and lede. */
     .cmp-title {
-      font-size: 28px;
-      font-weight: 700;
+      font-size: 32px;
+      font-weight: 600;
+      line-height: 1.2;
       letter-spacing: -0.5px;
       color: var(--rtg-text-heading);
-      margin-bottom: 24px;
+      margin-bottom: 6px;
     }
     .cmp-subtitle {
-      font-size: 14px;
+      font-size: 15px;
       color: var(--rtg-text-muted);
-      margin-top: -18px;
-      margin-bottom: 24px;
+      margin-bottom: 28px;
     }
+    .cmp-title + #comparisonContent > :first-child:not(.cmp-subtitle) { margin-top: 22px; }
 
     /* --- Tire header cards --- */
     .cmp-tire-headers {
@@ -460,11 +470,12 @@ $rtg_settings = get_option( 'rtg_settings', array() );
     /* --- Empty state --- */
     .cmp-empty {
       text-align: center;
-      padding: 80px 20px;
+      padding: 60px 16px;
     }
     .cmp-empty-icon {
       font-size: 48px;
-      color: var(--rtg-border);
+      color: var(--rtg-text-muted);
+      opacity: 0.5;
       margin-bottom: 16px;
     }
     .cmp-empty-title {
@@ -492,9 +503,9 @@ $rtg_settings = get_option( 'rtg_settings', array() );
 
     /* --- Responsive: mobile --- */
     @media (max-width: 768px) {
-      .cmp-page { padding: 16px 0 40px; }
-      .cmp-title { font-size: 23px; margin-bottom: 16px; }
-      .cmp-subtitle { margin-bottom: 16px; }
+      .cmp-page { padding: 20px 0 60px; }
+      .cmp-title { font-size: 26px; }
+      .cmp-subtitle { margin-bottom: 20px; }
 
       .cmp-tire-header {
         text-align: center;
