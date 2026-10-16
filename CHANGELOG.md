@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.12.0] - 2026-10-16
+
+### Added
+- **A "My reviews" page that needs no ID, and reviewer names that link to it.** The user reviews page (`[rivian_user_reviews]`, slug from the `user_reviews_slug` setting) only worked with a literal `?reviewer=ID` in the address, so a site menu could not link a member to their own reviews: a menu item holds one URL for everyone. `RTG_Frontend::enqueue_user_reviews_assets()` now localizes `currentUserId` and a `loginUrl` that returns to the page, and `user-reviews.js` treats the bare page as the signed-in visitor's own: it fills in their ID, writes `?reviewer=ID` into the address with `replaceState()` so the page can be bookmarked, titles it "My reviews", and gives the empty state a first-person line. A signed-out visitor on the bare page gets a "Sign in to see your reviews" state with a sign-in button (`.rtg-user-reviews-signin` in `rivian-tires.css`) instead of "No reviewer specified". A `?reviewer=` that names someone else still works as before. A new `RTG_Frontend::user_reviews_url( $user_id )` is the one place the page's address is built: the bare page for 0, `?reviewer=ID` otherwise; `rtgData.settings.userReviewsUrl` uses it. On the tire page, a member's name on a review now links to their reviews, in the server-rendered first page (`tire-page-content.php`) and in the pages the feed appends (`reviewerUrl()` in `tire-page.js`, fed `rtgTirePage.userReviewsUrl`). Guest reviews have no user ID and stay plain text. The link keeps the heading color with a faint underline and turns accent on hover.
+
+### Tests
+- `tests/test-frontend.php` (new): `user_reviews_url()` returns the bare page for 0 and `?reviewer=ID` for a member, follows the `user_reviews_slug` setting, and falls back to `user-reviews` when the setting is blank. `npm test`, `php -l` and the contract checks pass locally; the PHPUnit suite runs in CI.
+
 ## [2.11.0] - 2026-09-22
 
 ### Added

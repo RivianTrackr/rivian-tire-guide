@@ -262,6 +262,21 @@ var RTG_TP_TOOLTIPS = {
       return wrap;
     }
 
+    // A member's name links to the page listing their reviews; guest rows
+    // (user_id 0) stay plain text, matching the server-rendered first page.
+    function reviewerUrl(review) {
+      var base = (window.rtgTirePage && window.rtgTirePage.userReviewsUrl) || '';
+      var userId = parseInt(review.user_id, 10) || 0;
+      if (!base || userId <= 0) return '';
+      try {
+        var url = new URL(base, window.location.href);
+        url.searchParams.set('reviewer', String(userId));
+        return url.toString();
+      } catch (e) {
+        return '';
+      }
+    }
+
     function renderReview(review) {
       var item = document.createElement('div');
       item.className = 'rtg-tp-review';
@@ -270,9 +285,15 @@ var RTG_TP_TOOLTIPS = {
       head.className = 'rtg-tp-review-head';
       var who = document.createElement('span');
       who.className = 'rtg-tp-review-who';
-      var author = document.createElement('span');
+      var name = review.display_name || 'Guest';
+      var authorUrl = reviewerUrl(review);
+      var author = document.createElement(authorUrl ? 'a' : 'span');
       author.className = 'rtg-tp-review-author';
-      author.textContent = review.display_name || 'Guest';
+      author.textContent = name;
+      if (authorUrl) {
+        author.href = authorUrl;
+        author.title = 'More reviews by ' + name;
+      }
       who.appendChild(author);
       var when = formatMonth(review.created_at);
       if (when) {

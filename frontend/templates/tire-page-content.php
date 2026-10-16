@@ -696,6 +696,8 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
   .rtg-tp .rtg-tp-review-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 6px; }
   .rtg-tp .rtg-tp-review-who { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .rtg-tp .rtg-tp-review-author { font-weight: 600; color: var(--rtg-tp-heading); font-size: 14px; }
+  .rtg-tp a.rtg-tp-review-author { color: var(--rtg-tp-heading); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--rtg-tp-heading) 30%, transparent); text-underline-offset: 3px; transition: color 0.15s ease, text-decoration-color 0.15s ease; }
+  .rtg-tp a.rtg-tp-review-author:hover { color: var(--rtg-tp-accent); text-decoration-color: var(--rtg-tp-accent); }
   .rtg-tp .rtg-tp-review-date { font-size: 12px; color: var(--rtg-tp-muted); }
   .rtg-tp .rtg-tp-review-meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 6px; }
   .rtg-tp .rtg-tp-review-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; line-height: 1; padding: 5px 9px; border-radius: 20px; color: var(--rtg-tp-muted); background: var(--rtg-tp-deep); border: 1px solid var(--rtg-tp-divider); }
@@ -988,7 +990,11 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
     <div class="rtg-tp-review">
       <div class="rtg-tp-review-head">
         <span class="rtg-tp-review-who">
+          <?php if ( (int) $review['user_id'] > 0 ) : ?>
+          <a class="rtg-tp-review-author" href="<?php echo esc_url( RTG_Frontend::user_reviews_url( (int) $review['user_id'] ) ); ?>" title="More reviews by <?php echo esc_attr( $review['display_name'] ); ?>"><?php echo esc_html( $review['display_name'] ); ?></a>
+          <?php else : ?>
           <span class="rtg-tp-review-author"><?php echo esc_html( $review['display_name'] ); ?></span>
+          <?php endif; ?>
           <?php if ( ! empty( $review['created_at'] ) ) : ?>
           <span class="rtg-tp-review-date"><?php echo esc_html( date_i18n( 'M Y', strtotime( $review['created_at'] ) ) ); ?></span>
           <?php endif; ?>

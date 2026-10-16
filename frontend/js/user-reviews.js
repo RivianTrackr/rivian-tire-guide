@@ -15,7 +15,9 @@
     return '<i class="' + classStr + '"' + style + ' aria-hidden="true"></i>';
   }
 
-  var tireGuideUrl = (typeof rtgUserReviews !== "undefined" && rtgUserReviews.tireGuideUrl) || "";
+  var cfg = (typeof rtgUserReviews !== "undefined" && rtgUserReviews) || {};
+  var tireGuideUrl = cfg.tireGuideUrl || "";
+  var currentUserId = parseInt(cfg.currentUserId, 10) || 0;
 
   // Render back link
   var backContainer = document.getElementById("rtg-user-reviews-back");
@@ -27,12 +29,50 @@
     backContainer.appendChild(backLink);
   }
 
+  // ?reviewer=ID names a member. Without it the page is "my reviews": the
+  // signed-in visitor's own, so a menu item can link the bare page. A
+  // signed-out visitor is sent to log in and lands back here.
   const params = new URLSearchParams(window.location.search);
-  const userId = parseInt(params.get("reviewer"), 10);
+  var userId = parseInt(params.get("reviewer"), 10) || 0;
+  var isOwn = false;
+
+  if (!userId && currentUserId) {
+    userId = currentUserId;
+    isOwn = true;
+    // Put the ID in the address so the page can be bookmarked or shared.
+    try {
+      var own = new URL(window.location.href);
+      own.searchParams.set("reviewer", String(userId));
+      window.history.replaceState(window.history.state, "", own.toString());
+    } catch (e) { /* leave the address as it is */ }
+  } else if (userId && currentUserId && userId === currentUserId) {
+    isOwn = true;
+  }
 
   if (!userId) {
-    const list = document.getElementById("rtg-user-reviews-list");
-    if (list) list.innerHTML = '<div class="rtg-reviews-empty"><div class="rtg-reviews-empty-heading">No reviewer specified</div></div>';
+    var list0 = document.getElementById("rtg-user-reviews-list");
+    var title0 = document.getElementById("rtg-user-reviews-title");
+    if (title0) title0.textContent = "My reviews";
+    if (list0) {
+      list0.innerHTML = "";
+      var empty = document.createElement("div");
+      empty.className = "rtg-reviews-empty";
+      var heading = document.createElement("div");
+      heading.className = "rtg-reviews-empty-heading";
+      heading.textContent = "Sign in to see your reviews";
+      empty.appendChild(heading);
+      if (cfg.loginUrl) {
+        var p = document.createElement("p");
+        p.className = "rtg-reviews-empty-text";
+        var a = document.createElement("a");
+        a.href = cfg.loginUrl;
+        a.className = "rtg-user-reviews-signin";
+        a.innerHTML = rtgIcon('right-to-bracket', 14) + ' Sign in';
+        p.appendChild(a);
+        empty.appendChild(p);
+      }
+      list0.appendChild(empty);
+    }
     return;
   }
 
@@ -64,13 +104,14 @@
 
         // Update header
         var titleEl = document.getElementById("rtg-user-reviews-title");
-        if (titleEl) titleEl.textContent = "Reviews by " + d.display_name;
+        if (titleEl) titleEl.textContent = isOwn ? "My reviews" : "Reviews by " + d.display_name;
 
         var countEl = document.getElementById("rtg-user-reviews-count");
         if (countEl) countEl.textContent = d.total + " review" + (d.total !== 1 ? "s" : "");
 
         if (!d.reviews || !d.reviews.length) {
-          list.innerHTML = '<div class="rtg-reviews-empty"><div class="rtg-reviews-empty-icon">\u270D\uFE0F</div><div class="rtg-reviews-empty-heading">No reviews yet</div></div>';
+          list.innerHTML = '<div class="rtg-reviews-empty"><div class="rtg-reviews-empty-icon">\u270D\uFE0F</div><div class="rtg-reviews-empty-heading">'
+            + (isOwn ? "You haven\u2019t written a review yet" : "No reviews yet") + '</div></div>';
           return;
         }
 

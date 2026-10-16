@@ -42,6 +42,27 @@ class RTG_Frontend {
         return RTG_Theme_Render::ad_blocklist_markup() . ob_get_clean();
     }
 
+    /**
+     * The page that lists a member's reviews.
+     *
+     * With a user ID the URL names that member (`?reviewer=ID`), the form a
+     * reviewer's name on a tire page links to. Without one it is the bare
+     * page, which `user-reviews.js` reads as "the visitor's own reviews" when
+     * they are signed in, so a "My reviews" menu item can point at it as is.
+     * Guest reviews carry no user ID and get no link: pass 0 and you get the
+     * bare page back.
+     *
+     * @param int $user_id WordPress user ID, or 0 for the bare page.
+     * @return string Absolute URL.
+     */
+    public static function user_reviews_url( $user_id = 0 ) {
+        $settings = get_option( 'rtg_settings', array() );
+        $slug     = sanitize_title( $settings['user_reviews_slug'] ?? 'user-reviews' );
+        $url      = home_url( '/' . ( $slug ?: 'user-reviews' ) . '/' );
+        $user_id  = absint( $user_id );
+        return $user_id > 0 ? add_query_arg( 'reviewer', $user_id, $url ) : $url;
+    }
+
     private function enqueue_user_reviews_assets() {
         $suffix = self::asset_suffix();
 
@@ -74,9 +95,14 @@ class RTG_Frontend {
         }
 
         wp_localize_script( 'rtg-user-reviews', 'rtgUserReviews', array(
-            'ajaxurl'      => admin_url( 'admin-ajax.php' ),
-            'nonce'        => wp_create_nonce( 'tire_rating_nonce' ),
-            'tireGuideUrl' => $tire_guide_url,
+            'ajaxurl'       => admin_url( 'admin-ajax.php' ),
+            'nonce'         => wp_create_nonce( 'tire_rating_nonce' ),
+            'tireGuideUrl'  => $tire_guide_url,
+            // The bare page (no ?reviewer=) shows the signed-in visitor's own
+            // reviews; a signed-out visitor is pointed at the login form and
+            // comes back here.
+            'currentUserId' => get_current_user_id(),
+            'loginUrl'      => wp_login_url( self::user_reviews_url() ),
         ) );
 
         $this->inject_theme_color_overrides();
@@ -139,7 +165,6 @@ class RTG_Frontend {
         );
 
         $server_side        = ! empty( $settings['server_side_pagination'] );
-        $user_reviews_slug  = $settings['user_reviews_slug'] ?? 'user-reviews';
 
         // Build shortcode pre-filter overrides.
         $prefilters = array();
@@ -176,7 +201,7 @@ class RTG_Frontend {
                 'rowsPerPage'     => intval( $settings['rows_per_page'] ?? 12 ),
                 'compareUrl'      => home_url( '/' . $compare_slug . '/' ),
                 'tirePageUrl'     => home_url( '/' . RTG_Tire_Page::slug_base() . '/' ),
-                'userReviewsUrl'  => home_url( '/' . sanitize_title( $user_reviews_slug ) . '/' ),
+                'userReviewsUrl'  => self::user_reviews_url(),
                 // A tapped star on a card opens the review page with the tire and star set.
                 'tireReviewUrl'   => home_url( '/' . sanitize_title( $settings['tire_review_slug'] ?? 'tire-review' ) . '/' ),
                 'serverSide'      => $server_side,

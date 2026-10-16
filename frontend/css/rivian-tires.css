@@ -3166,6 +3166,29 @@ a.rtg-review-card-title-link:hover {
 .rtg-user-reviews-back-link:hover {
   opacity: 0.8;
 }
+/* "Sign in" on the bare page for a signed-out visitor */
+.rtg-user-reviews-signin {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 10px 18px;
+  margin-top: 8px;
+  border-radius: 8px;
+  background: var(--rtg-accent, #fba919);
+  color: var(--rtg-text-on-accent, #15130e);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+.rtg-user-reviews-signin:hover {
+  opacity: 0.9;
+  color: var(--rtg-text-on-accent, #15130e);
+}
+.rtg-user-reviews-signin:active {
+  transform: scale(0.93);
+}
 .rtg-user-reviews-header {
   margin-bottom: 24px;
 }
