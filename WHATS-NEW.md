@@ -11,6 +11,10 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.13.1 - 2026-10-16
+
+- **The Review a Tire page matches too.** The tires listed under "start from your Rivian", and the matches as you type in the search box, now use the same card as a tire's page and the reviews page: the tire's photo on white, the brand in small caps above the model, the size and how many reviews it has, and a Review link with a chevron. Nothing about how you write a review changed.
+
 ## 2.13.0 - 2026-10-16
 
 - **The reviews page looks like the rest of the guide.** My reviews, and any member's reviews you open from a tire page, now use the same layout as a tire's page: the breadcrumb and big title up top, a count of reviews under it, and each review on its own card with the tire's photo, name and size as a link straight to that tire's page. The stars, the month, and the Verified owner, vehicle and mileage tags look exactly as they do on a tire's page. Your own page gets a Write a review button, and an empty page tells you what to do next instead of leaving you with a blank list.

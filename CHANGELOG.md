@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.13.1] - 2026-10-16
+
+### Changed
+- **The review page's tire rows are the tire page's card.** The "start from your Rivian" list on `/tire-review/` showed each tire as a 44px thumbnail, "Brand Model" in one 14px line, size and count in 12px, and a plain "Review" word, in a 10px-radius box: the guide's older row, not the card the tire page and the member's reviews page (2.13.0) now share. `renderPopular()` in `tire-review.js` now writes the brand on its own line and the model under it, and `.rv-popular-*` in `tire-review.css` takes the shared treatment: 12px radius, 14px 16px padding, 56px thumbnail on white with a border, brand in 11px accent caps, model 16px bold, size and count 13px muted, and "Review" with a chevron that nudges right as the card border tints toward accent on hover; on phones the thumbnail is 48px and the model wraps instead of truncating. The search results get the same brand line (`.rv-dropdown-brand`) and a bordered 48px thumbnail so what you type into and what you pick from match. The selected-tire card already used this header and is unchanged.
+
+### Tests
+- `npm test`, `php -l` and the contract checks pass locally; the PHPUnit suite runs in CI.
+
 ## [2.13.0] - 2026-10-16
 
 ### Changed
