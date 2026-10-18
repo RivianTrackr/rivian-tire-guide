@@ -83,6 +83,10 @@ class RTG_Tire_Review {
         if ( $preselected_rating < 1 || $preselected_rating > 5 ) {
             $preselected_rating = 0;
         }
+        // ?edit=1 beside a tire: a member came back to change the review they
+        // already wrote (the account page's Edit button, the tire page's
+        // "Edit Your Review"). The page loads it into the form on arrival.
+        $preselected_edit = '' !== $preselected && ! empty( $_GET['edit'] );
 
         // Lightweight tire list with named keys for the review page JS.
         $review_tires = array();
@@ -107,10 +111,13 @@ class RTG_Tire_Review {
             'ajaxurl'         => admin_url( 'admin-ajax.php' ),
             'nonce'           => wp_create_nonce( 'tire_rating_nonce' ),
             'is_logged_in'    => is_user_logged_in(),
-            // Back to this page after signing in, not the home page.
-            'login_url'       => wp_login_url( home_url( '/' . $review_slug . '/' ) ),
+            // Back to this page after signing in, not the home page: with
+            // the tire (and the edit flag) kept, so the form picks up where
+            // the visitor was.
+            'login_url'       => wp_login_url( '' !== $preselected ? self::url( $preselected, $preselected_edit ) : home_url( '/' . $review_slug . '/' ) ),
             'preselectedTire' => $preselected,
             'preselectedRating' => $preselected_rating,
+            'preselectedEdit' => $preselected_edit,
             'tireGuideUrl'    => RTG_Tire_Page::guide_url(),
             // "See the tire page" after a submit: base + slug + '/'.
             'tirePageBase'    => home_url( '/' . RTG_Tire_Page::slug_base() . '/' ),
@@ -133,6 +140,28 @@ class RTG_Tire_Review {
     public static function slug() {
         $settings = get_option( 'rtg_settings', array() );
         return sanitize_title( $settings['tire_review_slug'] ?? 'tire-review' );
+    }
+
+    /**
+     * The review page's URL: bare, with a tire preselected, or with a
+     * member's existing review of that tire loaded for editing (`edit=1`,
+     * which only means something beside a tire).
+     *
+     * @param string $tire_id Tire to preselect, or '' for the bare page.
+     * @param bool   $edit    Load the visitor's own review of the tire into the form.
+     * @return string
+     */
+    public static function url( $tire_id = '', $edit = false ) {
+        $url     = home_url( '/' . self::slug() . '/' );
+        $tire_id = (string) $tire_id;
+        if ( '' === $tire_id ) {
+            return $url;
+        }
+        $args = array( 'tire' => rawurlencode( $tire_id ) );
+        if ( $edit ) {
+            $args['edit'] = '1';
+        }
+        return add_query_arg( $args, $url );
     }
 
     /**

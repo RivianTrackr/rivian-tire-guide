@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.14.1] - 2026-10-18
+
+### Fixed
+- **Editing a review from the account page.** The Edit button on the My Account Reviews tab (the Passkeys plugin) linked to the tire page, which has no review form, so it looked like it did nothing. The way to change a review was buried on the review page: pick the tire again, wait for the "You reviewed this tire" banner, tap "Load it to edit". The review page now takes `?tire=X&edit=1` and, for a signed-in member who reviewed X, loads that review into the form on arrival (stars, the six detail axes, vehicle, miles, owner, title and words), marks the banner's load button "Loaded", and labels the submit button "Save Changes"; the success screen then says the review is updated rather than live. `RTG_Tire_Review::url( $tire_id, $edit )` builds the review page URL (bare, with a tire, or with the edit flag beside a tire) for every caller. The tire page's "Write a Review" CTA (`tire-page-content.php`, both the reviews header and the empty state) becomes "Edit Your Review" with the edit URL for a member who already reviewed the tire (`RTG_Database::get_user_review()`). The sign-in link on the review page now returns to the same tire (and edit flag) instead of the bare page. Picking a different tire or starting over drops `edit` from the URL. The Passkeys plugin's account page points its Edit button at the new URL in its own release.
+
+### Tests
+- `tests/test-meta.php`: the review page URL is bare, carries the tire, carries the edit flag only beside a tire, and honors the slug setting. `npm test`, `php -l` and the contract checks pass locally; the PHPUnit suite runs in CI.
+
 ## [2.14.0] - 2026-10-16
 
 ### Added

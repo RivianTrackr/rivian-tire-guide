@@ -36,6 +36,21 @@ class Test_RTG_Meta extends WP_UnitTestCase {
     }
 
     /**
+     * The review page URL the tire page, the account page and the sign-in
+     * redirect share: bare, with a tire, or with the edit flag beside a tire.
+     */
+    public function test_the_review_page_url_carries_the_tire_and_the_edit_flag() {
+        update_option( 'rtg_settings', array( 'tire_review_slug' => 'tire-review' ) );
+        $this->assertSame( home_url( '/tire-review/' ), RTG_Tire_Review::url() );
+        $this->assertSame( home_url( '/tire-review/?tire=tire001' ), RTG_Tire_Review::url( 'tire001' ) );
+        $this->assertSame( home_url( '/tire-review/?tire=tire001&edit=1' ), RTG_Tire_Review::url( 'tire001', true ) );
+        $this->assertSame( home_url( '/tire-review/' ), RTG_Tire_Review::url( '', true ), 'edit means nothing without a tire' );
+
+        update_option( 'rtg_settings', array( 'tire_review_slug' => 'review-a-tire' ) );
+        $this->assertSame( home_url( '/review-a-tire/?tire=tire001&edit=1' ), RTG_Tire_Review::url( 'tire001', true ), 'the slug setting is honored' );
+    }
+
+    /**
      * Every tire-related page opens with Mediavine's blocklist element, so
      * the ad script serves nothing there; the filter turns it back off.
      */

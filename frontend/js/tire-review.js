@@ -55,8 +55,11 @@
   var pickedVehicle = '';
   var focusedIndex = -1;
   var existingReview = null;      // signed-in user's review of the selected tire
+  var editingExisting = false;    // that review is in the form, so Save replaces it
   var guestBlocked = false;       // guest email already reviewed the selected tire
   var checkSeq = 0;
+  // ?tire=X&edit=1 (the account page's Edit button): load the member's review of X on arrival.
+  var wantsEdit = !!config.preselectedTire && (config.preselectedEdit === true || config.preselectedEdit === '1' || config.preselectedEdit === 1);
 
   // --- DOM refs ---
   var $ = function(id) { return document.getElementById(id); };
@@ -540,6 +543,7 @@
 
     var u = new URL(window.location);
     u.searchParams.set('tire', tire.tire_id);
+    if (!wantsEdit) u.searchParams.delete('edit');
     window.history.replaceState({}, '', u);
     tireCard.scrollIntoView({ block: 'start', behavior: scrollBehavior() });
   }
@@ -572,12 +576,17 @@
         }
         if (isLoggedIn && d && d.user_reviews && d.user_reviews[tireId]) {
           existingReview = d.user_reviews[tireId];
-          showSignedExistingBanner(existingReview);
+          // Arrived to edit this very tire: the review goes straight into the form.
+          var loadNow = wantsEdit && String(tireId) === String(config.preselectedTire);
+          showSignedExistingBanner(existingReview, loadNow);
+          if (loadNow) fillFromReview(existingReview);
         }
+        wantsEdit = false;
       })
       .catch(function() {
         renderDisplayStars(starsContainer, 0);
         ratingText.textContent = 'No reviews yet';
+        wantsEdit = false;
       });
   }
 
@@ -608,6 +617,7 @@
     var u = new URL(window.location);
     u.searchParams.delete('tire');
     u.searchParams.delete('rating');
+    u.searchParams.delete('edit');
     window.history.replaceState({}, '', u);
   }
 
@@ -624,10 +634,16 @@
     errorEl.textContent = '';
     ['rvStarError', 'rvWordsError', 'rvNameError', 'rvEmailError'].forEach(function(id) { setFieldError(id, ''); });
     existingReview = null;
+    editingExisting = false;
     guestBlocked = false;
     hideExistingBanner();
     submitBtn.disabled = false;
-    submitBtn.textContent = 'Submit Review';
+    submitBtn.textContent = submitLabel();
+  }
+
+  /** What the submit button says: a loaded review is saved over, anything else is submitted. */
+  function submitLabel() {
+    return editingExisting ? 'Save Changes' : 'Submit Review';
   }
 
   function resetAll() {
@@ -729,7 +745,7 @@
     return wrap;
   }
 
-  function showSignedExistingBanner(review) {
+  function showSignedExistingBanner(review, loaded) {
     var b = $('rvExistingBanner');
     if (!b) return;
     b.textContent = '';
@@ -745,7 +761,7 @@
     var load = document.createElement('button');
     load.type = 'button';
     load.className = 'rv-link-btn';
-    load.textContent = 'Load it to edit';
+    load.textContent = loaded ? 'Loaded' : 'Load it to edit';
     load.addEventListener('click', function() { fillFromReview(review); load.textContent = 'Loaded'; });
     var fresh = document.createElement('button');
     fresh.type = 'button';
@@ -776,6 +792,8 @@
     $('rvReviewTitle').value = review.review_title || '';
     $('rvReviewText').value = review.review_text || '';
     charCount.textContent = ($('rvReviewText').value.length) + '/5000';
+    editingExisting = true;
+    if (submitBtn.textContent !== 'Submitting...') submitBtn.textContent = submitLabel();
   }
 
   function deleteOwnReview(btn) {
@@ -998,13 +1016,13 @@
         } else {
           errorEl.textContent = (data && data.data) || 'Failed to submit. Please try again.';
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Submit Review';
+          submitBtn.textContent = submitLabel();
         }
       })
       .catch(function() {
         errorEl.textContent = 'Network error. Please try again.';
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Submit Review';
+        submitBtn.textContent = submitLabel();
       });
   }
 
@@ -1028,6 +1046,9 @@
       } else {
         text.appendChild(document.createTextNode('It is usually live the same day.'));
       }
+    } else if (editingExisting) {
+      title.textContent = 'Your review is updated';
+      text.textContent = 'The new version is on the ' + tireName + ' page now. ' + (firstName ? 'Thanks, ' + firstName + '. ' : 'Thanks. ') + 'Reviews like this are what the guide runs on.';
     } else {
       title.textContent = 'Your review is live';
       text.textContent = 'It is on the ' + tireName + ' page now. ' + (firstName ? 'Thanks, ' + firstName + '. ' : 'Thanks. ') + 'Reviews like this are what the guide runs on.';
