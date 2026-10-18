@@ -108,8 +108,14 @@ $rtg_tp_similar     = RTG_Database::get_similar_tires( $tire );
 
 $guide_url   = RTG_Tire_Page::guide_url();
 $rtg_set     = get_option( 'rtg_settings', array() );
-$review_slug = sanitize_title( $rtg_set['tire_review_slug'] ?? 'tire-review' );
-$review_url  = add_query_arg( 'tire', rawurlencode( $tire_id ), home_url( '/' . $review_slug . '/' ) );
+$review_url  = RTG_Tire_Review::url( $tire_id );
+$review_cta  = 'Write a Review';
+// A member who already reviewed this tire is offered their review to edit
+// instead: the review page loads it into the form.
+if ( is_user_logged_in() && RTG_Database::get_user_review( $tire_id, get_current_user_id() ) ) {
+    $review_url = RTG_Tire_Review::url( $tire_id, true );
+    $review_cta = 'Edit Your Review';
+}
 $rtg_tp_retailer = RTG_Retailer::label( $tire );
 $compare_url = add_query_arg( 'compare', rawurlencode( $tire_id ), home_url( '/' . sanitize_title( $rtg_set['compare_slug'] ?? 'tire-compare' ) . '/' ) );
 
@@ -976,7 +982,7 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
         <button type="button" class="rtg-tp-sort-btn" role="radio" aria-checked="false" tabindex="-1" data-sort="lowest">Lowest</button>
       </div>
       <?php endif; ?>
-      <a class="rtg-tp-cta rtg-tp-cta-secondary" href="<?php echo esc_url( $review_url ); ?>">Write a Review</a>
+      <a class="rtg-tp-cta rtg-tp-cta-secondary" href="<?php echo esc_url( $review_url ); ?>"><?php echo esc_html( $review_cta ); ?></a>
     </div>
     <?php endif; ?>
   </div>
@@ -1031,7 +1037,7 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
       <i class="fa-solid fa-comment-dots" aria-hidden="true"></i>
       <div class="rtg-tp-reviews-empty-title">No reviews yet</div>
       <p class="rtg-tp-reviews-empty-text">Be the first to share how this tire performs on your Rivian — range impact, road noise, traction, and wear all help fellow owners choose.</p>
-      <a class="rtg-tp-cta rtg-tp-cta-primary" href="<?php echo esc_url( $review_url ); ?>">Write a Review</a>
+      <a class="rtg-tp-cta rtg-tp-cta-primary" href="<?php echo esc_url( $review_url ); ?>"><?php echo esc_html( $review_cta ); ?></a>
     </div>
   <?php endif; ?>
 
