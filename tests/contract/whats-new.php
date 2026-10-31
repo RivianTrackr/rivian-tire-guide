@@ -81,7 +81,7 @@ check( array() === RTG_Whats_New::parse( '' ), 'an empty file is no releases' );
 
 $view = RTG_Whats_New::to_view( $releases );
 check( true === $view[0]['latest'] && false === $view[1]['latest'], 'only the first release is marked latest' );
-check( 'Sep 3, 2026' === $view[0]['date_display'], 'the date reads as Sep 3, 2026' );
+check( 'September 3, 2026' === $view[0]['date_display'], 'the date reads as September 3, 2026' );
 check( false !== strpos( $view[0]['items'][0]['detail'], '<code>code</code>' ), 'backticks render as code' );
 check( false !== strpos( $view[0]['items'][0]['detail'], '<a href="https://example.com/a?b=1&amp;c=2">link</a>' ), 'a markdown link renders with an escaped href' );
 

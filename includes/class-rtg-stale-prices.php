@@ -98,7 +98,7 @@ class RTG_Stale_Prices {
             return array( 'touched' => 0, 'label' => '', 'stale' => false, 'age_days' => 0, 'show' => false );
         }
 
-        $format   = gmdate( 'Y', $touched ) === gmdate( 'Y', $now ) ? 'M j' : 'M j, Y';
+        $format   = gmdate( 'Y', $touched ) === gmdate( 'Y', $now ) ? 'F j' : 'F j, Y';
         $age_days = (int) floor( max( 0, $now - $touched ) / DAY_IN_SECONDS );
         $stale    = $stale_days > 0 && $touched < ( $now - ( $stale_days * DAY_IN_SECONDS ) );
 

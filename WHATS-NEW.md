@@ -11,6 +11,10 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.14.2 - 2026-10-31
+
+- **Bug fixes and improvements.**
+
 ## 2.14.1 - 2026-10-18
 
 - **Edit a review you already wrote.** The Edit button on your account's Reviews tab now opens your review in the form with everything filled in: stars, details, vehicle, miles, title and words. Change what you like and tap Save Changes. The tire page helps too: once you have reviewed a tire, its Write a Review button reads Edit Your Review and takes you straight there.
