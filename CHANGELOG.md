@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Mono type on iOS.** Tire card specs and wheel sizes used bare `monospace`, and the other mono rules had no font iOS ships. All now start with `ui-monospace` and include `Menlo`.
 - **Nothing under 11px.** Card stat labels, spec tags and wheel badges move from 10px to 11px.
 - **40px tap targets.** Vehicle buttons and the sort select get a 40px minimum height. Card tools, info tooltips, review counts, the What's New link and details links get larger tap areas without changing the layout.
-- **Dates use the house format.** What's New, stock and price labels move to `F j, Y`, or `F j` within the current year.
+- **Dates use the house format.** What's New, stock and price labels move to `F j, Y`, or `F j` within the current year, in both PHP and `frontend/js/modules/pricing.js`.
 - **Muted text passes contrast.** The disabled filter option moves from `#79766f` to `#8f8c85`.
 
 ### Removed

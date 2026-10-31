@@ -88,7 +88,7 @@ export function parseMysqlDate(value) {
  */
 export function formatAsOf(date, now = new Date()) {
   if (!(date instanceof Date)) return '';
-  const opts = { month: 'short', day: 'numeric' };
+  const opts = { month: 'long', day: 'numeric' };
   if (date.getFullYear() !== now.getFullYear()) opts.year = 'numeric';
   return date.toLocaleDateString('en-US', opts);
 }
