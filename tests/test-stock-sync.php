@@ -142,7 +142,7 @@ class Test_RTG_Stock_Sync extends WP_UnitTestCase {
 
         $this->assertTrue( $note['show'] );
         $this->assertSame( 'Out of stock at Tire Rack', $note['label'] );
-        $this->assertStringContainsString( 'Sep 15', $note['title'] );
+        $this->assertStringContainsString( 'September 15', $note['title'] );
         $this->assertSame( 'SimpleTire', $note['alt_retailer'] );
     }
 

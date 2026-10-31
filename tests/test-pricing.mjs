@@ -61,7 +61,7 @@ test('rejects empties and the zero date', () => {
 
 console.log('formatAsOf');
 test('omits the year when it is this year', () => {
-  assert.equal(formatAsOf(new Date(2026, 7, 28), new Date(2026, 8, 1)), 'Aug 28');
+  assert.equal(formatAsOf(new Date(2026, 7, 28), new Date(2026, 8, 1)), 'August 28');
 });
 test('includes the year when it is not', () => {
   assert.equal(formatAsOf(new Date(2025, 4, 12), new Date(2026, 8, 1)), 'May 12, 2025');
@@ -71,7 +71,7 @@ console.log('priceFreshness');
 const now = new Date(2026, 8, 1); // Sep 1, 2026
 test('a synced price is fresh within the threshold', () => {
   const f = priceFreshness({ priceSyncedAt: '2026-08-28 03:00:00', updatedAt: '2026-06-01 00:00:00' }, 90, now);
-  assert.equal(f.label, 'as of Aug 28');
+  assert.equal(f.label, 'as of August 28');
   assert.equal(f.stale, false);
   assert.equal(f.ageDays, 4);
   assert.equal(f.show, false, 'four days old has not earned its line');
@@ -84,12 +84,12 @@ test('the date shows once it is old enough, before it is stale', () => {
 });
 test('a manual tire falls back to updated_at', () => {
   const f = priceFreshness({ priceSyncedAt: '', updatedAt: '2026-07-04 10:00:00' }, 90, now);
-  assert.equal(f.label, 'as of Jul 4');
+  assert.equal(f.label, 'as of July 4');
   assert.equal(f.stale, false);
 });
 test('the later of the two timestamps wins', () => {
   const f = priceFreshness({ priceSyncedAt: '2026-05-01 00:00:00', updatedAt: '2026-08-30 00:00:00' }, 90, now);
-  assert.equal(f.label, 'as of Aug 30');
+  assert.equal(f.label, 'as of August 30');
 });
 test('older than the threshold is stale', () => {
   const f = priceFreshness({ priceSyncedAt: '', updatedAt: '2026-05-12 00:00:00' }, 90, now);
@@ -118,7 +118,7 @@ console.log('stockNote');
     const note = stockNote(base, STOCK_FRESH_DAYS, now);
     assert.equal(note.show, true);
     assert.equal(note.label, 'Out of stock at Tire Rack');
-    assert.match(note.title, /Sep 15/);
+    assert.match(note.title, /September 15/);
     assert.equal(note.altRetailer, 'SimpleTire');
     assert.equal(note.altLink, 'https://www.tkqlhce.com/click-2?url=b');
   });

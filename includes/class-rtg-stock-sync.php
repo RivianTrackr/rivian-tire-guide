@@ -289,7 +289,7 @@ class RTG_Stock_Sync {
             return $out;
         }
 
-        $format = gmdate( 'Y', $checked ) === gmdate( 'Y', $now ) ? 'M j' : 'M j, Y';
+        $format = gmdate( 'Y', $checked ) === gmdate( 'Y', $now ) ? 'F j' : 'F j, Y';
 
         $out['show']         = true;
         $out['label']        = 'Out of stock at ' . ( '' !== $retailer ? $retailer : 'the retailer' );

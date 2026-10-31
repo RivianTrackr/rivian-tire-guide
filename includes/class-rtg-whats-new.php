@@ -201,10 +201,10 @@ class RTG_Whats_New {
         return $html;
     }
 
-    /** "2026-09-03" as "Sep 3, 2026". */
+    /** "2026-09-03" as "September 3, 2026". */
     public static function format_date( $ymd ) {
         $ts = strtotime( $ymd . ' 12:00:00 UTC' );
-        return $ts ? date_i18n( 'M j, Y', $ts ) : $ymd;
+        return $ts ? date_i18n( 'F j, Y', $ts ) : $ymd;
     }
 
     /**

@@ -90,7 +90,7 @@ class Test_RTG_Stale_Prices extends WP_UnitTestCase {
         );
 
         $this->assertSame( strtotime( $this->ago( 3 ) ), $fresh['touched'] );
-        $this->assertSame( 'as of ' . date_i18n( 'M j', strtotime( $this->ago( 3 ) ) ), $fresh['label'] );
+        $this->assertSame( 'as of ' . date_i18n( 'F j', strtotime( $this->ago( 3 ) ) ), $fresh['label'] );
         $this->assertFalse( $fresh['stale'] );
         $this->assertSame( 3, $fresh['age_days'] );
         $this->assertFalse( $fresh['show'], 'three days old has not earned its line' );
@@ -116,7 +116,7 @@ class Test_RTG_Stale_Prices extends WP_UnitTestCase {
         $touched = strtotime( '2025-05-12 09:00:00' );
         $fresh   = RTG_Stale_Prices::freshness( $this->tire( array( 'updated_at' => gmdate( 'Y-m-d H:i:s', $touched ) ) ), $this->now );
 
-        $this->assertSame( 'as of ' . date_i18n( 'M j, Y', $touched ), $fresh['label'] );
+        $this->assertSame( 'as of ' . date_i18n( 'F j, Y', $touched ), $fresh['label'] );
     }
 
     public function test_freshness_says_nothing_when_nothing_is_known() {
