@@ -435,4 +435,56 @@ class Test_RTG_Catalog_Source_CJ extends WP_UnitTestCase {
         $this->assertStringNotContainsString( 'googleProductCategory', RTG_Catalog_Source_CJ::DEFAULT_QUERY );
         $this->assertFalse( method_exists( RTG_Catalog_Source_CJ::class, 'get_category_names' ) );
     }
+
+    // --- Rotation ---
+
+    /**
+     * A size the budget cuts off mid-read starts the next run.
+     *
+     * Advancing past it put its unread pages at the back of the rotation, so
+     * a live run reading 2,000 of 4,333 matches for 275/65R20 would not come
+     * back to that size for days, and then might be cut off again.
+     */
+    public function test_a_size_cut_off_mid_read_starts_the_next_run() {
+        update_option( 'rtg_settings', array(
+            'cj_enabled'    => true,
+            'cj_company_id' => '1234567',
+            'cj_pat'        => 'token',
+        ) );
+        delete_option( RTG_Catalog_Source_CJ::CURSOR_OPTION );
+
+        $mock = function ( $preempt, $args ) {
+            $body    = json_decode( $args['body'], true );
+            $keyword = $body['variables']['keywords'][0];
+            $offset  = $body['variables']['offset'];
+            $slow    = false !== strpos( $keyword, '65R20' );
+
+            if ( $slow ) {
+                usleep( 600000 );
+            }
+
+            return array(
+                'headers'  => array(),
+                'response' => array( 'code' => 200, 'message' => 'OK' ),
+                'body'     => wp_json_encode( array(
+                    'data' => array(
+                        'shoppingProducts' => array(
+                            'totalCount' => $slow ? 5 : 1,
+                            'resultList' => array( array( 'id' => $keyword . '-' . $offset, 'title' => $keyword ) ),
+                        ),
+                    ),
+                ) ),
+            );
+        };
+        add_filter( 'pre_http_request', $mock, 10, 2 );
+
+        $source = new RTG_Catalog_Source_CJ();
+        $source->fetch( array( '275/60R20', '275/65R20', '255/55R21' ), 0.5 );
+
+        remove_filter( 'pre_http_request', $mock, 10 );
+
+        $this->assertSame( 1, intval( get_option( RTG_Catalog_Source_CJ::CURSOR_OPTION ) ) );
+        $this->assertStringContainsString( '255/55R21 not checked', $source->get_last_error() );
+        $this->assertStringContainsString( '275/65R20 (1 of 5)', $source->get_last_error() );
+    }
 }
