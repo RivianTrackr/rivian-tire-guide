@@ -488,6 +488,17 @@ class RTG_Catalog_Source_CJ implements RTG_Catalog_Source {
             }
 
             $next_cursor = ( $cursor + $index + 1 ) % count( $queue );
+
+            // A size the budget cut off mid-read starts the next run instead
+            // of waiting a full rotation, so its unread pages are reached the
+            // next night rather than days later. Only when it wasn't already
+            // first: a size too big for one run's budget would otherwise hold
+            // the cursor forever and starve every size after it.
+            if ( $index > 0 && isset( $truncated[ $size ] ) && ( microtime( true ) - $started ) > $budget ) {
+                $skipped     = array_slice( $ordered, $index + 1 );
+                $next_cursor = ( $cursor + $index ) % count( $queue );
+                break;
+            }
         }
 
         update_option( self::CURSOR_OPTION, $next_cursor, false );

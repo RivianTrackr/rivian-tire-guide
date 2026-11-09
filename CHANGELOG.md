@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.14.3] - 2026-11-09
+
+Nothing visible to owners.
+
+### Fixed
+- **A CJ size cut off mid-read now starts the next run.** When the sweep's time budget ran out partway through a size's pages, the rotation cursor still moved past it, so its unread pages waited a full rotation (about five nights at the 120-second run budget) and could be cut off again. `RTG_Catalog_Source_CJ::fetch()` now leaves the cursor on that size, unless it was already first in the run, so one size too big for the budget can't hold the cursor forever.
+
+### Tests
+- `tests/test-catalog-source-cj.php`: a size the budget cuts off mid-read is where the next run starts, and the sizes after it are reported as not checked. Checked locally with a stub harness before and after the change; the PHPUnit suite runs in CI.
+
 ## [2.14.2] - 2026-10-31
 
 ### Changed
