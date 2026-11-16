@@ -1,6 +1,6 @@
 <?php
 /**
- * Roamer Data: real-world efficiency from Rivian Roamer, matched to the guide.
+ * Roamer Data: real-world efficiency from Roamer, matched to the guide.
  *
  * Status and the work that needs a person (ambiguous and unmatched tires)
  * come first; the settings and the long reference lists are collapsed
@@ -42,7 +42,7 @@ $sync_rel  = $sync_time ? human_time_diff( strtotime( $sync_time ), current_time
         <div class="rtg-page-heading">
             <h1 class="rtg-page-title">Roamer Data</h1>
             <p class="rtg-page-subtitle">
-                Real-world miles per kWh from <a href="https://rivianroamer.com" target="_blank" rel="noopener">Rivian Roamer</a>, matched to the guide's tires and shown on their cards. The sync runs every five minutes and only writes when a number moves.
+                Real-world miles per kWh from <a href="https://rivianroamer.com" target="_blank" rel="noopener">Roamer</a>, matched to the guide's tires and shown on their cards. The sync runs every five minutes and only writes when a number moves.
             </p>
         </div>
         <div class="rtg-page-actions">
@@ -102,12 +102,12 @@ $sync_rel  = $sync_time ? human_time_diff( strtotime( $sync_time ), current_time
                         </div>
                     <?php endif; ?>
                 <?php else : ?>
-                    <p class="rtg-empty-line">No sync has run yet. Use <strong>Sync now</strong> to fetch data from Rivian Roamer.</p>
+                    <p class="rtg-empty-line">No sync has run yet. Use <strong>Sync now</strong> to fetch data from Roamer.</p>
                 <?php endif; ?>
             </div>
             <div id="rtg-roamer-sync-spinner" class="rtg-spinner-row" style="display:none;">
                 <span class="spinner is-active"></span>
-                Syncing with Rivian Roamer...
+                Syncing with Roamer...
             </div>
         </div>
     </div>
@@ -211,7 +211,7 @@ $sync_rel  = $sync_time ? human_time_diff( strtotime( $sync_time ), current_time
                 <div>
                     <h2>Unmatched Roamer tires <span class="rtg-count"><?php echo count( $unmatched_list ); ?></span></h2>
                     <p>
-                        On Rivian Roamer but not in the guide, most-driven first. Select one or more and assign them to a guide tire.
+                        On Roamer but not in the guide, most-driven first. Select one or more and assign them to a guide tire.
                         With several selected, efficiency is averaged by distance. Assigning to a tire marked <em>already linked</em> merges the selection into its existing IDs, for when Roamer lists the same tire twice.
                     </p>
                 </div>

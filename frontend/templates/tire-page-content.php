@@ -158,8 +158,8 @@ $rtg_tp_glance = '';
     if ( $roamer_eff > 0 ) {
         $eff = 'returning ' . number_format( $roamer_eff, 2 ) . ' mi/kWh';
         $eff .= $r_veh > 0
-            ? ' across ' . $r_veh . ' owner vehicle' . ( 1 === $r_veh ? '' : 's' ) . ' on Rivian Roamer'
-            : ' in owner data from Rivian Roamer';
+            ? ' across ' . $r_veh . ' owner vehicle' . ( 1 === $r_veh ? '' : 's' ) . ' on Roamer'
+            : ' in owner data from Roamer';
         $clauses[] = $eff;
     }
 
@@ -258,7 +258,7 @@ $rtg_tp_tiles = array(
     array(
         'label'         => 'Real-world efficiency',
         'value'         => $roamer_eff > 0 ? number_format( $roamer_eff, 2 ) . ' mi/kWh' : 'No data yet',
-        'meta'          => $roamer_eff > 0 ? implode( ' · ', $r_meta ) : 'from Rivian Roamer owners',
+        'meta'          => $roamer_eff > 0 ? implode( ' · ', $r_meta ) : 'from Roamer owners',
         'class'         => 'rtg-tp-stat-roamer' . ( $roamer_eff > 0 ? '' : ' is-empty' ) . ( $r_limited ? ' is-limited' : '' ),
         'tooltip'       => 'Real-World Efficiency',
         'tooltip_extra' => implode( ' · ', $r_meta ) . ( $r_limited ? ( $r_meta ? ' · ' : '' ) . 'limited data so far' : '' ),

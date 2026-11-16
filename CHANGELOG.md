@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.14.4] - 2026-11-16
+
+### Changed
+- **"Rivian Roamer" is now "Roamer"**, after the service's rename. Covers the efficiency tooltip, the guide footer credit, the tire page summary line, the sync failure email and the admin dashboard, Roamer Data, tire edit and import screens. Links to rivianroamer.com are unchanged.
+
 ## [2.14.3] - 2026-11-09
 
 Nothing visible to owners.

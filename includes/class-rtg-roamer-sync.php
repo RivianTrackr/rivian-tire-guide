@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Syncs real-world tire efficiency data from Rivian Roamer.
+ * Syncs real-world tire efficiency data from Roamer.
  *
  * Fetches the tire-efficiency.json feed, matches entries to local tires
  * by brand + model + size, and stores the efficiency data. Ambiguous
@@ -21,7 +21,7 @@ class RTG_Roamer_Sync {
     /** Cron recurrence key, registered in the plugin bootstrap. */
     const CRON_RECURRENCE = 'rtg_five_minutes';
 
-    /** Default Rivian Roamer feed URL. */
+    /** Default Roamer feed URL. */
     const DEFAULT_URL = 'https://rivianroamer.com/guides/tire-efficiency.json';
 
     /** Option key for sync stats. */

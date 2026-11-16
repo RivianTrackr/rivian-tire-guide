@@ -27,10 +27,10 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Review Moderation** — Admin approval queue with pending/approved/rejected status tabs. Admin-submitted reviews auto-approve; user and guest reviews default to pending.
 - **Email Notifications** — Admins receive styled HTML email notifications for new guest reviews. Reviewers receive approval notification emails.
 
-### Real-World Efficiency (Rivian Roamer)
-- **Live Data Sync** — Integrates real-world mi/kWh efficiency data from [Rivian Roamer](https://rivianroamer.com), collected from actual Rivian owner driving sessions. Syncs automatically every 5 minutes via WP-Cron.
+### Real-World Efficiency (Roamer)
+- **Live Data Sync** — Integrates real-world mi/kWh efficiency data from [Roamer](https://rivianroamer.com), collected from actual Rivian owner driving sessions. Syncs automatically every 5 minutes via WP-Cron.
 - **Admin Mapping** — Auto-matches tires by brand + model + size. Ambiguous matches (same tire, different load ratings) are flagged for manual review on the Roamer Data admin page. Multiple Roamer entries can be assigned to one tire with weighted-average efficiency.
-- **Tire Cards** — Blue mi/kWh pill badge with its own info tooltip linking to Rivian Roamer.
+- **Tire Cards** — Blue mi/kWh pill badge with its own info tooltip linking to Roamer.
 - **Sort & Compare** — "Real-World Efficiency" sort option and comparison row in Performance section.
 - **Dashboard** — Roamer overview card (coverage, avg/best/worst mi/kWh, sessions, vehicles, last sync) and top 5 most efficient tires by real-world data.
 
@@ -53,7 +53,7 @@ A comprehensive WordPress plugin that provides an interactive tire catalog for R
 - **Data Retention** — Configurable retention period (7-365 days) with daily WP-Cron cleanup.
 
 ### Admin
-- **Dashboard** — A "Needs attention" list first (failed runs, pending reviews, the discovery queue, broken or missing links, missing images), then overview tiles (tires, reviews, affiliate coverage, Roamer coverage, average price), breakdowns by category/brand/size, Rivian Roamer real-world efficiency overview and top 5 rankings. A quick-stats dashboard widget (with Roamer coverage) also appears on the main WordPress dashboard.
+- **Dashboard** — A "Needs attention" list first (failed runs, pending reviews, the discovery queue, broken or missing links, missing images), then overview tiles (tires, reviews, affiliate coverage, Roamer coverage, average price), breakdowns by category/brand/size, Roamer real-world efficiency overview and top 5 rankings. A quick-stats dashboard widget (with Roamer coverage) also appears on the main WordPress dashboard.
 - **Tire Management** — Full CRUD with search, filters, bulk actions, tire duplication, and tag suggestions.
 - **CSV Import/Export** — Bulk import with duplicate handling (skip/update), auto-generated IDs, MIME validation, and full catalog export.
 - **Reviews Management** — Pending/approved/rejected tabs with approve, reject, and delete actions.
@@ -215,7 +215,7 @@ rivian-tire-guide/
 │   ├── class-rtg-meta.php           # Per-tire meta, Open Graph & Twitter Cards
 │   ├── class-rtg-whats-new.php      # What's new: notes parser, page, REST route
 │   ├── class-rtg-advisor.php        # AI Tire Advisor: ranking, prompts, Claude client, routes
-│   ├── class-rtg-roamer-sync.php    # Rivian Roamer efficiency data sync
+│   ├── class-rtg-roamer-sync.php    # Roamer efficiency data sync
 │   ├── class-rtg-catalog-sync.php   # Tire Discovery: the daily catalog check
 │   ├── class-rtg-catalog-source.php # Retailer source interface (+ class-rtg-catalog-source-cj.php)
 │   ├── class-rtg-tire-qualifier.php # Discovery: spec parsing and qualification rules

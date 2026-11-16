@@ -148,7 +148,7 @@ $total = RTG_Database::get_tire_count();
                     <tr><td><code>review_link</code></td><td>No</td><td>URL</td><td>https://youtube.com/watch?v=…</td></tr>
                     <tr><td><code>sort_order</code></td><td>No</td><td>Integer</td><td>0</td></tr>
                     <tr><td><code>slug</code></td><td>No (auto-generated)</td><td>Text</td><td>michelin-defender-ltx-ms-2-275-65r20</td></tr>
-                    <tr><td><code>roamer_tire_id</code></td><td>No</td><td>Text</td><td>Rivian Roamer tire identifier, as assigned on the Roamer Data page</td></tr>
+                    <tr><td><code>roamer_tire_id</code></td><td>No</td><td>Text</td><td>Roamer tire identifier, as assigned on the Roamer Data page</td></tr>
                 </tbody>
             </table>
         </div>

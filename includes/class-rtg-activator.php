@@ -404,7 +404,7 @@ class RTG_Activator {
     }
 
     /**
-     * Migration 12: Add Rivian Roamer real-world efficiency columns.
+     * Migration 12: Add Roamer real-world efficiency columns.
      * Columns added by dbDelta above; this marks the migration.
      */
     private static function migrate_12_add_roamer_columns() {
