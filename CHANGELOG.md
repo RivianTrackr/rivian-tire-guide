@@ -4,6 +4,13 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.15.1] - 2026-11-16
+
+### Fixed
+- **The Changelog page stayed dark in the site's light mode.** `RTG_Whats_New::maybe_render()` never loaded `rtg-light.css`, so the light rules for the `.rtg-wn` styles in `frontend/templates/whats-new.php` were never applied. It now calls `RTG_Frontend::enqueue_light_mode()`.
+
+Nothing visible to owners in dark mode. In light mode the Changelog page now matches the rest of the guide.
+
 ## [2.15.0] - 2026-11-16
 
 ### Added
