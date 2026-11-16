@@ -65,6 +65,7 @@ class RTG_Tire_Review {
             array(),
             RTG_VERSION
         );
+        RTG_Frontend::enqueue_light_mode();
         wp_enqueue_script(
             'rtg-tire-review',
             RTG_PLUGIN_URL . 'frontend/js/tire-review' . $suffix . '.js',

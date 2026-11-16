@@ -47,6 +47,8 @@ class RTG_Compare {
             file_exists( RTG_PLUGIN_DIR . 'frontend/js/rtg-shared.min.js' ) ? '.min' : ''
         );
 
+        RTG_Frontend::enqueue_light_mode();
+
         wp_enqueue_script(
             'rtg-shared',
             RTG_PLUGIN_URL . 'frontend/js/rtg-shared' . $suffix . '.js',

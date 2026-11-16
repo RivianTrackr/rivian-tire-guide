@@ -116,6 +116,12 @@ const builds = [
     minify: true,
     bundle: false,
   },
+  {
+    entryPoints: ['frontend/css/rtg-light.css'],
+    outfile: 'frontend/css/rtg-light.min.css',
+    minify: true,
+    bundle: false,
+  },
   // --- Admin JS ---
   {
     ...jsDefaults,

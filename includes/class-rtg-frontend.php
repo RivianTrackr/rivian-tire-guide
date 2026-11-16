@@ -76,6 +76,7 @@ class RTG_Frontend {
             array(),
             RTG_VERSION
         );
+        self::enqueue_light_mode();
 
         wp_enqueue_script(
             'rtg-user-reviews',
@@ -113,6 +114,21 @@ class RTG_Frontend {
     /**
      * Return '.min' when minified assets exist and SCRIPT_DEBUG is off.
      */
+    /**
+     * Site light mode (frontend/css/rtg-light.css, built by tools/build-light.mjs).
+     * Every rule in it is scoped to html[data-rt-theme="light"], which RivianTrackr's
+     * color modes set on <html>, so it changes nothing on a page without the attribute.
+     * Safe to call more than once.
+     */
+    public static function enqueue_light_mode() {
+        wp_enqueue_style(
+            'rtg-light',
+            RTG_PLUGIN_URL . 'frontend/css/rtg-light' . self::asset_suffix() . '.css',
+            array(),
+            RTG_VERSION
+        );
+    }
+
     private static function asset_suffix() {
         if ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) {
             return '';
@@ -146,6 +162,7 @@ class RTG_Frontend {
             array( 'rtg-dialog' ),
             RTG_VERSION
         );
+        self::enqueue_light_mode();
 
         $this->inject_theme_color_overrides();
 
