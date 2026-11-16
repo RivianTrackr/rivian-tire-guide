@@ -4,6 +4,15 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.15.0] - 2026-11-16
+
+### Added
+- **Site light mode.** `tools/build-light.mjs` reads every front-end stylesheet and every `<style>` block in `frontend/templates`, and writes `frontend/css/rtg-light.css`: each rule that sets a color, re-emitted under `html[data-rt-theme="light"]` with the dark ink-and-brass values mapped to the light palette. Every color declaration is re-emitted, changed or not, so a specific rule still beats a generic one in light mode. Gold stays the fill for buttons, stars and chips, and gold used as text (including `var(--rtg-accent)` and `var(--rtg-tp-accent)`) becomes brass `#8a5800`. Print rules are left out.
+- `RTG_Frontend::enqueue_light_mode()` loads it next to the guide, tire page, compare, review, reviews and saved tires styles. RivianTrackr's color modes set the attribute, so without it nothing changes.
+- `npm run build` runs the generator before esbuild. Edit the dark CSS and rebuild, never `rtg-light.css`.
+
+Nothing visible to owners yet. The site's light mode is a preview until it goes live.
+
 ## [2.14.4] - 2026-11-16
 
 ### Changed
