@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Rivian Tire Guide
  * Description: Interactive tire guide for Rivian vehicles with filtering, comparison, and ratings.
- * Version: 2.14.3
+ * Version: 2.14.4
  * Author: RivianTrackr
  * Text Domain: rivian-tire-guide
  * Requires at least: 5.8
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'RTG_VERSION', '2.14.3' );
+define( 'RTG_VERSION', '2.14.4' );
 define( 'RTG_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'RTG_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'RTG_PLUGIN_FILE', __FILE__ );
@@ -81,7 +81,7 @@ function rtg_init() {
     RTG_Link_Checker::schedule();
     add_action( RTG_Link_Checker::CRON_HOOK, array( 'RTG_Link_Checker', 'run' ) );
 
-    // Schedule the five-minute Rivian Roamer efficiency data sync.
+    // Schedule the five-minute Roamer efficiency data sync.
     RTG_Roamer_Sync::schedule();
     add_action( RTG_Roamer_Sync::CRON_HOOK, array( 'RTG_Roamer_Sync', 'run' ) );
 

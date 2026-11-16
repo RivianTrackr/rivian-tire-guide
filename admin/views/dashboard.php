@@ -380,7 +380,7 @@ $all_clear = array(
     </div>
 
     <!-- ================================================================
-         Rivian Roamer: real-world efficiency
+         Roamer: real-world efficiency
          ================================================================ -->
     <div class="rtg-dashboard-grid">
 
@@ -388,7 +388,7 @@ $all_clear = array(
             <div class="rtg-card-header is-split">
                 <div>
                     <h2>Real-world efficiency</h2>
-                    <p>Miles per kWh reported by Rivian Roamer owners, matched to the guide's tires.</p>
+                    <p>Miles per kWh reported by Roamer owners, matched to the guide's tires.</p>
                 </div>
                 <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-roamer-sync' ) ); ?>" class="rtg-btn rtg-btn-secondary rtg-btn-sm">Manage</a>
             </div>

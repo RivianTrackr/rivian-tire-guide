@@ -541,7 +541,7 @@ class RTG_Mailer {
     <td style="padding: 32px;">
       <h2 style="margin: 0 0 16px 0; color: #1d1d1f; font-size: 22px; font-weight: 600;">Roamer Sync Failed</h2>
       <p style="margin: 0 0 20px 0; color: #6e6e73; font-size: 16px; line-height: 1.5;">
-        The scheduled Rivian Roamer efficiency sync could not complete. Real-world efficiency data will be stale until this is resolved.
+        The scheduled Roamer efficiency sync could not complete. Real-world efficiency data will be stale until this is resolved.
       </p>
       <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fff3f3; border: 1px solid #ffdada; border-radius: 8px; margin: 0 0 24px 0;">
         <tr>

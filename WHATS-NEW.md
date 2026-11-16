@@ -11,6 +11,10 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.14.4 - 2026-11-16
+
+- **Rivian Roamer is now Roamer.** The real-world efficiency data on tire cards and tire pages now credits Roamer by its new name.
+
 ## 2.14.2 - 2026-10-31
 
 - **Bug fixes and improvements.**

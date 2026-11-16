@@ -569,14 +569,14 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
             <!-- Roamer Real-World Data -->
             <div class="rtg-card">
                 <div class="rtg-card-header">
-                    <h2>Rivian Roamer real-world data</h2>
+                    <h2>Roamer real-world data</h2>
                 </div>
                 <div class="rtg-card-body">
                     <div class="rtg-field-row">
                         <div class="rtg-field-label-row">
                             <label class="rtg-field-label" for="roamer_tire_id">Roamer Tire ID</label>
                         </div>
-                        <p class="rtg-field-description">Slug from Rivian Roamer (e.g. michelin-defender-ltx-275-65r20). Set manually or auto-assigned during sync.</p>
+                        <p class="rtg-field-description">Slug from Roamer (e.g. michelin-defender-ltx-275-65r20). Set manually or auto-assigned during sync.</p>
                         <input type="text" id="roamer_tire_id" name="roamer_tire_id" value="<?php echo esc_attr( $v['roamer_tire_id'] ?? '' ); ?>" class="rtg-input-wide" placeholder="e.g. michelin-defender-ltx-275-65r20">
                     </div>
                     <?php
