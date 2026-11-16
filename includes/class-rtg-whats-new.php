@@ -303,6 +303,10 @@ class RTG_Whats_New {
             return;
         }
 
+        // Site light mode: the page's styles live in the template, and their
+        // light versions in rtg-light.css.
+        RTG_Frontend::enqueue_light_mode();
+
         RTG_Theme_Render::render( array(
             'title'       => 'Changelog — Rivian Tire Guide',
             'slug'        => 'whats-new',
