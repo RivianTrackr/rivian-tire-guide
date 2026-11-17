@@ -516,7 +516,7 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
     background: color-mix(in srgb, var(--rtg-tp-accent) 8%, var(--rtg-tp-deep));
     font-size: 13px;
   }
-  .rtg-tp .rtg-tp-admin-badge { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--rtg-tp-accent); }
+  .rtg-tp .rtg-tp-admin-badge { font-size: 12px; font-weight: 700;color: var(--rtg-tp-accent); }
   .rtg-tp .rtg-tp-admin-link { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--rtg-tp-accent); }
   .rtg-tp .rtg-tp-admin-note { color: var(--rtg-tp-muted); font-size: 12px; }
 
@@ -543,7 +543,7 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
      the box is as tall as the info column, and the photo fits inside it. */
   .rtg-tp .rtg-tp-img img { position: absolute; inset: 20px; width: calc(100% - 40px); height: calc(100% - 40px); object-fit: contain; margin: 0; display: block; }
   .rtg-tp .rtg-tp-info { flex: 1 1 420px; min-width: 280px; display: flex; flex-direction: column; gap: 12px; }
-  .rtg-tp .rtg-tp-brand { font-size: 13px; font-weight: 700; color: var(--rtg-tp-accent); text-transform: uppercase; letter-spacing: .8px; margin: 0; }
+  .rtg-tp .rtg-tp-brand { font-size: 13px; font-weight: 700; color: var(--rtg-tp-accent);margin: 0; }
   .rtg-tp h1.rtg-tp-title { font-size: 34px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.15; color: var(--rtg-tp-heading); margin: -6px 0 0; padding: 0; }
   .rtg-tp .rtg-tp-glance { font-size: 15px; line-height: 1.55; color: var(--rtg-tp-text); margin: 0; max-width: 640px; }
   .rtg-tp .rtg-tp-glance strong { color: var(--rtg-tp-heading); font-weight: 600; }
@@ -601,7 +601,7 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
   /* --- Key-stat tiles --- */
   .rtg-tp .rtg-tp-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 2px 0 0; }
   .rtg-tp .rtg-tp-stat { background: var(--rtg-tp-deep); border: 1px solid var(--rtg-tp-divider); border-radius: 10px; padding: 12px 14px; min-width: 0; }
-  .rtg-tp .rtg-tp-stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--rtg-tp-muted); margin: 0 0 4px; display: flex; align-items: center; gap: 5px; }
+  .rtg-tp .rtg-tp-stat-label { font-size: 12px; font-weight: 600;color: var(--rtg-tp-muted); margin: 0 0 4px; display: flex; align-items: center; gap: 5px; }
   .rtg-tp .info-tooltip-trigger {
     background: none; border: none; padding: 2px; margin: 0;
     color: var(--rtg-tp-muted); font-size: 13px; line-height: 1;
@@ -691,7 +691,7 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
   /* --- Reviews --- */
   .rtg-tp .rtg-tp-reviews-list { display: flex; flex-direction: column; gap: 12px; }
   .rtg-tp .rtg-tp-owners-say { background: var(--rtg-tp-card); border: 1px solid var(--rtg-tp-border); border-left: 3px solid var(--rtg-tp-accent); border-radius: 12px; padding: 16px 18px; margin: 0 0 12px; }
-  .rtg-tp .rtg-tp-owners-say-label { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--rtg-tp-accent); margin: 0 0 8px; }
+  .rtg-tp .rtg-tp-owners-say-label { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700;color: var(--rtg-tp-accent); margin: 0 0 8px; }
   .rtg-tp .rtg-tp-owners-say-label i { font-size: 12px; }
   .rtg-tp .rtg-tp-owners-say-text { font-size: 15px; line-height: 1.55; color: var(--rtg-tp-heading); margin: 0; }
   .rtg-tp .rtg-tp-owners-say-lists { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }

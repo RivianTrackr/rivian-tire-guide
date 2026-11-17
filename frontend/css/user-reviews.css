@@ -157,11 +157,9 @@
 .ur-review-tire-img i { color: #86868b; font-size: 20px; }
 .ur-review-tire-text { min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; }
 .ur-review-tire-brand {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  color: var(--rtg-accent);
+color: var(--rtg-accent);
   line-height: 1.2;
 }
 .ur-review-tire-name {

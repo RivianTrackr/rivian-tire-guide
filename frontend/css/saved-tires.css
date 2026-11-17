@@ -104,7 +104,7 @@
 .st-tire-img i { color: #86868b; font-size: 22px; }
 
 .st-tire-text { flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.st-tire-brand { font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--rtg-accent); line-height: 1.2; }
+.st-tire-brand { font-size: 12px; font-weight: 700;color: var(--rtg-accent); line-height: 1.2; }
 .st-root .st-tire-name { font-size: 16px; font-weight: 700; color: var(--rtg-text-heading); line-height: 1.25; transition: color 0.15s ease; }
 .st-root a.st-tire-name:hover { color: var(--rtg-accent); }
 .st-tire-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
@@ -120,7 +120,7 @@
 /* Price, efficiency, rating: three tiles like the tire page's glance row. */
 .st-tire-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; flex: 0 0 400px; }
 .st-stat { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.st-stat-label { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--rtg-text-muted); }
+.st-stat-label { font-size: 12px; font-weight: 700;color: var(--rtg-text-muted); }
 .st-stat-value { font-size: 18px; font-weight: 600; font-family: var(--st-mono); color: var(--rtg-text-heading); line-height: 1.2; }
 .st-stat-value.is-eff { color: var(--st-info); }
 .st-stat-value.is-muted { color: var(--rtg-text-muted); }
