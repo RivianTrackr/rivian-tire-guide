@@ -4,12 +4,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Who the "View Tire" button actually goes to.
+ * Who the "View tire" button actually goes to.
  *
  * A synced price knows its advertiser (price_source). A manual link only
  * has its hostname — or, for an affiliate tracking link, the destination
  * tucked into a query parameter. Either way the button can say "View at
- * Tire Rack" instead of "View Tire", which is where the shopper is about
+ * Tire Rack" instead of "View tire", which is where the shopper is about
  * to be sent.
  *
  * @since 1.89.0

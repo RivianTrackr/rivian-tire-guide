@@ -592,7 +592,7 @@ margin-bottom: 2px;
         <div class="cmp-empty-title">No tires selected</div>
         <div class="cmp-empty-text">Head back to the tire guide and select tires to compare.</div>
         <a href="<?php echo esc_url( $rtg_guide_url ); ?>" class="cmp-btn cmp-btn-primary">
-          <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Browse Tires
+          <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Browse tires
         </a>
       </div>
     </div>

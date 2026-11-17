@@ -86,7 +86,7 @@ class RTG_Tire_Review {
         }
         // ?edit=1 beside a tire: a member came back to change the review they
         // already wrote (the account page's Edit button, the tire page's
-        // "Edit Your Review"). The page loads it into the form on arrival.
+        // "Edit your review"). The page loads it into the form on arrival.
         $preselected_edit = '' !== $preselected && ! empty( $_GET['edit'] );
 
         // Lightweight tire list with named keys for the review page JS.

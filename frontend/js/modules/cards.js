@@ -847,7 +847,7 @@ export function createSingleCard(row) {
     // "View at Tire Rack": say where the click goes. The label is resolved
     // server-side (RTG_Retailer) and rides the row at index 29.
     const retailerName = safeString(retailer, 40);
-    viewButton.textContent = retailerName ? `View at ${retailerName}` : 'View Tire';
+    viewButton.textContent = retailerName ? `View at ${retailerName}` : 'View tire';
     viewButton.insertAdjacentHTML('beforeend', '&nbsp;' + rtgIcon('arrow-up-right', 14));
     actionsContainer.appendChild(viewButton);
   } else {
@@ -882,7 +882,7 @@ export function createSingleCard(row) {
     const detailsLink = document.createElement('a');
     detailsLink.className = 'tire-card-details-link';
     detailsLink.href = tirePageUrl;
-    detailsLink.innerHTML = 'Full Specs &amp; Reviews&nbsp;' + rtgIcon('arrow-right', 12);
+    detailsLink.innerHTML = 'Full specs &amp; reviews';
     linksRow.appendChild(detailsLink);
   }
 
