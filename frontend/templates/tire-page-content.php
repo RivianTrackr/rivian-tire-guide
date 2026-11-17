@@ -109,12 +109,12 @@ $rtg_tp_similar     = RTG_Database::get_similar_tires( $tire );
 $guide_url   = RTG_Tire_Page::guide_url();
 $rtg_set     = get_option( 'rtg_settings', array() );
 $review_url  = RTG_Tire_Review::url( $tire_id );
-$review_cta  = 'Write a Review';
+$review_cta  = 'Write a review';
 // A member who already reviewed this tire is offered their review to edit
 // instead: the review page loads it into the form.
 if ( is_user_logged_in() && RTG_Database::get_user_review( $tire_id, get_current_user_id() ) ) {
     $review_url = RTG_Tire_Review::url( $tire_id, true );
-    $review_cta = 'Edit Your Review';
+    $review_cta = 'Edit your review';
 }
 $rtg_tp_retailer = RTG_Retailer::label( $tire );
 $compare_url = add_query_arg( 'compare', rawurlencode( $tire_id ), home_url( '/' . sanitize_title( $rtg_set['compare_slug'] ?? 'tire-compare' ) . '/' ) );
@@ -887,7 +887,7 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
 
       <div class="rtg-tp-ctas">
         <?php if ( $link ) : ?>
-        <a class="rtg-tp-cta rtg-tp-cta-primary" href="<?php echo esc_url( $link ); ?>" target="_blank" rel="nofollow sponsored noopener"><?php echo $rtg_tp_retailer ? 'View at ' . esc_html( $rtg_tp_retailer ) : 'View Tire'; ?><i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i></a>
+        <a class="rtg-tp-cta rtg-tp-cta-primary" href="<?php echo esc_url( $link ); ?>" target="_blank" rel="nofollow sponsored noopener"><?php echo $rtg_tp_retailer ? 'View at ' . esc_html( $rtg_tp_retailer ) : 'View tire'; ?><i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i></a>
         <?php endif; ?>
         <?php if ( ! empty( $rtg_tp_stock['show'] ) && '' !== $rtg_tp_stock['alt_link'] && '' !== $rtg_tp_stock['alt_retailer'] ) : ?>
         <a class="rtg-tp-cta rtg-tp-cta-secondary rtg-tp-cta-alt" href="<?php echo esc_url( $rtg_tp_stock['alt_link'] ); ?>" target="_blank" rel="nofollow sponsored noopener">
@@ -896,7 +896,7 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
         <?php endif; ?>
         <?php if ( $review_link_url ) : ?>
         <a class="rtg-tp-cta rtg-tp-cta-secondary rtg-tp-review-link" href="<?php echo esc_url( $review_link_url ); ?>" target="_blank" rel="noopener noreferrer">
-          <i class="fa-solid <?php echo $review_is_video ? 'fa-circle-play' : 'fa-newspaper'; ?>" aria-hidden="true"></i><?php echo $review_is_video ? 'Watch Review' : 'Read Review'; ?>
+          <i class="fa-solid <?php echo $review_is_video ? 'fa-circle-play' : 'fa-newspaper'; ?>" aria-hidden="true"></i><?php echo $review_is_video ? 'Watch Review' : 'Read review'; ?>
         </a>
         <?php endif; ?>
         <?php $rtg_tp_saved = is_user_logged_in() && RTG_Database::is_tire_saved( get_current_user_id(), $tire_id ); ?>
@@ -1051,7 +1051,7 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
       <strong><?php echo esc_html( $h1_text ); ?></strong>
       <?php endif; ?>
     </div>
-    <a class="rtg-tp-cta rtg-tp-cta-primary" href="<?php echo esc_url( $link ); ?>" target="_blank" rel="nofollow sponsored noopener" tabindex="-1"><?php echo $rtg_tp_retailer ? 'View at ' . esc_html( $rtg_tp_retailer ) : 'View Tire'; ?><i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i></a>
+    <a class="rtg-tp-cta rtg-tp-cta-primary" href="<?php echo esc_url( $link ); ?>" target="_blank" rel="nofollow sponsored noopener" tabindex="-1"><?php echo $rtg_tp_retailer ? 'View at ' . esc_html( $rtg_tp_retailer ) : 'View tire'; ?><i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i></a>
   </div>
   <?php endif; ?>
 </div>

@@ -154,7 +154,7 @@ function renderCTAs(tire) {
   if (link) {
     const retailer = typeof tire[COL.retailer] === 'string' ? tire[COL.retailer].trim() : '';
     html += `<a href="${escapeHTML(link)}" target="_blank" rel="noopener noreferrer" class="cmp-cta cmp-cta-primary">
-      ${retailer ? 'View at ' + escapeHTML(retailer) : 'View Tire'} ${rtgIcon('arrow-up-right', 14)}</a>`;
+      ${retailer ? 'View at ' + escapeHTML(retailer) : 'View tire'} ${rtgIcon('arrow-up-right', 14)}</a>`;
   }
   if (review) {
     let isVideo = false;
@@ -174,13 +174,13 @@ function renderCTAs(tire) {
       isVideo = false;
     }
     const iconName = isVideo ? 'circle-play' : 'newspaper';
-    const label = isVideo ? 'Watch Official Review' : 'Read Official Review';
+    const label = isVideo ? 'Watch Official Review' : 'Read official review';
     html += `<a href="${escapeHTML(review)}" target="_blank" rel="noopener noreferrer" class="cmp-cta cmp-cta-review">
       ${label} ${rtgIcon(iconName, 14)}</a>`;
   }
   if (page) {
     html += `<a href="${escapeHTML(page)}" class="cmp-cta cmp-cta-secondary">
-      Full Specs &amp; Reviews ${rtgIcon('arrow-right', 14)}</a>`;
+      Full specs &amp; reviews</a>`;
   }
   html += '</div>';
   return rawHTML(html);
@@ -490,7 +490,7 @@ function renderComparison(rows, tokens) {
             <span class="cmp-tire-meta-value">${fmtWeight(t[COL.weight])}</span>
           </div>
         </div>
-        ${page ? `<a class="cmp-tire-page-link" href="${escapeHTML(page)}">Full specs &amp; reviews ${rtgIcon('arrow-right', 11)}</a>` : ''}
+        ${page ? `<a class="cmp-tire-page-link" href="${escapeHTML(page)}">Full specs &amp; reviews</a>` : ''}
       </div>
     </div>`;
   });
@@ -616,7 +616,7 @@ function renderEmptyState(message) {
     '<div class="cmp-empty"><div class="cmp-empty-icon">' + rtgIcon('scale-balanced', 48) + '</div>' +
     '<div class="cmp-empty-title">No tires selected</div>' +
     '<div class="cmp-empty-text">' + escapeHTML(message) + '</div>' +
-    (guideUrl ? `<a href="${escapeHTML(guideUrl)}" class="cmp-btn cmp-btn-primary">${rtgIcon('arrow-left', 13)} Browse Tires</a>` : '') +
+    (guideUrl ? `<a href="${escapeHTML(guideUrl)}" class="cmp-btn cmp-btn-primary">${rtgIcon('arrow-left', 13)} Browse tires</a>` : '') +
     '</div>';
   if (typeof rtgData !== 'undefined' && Array.isArray(rtgData.tires)) {
     renderAddPanel(container, rtgData.tires, [], 'bottom');

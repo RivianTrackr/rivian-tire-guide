@@ -643,7 +643,7 @@
 
   /** What the submit button says: a loaded review is saved over, anything else is submitted. */
   function submitLabel() {
-    return editingExisting ? 'Save Changes' : 'Submit Review';
+    return editingExisting ? 'Save changes' : 'Submit review';
   }
 
   function resetAll() {

@@ -117,7 +117,7 @@ class RTG_Tire_Page {
         $canonical   = self::tire_url( $tire['slug'] ?? $tire['tire_id'] );
         $description = RTG_Meta::build_description( $tire );
 
-        // Affiliate click tracking for the "View Tire" CTA — same analytics
+        // Affiliate click tracking for the "View tire" CTA — same analytics
         // endpoint the guide cards report to.
         $suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : (
             file_exists( RTG_PLUGIN_DIR . 'frontend/js/tire-page.min.js' ) ? '.min' : ''

@@ -43,7 +43,7 @@ export function initializeSmartSearch() {
   searchInput.addEventListener('keydown', searchKeydownHandler);
 
   // Clear input on filter reset. (resetFilters() dispatches this; the old
-  // document-wide click handler that text-matched "Clear All" is gone.)
+  // document-wide click handler that text-matched "Clear all" is gone.)
   document.addEventListener('filtersReset', () => {
     const input = document.querySelector('#searchInput');
     if (input) {

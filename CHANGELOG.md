@@ -4,6 +4,12 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.15.3] - 2026-11-17
+
+### Changed
+- **Buttons in sentence case**: "View tire", "Write a review", "Write your review", "Edit your review", "Submit review", "Read review", "Save changes", "Clear all", "Read official review", "Full specs & reviews", "Browse tires", and "View your review" in the review email. Spec names ("Load Index", "Load Range") and retailer names keep their capitals.
+- **Fewer arrows**: the "Full specs & reviews" links on cards and in compare drop their trailing arrow. External retailer buttons keep theirs.
+
 ## [2.15.2] - 2026-11-17
 
 ### Changed

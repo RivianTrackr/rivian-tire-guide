@@ -81,7 +81,7 @@ if ( ! empty( $guide_pages ) ) {
       <span aria-hidden="true">&rsaquo;</span>
       <a href="<?php echo esc_url( $tire_guide_url ); ?>">Tire Guide</a>
       <span aria-hidden="true">&rsaquo;</span>
-      <span aria-current="page">Write a Review</span>
+      <span aria-current="page">Write a review</span>
     </nav>
 
     <h1 class="rv-title">Review a Tire</h1>
@@ -133,7 +133,7 @@ if ( ! empty( $guide_pages ) ) {
     <!-- Review form -->
     <form class="rv-form" id="rvForm" novalidate>
       <div class="rv-form-header">
-        <h2 id="rvFormTitle">Write Your Review</h2>
+        <h2 id="rvFormTitle">Write your review</h2>
         <span class="rv-form-time">About 2 minutes</span>
       </div>
 
@@ -230,7 +230,7 @@ if ( ! empty( $guide_pages ) ) {
           <span class="rv-footer-note" id="rvFooterNote">Goes live after a quick check, usually the same day. We email you when it is up.</span>
           <div class="rv-error" id="rvError" role="alert"></div>
         </div>
-        <button type="submit" class="rv-btn-submit" id="rvSubmitBtn">Submit Review</button>
+        <button type="submit" class="rv-btn-submit" id="rvSubmitBtn">Submit review</button>
       </div>
     </form>
 
