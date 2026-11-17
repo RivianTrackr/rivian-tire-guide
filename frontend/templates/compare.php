@@ -179,9 +179,7 @@ $rtg_settings = get_option( 'rtg_settings', array() );
       font-size: 13px;
       font-weight: 600;
       color: var(--rtg-accent);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 2px;
+margin-bottom: 2px;
     }
     .cmp-tire-model {
       font-size: 20px;
@@ -204,12 +202,10 @@ $rtg_settings = get_option( 'rtg_settings', array() );
       flex-direction: column;
     }
     .cmp-tire-meta-label {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 600;
       color: var(--rtg-text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
+}
     .cmp-tire-meta-value {
       font-size: 16px;
       font-weight: 700;
@@ -544,7 +540,7 @@ $rtg_settings = get_option( 'rtg_settings', array() );
 
     /* --- In plain words (advisor) --- */
     .cmp-ai { background: var(--rtg-bg-card, #16191e); border: 1px solid var(--rtg-border, #3a3e45); border-left: 3px solid var(--rtg-accent, #fba919); border-radius: 12px; padding: 14px 18px; margin: 0 0 20px; }
-    .cmp-ai-label { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--rtg-accent, #fba919); margin: 0 0 6px; }
+    .cmp-ai-label { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700;color: var(--rtg-accent, #fba919); margin: 0 0 6px; }
     .cmp-ai-text { margin: 0; font-size: 15px; line-height: 1.55; color: var(--rtg-text-heading, #f6f4f0); }
     .cmp-ai-text.is-loading { color: var(--rtg-text-muted, #a19e97); font-style: italic; }
 

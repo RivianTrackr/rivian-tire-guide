@@ -18,7 +18,7 @@ $rtg_write_review_url = home_url( '/' . sanitize_title( $rtg_guide_settings['tir
       </div>
       <?php if ( RTG_Advisor::is_enabled() ) : ?>
       <button id="rtgAdvisorOpen" class="rtg-advisor-btn" type="button">
-        <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Help me choose
+        Help me choose
       </button>
       <?php endif; ?>
     </div>

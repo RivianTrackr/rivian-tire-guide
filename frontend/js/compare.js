@@ -662,7 +662,7 @@ function loadCompareSummary() {
   if (ids.length < 2) return;
 
   slot.hidden = false;
-  slot.innerHTML = '<div class="cmp-ai-label">' + rtgIcon('wand-magic-sparkles', 12) + ' In plain words</div><p class="cmp-ai-text is-loading">Reading the numbers…</p>';
+  slot.innerHTML = '<div class="cmp-ai-label">In plain words</div><p class="cmp-ai-text is-loading">Reading the numbers…</p>';
   const url = base + (base.includes('?') ? '&' : '?') + 'ids=' + encodeURIComponent(ids.join(','));
   let tries = 0;
 

@@ -513,9 +513,7 @@
   background: var(--rtg-bg-card);
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  color: var(--rtg-text-heading);
+color: var(--rtg-text-heading);
   white-space: nowrap;
 }
 .rtg-fopt-group::after {
@@ -1014,11 +1012,9 @@ input.range-slider::-moz-range-thumb:hover {
 }
 .rtg-adv-sub-label {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: var(--rtg-text-muted);
+color: var(--rtg-text-muted);
   margin: 12px 0 6px;
 }
 .rtg-adv-seg {
@@ -1217,9 +1213,7 @@ input.range-slider::-moz-range-thumb:hover {
 .rtg-adv-pick-brand {
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
-  color: var(--rtg-text-muted);
+color: var(--rtg-text-muted);
 }
 .rtg-adv-pick-model {
   font-size: 17px;
@@ -1267,11 +1261,9 @@ input.range-slider::-moz-range-thumb:hover {
   min-width: 0;
 }
 .rtg-adv-pick-tile-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  color: var(--rtg-text-muted);
+color: var(--rtg-text-muted);
   white-space: nowrap;
 }
 .rtg-adv-pick-tile-value {
@@ -1532,11 +1524,9 @@ input.range-slider::-moz-range-thumb:hover {
   height: 22px;
   padding: 0 8px;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: #15130e;
+color: #15130e;
   background: var(--rtg-star-user);
 }
 .rtg-wn-intro {
@@ -1873,12 +1863,11 @@ input.range-slider::-moz-range-thumb:hover {
   top: 12px;
   left: 12px;
   z-index: 10;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  text-transform: uppercase;
-  padding: 2.5px;
+padding: 2.5px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #047857, #10b981, #34d399);
+  background: #047857;
 }
 .tire-card-badge-oem .tire-card-badge-inner {
   background: #ffffff;
@@ -1909,9 +1898,7 @@ input.range-slider::-moz-range-thumb:hover {
   font-size: 13px;
   font-weight: 600;
   color: var(--rtg-accent);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  line-height: 1.1;
+line-height: 1.1;
   margin-bottom: -8px;
 }
 .tire-card-model {
@@ -1997,11 +1984,9 @@ input.range-slider::-moz-range-thumb:hover {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--rtg-text-muted);
+color: var(--rtg-text-muted);
   margin-bottom: 2px;
 }
 .tire-card-stat-value {
@@ -2714,11 +2699,9 @@ input.range-slider::-moz-range-thumb:hover {
   gap: 5px;
 }
 .wheel-card-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--rtg-text-muted);
+color: var(--rtg-text-muted);
   min-width: 34px;
 }
 /* Section headings inside a vehicle tab, shown only when it lists both
@@ -2728,11 +2711,9 @@ input.range-slider::-moz-range-thumb:hover {
   align-items: center;
   gap: 10px;
   margin: 0 0 10px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--rtg-text-muted);
+color: var(--rtg-text-muted);
 }
 .wheel-section-heading::after {
   content: "";
@@ -2754,11 +2735,9 @@ input.range-slider::-moz-range-thumb:hover {
   top: 8px;
   right: 8px;
   z-index: 1;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  padding: 3px 8px;
+padding: 3px 8px;
   border-radius: 6px;
   color: #a78bfa;
   background: color-mix(in srgb, #a78bfa 18%, var(--rtg-bg-deep));

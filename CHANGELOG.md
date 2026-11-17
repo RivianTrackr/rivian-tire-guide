@@ -4,6 +4,13 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.15.2] - 2026-11-17
+
+### Changed
+- **Labels in sentence case.** 26 label rules across the guide, tire page, compare, review, reviews, saved tires and changelog styles drop `text-transform: uppercase` and their letter spacing. Anything under 12px moves to 12px. Brand names now read as written ("Michelin", not "MICHELIN").
+- **No sparkle icons.** "Help me choose" (`tire-guide.php`) and compare's "In plain words" label (`compare.js`) lose the wand-and-sparkles icon.
+- **OEM badge** ring is solid `#047857` instead of the three-stop green gradient.
+
 ## [2.15.1] - 2026-11-16
 
 ### Fixed
