@@ -4,6 +4,17 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.16.0] - 2026-11-19
+
+### Added
+- **Discontinued tires.** New `discontinued` (TINYINT) and `replaced_by` (tire_id) columns on `rtg_tires`, migration 32. The edit form gets a Discontinued toggle and a "Replaced by" select of current tires, and the tire list shows a Discontinued badge. A successor that is the tire itself or does not exist is dropped on save.
+- **The guide hides discontinued tires by default.** A "Show discontinued" toggle in the filter bar (`filterDiscontinued`, URL `discontinued=1`) brings them back, and a search by name always finds them. Same rule server side in `build_filter_where_clause()`, which also lets a direct `tire_id` lookup through. Cards carry a neutral "Discontinued" chip.
+- **Tire page:** a Discontinued chip and a note that the maker no longer makes the tire, linking to the replacement when one is set. Product schema reports `https://schema.org/Discontinued`.
+- Frontend rows grow to 36 columns: index 34 is `'1'` for discontinued, 35 the successor's tire_id. The JSON feed carries `discontinued` and `replaced_by`.
+
+### Changed
+- Price, stock and link syncs, the stale price report and the delisting alert skip discontinued tires. Help me choose never recommends one, and the tire page's similar tires leave them out. Roamer sync still matches them, so their efficiency data keeps updating.
+
 ## [2.15.4] - 2026-11-19
 
 ### Added

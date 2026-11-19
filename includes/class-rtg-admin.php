@@ -891,8 +891,15 @@ class RTG_Admin {
             'image'            => $this->build_image_url( $post['image'] ?? '' ),
             'review_link'      => esc_url_raw( $post['review_link'] ?? '' ),
             'roamer_tire_id'   => sanitize_text_field( $post['roamer_tire_id'] ?? '' ),
+            'discontinued'     => empty( $post['discontinued'] ) ? 0 : 1,
+            'replaced_by'      => sanitize_text_field( $post['replaced_by'] ?? '' ),
             'sort_order'       => intval( $post['sort_order'] ?? 0 ),
         );
+
+        // A successor must be another tire that exists.
+        if ( '' !== $data['replaced_by'] && ( $data['replaced_by'] === $data['tire_id'] || ! RTG_Database::get_tire( $data['replaced_by'] ) ) ) {
+            $data['replaced_by'] = '';
+        }
 
         // A new tire imported from discovery with the image field left blank
         // gets the candidate's product image pulled into the tire images

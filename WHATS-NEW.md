@@ -11,6 +11,10 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.16.0 - 2026-11-19
+
+- **Discontinued tires stay in the guide.** Tires that are no longer made keep their page, specs and real-world efficiency, with a link to the tire that replaced them. They're hidden from the main list until you turn on "Show discontinued", and searching by name always finds them.
+
 ## 2.15.3 - 2026-11-17
 
 - **Bug fixes and improvements.**

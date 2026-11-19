@@ -164,6 +164,24 @@ $rtg_write_review_url = home_url( '/' . sanitize_title( $rtg_guide_settings['tir
           <input type="checkbox" id="filterOEM" class="rtg-fcheckbox" aria-label="OEM" />
         </div>
 
+        <div class="rtg-fitem rtg-fitem-toggle" data-key="discontinued">
+          <button type="button" class="rtg-fchip rtg-fchip-toggle" data-toggle="filterDiscontinued" aria-pressed="false" aria-describedby="rtgTipDiscontinued">
+            <span class="rtg-fchip-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l3 2"></path></svg>
+            </span>
+            <span class="rtg-fchip-text">
+              <span class="rtg-fchip-label">Show discontinued</span>
+              <span class="rtg-fchip-sub">No longer made, with real-world data</span>
+            </span>
+            <span class="rtg-fchip-check"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
+            <span class="rtg-fswitch" aria-hidden="true"></span>
+          </button>
+          <div class="rtg-fchip-tip" id="rtgTipDiscontinued" role="tooltip">
+            <strong>Discontinued</strong> Tires the maker no longer sells. They stay in the guide for owners still running them, with their Roamer efficiency data. Searching by name finds them too.
+          </div>
+          <input type="checkbox" id="filterDiscontinued" class="rtg-fcheckbox" aria-label="Show discontinued tires" />
+        </div>
+
         <div class="rtg-fitem rtg-fitem-toggle rtg-fitem-saved" data-key="saved">
           <button type="button" class="rtg-fchip rtg-fchip-toggle" data-toggle="filterSaved" aria-pressed="false" aria-describedby="rtgTipSaved">
             <span class="rtg-fchip-glyph" aria-hidden="true">

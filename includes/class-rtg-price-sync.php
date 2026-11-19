@@ -370,6 +370,9 @@ class RTG_Price_Sync {
         );
 
         foreach ( RTG_Database::get_all_tires() as $tire ) {
+            if ( RTG_Database::is_discontinued( $tire ) ) {
+                continue;
+            }
             $tire_id    = (string) $tire['tire_id'];
             $candidates = $by_tire[ $tire_id ] ?? array();
 

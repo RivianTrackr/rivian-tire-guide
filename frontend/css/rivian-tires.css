@@ -1966,6 +1966,13 @@ line-height: 1.1;
   color: #60a5fa;
 }
 
+/* Discontinued: neutral, it informs rather than sells. */
+.tire-card-chip-discontinued {
+  background: var(--rtg-bg-deep);
+  border-color: var(--rtg-border);
+  color: var(--rtg-text-muted);
+}
+
 /* Key stats row — price + real-world efficiency (matches tire-page hero stats) */
 .tire-card-stats {
   display: flex;

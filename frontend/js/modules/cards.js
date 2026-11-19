@@ -325,7 +325,8 @@ export function createSingleCard(row) {
     reviewLink, /* createdAt */ ,
     roamerEfficiency, roamerTotalKm, roamerVehicleCount, roamerVehicleBreakdown, slug,
     priceSyncedAt, updatedAt, retailer,
-    stockStatus, stockCheckedAt, stockAltRetailer, stockAltLink
+    stockStatus, stockCheckedAt, stockAltRetailer, stockAltLink,
+    discontinued
   ] = row;
 
   // The linked retailer's fresh word that the tire cannot be bought, and
@@ -791,6 +792,10 @@ export function createSingleCard(row) {
   // Chips — which Rivian it fits, category, 3PMS, tags (matches the tire
   // page's chip treatment). Each chip is { text, cls, icon }.
   const chips = [];
+
+  if (discontinued === '1') {
+    chips.push({ text: 'Discontinued', cls: 'tire-card-chip-discontinued' });
+  }
 
   // Which Rivian takes this size: in the "All" view nothing else says so.
   const sizeKey = safeString(size).trim().toLowerCase();

@@ -668,6 +668,11 @@ html[data-rt-theme="light"] .tire-card-chip-3pms {
 html[data-rt-theme="light"] .tire-card-chip-3pms .tire-card-chip-icon {
     color: #1e5fb8
 }
+html[data-rt-theme="light"] .tire-card-chip-discontinued {
+    background: var(--rtg-bg-deep);
+    border-color: var(--rtg-border);
+    color: var(--rtg-text-muted)
+}
 html[data-rt-theme="light"] .tire-card-stat {
     background: var(--rtg-bg-deep);
     border: 1px solid color-mix(in srgb, var(--rtg-border) 55%, transparent)
@@ -2452,6 +2457,18 @@ html[data-rt-theme="light"] .rtg-tp .rtg-tp-fitment-note {
 }
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-fitment-note i {
     color: #6d3fd6
+}
+html[data-rt-theme="light"] .rtg-tp .rtg-tp-discontinued-note {
+    background: var(--rtg-tp-deep);
+    border-color: var(--rtg-tp-border)
+}
+html[data-rt-theme="light"] .rtg-tp .rtg-tp-discontinued-note i {
+    color: var(--rtg-tp-muted)
+}
+html[data-rt-theme="light"] .rtg-tp .rtg-tp-chip-discontinued {
+    background: var(--rtg-tp-deep);
+    border-color: var(--rtg-tp-border);
+    color: var(--rtg-tp-muted)
 }
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-stat {
     background: var(--rtg-tp-deep);

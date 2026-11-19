@@ -103,9 +103,11 @@ class RTG_Schema {
                 'priceCurrency' => 'USD',
                 // The linked retailer's fresh word, when it says the tire
                 // cannot be bought; in stock is the default it always was.
-                'availability'  => RTG_Stock_Sync::note( $tire, current_time( 'timestamp' ) )['show']
-                    ? 'https://schema.org/OutOfStock'
-                    : 'https://schema.org/InStock',
+                'availability'  => RTG_Database::is_discontinued( $tire )
+                    ? 'https://schema.org/Discontinued'
+                    : ( RTG_Stock_Sync::note( $tire, current_time( 'timestamp' ) )['show']
+                        ? 'https://schema.org/OutOfStock'
+                        : 'https://schema.org/InStock' ),
             );
 
             if ( ! empty( $tire['link'] ) ) {

@@ -682,6 +682,7 @@ class RTG_Ajax {
             'category'     => sanitize_text_field( $_POST['category'] ?? '' ),
             'three_pms'    => ! empty( $_POST['three_pms'] ),
             'oem'          => ! empty( $_POST['oem'] ),
+            'discontinued' => ! empty( $_POST['discontinued'] ),
         );
 
         // No price parameter means no price constraint — the old default of

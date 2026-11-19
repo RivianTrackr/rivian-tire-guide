@@ -126,7 +126,7 @@ class Test_RTG_Database extends WP_UnitTestCase {
         // Each row should be a numerically-indexed array of strings.
         $row = $tires[0];
         $this->assertIsArray( $row );
-        $this->assertCount( 34, $row, 'the frontend row layout is a fixed 34 columns' );
+        $this->assertCount( 36, $row, 'the frontend row layout is a fixed 36 columns' );
         foreach ( $row as $val ) {
             $this->assertIsString( $val );
         }
@@ -224,13 +224,13 @@ class Test_RTG_Database extends WP_UnitTestCase {
     // --- Frontend row format ---
 
     /**
-     * The JS reads fixed indexes up to row[33] (the other retailer's
-     * in-stock link), so every producer of frontend rows must emit the
-     * same 34 columns.
+     * The JS reads fixed indexes up to row[35] (the tire that replaced a
+     * discontinued one), so every producer of frontend rows must emit the
+     * same 36 columns.
      * get_filtered_tires() once lagged at 28, which silently dropped the
      * tire-page links whenever server-side pagination was on.
      */
-    public function test_every_frontend_row_producer_emits_the_same_34_columns() {
+    public function test_every_frontend_row_producer_emits_the_same_36_columns() {
         RTG_Database::insert_tire( $this->sample_tire( array(
             'tire_id' => 'row-format-001',
             'brand'   => 'RowBrand',
@@ -255,7 +255,7 @@ class Test_RTG_Database extends WP_UnitTestCase {
                 }
             }
             $this->assertNotNull( $row, "$name should return the inserted tire" );
-            $this->assertCount( 34, $row, "$name row width" );
+            $this->assertCount( 36, $row, "$name row width" );
             $this->assertSame( $expected_slug, $row[26], "$name slug at index 26" );
             $this->assertSame( '', $row[27], "$name price_synced_at at index 27 (never synced)" );
             $this->assertMatchesRegularExpression( '/^\d{4}-\d{2}-\d{2} /', $row[28], "$name updated_at at index 28" );
@@ -264,7 +264,41 @@ class Test_RTG_Database extends WP_UnitTestCase {
             $this->assertSame( '', $row[31], "$name stock_checked_at at index 31" );
             $this->assertSame( '', $row[32], "$name stock_alt_retailer at index 32" );
             $this->assertSame( '', $row[33], "$name stock_alt_link at index 33" );
+            $this->assertSame( '', $row[34], "$name discontinued at index 34" );
+            $this->assertSame( '', $row[35], "$name replaced_by at index 35" );
         }
+    }
+
+    /**
+     * A discontinued tire leaves the list unless asked for, searched for by
+     * name, or opened by ID, and its row carries the flag and successor.
+     */
+    public function test_discontinued_tires_hide_unless_asked_for() {
+        RTG_Database::insert_tire( $this->sample_tire( array( 'tire_id' => 'disc-new-001', 'brand' => 'DiscBrand', 'model' => 'Current' ) ) );
+        RTG_Database::insert_tire( $this->sample_tire( array(
+            'tire_id'      => 'disc-old-001',
+            'brand'        => 'DiscBrand',
+            'model'        => 'Retired',
+            'discontinued' => 1,
+            'replaced_by'  => 'disc-new-001',
+        ) ) );
+
+        $ids = function ( $result ) {
+            return array_map( function ( $row ) {
+                return $row[0];
+            }, $result['rows'] );
+        };
+
+        $this->assertSame( array( 'disc-new-001' ), $ids( RTG_Database::get_filtered_tires( array( 'brand' => 'DiscBrand' ) ) ) );
+        $this->assertCount( 2, $ids( RTG_Database::get_filtered_tires( array( 'brand' => 'DiscBrand', 'discontinued' => true ) ) ) );
+        $this->assertContains( 'disc-old-001', $ids( RTG_Database::get_filtered_tires( array( 'search' => 'Retired' ) ) ) );
+        $this->assertSame( array( 'disc-old-001' ), $ids( RTG_Database::get_filtered_tires( array( 'tire_id' => 'disc-old-001' ) ) ) );
+
+        $row = RTG_Database::get_tires_by_ids( array( 'disc-old-001' ) )[0];
+        $this->assertSame( '1', $row[34] );
+        $this->assertSame( 'disc-new-001', $row[35] );
+        $this->assertTrue( RTG_Database::is_discontinued( RTG_Database::get_tire( 'disc-old-001' ) ) );
+        $this->assertFalse( RTG_Database::is_discontinued( RTG_Database::get_tire( 'disc-new-001' ) ) );
     }
 
 

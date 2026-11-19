@@ -202,8 +202,11 @@ class RTG_Health {
             return;
         }
 
+        // A discontinued tire leaving the catalog is expected, not news.
         $presence = RTG_Catalog_Presence::evaluate(
-            RTG_Database::get_all_tires(),
+            array_filter( RTG_Database::get_all_tires(), function ( $tire ) {
+                return ! RTG_Database::is_discontinued( $tire );
+            } ),
             RTG_Candidates::get_by_match_key(),
             RTG_Catalog_Presence::fully_read_sizes( RTG_Catalog_Sync::get_stats() ?: array() ),
             current_time( 'timestamp' )

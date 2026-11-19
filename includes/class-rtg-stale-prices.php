@@ -160,7 +160,9 @@ class RTG_Stale_Prices {
         }
 
         $stale = self::find_stale(
-            RTG_Database::get_all_tires(),
+            array_filter( RTG_Database::get_all_tires(), function ( $tire ) {
+                return ! RTG_Database::is_discontinued( $tire );
+            } ),
             current_time( 'timestamp' ),
             self::stale_days()
         );

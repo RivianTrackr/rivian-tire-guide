@@ -238,6 +238,9 @@ $sort_indicator = function ( $col ) use ( $orderby, $order ) {
                                                 <?php echo esc_html( $tire['tire_id'] ); ?>
                                             </a>
                                         </strong>
+                                        <?php if ( RTG_Database::is_discontinued( $tire ) ) : ?>
+                                            <span class="rtg-badge rtg-badge-muted">Discontinued</span>
+                                        <?php endif; ?>
                                         <div class="row-actions">
                                             <span class="edit">
                                                 <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit&id=' . $tire['id'] ) ); ?>">Edit</a> |
