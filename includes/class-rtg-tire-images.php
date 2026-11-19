@@ -368,6 +368,73 @@ class RTG_Tire_Images {
     }
 
     /**
+     * Save an image uploaded from the tire edit form into the folder.
+     *
+     * Named like a download (brand-model), but never written over an
+     * existing file: siblings may share that file, and Cloudflare keeps
+     * serving the old bytes at the old URL. A taken name gets a numeric
+     * suffix instead, so the new picture shows up right away.
+     *
+     * @param array  $file  One entry of $_FILES.
+     * @param string $brand Tire brand, for the filename.
+     * @param string $model Tire model, for the filename.
+     * @return string Bare filename inside the folder, or '' (see get_last_error()).
+     */
+    public static function save_upload( $file, $brand, $model ) {
+        $name = isset( $file['name'] ) ? sanitize_file_name( (string) $file['name'] ) : '';
+
+        if ( ! is_array( $file ) || ! isset( $file['tmp_name'], $file['error'] ) || UPLOAD_ERR_OK !== (int) $file['error'] ) {
+            return self::fail( $name, 'The upload did not arrive. Try again, or pick a smaller file.' );
+        }
+
+        if ( ! is_uploaded_file( $file['tmp_name'] ) ) {
+            return self::fail( $name, 'The upload did not arrive. Try again.' );
+        }
+
+        $size = (int) filesize( $file['tmp_name'] );
+        if ( $size <= 0 || $size >= self::MAX_BYTES ) {
+            return self::fail( $name, sprintf( 'The image must be under %d MB.', self::MAX_BYTES / 1048576 ) );
+        }
+
+        $base = self::basename_for( $brand, $model );
+        if ( '' === $base ) {
+            return self::fail( $name, 'Fill in the brand and model first, they name the file.' );
+        }
+
+        // The file's own bytes decide the type, not its name or the
+        // browser's claim. AVIF is checked by extension only because PHP
+        // before 8.1 cannot read its dimensions.
+        $check     = wp_check_filetype_and_ext( $file['tmp_name'], $name, array(
+            'webp'     => 'image/webp',
+            'jpg|jpeg' => 'image/jpeg',
+            'png'      => 'image/png',
+            'gif'      => 'image/gif',
+            'avif'     => 'image/avif',
+        ) );
+        $type      = $check['type'] ? $check['type'] : '';
+        $extension = isset( self::CONTENT_TYPES[ $type ] ) ? self::CONTENT_TYPES[ $type ] : '';
+
+        if ( '' === $extension || ( 'avif' !== $extension && false === @getimagesize( $file['tmp_name'] ) ) ) {
+            return self::fail( $name, 'That file is not a WebP, JPEG, PNG, GIF or AVIF image.' );
+        }
+
+        $dir = self::dir();
+        if ( ! wp_mkdir_p( $dir ) || ! is_writable( $dir ) ) {
+            return self::fail( $name, sprintf( 'PHP cannot write to %s. Check its ownership and permissions.', $dir ) );
+        }
+
+        $filename = wp_unique_filename( $dir, $base . '.' . $extension );
+
+        if ( ! @move_uploaded_file( $file['tmp_name'], $dir . '/' . $filename ) ) {
+            return self::fail( $name, sprintf( 'Saving %s into %s failed.', $filename, $dir ) );
+        }
+
+        @chmod( $dir . '/' . $filename, 0644 );
+
+        return self::succeed( $name, $filename );
+    }
+
+    /**
      * One fetch of a remote image.
      *
      * safe_remote_get refuses redirects into private address space — the URL

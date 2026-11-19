@@ -4,6 +4,13 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.15.4] - 2026-11-19
+
+### Added
+- **Upload image** on the tire edit form, next to "Fetch from catalog". The picked file goes to the new `rtg_upload_tire_image` AJAX action (`manage_options`, admin nonce) and `RTG_Tire_Images::save_upload()`, which checks the real file type with `wp_check_filetype_and_ext()` and `getimagesize()` (WebP, JPEG, PNG, GIF, AVIF, under 5 MB), names it brand-model like a catalog download, and never overwrites: a taken name gets a numeric suffix through `wp_unique_filename()`, so siblings keep their file and Cloudflare never serves the old picture under the same URL. The filename lands in the Image field and the preview updates. Save the tire to keep it.
+
+Nothing visible to owners. The button is on the admin edit screen only.
+
 ## [2.15.3] - 2026-11-17
 
 ### Changed

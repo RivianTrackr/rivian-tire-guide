@@ -329,13 +329,17 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                             $image_display = substr( $image_display, strlen( $image_prefix ) );
                         }
                         ?>
-                        <p class="rtg-field-description">A filename in the images folder, or a full URL. "Fetch from catalog" downloads the retailer's product photo into the folder for you.</p>
+                        <p class="rtg-field-description">A filename in the images folder, or a full URL. "Upload image" saves a photo from your computer into the folder, and "Fetch from catalog" downloads the retailer's.</p>
                         <div class="rtg-input-group">
                             <span class="rtg-input-group-addon" title="<?php echo esc_attr( $image_prefix ); ?>"><?php echo esc_html( $image_prefix_short ); ?></span>
                             <input type="text" id="image" name="image" value="<?php echo esc_attr( $image_display ); ?>" class="rtg-input-wide" placeholder="filename.webp">
                         </div>
                         <input type="hidden" id="image_prefix" value="<?php echo esc_attr( $image_prefix ); ?>">
                         <div class="rtg-field-inline">
+                            <button type="button" id="rtg-upload-image-btn" class="rtg-btn rtg-btn-secondary rtg-btn-sm">
+                                <span class="dashicons dashicons-upload"></span> Upload image
+                            </button>
+                            <input type="file" id="rtg-upload-image-file" accept="image/webp,image/jpeg,image/png,image/gif,image/avif" hidden>
                             <button type="button" id="rtg-fetch-image-btn" class="rtg-btn rtg-btn-secondary rtg-btn-sm">
                                 <span class="dashicons dashicons-download"></span> Fetch from catalog
                             </button>
@@ -343,6 +347,51 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                         </div>
                         <script>
                         jQuery(function ($) {
+                            function rtgImageSaved(r, $msg) {
+                                $('#image').val(r.data.filename);
+                                $('#image-preview').attr('src', r.data.url);
+                                $('#image-preview').closest('.rtg-image-preview, #image-preview-container').show();
+                                $msg.css('color', 'var(--rtg-success, #34c759)')
+                                    .text(r.data.filename + ' saved to the images folder. Save the tire to keep it.');
+                            }
+
+                            $('#rtg-upload-image-btn').on('click', function () {
+                                $('#rtg-upload-image-file').val('').trigger('click');
+                            });
+
+                            $('#rtg-upload-image-file').on('change', function () {
+                                var file = this.files && this.files[0];
+                                if (!file) {
+                                    return;
+                                }
+                                var $btn = $('#rtg-upload-image-btn'), $msg = $('#rtg-fetch-image-msg');
+                                var data = new FormData();
+                                data.append('action', 'rtg_upload_tire_image');
+                                data.append('nonce', '<?php echo esc_js( wp_create_nonce( 'rtg_admin_nonce' ) ); ?>');
+                                data.append('brand', $('#brand').val() || '');
+                                data.append('model', $('#model').val() || '');
+                                data.append('image_file', file);
+
+                                $btn.prop('disabled', true);
+                                $msg.css('color', '').text('Uploading…');
+
+                                $.ajax({ url: ajaxurl, type: 'POST', data: data, processData: false, contentType: false })
+                                    .done(function (r) {
+                                        if (r && r.success) {
+                                            rtgImageSaved(r, $msg);
+                                        } else {
+                                            $msg.css('color', 'var(--rtg-error, #ff3b30)')
+                                                .text((r && r.data) ? r.data : 'The upload failed.');
+                                        }
+                                    })
+                                    .fail(function () {
+                                        $msg.css('color', 'var(--rtg-error, #ff3b30)').text('The upload failed.');
+                                    })
+                                    .always(function () {
+                                        $btn.prop('disabled', false);
+                                    });
+                            });
+
                             $('#rtg-fetch-image-btn').on('click', function () {
                                 var $btn = $(this), $msg = $('#rtg-fetch-image-msg');
                                 $btn.prop('disabled', true);
@@ -358,11 +407,7 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                                 }, function (r) {
                                     $btn.prop('disabled', false);
                                     if (r && r.success) {
-                                        $('#image').val(r.data.filename);
-                                        $('#image-preview').attr('src', r.data.url);
-                                        $('#image-preview').closest('.rtg-image-preview, #image-preview-container').show();
-                                        $msg.css('color', 'var(--rtg-success, #34c759)')
-                                            .text(r.data.filename + ' saved to the images folder — save the tire to keep it.');
+                                        rtgImageSaved(r, $msg);
                                     } else {
                                         $msg.css('color', 'var(--rtg-error, #ff3b30)')
                                             .text((r && r.data) ? r.data : 'The request failed.');
