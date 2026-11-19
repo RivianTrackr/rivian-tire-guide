@@ -274,8 +274,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     {
                         label: 'Purchase',
                         data: purchaseData,
-                        borderColor: '#0071e3',
-                        backgroundColor: 'rgba(0, 113, 227, 0.1)',
+                        borderColor: '#fba919',
+                        backgroundColor: 'rgba(251, 169, 25, 0.12)',
                         fill: true,
                         tension: 0.3,
                     },

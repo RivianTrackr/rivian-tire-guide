@@ -1,6 +1,7 @@
 /* ==========================================================================
    Rivian Tire Guide — Admin Design System
-   Apple/iOS-inspired design language (light theme)
+   Paper and ink, matching the site's wp-admin skin: warm off-white,
+   white cards, ink text, gold as the only accent (fill only, brass as text).
 
    One stylesheet for every Tire Guide admin screen. Views carry no inline
    styles: anything a screen needs is a class here, so the pages stay
@@ -14,12 +15,15 @@
     --rtg-font-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
 
     /* Colors */
-    --rtg-text-primary: #1d1d1f;
-    --rtg-text-secondary: #6e6e73;
-    --rtg-text-muted: #86868b;
-    --rtg-action-primary: #0071e3;
-    --rtg-action-hover: #0077ed;
-    --rtg-action-light: #e8f1fd;
+    --rtg-text-primary: #1a1c20;
+    --rtg-text-secondary: #53565c;
+    --rtg-text-muted: #686b71;
+    --rtg-action-primary: #fba919;
+    --rtg-action-hover: #ffbe4a;
+    --rtg-action-light: #fdf1da;
+    --rtg-on-action: #15130e;
+    --rtg-action-text: #8a5800;
+    --rtg-action-text-hover: #6f4700;
     --rtg-success: #34c759;
     --rtg-success-light: #d1f4e0;
     --rtg-success-text: #0a5e2a;
@@ -36,10 +40,11 @@
     --rtg-purple-bg: #efeafb;
     --rtg-purple-text: #5b3fc4;
     --rtg-accent: #fba919;
-    --rtg-border: #d2d2d7;
-    --rtg-bg-light: #f5f5f7;
-    --rtg-bg-hover: #e8e8ed;
-    --rtg-divider: #f5f5f7;
+    --rtg-border: #e3e0d9;
+    --rtg-border-strong: #cdc9c1;
+    --rtg-bg-light: #f6f5f2;
+    --rtg-bg-hover: #eeece7;
+    --rtg-divider: #eeece7;
     --rtg-white: #ffffff;
 
     /* Radii */
@@ -52,7 +57,7 @@
     /* Shadows */
     --rtg-shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.08);
     --rtg-shadow-floating: 0 -8px 25px rgba(0, 0, 0, 0.08);
-    --rtg-focus-ring: 0 0 0 3px rgba(0, 113, 227, 0.12);
+    --rtg-focus-ring: 0 0 0 2px var(--rtg-action-primary);
 }
 
 /* ==========================================================================
@@ -83,12 +88,12 @@
 .rtg-wrap .rtg-card-header p a,
 .rtg-wrap .rtg-field-description a,
 .rtg-wrap .rtg-page-subtitle a {
-    color: var(--rtg-action-primary);
+    color: var(--rtg-action-text);
 }
 
 .rtg-wrap a:not([class]):hover,
 .rtg-wrap a:not([class]):focus {
-    color: var(--rtg-action-hover);
+    color: var(--rtg-action-text-hover);
 }
 
 .rtg-wrap :focus-visible {
@@ -205,7 +210,7 @@
     padding: 9px 16px;
     font-size: 14px;
     font-weight: 500;
-    color: var(--rtg-white);
+    color: var(--rtg-on-action);
     background: var(--rtg-action-primary);
     border: 1px solid transparent;
     border-radius: var(--rtg-radius-input);
@@ -218,7 +223,7 @@
 .rtg-page-title-action:hover,
 .rtg-page-title-action:focus {
     background: var(--rtg-action-hover);
-    color: var(--rtg-white);
+    color: var(--rtg-on-action);
 }
 
 .rtg-page-title-action.is-secondary {
@@ -245,7 +250,7 @@
 }
 
 .rtg-breadcrumb:hover {
-    color: var(--rtg-action-primary);
+    color: var(--rtg-action-text);
 }
 
 /* ==========================================================================
@@ -411,7 +416,7 @@
 }
 
 .rtg-details > summary:hover {
-    color: var(--rtg-action-primary);
+    color: var(--rtg-action-text);
 }
 
 .rtg-details-body {
@@ -480,8 +485,8 @@
 }
 
 .rtg-tab.is-active {
-    color: var(--rtg-action-primary);
-    border-bottom-color: var(--rtg-action-primary);
+    color: var(--rtg-action-text);
+    border-bottom-color: var(--rtg-action-text);
     font-weight: 600;
 }
 
@@ -502,7 +507,7 @@
 
 .rtg-tab.is-active .rtg-tab-count {
     background: var(--rtg-action-primary);
-    color: var(--rtg-white);
+    color: var(--rtg-on-action);
 }
 
 .rtg-tab-count.is-alert {
@@ -597,7 +602,9 @@
 .rtg-toolbar input[type="search"],
 .rtg-toolbar select,
 .rtg-toolbar .rtg-btn {
-    height: 40px;
+    height: 36px;
+    padding-top: 0;
+    padding-bottom: 0;
     line-height: normal;
     font-size: 14px;
 }
@@ -709,12 +716,12 @@
 .rtg-wrap input[type="password"],
 .rtg-wrap textarea,
 .rtg-wrap select {
-    padding: 10px 12px;
-    font-size: 15px;
+    padding: 7px 10px;
+    font-size: 14px;
     font-family: var(--rtg-font-stack);
     color: var(--rtg-text-primary);
-    background: var(--rtg-white);
-    border: 1px solid var(--rtg-border);
+    background-color: var(--rtg-white);
+    border: 1px solid var(--rtg-border-strong);
     border-radius: var(--rtg-radius-input);
     max-width: 400px;
     width: 100%;
@@ -723,6 +730,11 @@
     box-shadow: none;
     transition: border-color 0.2s, box-shadow 0.2s;
     outline: none;
+}
+
+.rtg-wrap select {
+    padding-right: 28px;
+    line-height: normal;
 }
 
 .rtg-wrap textarea {
@@ -746,7 +758,7 @@
 .rtg-wrap select:focus,
 .rtg-input:focus,
 .rtg-select:focus {
-    border-color: var(--rtg-action-primary);
+    border-color: var(--rtg-action-text);
     box-shadow: var(--rtg-focus-ring);
 }
 
@@ -903,7 +915,7 @@
     width: 18px;
     height: 18px;
     margin: 0;
-    accent-color: var(--rtg-action-primary);
+    accent-color: var(--rtg-action-text);
     cursor: pointer;
     flex-shrink: 0;
 }
@@ -946,7 +958,7 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 8px 16px;
+    padding: 6px 14px;
     font-size: 14px;
     font-weight: 500;
     font-family: var(--rtg-font-stack);
@@ -980,19 +992,19 @@
 
 .rtg-btn-primary {
     background: var(--rtg-action-primary);
-    color: var(--rtg-white);
+    color: var(--rtg-on-action);
 }
 
 .rtg-btn-primary:hover,
 .rtg-btn-primary:focus {
     background: var(--rtg-action-hover);
-    color: var(--rtg-white);
+    color: var(--rtg-on-action);
 }
 
 .rtg-btn-secondary {
     background: var(--rtg-white);
     color: var(--rtg-text-primary);
-    border-color: var(--rtg-border);
+    border-color: var(--rtg-border-strong);
 }
 
 .rtg-btn-secondary:hover,
@@ -1029,7 +1041,7 @@
 /* Text-only button. */
 .rtg-btn-ghost {
     background: transparent;
-    color: var(--rtg-action-primary);
+    color: var(--rtg-action-text);
     padding-left: 8px;
     padding-right: 8px;
 }
@@ -1037,7 +1049,7 @@
 .rtg-btn-ghost:hover,
 .rtg-btn-ghost:focus {
     background: var(--rtg-action-light);
-    color: var(--rtg-action-hover);
+    color: var(--rtg-action-text-hover);
 }
 
 .rtg-btn-sm {
@@ -1262,8 +1274,8 @@
 .rtg-tag-chip.is-selected,
 .rtg-tag-suggestion.is-selected {
     background: var(--rtg-action-primary);
-    border-color: var(--rtg-action-primary);
-    color: var(--rtg-white);
+    border-color: var(--rtg-action-text);
+    color: var(--rtg-on-action);
 }
 
 /* ==========================================================================
@@ -1519,7 +1531,7 @@
 
 a.rtg-stat-card:hover,
 a.rtg-stat-card:focus {
-    border-color: var(--rtg-action-primary);
+    border-color: var(--rtg-action-text);
     background: #fafcff;
     color: inherit;
 }
@@ -1784,7 +1796,7 @@ a.rtg-stat-card:focus {
     width: 18px;
     height: 18px;
     margin: 0;
-    accent-color: var(--rtg-action-primary);
+    accent-color: var(--rtg-action-text);
     cursor: pointer;
 }
 
@@ -1811,14 +1823,14 @@ a.rtg-stat-card:focus {
 
 .rtg-table .column-primary strong a,
 .rtg-table .rtg-row-title {
-    color: var(--rtg-action-primary);
+    color: var(--rtg-action-text);
     text-decoration: none;
     font-weight: 600;
 }
 
 .rtg-table .column-primary strong a:hover,
 .rtg-table .rtg-row-title:hover {
-    color: var(--rtg-action-hover);
+    color: var(--rtg-action-text-hover);
     text-decoration: underline;
 }
 
@@ -1848,7 +1860,7 @@ a.rtg-stat-card:focus {
 }
 
 .rtg-table .rtg-row-note a {
-    color: var(--rtg-action-primary);
+    color: var(--rtg-action-text);
 }
 
 .rtg-table .rtg-row-note ul {
@@ -1884,7 +1896,7 @@ a.rtg-stat-card:focus {
 }
 
 .rtg-table .row-actions a:hover {
-    color: var(--rtg-action-primary);
+    color: var(--rtg-action-text);
 }
 
 .rtg-table .row-actions .delete a {
@@ -2337,7 +2349,7 @@ a.rtg-stat-card:focus {
 }
 
 .rtg-empty-state a {
-    color: var(--rtg-action-primary);
+    color: var(--rtg-action-text);
     text-decoration: none;
 }
 
@@ -2472,7 +2484,7 @@ a.rtg-stat-card:focus {
 
 .rtg-quick-action:hover,
 .rtg-quick-action:focus {
-    border-color: var(--rtg-action-primary);
+    border-color: var(--rtg-action-text);
     background: #fafcff;
     color: var(--rtg-text-primary);
 }
@@ -2482,7 +2494,7 @@ a.rtg-stat-card:focus {
     height: 36px;
     border-radius: 10px;
     background: var(--rtg-action-light);
-    color: var(--rtg-action-primary);
+    color: var(--rtg-action-text);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2624,7 +2636,7 @@ a.rtg-stat-card:focus {
 }
 
 .rtg-mini-list-name a {
-    color: var(--rtg-action-primary);
+    color: var(--rtg-action-text);
     text-decoration: none;
 }
 
@@ -2741,7 +2753,7 @@ a.rtg-stat-card:focus {
    ========================================================================== */
 
 .rtg-affiliate-table .rtg-link-url {
-    color: var(--rtg-action-primary);
+    color: var(--rtg-action-text);
     text-decoration: none;
     font-size: 13px;
     word-break: break-all;
@@ -2749,7 +2761,7 @@ a.rtg-stat-card:focus {
 
 .rtg-affiliate-table .rtg-link-url:hover {
     text-decoration: underline;
-    color: var(--rtg-action-hover);
+    color: var(--rtg-action-text-hover);
 }
 
 .rtg-affiliate-table .rtg-link-empty {
