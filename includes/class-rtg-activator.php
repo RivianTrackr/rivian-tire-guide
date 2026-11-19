@@ -9,7 +9,7 @@ class RTG_Activator {
      * Current database schema version.
      * Increment this whenever a migration is added.
      */
-    const DB_VERSION = 31;
+    const DB_VERSION = 32;
 
     public static function activate() {
         self::create_tables();
@@ -112,6 +112,8 @@ class RTG_Activator {
             stock_checked_at DATETIME NULL DEFAULT NULL,
             stock_alt_retailer VARCHAR(100) NOT NULL DEFAULT '',
             stock_alt_link TEXT,
+            discontinued TINYINT(1) NOT NULL DEFAULT 0,
+            replaced_by VARCHAR(50) NOT NULL DEFAULT '',
             sort_order INT UNSIGNED NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -281,6 +283,7 @@ class RTG_Activator {
             29 => 'migrate_29_add_candidate_availability',
             30 => 'migrate_30_add_tire_stock',
             31 => 'migrate_31_create_saved_tires_table',
+            32 => 'migrate_32_add_discontinued',
         );
 
         foreach ( $migrations as $version => $method ) {
@@ -896,5 +899,25 @@ class RTG_Activator {
      */
     private static function migrate_31_create_saved_tires_table() {
         // Table created by dbDelta above.
+    }
+
+    /**
+     * Migration 32 (2.16.0): a tire can be marked discontinued, with the
+     * tire_id of the model that replaced it. Kept rather than deleted so its
+     * page and its Roamer efficiency data stay public. Explicit ALTERs like
+     * migration 30, in case dbDelta skipped the columns.
+     */
+    private static function migrate_32_add_discontinued() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'rtg_tires';
+
+        $cols = $wpdb->get_col( "SHOW COLUMNS FROM {$table}" );
+
+        if ( ! in_array( 'discontinued', $cols, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table} ADD COLUMN discontinued TINYINT(1) NOT NULL DEFAULT 0 AFTER stock_alt_link" );
+        }
+        if ( ! in_array( 'replaced_by', $cols, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table} ADD COLUMN replaced_by VARCHAR(50) NOT NULL DEFAULT '' AFTER discontinued" );
+        }
     }
 }

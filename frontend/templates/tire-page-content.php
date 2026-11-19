@@ -222,6 +222,14 @@ if ( $rtg_tp_fit_3p ) {
 if ( $category ) {
     $rtg_tp_chips[] = array( 'text' => $category, 'class' => '' );
 }
+// Discontinued: a chip, and a note naming the tire that replaced it.
+$rtg_tp_successor = null;
+if ( RTG_Database::is_discontinued( $tire ) ) {
+    array_unshift( $rtg_tp_chips, array( 'text' => 'Discontinued', 'class' => 'rtg-tp-chip-discontinued' ) );
+    if ( ! empty( $tire['replaced_by'] ) ) {
+        $rtg_tp_successor = RTG_Database::get_tire( (string) $tire['replaced_by'] );
+    }
+}
 if ( strtolower( trim( $tire['three_pms'] ?? '' ) ) === 'yes' ) {
     $rtg_tp_chips[] = array( 'text' => '3PMS Rated', 'class' => 'rtg-tp-chip-3pms', 'icon' => 'fa-snowflake' );
 }
@@ -597,6 +605,10 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
     font-size: 14px; line-height: 1.5;
   }
   .rtg-tp .rtg-tp-fitment-note i { color: #a78bfa; margin-top: 3px; }
+  /* Discontinued: neutral, it informs. Lavender stays for third-party fit. */
+  .rtg-tp .rtg-tp-discontinued-note { background: var(--rtg-tp-deep); border-color: var(--rtg-tp-border); }
+  .rtg-tp .rtg-tp-discontinued-note i { color: var(--rtg-tp-muted); }
+  .rtg-tp .rtg-tp-chip-discontinued { background: var(--rtg-tp-deep); border-color: var(--rtg-tp-border); color: var(--rtg-tp-muted); }
 
   /* --- Key-stat tiles --- */
   .rtg-tp .rtg-tp-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 2px 0 0; }
@@ -842,6 +854,18 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
       <div class="rtg-tp-fitment-warning" role="note">
         <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
         <span><?php echo esc_html( RTG_Fitment::describe( $rtg_tp_load_index, $rtg_tp_fit_fails ) ); ?> A tire below the minimum can't safely carry the vehicle's weight; check the load index before buying.</span>
+      </div>
+      <?php endif; ?>
+
+      <?php if ( RTG_Database::is_discontinued( $tire ) ) : ?>
+      <div class="rtg-tp-fitment-note rtg-tp-discontinued-note" role="note">
+        <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+        <span>
+          <?php echo esc_html( trim( (string) $tire['brand'] ) . ' no longer makes this tire. Its specs and real-world efficiency stay here for owners still running it.' ); ?>
+          <?php if ( $rtg_tp_successor ) : ?>
+          Replaced by the <a href="<?php echo esc_url( RTG_Tire_Page::tire_url( ! empty( $rtg_tp_successor['slug'] ) ? $rtg_tp_successor['slug'] : $rtg_tp_successor['tire_id'] ) ); ?>"><?php echo esc_html( $rtg_tp_successor['brand'] . ' ' . $rtg_tp_successor['model'] ); ?></a>.
+          <?php endif; ?>
+        </span>
       </div>
       <?php endif; ?>
 

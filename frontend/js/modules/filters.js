@@ -269,6 +269,9 @@ function getFilteredIndexes(filters) {
 
     if (filters["3PMS"] && !safeString(row[9]).toLowerCase().includes("yes")) return false;
     if (filters["OEM"] && !safeString(row[17]).toLowerCase().includes("oem")) return false;
+    // Discontinued tires (row[34]) stay hidden unless asked for, or
+    // searched for by name.
+    if (row[34] === '1' && !filters["Discontinued"] && !filters.search) return false;
     // The member's shortlist (saved.js keeps state.savedIds current).
     if (filters["Saved"] && !state.savedIds.has(row[0])) return false;
 
@@ -415,6 +418,7 @@ export function filterAndRender() {
   const warrantyMin = getDOMElement("warrantyMin");
   const filter3pms = getDOMElement("filter3pms");
   const filterOEM = getDOMElement("filterOEM");
+  const filterDiscontinued = getDOMElement("filterDiscontinued");
   const filterSaved = getDOMElement("filterSaved");
   const filterSize = getDOMElement("filterSize");
   const filterBrand = getDOMElement("filterBrand");
@@ -434,6 +438,7 @@ export function filterAndRender() {
     WarrantyMin: warrantyVal,
     "3PMS": filter3pms?.checked || false,
     "OEM": filterOEM?.checked || false,
+    "Discontinued": filterDiscontinued?.checked || false,
     "Saved": filterSaved?.checked || false,
     Vehicle: vehicleVal && state.VALID_VEHICLES.includes(vehicleVal) ? vehicleVal : "",
     Size: filterSize?.value && state.VALID_SIZES.includes(filterSize.value) ? filterSize.value : "",
@@ -465,6 +470,7 @@ export function filterAndRender() {
   if (f.Category) activeFilters.category = f.Category;
   if (f["3PMS"]) activeFilters.three_pms = true;
   if (f["OEM"]) activeFilters.oem = true;
+  if (f["Discontinued"]) activeFilters.discontinued = true;
   if (f["Saved"]) activeFilters.saved = true;
   if (f.PriceMax < priceCeiling) activeFilters.price_max = f.PriceMax;
   if (f.WarrantyMin > 0) activeFilters.warranty_min = f.WarrantyMin;
@@ -606,6 +612,7 @@ function getCurrentFilters() {
     WarrantyMin: warrantyMin ? validateNumeric(warrantyMin.value, NUMERIC_BOUNDS.warranty, 0) : 0,
     "3PMS": filter3pms?.checked || false,
     "OEM": filterOEM?.checked || false,
+    "Discontinued": getDOMElement("filterDiscontinued")?.checked || false,
     Vehicle: getSelectedVehicle() && state.VALID_VEHICLES.includes(getSelectedVehicle()) ? getSelectedVehicle() : "",
     Size: filterSize?.value && state.VALID_SIZES.includes(filterSize.value) ? filterSize.value : "",
     Brand: filterBrand?.value && state.VALID_BRANDS.includes(filterBrand.value) ? filterBrand.value : "",
@@ -1007,7 +1014,7 @@ export function resetFilters() {
     if (el) el.value = value;
   });
 
-  const checkboxes = ["filter3pms", "filterOEM", "filterSaved"];
+  const checkboxes = ["filter3pms", "filterOEM", "filterDiscontinued", "filterSaved"];
   checkboxes.forEach(id => {
     const el = getDOMElement(id);
     if (el) el.checked = false;
@@ -1262,6 +1269,7 @@ export function updateURLFromFilters() {
 
   if (getChecked("filter3pms")) params.set("3pms", "1");
   if (getChecked("filterOEM")) params.set("oem", "1");
+  if (getChecked("filterDiscontinued")) params.set("discontinued", "1");
   if (getChecked("filterSaved")) params.set("saved", "1");
 
   const currentSort = getVal("sortBy");
@@ -1389,6 +1397,7 @@ export function applyFiltersFromURL() {
 
   setChecked("filter3pms", params.get("3pms"));
   setChecked("filterOEM", params.get("oem"));
+  setChecked("filterDiscontinued", params.get("discontinued"));
   // Only a member has a list to show; a shared link's saved=1 is ignored
   // for anyone else rather than emptying their guide.
   setChecked("filterSaved", isMember() ? params.get("saved") : null);

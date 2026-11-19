@@ -209,6 +209,8 @@ class RTG_REST_API {
                 'rating_average'      => $rating ? floatval( $rating['average'] ) : null,
                 'rating_count'        => $rating ? intval( $rating['count'] ) : 0,
                 'created_at'          => $tire['created_at'],
+                'discontinued'        => RTG_Database::is_discontinued( $tire ),
+                'replaced_by'         => (string) ( $tire['replaced_by'] ?? '' ),
             );
         }
 

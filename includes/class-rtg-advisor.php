@@ -433,6 +433,11 @@ class RTG_Advisor {
         }
         $pool = array();
         foreach ( $tires as $tire ) {
+            // Never recommend a tire that can no longer be bought. Read
+            // directly: this method stays pure for tests/contract/advisor.php.
+            if ( ! empty( $tire['discontinued'] ) ) {
+                continue;
+            }
             $c = self::compact_tire( $tire, $size_map, $floors, $vehicle, $third_party );
             if ( $vehicle && ! $c['fits'] ) {
                 continue;

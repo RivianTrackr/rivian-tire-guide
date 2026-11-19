@@ -221,6 +221,7 @@ function initializeUI() {
     { id: "filterCategory", listener: filterFn },
     { id: "filter3pms", listener: filterFn },
     { id: "filterOEM", listener: filterFn },
+    { id: "filterDiscontinued", listener: filterFn },
   ];
 
   inputsToWatch.forEach(({ id, listener }) => {

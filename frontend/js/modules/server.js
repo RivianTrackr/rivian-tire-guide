@@ -40,6 +40,7 @@ export function fetchTiresFromServer(page) {
   body.append('category', getDOMElement("filterCategory")?.value || '');
   body.append('three_pms', getDOMElement("filter3pms")?.checked ? '1' : '');
   body.append('oem', getDOMElement("filterOEM")?.checked ? '1' : '');
+  body.append('discontinued', getDOMElement("filterDiscontinued")?.checked ? '1' : '');
   // Sent only when the slider exists: an absent parameter means no price
   // constraint server-side, where a made-up 600 used to cap the listing.
   const priceMax = getDOMElement("priceMax");
@@ -158,6 +159,7 @@ export function fetchTiresFromServer(page) {
     if (ssCat) ssFilters.category = ssCat;
     if (getDOMElement("filter3pms")?.checked) ssFilters.three_pms = true;
     if (getDOMElement("filterOEM")?.checked) ssFilters.oem = true;
+    if (getDOMElement("filterDiscontinued")?.checked) ssFilters.discontinued = true;
 
     if (ssSearch || Object.keys(ssFilters).length > 0) {
       RTG_ANALYTICS.trackSearch(

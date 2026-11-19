@@ -95,6 +95,9 @@ check( true === $snow[0]['efficiency_limited'], 'one vehicle over 1,900 miles is
 
 $any = RTG_Advisor::candidates( $tires, RTG_Advisor::normalize_input( array() ), $size_map, $floors );
 check( 6 === count( $any ), 'no vehicle means every tire is a candidate' );
+$retired = $tires;
+$retired[] = tire( 'retired', array( 'discontinued' => 1, 'price' => 100 ) );
+check( 6 === count( RTG_Advisor::candidates( $retired, RTG_Advisor::normalize_input( array() ), $size_map, $floors ) ), 'a discontinued tire is never a candidate' );
 $sized = RTG_Advisor::candidates( $tires, RTG_Advisor::normalize_input( array( 'size' => '255/45R21' ) ), $size_map, $floors );
 check( array( 'r2only' ) === array_map( function ( $x ) { return $x['tire_id']; }, $sized ), 'a size narrows to that size' );
 check( 6 === count( RTG_Advisor::candidates( $tires, RTG_Advisor::normalize_input( array( 'vehicle' => 'R9' ) ), $size_map, $floors ) ), 'an unknown vehicle is treated as any' );

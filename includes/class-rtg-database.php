@@ -259,6 +259,19 @@ class RTG_Database {
     }
 
     /**
+     * Whether a tire row is marked discontinued.
+     *
+     * A discontinued tire keeps its page and its Roamer data, but nothing
+     * that buys, prices or recommends it should touch it.
+     *
+     * @param array $tire Tire row.
+     * @return bool
+     */
+    public static function is_discontinued( $tire ) {
+        return ! empty( $tire['discontinued'] );
+    }
+
+    /**
      * Fetch all tires with aggregated rating data in a single query.
      * Avoids the N+1 pattern of calling get_all_tires() + get_tire_ratings() separately.
      *
@@ -298,9 +311,10 @@ class RTG_Database {
      * here so the one hostname map lives in PHP. Indexes 30 to 33 are the
      * linked retailer's stock (status, when it was checked) and the other
      * retailer's in-stock tracked listing (name, URL) from RTG_Stock_Sync.
+     * Index 34 is '1' for a discontinued tire, 35 the tire_id that replaced it.
      *
      * @param array $tire Tire row as associative array.
-     * @return array Numerically-indexed frontend row (34 elements).
+     * @return array Numerically-indexed frontend row (36 elements).
      */
     public static function to_frontend_row( $tire ) {
         return array(
@@ -338,6 +352,8 @@ class RTG_Database {
             (string) ( $tire['stock_checked_at'] ?? '' ),
             (string) ( $tire['stock_alt_retailer'] ?? '' ),
             (string) ( $tire['stock_alt_link'] ?? '' ),
+            empty( $tire['discontinued'] ) ? '' : '1',
+            (string) ( $tire['replaced_by'] ?? '' ),
         );
     }
 
@@ -449,13 +465,14 @@ class RTG_Database {
         $tire_id  = (string) ( $tire['tire_id'] ?? '' );
         $category = trim( (string) ( $tire['category'] ?? '' ) );
         $limit    = max( 1, (int) $limit );
+        // Alternatives to buy, so discontinued tires are left out.
         $order    = 'ORDER BY (roamer_efficiency > 0) DESC, roamer_efficiency DESC, (price > 0) DESC, price ASC, id ASC';
 
         $rows = array();
         if ( '' !== $category ) {
             $rows = $wpdb->get_results(
                 $wpdb->prepare(
-                    "SELECT * FROM {$table} WHERE size = %s AND category = %s AND tire_id != %s {$order} LIMIT %d",
+                    "SELECT * FROM {$table} WHERE size = %s AND category = %s AND tire_id != %s AND discontinued = 0 {$order} LIMIT %d",
                     $size,
                     $category,
                     $tire_id,
@@ -469,7 +486,7 @@ class RTG_Database {
         if ( count( (array) $rows ) < 3 ) {
             $rows = $wpdb->get_results(
                 $wpdb->prepare(
-                    "SELECT * FROM {$table} WHERE size = %s AND tire_id != %s {$order} LIMIT %d",
+                    "SELECT * FROM {$table} WHERE size = %s AND tire_id != %s AND discontinued = 0 {$order} LIMIT %d",
                     $size,
                     $tire_id,
                     $limit
@@ -531,6 +548,7 @@ class RTG_Database {
             case 'max_load_lb':
             case 'sort_order':
             case 'roamer_vehicle_count':
+            case 'discontinued':
                 return '%d';
             default:
                 return '%s';
@@ -970,6 +988,7 @@ class RTG_Database {
      *     @type string $category Exact category match.
      *     @type bool   $three_pms Filter to 3PMS-rated only.
      *     @type bool   $oem       Filter to OEM tags.
+     *     @type bool   $discontinued Include discontinued tires.
      *     @type float  $price_max Max price.
      *     @type int    $warranty_min Min mileage warranty.
      * }
@@ -1038,6 +1057,12 @@ class RTG_Database {
 
         if ( ! empty( $filters['oem'] ) ) {
             $where[] = "LOWER(tags) LIKE '%oem%'";
+        }
+
+        // Discontinued tires stay out of the list unless asked for, or
+        // searched for by name, or opened directly by ID.
+        if ( empty( $filters['discontinued'] ) && empty( $filters['search'] ) && empty( $filters['tire_id'] ) ) {
+            $where[] = 'discontinued = 0';
         }
 
         // Any positive ceiling applies. The old `< 600` sentinel dated from

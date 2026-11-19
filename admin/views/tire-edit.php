@@ -38,6 +38,8 @@ $defaults = array(
     'bundle_link'      => '',
     'image'            => '',
     'review_link'      => '',
+    'discontinued'     => 0,
+    'replaced_by'      => '',
     'sort_order'       => 0,
 );
 $v = $tire ? wp_parse_args( $tire, $defaults ) : $defaults;
@@ -248,6 +250,40 @@ $dd_load_index_map = RTG_Admin::get_load_index_map();
                             without changing the name readers see.
                         </p>
                         <textarea id="model_aliases" name="model_aliases" rows="2" placeholder="Ridge Grappler LT"><?php echo esc_textarea( $v['model_aliases'] ?? '' ); ?></textarea>
+                    </div>
+                    <div class="rtg-field-row">
+                        <div class="rtg-field-label-row">
+                            <label class="rtg-field-label" for="discontinued">Discontinued</label>
+                        </div>
+                        <p class="rtg-field-description">
+                            The maker no longer sells it. Its page and Roamer data stay up, the guide hides it
+                            unless readers turn on "Show discontinued", and price, stock and link checks skip it.
+                        </p>
+                        <label class="rtg-toggle">
+                            <input type="checkbox" id="discontinued" name="discontinued" value="1" <?php checked( ! empty( $v['discontinued'] ) ); ?>>
+                            <span class="rtg-toggle-track"></span>
+                            <span class="rtg-toggle-label">Discontinued</span>
+                        </label>
+                    </div>
+                    <div class="rtg-field-row">
+                        <div class="rtg-field-label-row">
+                            <label class="rtg-field-label" for="replaced_by">Replaced by</label>
+                        </div>
+                        <p class="rtg-field-description">Optional. The tire page links here for a discontinued tire.</p>
+                        <select id="replaced_by" name="replaced_by">
+                            <option value="">None</option>
+                            <?php
+                            $rtg_successors = array_filter( RTG_Database::get_all_tires(), function ( $t ) use ( $v ) {
+                                return (string) $t['tire_id'] !== (string) $v['tire_id'] && ! RTG_Database::is_discontinued( $t );
+                            } );
+                            usort( $rtg_successors, function ( $a, $b ) {
+                                return strcasecmp( $a['brand'] . ' ' . $a['model'] . ' ' . $a['size'], $b['brand'] . ' ' . $b['model'] . ' ' . $b['size'] );
+                            } );
+                            foreach ( $rtg_successors as $rtg_s ) :
+                            ?>
+                                <option value="<?php echo esc_attr( $rtg_s['tire_id'] ); ?>" <?php selected( (string) $v['replaced_by'], (string) $rtg_s['tire_id'] ); ?>><?php echo esc_html( $rtg_s['brand'] . ' ' . $rtg_s['model'] . ' · ' . $rtg_s['size'] ); ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                 </div>
             </div>
