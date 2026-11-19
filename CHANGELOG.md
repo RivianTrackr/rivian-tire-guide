@@ -4,6 +4,13 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.16.3] - 2026-11-19
+
+### Fixed
+- **Discontinued tires counted as missing a purchase link** on the dashboard ("Needs attention"), the admin notice, the link status counts and the Affiliate Links "missing" filter. They have no link because they can't be bought, so `get_dashboard_stats()`, `get_link_status_counts()` and `get_tires_for_link_management()` now leave them out. They still count toward missing images.
+
+Nothing visible to owners. Admin screens only.
+
 ## [2.16.2] - 2026-11-19
 
 ### Fixed

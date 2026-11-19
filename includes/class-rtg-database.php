@@ -1172,7 +1172,7 @@ class RTG_Database {
                 MAX(weight_lb) as max_weight,
                 ROUND(AVG(CASE WHEN weight_lb > 0 THEN weight_lb ELSE NULL END), 1) as avg_weight,
                 SUM(CASE WHEN image = '' OR image IS NULL THEN 1 ELSE 0 END) as missing_images,
-                SUM(CASE WHEN link = '' OR link IS NULL THEN 1 ELSE 0 END) as missing_links,
+                SUM(CASE WHEN ( link = '' OR link IS NULL ) AND discontinued = 0 THEN 1 ELSE 0 END) as missing_links,
                 SUM(CASE WHEN roamer_tire_id != '' AND roamer_tire_id IS NOT NULL THEN 1 ELSE 0 END) as roamer_linked,
                 ROUND(AVG(CASE WHEN roamer_efficiency > 0 THEN roamer_efficiency ELSE NULL END), 2) as avg_roamer_efficiency,
                 MAX(CASE WHEN roamer_efficiency > 0 THEN roamer_efficiency ELSE NULL END) as max_roamer_efficiency,
@@ -2403,7 +2403,7 @@ class RTG_Database {
         $row = $wpdb->get_row(
             "SELECT
                 COUNT(*) as total,
-                SUM(CASE WHEN link = '' THEN 1 ELSE 0 END) as missing_link,
+                SUM(CASE WHEN link = '' AND discontinued = 0 THEN 1 ELSE 0 END) as missing_link,
                 SUM(CASE WHEN bundle_link = '' THEN 1 ELSE 0 END) as missing_bundle,
                 SUM(CASE WHEN bundle_link != '' THEN 1 ELSE 0 END) as has_bundle,
                 SUM(CASE WHEN review_link = '' THEN 1 ELSE 0 END) as missing_review,
@@ -2441,7 +2441,8 @@ class RTG_Database {
 
         switch ( $link_filter ) {
             case 'missing':
-                $where[] = "link = ''";
+                // A discontinued tire has no link because it can't be bought.
+                $where[] = "link = '' AND discontinued = 0";
                 break;
             case 'affiliate':
                 $clauses = array();
