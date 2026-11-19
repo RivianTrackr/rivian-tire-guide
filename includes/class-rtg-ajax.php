@@ -149,6 +149,7 @@ class RTG_Ajax {
         add_action( 'wp_ajax_rtg_cj_test_connection', array( $this, 'cj_test_connection' ) );
 
         add_action( 'wp_ajax_rtg_fetch_tire_image', array( $this, 'fetch_tire_image' ) );
+        add_action( 'wp_ajax_rtg_upload_tire_image', array( $this, 'upload_tire_image' ) );
         add_action( 'wp_ajax_rtg_adopt_model_alias', array( $this, 'adopt_model_alias' ) );
         add_action( 'wp_ajax_rtg_candidate_bulk', array( $this, 'candidate_bulk' ) );
     }
@@ -1090,6 +1091,36 @@ class RTG_Ajax {
         }
 
         $filename = RTG_Tire_Images::import_first_working( $urls, $tire['brand'], $tire['model'] );
+        if ( '' === $filename ) {
+            wp_send_json_error( RTG_Tire_Images::get_last_error() );
+        }
+
+        wp_send_json_success( array(
+            'filename' => $filename,
+            'url'      => RTG_Tire_Images::URL_PREFIX . $filename,
+        ) );
+    }
+
+    /**
+     * Save an image picked on the tire edit form into the images folder.
+     */
+    public function upload_tire_image() {
+        check_ajax_referer( 'rtg_admin_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized.' );
+        }
+
+        if ( empty( $_FILES['image_file'] ) ) {
+            wp_send_json_error( 'No file was sent.' );
+        }
+
+        $filename = RTG_Tire_Images::save_upload(
+            $_FILES['image_file'], // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- validated by save_upload().
+            sanitize_text_field( wp_unslash( $_POST['brand'] ?? '' ) ),
+            sanitize_text_field( wp_unslash( $_POST['model'] ?? '' ) )
+        );
+
         if ( '' === $filename ) {
             wp_send_json_error( RTG_Tire_Images::get_last_error() );
         }
