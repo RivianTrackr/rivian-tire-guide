@@ -4,6 +4,17 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.16.1] - 2026-11-19
+
+### Changed
+- **Admin screens in paper and ink**, matching the site's wp-admin skin. `admin-styles.css` tokens move from the Apple blue palette to the site's light palette: gold `#fba919` fills with ink `#15130e` text for primary buttons, active tab counts and progress bars, brass `#8a5800` (hover `#6f4700`) wherever the accent was text, warm neutrals for text, borders and surfaces, and a 2px gold focus ring. The analytics chart line is gold instead of blue.
+- **Smaller controls**, closer to wp-admin scale: inputs 7px 10px at 14px, buttons 6px 14px, toolbar controls 36px instead of 40px.
+
+### Fixed
+- **Select text clipped** in the tire list toolbar ("All categories"): toolbar controls had a fixed height plus 10px vertical padding. They now drop the vertical padding, and selects keep 28px on the right so core's arrow never covers the text. Inputs set `background-color` instead of the `background` shorthand, which had wiped core's select arrow.
+
+Nothing visible to owners. Admin screens only. The brass text on "Add tire" and "Import CSV" came from the site's wp-admin skin coloring every link in the page body. That rule now skips links inside `.rtg-wrap` that carry a class (server mu-plugin, outside this repo).
+
 ## [2.16.0] - 2026-11-19
 
 ### Added
