@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.16.2] - 2026-11-19
+
+### Fixed
+- **Discontinued tire cards said "Coming Soon"** in place of the retailer button, the label for a tire with no link yet. `cards.js` now says "No longer made" for a discontinued tire.
+
 ## [2.16.1] - 2026-11-19
 
 ### Changed

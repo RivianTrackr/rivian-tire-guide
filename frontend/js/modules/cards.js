@@ -858,7 +858,8 @@ export function createSingleCard(row) {
   } else {
     const comingSoon = document.createElement('span');
     comingSoon.className = 'tire-card-cta tire-card-cta-disabled';
-    comingSoon.textContent = 'Coming Soon';
+    // A discontinued tire has no link because it is gone, not coming.
+    comingSoon.textContent = discontinued === '1' ? 'No longer made' : 'Coming Soon';
     actionsContainer.appendChild(comingSoon);
   }
 
