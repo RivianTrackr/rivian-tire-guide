@@ -145,6 +145,31 @@ if ( $missing_images > 0 ) {
     );
 }
 
+// Models the daily check thinks are discontinued. A person decides.
+$rtg_suspects = array_slice( (array) get_option( RTG_Health::SUSPECTS_OPTION, array() ), 0, 5 );
+foreach ( $rtg_suspects as $rtg_suspect ) {
+    $rtg_key   = (string) ( $rtg_suspect['key'] ?? '' );
+    $rtg_sizes = count( (array) ( $rtg_suspect['tire_ids'] ?? array() ) );
+    $rtg_link  = function ( $action ) use ( $rtg_key ) {
+        return wp_nonce_url(
+            add_query_arg( array( 'action' => $action, 'model_key' => rawurlencode( $rtg_key ) ), admin_url( 'admin.php?page=rtg-dashboard' ) ),
+            'rtg_discontinued_' . $rtg_key
+        );
+    };
+    $attention[] = array(
+        'level'     => 'info',
+        'icon'      => 'dashicons-clock',
+        'title'     => sprintf( 'Possibly discontinued: %s %s', $rtg_suspect['brand'] ?? '', $rtg_suspect['model'] ?? '' ),
+        'text'      => sprintf(
+            'No retailer has listed %s in %s. Marking hides it from the guide and keeps its page.',
+            1 === $rtg_sizes ? 'it' : 'any of its ' . $rtg_sizes . ' sizes',
+            human_time_diff( (int) ( $rtg_suspect['last_seen'] ?? 0 ), current_time( 'timestamp' ) )
+        ),
+        'action'    => array( 'Mark discontinued', $rtg_link( 'mark_discontinued' ) ),
+        'secondary' => array( 'Still made', $rtg_link( 'dismiss_discontinued' ) ),
+    );
+}
+
 $all_clear = array(
     array( 'Reviews', 0 === $pending_reviews, 'All reviews moderated.' ),
     array( 'Discovery queue', 0 === $awaiting_candidates, 'Nothing waiting for review.' ),
@@ -196,6 +221,9 @@ $all_clear = array(
                         <p><?php echo esc_html( $item['text'] ); ?></p>
                     </span>
                     <span class="rtg-health-action">
+                        <?php if ( ! empty( $item['secondary'] ) ) : ?>
+                            <a href="<?php echo esc_url( $item['secondary'][1] ); ?>" class="rtg-btn rtg-btn-ghost rtg-btn-sm"><?php echo esc_html( $item['secondary'][0] ); ?></a>
+                        <?php endif; ?>
                         <a href="<?php echo esc_url( $item['action'][1] ); ?>" class="rtg-btn rtg-btn-secondary rtg-btn-sm"><?php echo esc_html( $item['action'][0] ); ?></a>
                     </span>
                 </div>

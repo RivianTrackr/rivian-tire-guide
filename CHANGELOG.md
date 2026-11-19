@@ -4,6 +4,13 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.16.4] - 2026-11-19
+
+### Added
+- **"Possibly discontinued" on the dashboard.** `RTG_Catalog_Presence::discontinued_suspects()` flags a model when every size the sweep read has been delisted for 30 days (`DISCONTINUED_DAYS`), with none still listed and none unread. Sizes no retailer ever carried don't block it. `RTG_Health::watch_discontinued()` runs it after the daily sync and stores the result in `rtg_discontinued_suspects`. The dashboard shows up to five as Needs attention items with "Mark discontinued" (marks every size of the model) and "Still made" (remembered in `rtg_discontinued_dismissed`, never asked again). Nothing is marked without a click. Contract check in `tests/contract/discontinued.php`. Run against the live catalog today it flags nothing, since the known cases were marked by hand.
+
+Nothing visible to owners. Admin screens only.
+
 ## [2.16.3] - 2026-11-19
 
 ### Fixed

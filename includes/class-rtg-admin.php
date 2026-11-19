@@ -621,6 +621,54 @@ class RTG_Admin {
         if ( isset( $_GET['action'] ) && $_GET['action'] === 'duplicate' && isset( $_GET['tire_id'] ) ) {
             $this->handle_tire_duplicate();
         }
+
+        // Possibly discontinued, from the dashboard: mark the model, or dismiss it.
+        if ( isset( $_GET['action'], $_GET['model_key'] ) && in_array( $_GET['action'], array( 'mark_discontinued', 'dismiss_discontinued' ), true ) ) {
+            $this->handle_discontinued_suspect();
+        }
+    }
+
+    /**
+     * Act on a "Possibly discontinued" dashboard item.
+     *
+     * Marking applies to every size of the model the check found. Dismissing
+     * remembers the model so the check stops asking about it.
+     */
+    private function handle_discontinued_suspect() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Unauthorized' );
+        }
+
+        $key = sanitize_text_field( wp_unslash( $_GET['model_key'] ) );
+        check_admin_referer( 'rtg_discontinued_' . $key );
+
+        $suspects = (array) get_option( RTG_Health::SUSPECTS_OPTION, array() );
+        $remaining = array();
+        $found     = null;
+        foreach ( $suspects as $suspect ) {
+            if ( ( $suspect['key'] ?? '' ) === $key ) {
+                $found = $suspect;
+            } else {
+                $remaining[] = $suspect;
+            }
+        }
+
+        if ( $found ) {
+            if ( 'mark_discontinued' === $_GET['action'] ) {
+                foreach ( (array) $found['tire_ids'] as $tire_id ) {
+                    RTG_Database::update_tire( (string) $tire_id, array( 'discontinued' => 1 ), false );
+                }
+                RTG_Database::flush_cache();
+            } else {
+                $dismissed   = (array) get_option( RTG_Health::DISMISSED_OPTION, array() );
+                $dismissed[] = $key;
+                update_option( RTG_Health::DISMISSED_OPTION, array_values( array_unique( $dismissed ) ), false );
+            }
+            update_option( RTG_Health::SUSPECTS_OPTION, $remaining, false );
+        }
+
+        wp_safe_redirect( admin_url( 'admin.php?page=rtg-dashboard' ) );
+        exit;
     }
 
     // --- Dropdown Options ---
