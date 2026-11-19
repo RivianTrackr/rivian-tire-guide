@@ -254,6 +254,37 @@ class RTG_Health {
     public static function after_sync() {
         self::check();
         self::watch_delistings();
+        self::watch_discontinued();
+    }
+
+    /** Option holding the current discontinued suspects, for the dashboard. */
+    const SUSPECTS_OPTION = 'rtg_discontinued_suspects';
+
+    /** Option holding model keys a person said are still made. */
+    const DISMISSED_OPTION = 'rtg_discontinued_dismissed';
+
+    /**
+     * Find models that look discontinued and keep them for the dashboard.
+     *
+     * Never marks anything itself: the dashboard asks, a person decides.
+     */
+    public static function watch_discontinued() {
+        $tires = RTG_Database::get_all_tires();
+
+        $suspects = RTG_Catalog_Presence::discontinued_suspects(
+            $tires,
+            RTG_Catalog_Presence::evaluate(
+                $tires,
+                RTG_Candidates::get_by_match_key(),
+                RTG_Catalog_Presence::fully_read_sizes( RTG_Catalog_Sync::get_stats() ?: array() ),
+                current_time( 'timestamp' )
+            ),
+            current_time( 'timestamp' ),
+            RTG_Catalog_Presence::DISCONTINUED_DAYS,
+            (array) get_option( self::DISMISSED_OPTION, array() )
+        );
+
+        update_option( self::SUSPECTS_OPTION, $suspects, false );
     }
 
     /**

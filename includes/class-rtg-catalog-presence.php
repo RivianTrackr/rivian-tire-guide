@@ -199,6 +199,85 @@ class RTG_Catalog_Presence {
         );
     }
 
+    /** Days a whole model must go unlisted before it is a discontinued suspect. */
+    const DISCONTINUED_DAYS = 30;
+
+    /**
+     * Models that look discontinued: every size the sweep read is delisted,
+     * none is still listed or unread, and the latest sighting of any size is
+     * older than $days. A suspect, not a verdict. One retailer dropping a
+     * tire is not the maker ending it, so a person decides.
+     *
+     * @param array $tires     Guide tires.
+     * @param array $evaluated Output of evaluate() for those tires.
+     * @param int   $now       Unix time.
+     * @param int   $days      Days unlisted before a model counts.
+     * @param array $dismissed Model keys a person said are still made.
+     * @return array[] { key, brand, model, tire_ids, last_seen }, oldest sighting first.
+     */
+    public static function discontinued_suspects( $tires, $evaluated, $now, $days = self::DISCONTINUED_DAYS, $dismissed = array() ) {
+        $groups = array();
+
+        foreach ( (array) $tires as $tire ) {
+            if ( ! empty( $tire['discontinued'] ) ) {
+                continue;
+            }
+            $key = self::model_key( $tire );
+            if ( '|' === $key ) {
+                continue;
+            }
+            if ( ! isset( $groups[ $key ] ) ) {
+                $groups[ $key ] = array(
+                    'key'      => $key,
+                    'brand'    => trim( (string) $tire['brand'] ),
+                    'model'    => trim( (string) $tire['model'] ),
+                    'tire_ids' => array(),
+                    'statuses' => array(),
+                    'last_seen' => 0,
+                );
+            }
+            $entry = $evaluated[ (string) $tire['tire_id'] ] ?? array();
+            $groups[ $key ]['tire_ids'][]  = (string) $tire['tire_id'];
+            $groups[ $key ]['statuses'][]  = (string) ( $entry['status'] ?? self::STATUS_UNKNOWN );
+            $groups[ $key ]['last_seen']   = max( $groups[ $key ]['last_seen'], (int) ( $entry['last_seen'] ?? 0 ) );
+        }
+
+        $out = array();
+        foreach ( $groups as $key => $group ) {
+            if ( in_array( $key, (array) $dismissed, true ) ) {
+                continue;
+            }
+            $statuses = $group['statuses'];
+            if ( in_array( self::STATUS_LISTED, $statuses, true ) || in_array( self::STATUS_UNKNOWN, $statuses, true ) ) {
+                continue;
+            }
+            if ( ! in_array( self::STATUS_DELISTED, $statuses, true ) ) {
+                continue;
+            }
+            if ( $group['last_seen'] <= 0 || ( $now - $group['last_seen'] ) < $days * DAY_IN_SECONDS ) {
+                continue;
+            }
+            unset( $group['statuses'] );
+            $out[] = $group;
+        }
+
+        usort( $out, function ( $a, $b ) {
+            return $a['last_seen'] <=> $b['last_seen'];
+        } );
+
+        return $out;
+    }
+
+    /**
+     * Brand and model, lowercased, as one key: the unit a maker discontinues.
+     *
+     * @param array $tire Guide tire.
+     * @return string
+     */
+    public static function model_key( $tire ) {
+        return strtolower( trim( (string) ( $tire['brand'] ?? '' ) ) ) . '|' . strtolower( trim( (string) ( $tire['model'] ?? '' ) ) );
+    }
+
     /**
      * Count each status, for a summary line.
      *

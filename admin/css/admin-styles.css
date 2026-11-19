@@ -2736,6 +2736,8 @@ a.rtg-stat-card:focus {
 
 .rtg-health-action {
     flex-shrink: 0;
+    display: flex;
+    gap: 8px;
 }
 
 .rtg-all-clear {
