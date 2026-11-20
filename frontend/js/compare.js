@@ -307,7 +307,7 @@ function renderAddPanel(container, rows, tokens, placement = 'top') {
     <div class="cmp-add-row">
       <label for="cmpAddSearch" class="cmp-sr-only">Search tires to add</label>
       <input id="cmpAddSearch" class="cmp-add-input" type="text" autocomplete="off" maxlength="80"
-        placeholder="Search by brand, model, or size…" role="combobox" aria-autocomplete="list"
+        placeholder="Search by brand, model, or size" role="combobox" aria-autocomplete="list"
         aria-expanded="false" aria-controls="cmpAddResults" />
       ${guideLink ? `<a class="cmp-btn" href="${escapeHTML(guideLink)}">${rtgIcon('arrow-left', 13)} <span>Pick from the guide</span></a>` : ''}
     </div>
@@ -585,7 +585,7 @@ function initShareButton() {
       const origIcon = iconEl ? iconEl.outerHTML : "";
       const origText = spanEl ? spanEl.textContent : "";
       if (iconEl) iconEl.outerHTML = rtgIcon('check', 16);
-      if (spanEl) spanEl.textContent = "Copied!";
+      if (spanEl) spanEl.textContent = "Copied";
       setTimeout(() => {
         const current = btn.querySelector("i");
         if (current) current.outerHTML = origIcon;

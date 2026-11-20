@@ -91,7 +91,7 @@ if ( ! empty( $guide_pages ) ) {
     <div class="rv-search-wrap">
       <svg class="rv-search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <label for="rvTireSearch" class="rv-sr-only">Search for a tire</label>
-      <input type="text" class="rv-search" id="rvTireSearch" placeholder="Search by brand, model, or size..." autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="rvDropdown" aria-haspopup="listbox" />
+      <input type="text" class="rv-search" id="rvTireSearch" placeholder="Search by brand, model, or size" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="rvDropdown" aria-haspopup="listbox" />
       <div class="rv-dropdown" id="rvDropdown" role="listbox" aria-label="Matching tires"></div>
     </div>
 
@@ -187,7 +187,7 @@ if ( ! empty( $guide_pages ) ) {
         <div class="rv-section-head"><span class="rv-step">4</span><span class="rv-section-title">In your words</span></div>
         <div class="rv-field">
           <label class="rv-label" for="rvReviewTitle">Title <span class="rv-label-hint" id="rvTitleHint">optional</span></label>
-          <input type="text" id="rvReviewTitle" class="rv-input" placeholder="Sum up your experience..." maxlength="200" />
+          <input type="text" id="rvReviewTitle" class="rv-input" placeholder="Sum up your experience" maxlength="200" />
         </div>
         <div class="rv-field">
           <label class="rv-label" for="rvReviewText">Review <span class="rv-label-hint" id="rvTextHint">optional</span></label>
@@ -237,7 +237,7 @@ if ( ! empty( $guide_pages ) ) {
     <!-- Success state -->
     <div class="rv-success" id="rvSuccess">
       <div class="rv-success-icon"><i class="fa-solid fa-circle-check" aria-hidden="true"></i></div>
-      <div class="rv-success-title" id="rvSuccessTitle">Review Submitted!</div>
+      <div class="rv-success-title" id="rvSuccessTitle">Review submitted</div>
       <div class="rv-success-text" id="rvSuccessText">Thanks for sharing your experience.</div>
       <div class="rv-success-recap" id="rvSuccessRecap" hidden></div>
       <div class="rv-success-actions">

@@ -405,7 +405,7 @@ html[data-rt-theme="light"] .rtg-adv-pick-tile-value {
     color: var(--rtg-text-heading)
 }
 html[data-rt-theme="light"] .rtg-adv-pick-tile.is-eff .rtg-adv-pick-tile-value {
-    color: #1e5fb8
+    color: var(--rtg-text-heading)
 }
 html[data-rt-theme="light"] .rtg-adv-pick-tile.is-empty .rtg-adv-pick-tile-value {
     color: var(--rtg-text-muted)
@@ -577,7 +577,7 @@ html[data-rt-theme="light"] .info-tooltip-trigger {
 }
 html[data-rt-theme="light"] .info-tooltip-trigger:hover,
 html[data-rt-theme="light"] .info-tooltip-trigger:focus {
-    color: var(--rtg-accent, #5ec095);
+    color: #8a5800;
     background-color: color-mix(in srgb, var(--rtg-accent, #5ec095) 10%, transparent)
 }
 html[data-rt-theme="light"] .sort-wrapper {
@@ -977,7 +977,7 @@ html[data-rt-theme="light"] .rating-review-count {
     color: var(--rtg-text-muted, #53565c)
 }
 html[data-rt-theme="light"] .rating-review-count:hover {
-    color: var(--rtg-accent, #8a5800)
+    color: #8a5800
 }
 html[data-rt-theme="light"] .rtg-review-pending-badge {
     color: var(--rtg-text-muted, #86868b);
@@ -1013,7 +1013,7 @@ html[data-rt-theme="light"] .rtg-review-author {
     color: var(--rtg-text-light, #121316)
 }
 html[data-rt-theme="light"] a.rtg-review-author-link {
-    color: var(--rtg-accent, #8a5800)
+    color: #8a5800
 }
 html[data-rt-theme="light"] .rtg-review-date {
     color: var(--rtg-text-muted, #686b71)
@@ -1041,13 +1041,13 @@ html[data-rt-theme="light"] .rtg-save-toast {
     color: var(--rtg-text-primary, #1a1c20)
 }
 html[data-rt-theme="light"] .rtg-save-toast-icon {
-    color: var(--rtg-accent, #8a5800)
+    color: #8a5800
 }
 html[data-rt-theme="light"] .rtg-save-toast-link {
-    color: var(--rtg-accent, #8a5800)
+    color: #8a5800
 }
 html[data-rt-theme="light"] .rtg-save-toast-link:hover {
-    color: var(--rtg-accent-hover, #6f4700)
+    color: #6f4700
 }
 html[data-rt-theme="light"] .rtg-save-dialog-text {
     color: var(--rtg-text-muted, #53565c)
@@ -1059,7 +1059,7 @@ html[data-rt-theme="light"] .rtg-pagination-btn {
 }
 html[data-rt-theme="light"] .rtg-pagination-btn:hover {
     border-color: var(--rtg-accent, #fba919);
-    color: var(--rtg-accent, #8a5800)
+    color: #8a5800
 }
 html[data-rt-theme="light"] .rtg-pagination-info {
     color: var(--rtg-text-primary, #1a1c20)
@@ -1069,7 +1069,7 @@ html[data-rt-theme="light"] .info-tooltip-trigger {
 }
 html[data-rt-theme="light"] .info-tooltip-trigger:hover,
 html[data-rt-theme="light"] .info-tooltip-trigger:focus-visible {
-    color: var(--rtg-accent, #8a5800);
+    color: #8a5800;
     background-color: color-mix(in srgb, var(--rtg-accent, #fba919) 10%, transparent)
 }
 html[data-rt-theme="light"] .info-tooltip-trigger:focus-visible {
@@ -1170,7 +1170,7 @@ html[data-rt-theme="light"] .rtg-dialog-text {
     color: var(--rtg-text-primary, #1a1c20)
 }
 html[data-rt-theme="light"] .rtg-dialog-text a {
-    color: var(--rtg-accent, #8a5800)
+    color: #8a5800
 }
 html[data-rt-theme="light"] .rtg-dialog-text strong {
     color: var(--rtg-text-heading, #121316)
@@ -2304,7 +2304,7 @@ html[data-rt-theme="light"] .cmp-ai {
     border-left: 3px solid var(--rtg-accent, #fba919)
 }
 html[data-rt-theme="light"] .cmp-ai-label {
-    color: var(--rtg-accent, #8a5800)
+    color: #8a5800
 }
 html[data-rt-theme="light"] .cmp-ai-text {
     color: var(--rtg-text-heading, #121316)
@@ -2782,8 +2782,8 @@ html[data-rt-theme="light"] .rtg-wn-date {
     color: var(--rtg-text-muted)
 }
 html[data-rt-theme="light"] .rtg-wn-latest {
-    color: #15130e;
-    background: var(--rtg-positive)
+    color: #1a1c20;
+    background: #eeece7
 }
 html[data-rt-theme="light"] .rtg-wn-intro {
     color: var(--rtg-text-heading)
