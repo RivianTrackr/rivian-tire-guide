@@ -112,6 +112,23 @@ html[data-rt-theme="light"] .tire-card .tire-card-image:has(.rtg-img-loaded) {
   background: #f6f5f2;
 }
 
+/* Light mode: the input surface turns white, so an unfilled range track
+   vanished on the white card. Give the track the line color instead. The
+   phone sheet's off switch goes light gray with a white knob. */
+html[data-rt-theme="light"] .range-slider {
+  --rtg-bg-input: #e3e0d9;
+}
+html[data-rt-theme="light"] .rtg-filter-chips.is-sheet .rtg-fswitch {
+  background: #cdc9c1;
+}
+html[data-rt-theme="light"] .rtg-filter-chips.is-sheet .rtg-fswitch::before {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+html[data-rt-theme="light"] .rtg-filter-chips.is-sheet .rtg-fchip-toggle[aria-pressed="true"] .rtg-fswitch {
+  background: var(--rtg-accent);
+}
+
 /* === Vehicle Toggle === */
 .rtg-vehicle-toggle {
   display: flex;

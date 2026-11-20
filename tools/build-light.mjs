@@ -65,7 +65,10 @@ function role(prop) {
 // Every color declaration of a rule is re-emitted, changed or not, so the light rules keep
 // the same specificity order as the originals and a specific rule still beats a generic one.
 const COLOR_PROP = /^(color|background(-color|-image)?|border(-(top|right|bottom|left|block|inline)(-start|-end)?)?(-color)?|outline(-color)?|fill|stroke|box-shadow|text-decoration(-color)?|caret-color|accent-color|--.*)$/i;
-const HAS_COLOR = /#[0-9a-f]{3,8}\b|rgba?\(|var\(|color-mix|currentcolor|inherit|transparent/i;
+// "none" counts: a reset like `.is-sheet .rtg-fpop { background: none; border: none }` must
+// be re-emitted too, or the light copy of the base rule (one attribute selector stronger)
+// paints the popover's card and border back over it.
+const HAS_COLOR = /#[0-9a-f]{3,8}\b|rgba?\(|var\(|color-mix|currentcolor|inherit|transparent|^none$/i;
 
 const hex6 = h => { h = h.slice(1).toLowerCase(); if (h.length === 3 || h.length === 4) h = h.slice(0, 3).split('').map(c => c + c).join(''); return h.slice(0, 6); };
 

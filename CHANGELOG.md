@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.17.2] - 2026-11-19
+
+### Fixed
+- **Phone filter sheet in light mode.** Each filter sat in a bordered card with its label against the edge, the 3PMS and OEM rows had boxes, the warranty slider had no visible track, and the off switches were dark gray. The sheet's resets (`background: none; border: none; box-shadow: none` on `.is-sheet .rtg-fpop` and the toggle rows) were never copied into `rtg-light.css`, so the light copy of the desktop popover rule won. `tools/build-light.mjs` now treats `none` as a color value, so resets are re-emitted with their rule. Light mode also gets a line-colored unfilled range track (the input surface is white on the white card) and a light gray off switch with a white knob. Dark mode was not affected.
+
 ## [2.17.1] - 2026-11-19
 
 ### Changed
