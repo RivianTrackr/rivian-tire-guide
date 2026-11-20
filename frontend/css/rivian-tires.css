@@ -143,8 +143,10 @@ html[data-rt-theme="light"] .rtg-filter-chips.is-sheet .rtg-fchip-toggle[aria-pr
   align-items: center;
 }
 .rtg-vehicle-btn {
-  min-height: 40px;
-  padding: 6px 20px;
+  /* 32px inside the 40px track: the 4px padding shows on every side, so the
+     active pill sits inset instead of running to the track's edges. */
+  height: 32px;
+  padding: 0 20px;
   border: none;
   border-radius: 8px;
   background: transparent;
@@ -177,7 +179,7 @@ html[data-rt-theme="light"] .rtg-filter-chips.is-sheet .rtg-fchip-toggle[aria-pr
   }
   .rtg-vehicle-btn {
     flex: 1;
-    padding: 10px 12px;
+    padding: 0 12px;
     font-size: 13px;
     text-align: center;
   }

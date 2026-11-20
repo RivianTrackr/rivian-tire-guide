@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.17.3] - 2026-11-19
+
+### Fixed
+- **R1/R2 switch: the active pill ran to the track's top and bottom edges.** `.rtg-vehicle-btn` had `min-height: 40px` inside a 40px track with 4px padding, so the buttons overflowed it by 4px each way while the sides kept their inset. Buttons are now 32px tall, so the inset is even on every side. Most visible in light mode, where the track is a lighter step than in dark.
+
 ## [2.17.2] - 2026-11-19
 
 ### Fixed
