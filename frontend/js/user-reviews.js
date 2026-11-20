@@ -12,7 +12,7 @@
 
   var cfg = (typeof rtgUserReviews !== "undefined" && rtgUserReviews) || {};
   var currentUserId = parseInt(cfg.currentUserId, 10) || 0;
-  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
   var listEl = document.getElementById("rtg-user-reviews-list");
   var titleEl = document.getElementById("rtg-user-reviews-title");
@@ -219,12 +219,13 @@
 
   // "Aug 2026" from a MySQL datetime, read as text so the browser's time
   // zone can't shift a review across a month boundary (as the tire page).
+  // "September 12, 2026" from a MySQL datetime, read as text.
   function formatMonth(value) {
-    var m = /^(\d{4})-(\d{2})/.exec(String(value || ''));
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value || ''));
     if (!m) return '';
     var month = parseInt(m[2], 10);
     if (month < 1 || month > 12) return '';
-    return MONTHS[month - 1] + ' ' + m[1];
+    return MONTHS[month - 1] + ' ' + parseInt(m[3], 10) + ', ' + m[1];
   }
 
   // Same tags the tire page shows under a reviewer's name.

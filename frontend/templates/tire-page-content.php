@@ -980,7 +980,7 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
         <?php endif; ?>
         <?php if ( $review_link_url ) : ?>
         <a class="rtg-tp-cta rtg-tp-cta-secondary rtg-tp-review-link" href="<?php echo esc_url( $review_link_url ); ?>" target="_blank" rel="noopener noreferrer">
-          <i class="fa-solid <?php echo $review_is_video ? 'fa-circle-play' : 'fa-newspaper'; ?>" aria-hidden="true"></i><?php echo $review_is_video ? 'Watch Review' : 'Read review'; ?>
+          <i class="fa-solid <?php echo $review_is_video ? 'fa-circle-play' : 'fa-newspaper'; ?>" aria-hidden="true"></i><?php echo $review_is_video ? 'Watch review' : 'Read review'; ?>
         </a>
         <?php endif; ?>
         <?php $rtg_tp_saved = is_user_logged_in() && RTG_Database::is_tire_saved( get_current_user_id(), $tire_id ); ?>

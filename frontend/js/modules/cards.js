@@ -5,7 +5,7 @@
  */
 
 import { state, ROWS_PER_PAGE } from './state.js';
-import { rtgIcon, safeString, getDOMElement } from './helpers.js';
+import { rtgIcon, safeString, getDOMElement, sentenceCase } from './helpers.js';
 import { VALIDATION_PATTERNS, NUMERIC_BOUNDS, validateNumeric, safeImageURL, safeLinkURL, safeReviewLinkURL } from './validation.js';
 import { TOOLTIP_DATA, createInfoTooltip } from './tooltips.js';
 import { createRatingHTML } from './ratings.js';
@@ -22,19 +22,6 @@ import { createSaveTool } from './saved.js';
  */
 const HIDDEN_TAGS = new Set(['oem', 'riv']);
 
-/**
- * Sentence case for a stored label: "All-Terrain" reads "All-terrain",
- * "EV Rated" reads "EV rated". Only plain capitalised words after the first
- * are lowered, so acronyms and sizes (EV, 3PMS, LT, XL) stay as written.
- */
-export function sentenceCase(text) {
-  let first = true;
-  return String(text || '').split(/(\s+|-)/).map(part => {
-    if (/^(\s+|-)$/.test(part) || part === '') return part;
-    if (first) { first = false; return part; }
-    return /^[A-Z][a-z]+$/.test(part) ? part.toLowerCase() : part;
-  }).join('');
-}
 
 // IntersectionObserver for enhanced lazy loading with fade-in
 let imageObserver = null;
@@ -383,11 +370,8 @@ export function createSingleCard(row) {
     const oemInner = document.createElement('div');
     oemInner.className = 'tire-card-badge-inner';
 
-    const oemIcon = document.createElement('span');
-    oemIcon.innerHTML = rtgIcon('certificate', 14);
-    oemIcon.style.display = 'inline-flex';
-
-    oemInner.appendChild(oemIcon);
+    // A quiet label on the photo plate, like the card's other tags.
+    oemBadge.title = 'Fitted by Rivian at the factory';
     oemInner.appendChild(document.createTextNode('OEM'));
     oemBadge.appendChild(oemInner);
     card.appendChild(oemBadge);
@@ -936,7 +920,7 @@ export function createSingleCard(row) {
     reviewEl.target = '_blank';
     reviewEl.rel = 'noopener noreferrer';
     reviewEl.className = 'tire-card-review-link';
-    reviewEl.innerHTML = rtgIcon(isVideo ? 'circle-play' : 'newspaper', 12) + '&nbsp;' + (isVideo ? 'Review Video' : 'Official Review');
+    reviewEl.innerHTML = rtgIcon(isVideo ? 'circle-play' : 'newspaper', 12) + '&nbsp;' + (isVideo ? 'Review video' : 'Official review');
     linksRow.appendChild(reviewEl);
   }
 

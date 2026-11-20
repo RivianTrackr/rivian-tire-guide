@@ -12,7 +12,17 @@
   'use strict';
 
   var STAR_PATH = 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z';
-  var RATING_LABELS = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+  // "All-Terrain" reads "All-terrain"; acronyms stay. Same rule as the guide's cards.
+  function sentenceCase(text) {
+    var first = true;
+    return String(text || '').split(/(\s+|-)/).map(function (part) {
+      if (part === '' || /^(\s+|-)$/.test(part)) return part;
+      if (first) { first = false; return part; }
+      return /^[A-Z][a-z]+$/.test(part) ? part.toLowerCase() : part;
+    }).join('');
+  }
+
+  var RATING_LABELS = ['', 'Poor', 'Fair', 'Good', 'Very good', 'Excellent'];
   var AXES = [
     { key: 'range',   name: 'Range and efficiency', note: 'Did your mi/kWh hold up?' },
     { key: 'noise',   name: 'Road noise',           note: 'Highway hum at 70 mph' },
@@ -520,7 +530,7 @@
     $('rvTireBrand').textContent = tire.brand || '';
     $('rvTireModel').textContent = tire.model || '';
     $('rvTireSize').textContent = tire.size || '';
-    $('rvTireCategory').textContent = tire.category || '';
+    $('rvTireCategory').textContent = sentenceCase(tire.category || '');
 
     var pageLink = $('rvTirePageLink');
     var url = tirePageUrl(tire);

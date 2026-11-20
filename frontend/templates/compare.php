@@ -161,7 +161,7 @@ $rtg_settings = get_option( 'rtg_settings', array() );
       width: 100%;
       height: 150px;
       flex-shrink: 0;
-      background: #fff;
+      background: #e4e1db;
       border-radius: 10px;
       display: flex;
       align-items: center;
@@ -169,11 +169,15 @@ $rtg_settings = get_option( 'rtg_settings', array() );
       overflow: hidden;
       padding: 10px;
     }
+    /* White-backed product shots melt into the plate, so dark mode shows a
+       deliberate tile instead of a white box. Light mode keeps white. */
     .cmp-tire-img-wrap img {
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
+      mix-blend-mode: multiply;
     }
+    html[data-rt-theme="light"] .cmp-root .cmp-tire-img-wrap { background: #fff; }
     .cmp-tire-info { flex: 1; min-width: 0; }
     .cmp-tire-brand {
       font-size: 13px;
@@ -270,11 +274,10 @@ margin-bottom: 2px;
     /* A size that fits only on 3rd-party wheels: same shape, lavender. */
     .cmp-fitment-note {
       display: inline-flex; align-items: flex-start; gap: 6px;
-      margin-top: 4px; padding: 4px 8px; border-radius: 6px;
-      font-size: 11px; font-weight: 600; line-height: 1.35; text-align: left;
-      color: #ece9e4;
-      background: color-mix(in srgb, #a78bfa 12%, #121418);
-      border: 1px solid color-mix(in srgb, #a78bfa 40%, transparent);
+      margin-top: 4px;
+      font-size: 12px; font-weight: 500; line-height: 1.35; text-align: left;
+      font-family: var(--cmp-sans);
+      color: #a6a39c;
     }
     .cmp-fitment-note i { margin-top: 2px; color: #a78bfa; }
 
@@ -357,12 +360,6 @@ margin-bottom: 2px;
       user-select: none;
     }
     .cmp-section-header:hover { background: #1f2228; }
-    .cmp-section-icon {
-      color: var(--rtg-accent);
-      font-size: 16px;
-      width: 20px;
-      text-align: center;
-    }
     .cmp-section-title {
       font-size: 15px;
       font-weight: 600;
@@ -405,28 +402,32 @@ margin-bottom: 2px;
       font-weight: 500;
       color: var(--rtg-text-primary);
       border-left: 1px solid rgba(52, 56, 63, 0.4);
-      font-family: monospace;
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
     }
     .cmp-row-value.is-best {
       color: var(--rtg-accent);
       font-weight: 700;
     }
+    /* Words in a cell read in the page font; mono is for numbers. */
+    .cmp-root { --cmp-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; }
+    .cmp-word { font-family: var(--cmp-sans); }
+    .cmp-eff { font-weight: 600; color: var(--rtg-text-heading); }
+    .cmp-yes { color: #4ade80; font-weight: 600; font-family: var(--cmp-sans); }
+    .cmp-hl { color: var(--rtg-accent); font-weight: 600; }
 
     /* --- Tags --- */
     .cmp-tags { display: flex; flex-wrap: wrap; gap: 5px; }
     .cmp-tag {
       display: inline-block;
-      font-size: 11px;
+      font-family: var(--cmp-sans);
+      font-size: 12px;
       font-weight: 600;
-      padding: 3px 8px;
-      border-radius: 4px;
-      background: var(--rtg-border);
-      color: var(--rtg-text-light);
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: #1f2228;
+      color: #a6a39c;
       white-space: nowrap;
     }
-    .cmp-tag-ev { background: #2563eb; color: #fff; }
-    .cmp-tag-3pms { background: #5ec095; color: #15130e; }
-    .cmp-tag-studded { background: #7c3aed; color: #fff; }
 
     /* --- CTA buttons --- */
     .cmp-cta-wrap {
@@ -440,10 +441,11 @@ margin-bottom: 2px;
       gap: 6px;
       padding: 10px 18px;
       border-radius: 8px;
+      font-family: var(--cmp-sans);
       font-size: 14px;
-      font-weight: 700;
+      font-weight: 600;
       text-decoration: none;
-      transition: all .15s;
+      transition: background-color .15s, border-color .15s, color .15s;
       white-space: nowrap;
     }
     .cmp-cta-primary {
@@ -529,13 +531,19 @@ margin-bottom: 2px;
 
       .cmp-section-header { padding: 12px 16px; }
 
-      .cmp-cta { padding: 8px 12px; font-size: 13px; flex: 1; justify-content: center; }
+      .cmp-cta { padding: 8px 12px; font-size: 13px; flex: 1; justify-content: center; white-space: normal; text-align: center; }
     }
 
     @media (max-width: 480px) {
       .cmp-topbar-actions .cmp-btn span { display: none; }
       .cmp-tire-meta { gap: 12px; }
       .cmp-tire-meta-value { font-size: 15px; }
+      /* Three tires on a phone leave about 100px a column: stack the
+         buttons full width so a retailer name wraps instead of clipping. */
+      .cmp-row-value { padding: 10px 8px; min-width: 0; }
+      .cmp-cta-wrap { flex-direction: column; }
+      .cmp-cta { width: 100%; padding: 8px 6px; font-size: 12px; }
+      .cmp-cta i, .cmp-cta svg { display: none; }
     }
 
     /* --- In plain words (advisor) --- */
@@ -585,7 +593,7 @@ margin-bottom: 2px;
         </button>
       </div>
     </div>
-    <h1 class="cmp-title">Tire Comparison</h1>
+    <h1 class="cmp-title">Tire comparison</h1>
     <div id="comparisonContent">
       <div class="cmp-empty">
         <div class="cmp-empty-icon"><i class="fa-solid fa-scale-balanced" style="font-size:48px" aria-hidden="true"></i></div>

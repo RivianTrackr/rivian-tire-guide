@@ -365,7 +365,7 @@ export function createRatingHTML(tireId, average = 0, count = 0, userRating = 0)
 
     const pendingBadge = document.createElement('span');
     pendingBadge.className = 'review-action-link rtg-review-pending-badge';
-    pendingBadge.textContent = 'Review Pending';
+    pendingBadge.textContent = 'Review pending';
     reviewActions.appendChild(pendingBadge);
 
     container.appendChild(reviewActions);

@@ -30,7 +30,7 @@ $rtg_wn_guide_url = RTG_Tire_Page::guide_url();
 .rtg-wn-release-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
 .rtg-wn-version { display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border-radius: 20px; font-size: 12px; font-weight: 700; font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace; color: var(--rtg-accent); background: color-mix(in srgb, var(--rtg-accent) 12%, var(--rtg-bg-deep)); border: 1px solid color-mix(in srgb, var(--rtg-accent) 30%, transparent); }
 .rtg-wn-date { font-size: 13px; font-weight: 500; color: var(--rtg-text-muted); }
-.rtg-wn-latest { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 12px; font-weight: 700;color: #15130e; background: var(--rtg-positive); }
+.rtg-wn-latest { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #ece9e4; background: #1f2228; }
 .rtg-wn-intro { font-size: 15px; color: var(--rtg-text-heading); margin: 0 0 12px; }
 .rtg-wn-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .rtg-wn-list li { position: relative; padding-left: 18px; font-size: 15px; }

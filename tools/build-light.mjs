@@ -50,7 +50,7 @@ const MAP = {
 // Token names that hold a fill color in both modes (buttons, stars). Their usages as text are
 // swapped instead, see ACCENT_VARS.
 const KEEP_VAR = /accent|star-filled|star-user/;
-const ACCENT_VARS = /^var\(--rtg(?:-tp)?-accent(-hover)?\)$/;
+const ACCENT_VARS = /^var\(--rtg(?:-tp)?-accent(-hover)?(?:,\s*#[0-9a-fA-F]{3,8})?\)$/;
 
 function role(prop) {
 	const p = prop.toLowerCase();

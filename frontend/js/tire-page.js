@@ -30,7 +30,7 @@ var RTG_TP_TOOLTIPS = {
   },
   'Real-World Efficiency': {
     title: 'Real-World Efficiency (mi/kWh)',
-    content: 'This is real-world energy efficiency data collected from Rivian owners via <a href="https://rivianroamer.com/join?with=riviantrackr" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:underline;">Roamer</a>. It measures how many miles the vehicle travels per kilowatt-hour of battery energy while using these tires. <br><br> Higher values mean better range efficiency. The data is based on actual driving sessions and updates regularly.'
+    content: 'This is real-world energy efficiency data collected from Rivian owners via <a href="https://rivianroamer.com/join?with=riviantrackr" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline;">Roamer</a>. It measures how many miles the vehicle travels per kilowatt-hour of battery energy while using these tires. <br><br> Higher values mean better range efficiency. The data is based on actual driving sessions and updates regularly.'
   }
 };
 
@@ -46,7 +46,7 @@ var RTG_TP_TOOLTIPS = {
 
     var extra = '';
     if (triggerEl && triggerEl.dataset && triggerEl.dataset.tooltipExtra) {
-      extra = '<br><br><strong style="color:#60a5fa;">This tire:</strong> ' + triggerEl.dataset.tooltipExtra;
+      extra = '<br><br><strong>This tire:</strong> ' + triggerEl.dataset.tooltipExtra;
     }
 
     var dlg = window.RTG_DIALOG.openDialog({
@@ -155,7 +155,7 @@ var RTG_TP_TOOLTIPS = {
         var label = shareBtn.querySelector('span');
         shareBtn.classList.add('copied');
         if (icon) icon.className = 'fa-solid fa-check';
-        if (label) label.textContent = 'Copied!';
+        if (label) label.textContent = 'Copied';
         setTimeout(function () {
           shareBtn.classList.remove('copied');
           if (icon) icon.className = 'fa-solid fa-share-nodes';

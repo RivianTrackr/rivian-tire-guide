@@ -148,7 +148,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fff;
+  background: #e4e1db;
   border: 1px solid var(--rtg-border);
   border-radius: 8px;
   overflow: hidden;
@@ -181,7 +181,7 @@ a.ur-review-tire:focus-visible { outline: 2px solid var(--rtg-accent); outline-o
 .ur-star { font-size: 17px; line-height: 1; color: var(--rtg-star-empty-visible); }
 .ur-star-full { color: var(--rtg-star-filled); filter: drop-shadow(0 1px 3px color-mix(in srgb, var(--rtg-star-filled) 35%, transparent)); }
 .ur-star-half { background: linear-gradient(90deg, var(--rtg-star-filled) 50%, var(--rtg-star-empty-visible) 50%); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.ur-review-date { font-size: 12px; color: var(--rtg-text-muted); }
+.ur-review-date { font-size: 12px; color: var(--rtg-text-muted); font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace; }
 
 /* What the reviewer told us: verified owner, which Rivian, miles on the set. */
 .ur-review-meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
@@ -269,3 +269,8 @@ a.ur-review-tire:focus-visible { outline: 2px solid var(--rtg-accent); outline-o
   .ur-review { border-color: #999; background: #fff; }
   .ur-review-tire-name, .ur-review-title, .ur-title { color: #000; }
 }
+
+/* Product shots are white-backed: in dark mode they sit on a light plate
+   (multiply melts the white into it) instead of a white box. */
+.ur-review-tire-img img { mix-blend-mode: multiply; }
+html[data-rt-theme="light"] body .ur-review-tire-img { background: #fff; }

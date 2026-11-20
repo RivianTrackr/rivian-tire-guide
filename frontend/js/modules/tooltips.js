@@ -98,7 +98,7 @@ export function showTooltipModal(tooltipKey, triggerEl) {
   // Append dynamic extra content from the trigger element (e.g. per-tire Roamer stats).
   let extraContent = '';
   if (triggerEl && triggerEl.dataset && triggerEl.dataset.tooltipExtra) {
-    extraContent = '<br><br><strong style="color:#60a5fa;">This tire:</strong> ' + triggerEl.dataset.tooltipExtra;
+    extraContent = '<br><br><strong>This tire:</strong> ' + triggerEl.dataset.tooltipExtra;
   }
   // The admin's fitment note for a 3rd-party wheel, under the wheel's name.
   // Both are admin text and land here escaped.
