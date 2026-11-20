@@ -4,6 +4,13 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.17.0] - 2026-11-19
+
+### Changed
+- **Tire cards follow the site's design rules (option A from the review).** The photo shows the whole tire on an inset plate (`object-fit: contain`, `mix-blend-mode: multiply`), paper in light mode and a light neutral in dark, instead of a cropped white band. Compare, share and save are 40px. Tags are one quiet neutral style; the vehicle tag carries a green check, and a size that fits only on 3rd-party wheels gets no tag, since the fitment line already says so. The 3rd-party note is a plain line with a lavender icon, not a box. Efficiency figures use heading color instead of blue. "Full specs and reviews" is a heading-color link with the gold underline. Labels are sentence case (`sentenceCase()` in `cards.js` for stored categories and tags; tooltip keys unchanged).
+- **Search and filters.** The light-mode search field is raised with a hairline (it was white on the white card). On tablet and desktop the filter chips wrap to a second line instead of scrolling sideways behind a fade. Sort options read in sentence case without arrows. The wheel callout lost its decorative truck icon.
+- **Tire page.** Fit chips match the cards (neutral, the icon carries the meaning; "on aftermarket wheels" replaces "· 3rd-party wheels"). Related rows show a fit tag only when the size differs from the page's tire, so "Similar tires" no longer repeats "Fits R2" on every row. Spec groups lost their heading icons and read in sentence case. Category and 3PMS values are no longer set in mono. Review dates read in full (`F j, Y`) in mono. The hero photo and thumbnails sit on the same plate as the cards in dark mode. Info buttons have a 40px tap area here and in the guide.
+
 ## [2.16.5] - 2026-11-19
 
 ### Fixed

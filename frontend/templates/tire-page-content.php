@@ -166,6 +166,34 @@ $rtg_tp_glance = '';
     $rtg_tp_glance = $lead . $fit_clause . ( $clauses ? ', ' . implode( ', ', $clauses ) : '' ) . '.';
 }
 
+if ( ! function_exists( 'rtg_tp_sentence_case' ) ) {
+    /**
+     * Sentence case for a stored label: "All-Terrain" reads "All-terrain".
+     * Only plain capitalised words after the first are lowered, so acronyms
+     * (EV, 3PMS, LT) stay as written. Mirrors sentenceCase() in cards.js.
+     *
+     * @param string $text Label.
+     * @return string
+     */
+    function rtg_tp_sentence_case( $text ) {
+        $parts = preg_split( '/(\s+|-)/', (string) $text, -1, PREG_SPLIT_DELIM_CAPTURE );
+        $first = true;
+        foreach ( $parts as $i => $part ) {
+            if ( '' === $part || preg_match( '/^(\s+|-)$/', $part ) ) {
+                continue;
+            }
+            if ( $first ) {
+                $first = false;
+                continue;
+            }
+            if ( preg_match( '/^[A-Z][a-z]+$/', $part ) ) {
+                $parts[ $i ] = strtolower( $part );
+            }
+        }
+        return implode( '', $parts );
+    }
+}
+
 // --- Chips: size, fitment, category, 3PMS, OEM. ---
 $rtg_tp_chips = array();
 if ( $size ) {
@@ -175,7 +203,7 @@ foreach ( $rtg_tp_verdicts as $rtg_tp_v ) {
     if ( $rtg_tp_v['ok'] && $rtg_tp_v['third_party'] ) {
         // A fit, but only on wheels Rivian never sold: lavender, not green.
         $rtg_tp_chips[] = array(
-            'text'  => 'Fits ' . $rtg_tp_v['vehicle'] . ' · 3rd-party wheels',
+            'text'  => 'Fits ' . $rtg_tp_v['vehicle'] . ' on aftermarket wheels',
             'class' => 'rtg-tp-chip-fit-3p',
             'icon'  => 'fa-circle-info',
         );
@@ -196,7 +224,7 @@ foreach ( $rtg_tp_verdicts as $rtg_tp_v ) {
 if ( ! $rtg_tp_verdicts ) {
     foreach ( $rtg_tp_fit_3p as $rtg_tp_f ) {
         $rtg_tp_chips[] = array(
-            'text'  => 'Fits ' . $rtg_tp_f['vehicle'] . ' · 3rd-party wheels',
+            'text'  => 'Fits ' . $rtg_tp_f['vehicle'] . ' on aftermarket wheels',
             'class' => 'rtg-tp-chip-fit-3p',
             'icon'  => 'fa-circle-info',
         );
@@ -250,7 +278,7 @@ if ( $rtg_tp_fit_3p ) {
     }
 }
 if ( $category ) {
-    $rtg_tp_chips[] = array( 'text' => $category, 'class' => '' );
+    $rtg_tp_chips[] = array( 'text' => rtg_tp_sentence_case( $category ), 'class' => '' );
 }
 // Discontinued: a chip, and a note naming the tire that replaced it.
 $rtg_tp_successor = null;
@@ -261,7 +289,7 @@ if ( RTG_Database::is_discontinued( $tire ) ) {
     }
 }
 if ( strtolower( trim( $tire['three_pms'] ?? '' ) ) === 'yes' ) {
-    $rtg_tp_chips[] = array( 'text' => '3PMS Rated', 'class' => 'rtg-tp-chip-3pms', 'icon' => 'fa-snowflake' );
+    $rtg_tp_chips[] = array( 'text' => '3PMS rated', 'class' => 'rtg-tp-chip-3pms' );
 }
 if ( false !== stripos( (string) ( $tire['tags'] ?? '' ), 'oem' ) ) {
     $rtg_tp_chips[] = array( 'text' => 'OEM', 'class' => '' );
@@ -331,27 +359,25 @@ $rtg_tp_tiles = array(
 // --- Grouped specifications (skip empty rows). Price lives in the hero. ---
 $spec_groups = array(
     array(
-        'icon'  => 'fa-ruler-combined',
-        'title' => 'Size & Fitment',
+        'title' => 'Size and fitment',
         'rows'  => array(
             'Size'         => $size . ( $diameter_display ? " ($diameter_display)" : '' ),
-            'Load Index'   => $tire['load_index'] ?? '',
-            'Load Range'   => $tire['load_range'] ?? '',
-            'Max Load'     => ( $tire['max_load_lb'] > 0 ) ? number_format( (int) $tire['max_load_lb'] ) . ' lb' : '',
-            'Speed Rating' => $tire['speed_rating'] ?? '',
+            'Load index'   => $tire['load_index'] ?? '',
+            'Load range'   => $tire['load_range'] ?? '',
+            'Max load'     => ( $tire['max_load_lb'] > 0 ) ? number_format( (int) $tire['max_load_lb'] ) . ' lb' : '',
+            'Speed rating' => $tire['speed_rating'] ?? '',
             'Max PSI'      => $tire['psi'] ?? '',
         ),
     ),
     array(
-        'icon'  => 'fa-gauge-high',
-        'title' => 'Construction & Performance',
+        'title' => 'Construction and performance',
         'rows'  => array(
-            'Category'         => $category,
+            'Category'         => rtg_tp_sentence_case( $category ),
             'Weight'           => ( $tire['weight_lb'] > 0 ) ? $tire['weight_lb'] . ' lb' : '',
-            'Tread Depth'      => $tire['tread'] ?? '',
+            'Tread depth'      => $tire['tread'] ?? '',
             'UTQG'             => ( strtolower( trim( $tire['utqg'] ?? '' ) ) === 'none' ) ? '' : ( $tire['utqg'] ?? '' ),
-            '3PMS Rated'       => $tire['three_pms'] ?? '',
-            'Mileage Warranty' => ( $tire['mileage_warranty'] > 0 ) ? number_format( (int) $tire['mileage_warranty'] ) . ' miles' : '',
+            '3PMS rated'       => $tire['three_pms'] ?? '',
+            'Mileage warranty' => ( $tire['mileage_warranty'] > 0 ) ? number_format( (int) $tire['mileage_warranty'] ) . ' miles' : '',
         ),
     ),
 );
@@ -461,9 +487,10 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
      *
      * @param array $row         Tire row.
      * @param array $vehicle_map Vehicle => sizes.
-     * @param array $third_party Vehicle => [ size => [ 'wheel', 'note' ] ]; a fit listed here is labeled 3rd-party.
+     * @param array  $third_party  Vehicle => [ size => [ 'wheel', 'note' ] ]; a fit listed here is labeled 3rd-party.
+     * @param string $current_size This page's size: a row in the same size fits the same vehicles, so it carries no fit tag.
      */
-    function rtg_tire_page_related_row( $row, $vehicle_map, $third_party = array() ) {
+    function rtg_tire_page_related_row( $row, $vehicle_map, $third_party = array(), $current_size = '' ) {
         $url  = RTG_Tire_Page::tire_url( ! empty( $row['slug'] ) ? $row['slug'] : $row['tire_id'] );
         $img  = ! empty( $row['image'] ) ? esc_url( $row['image'] ) : '';
         $meta = array();
@@ -497,13 +524,13 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
             <span class="rtg-tp-related-name"><span class="rtg-tp-related-brand"><?php echo esc_html( $row['brand'] ?? '' ); ?></span> <?php echo esc_html( $row['model'] ?? '' ); ?></span>
             <span class="rtg-tp-related-meta"><?php echo implode( ' &middot; ', $meta ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- each part escaped above ?></span>
           </span>
-          <?php if ( $fits ) : ?>
+          <?php if ( $fits && strtolower( trim( (string) $current_size ) ) !== $row_size ) : ?>
           <span class="rtg-tp-related-fits">
             <?php foreach ( $fits as $vehicle ) : ?>
             <?php if ( RTG_Fitment::third_party_entry( $row_size, $vehicle, $third_party ) ) : ?>
-            <span class="rtg-tp-chip rtg-tp-chip-fit-3p"><i class="fa-solid fa-circle-info" aria-hidden="true"></i><?php echo esc_html( 'Fits ' . $vehicle . ' · 3rd-party wheels' ); ?></span>
+            <span class="rtg-tp-chip rtg-tp-chip-fit-3p"><i class="fa-solid fa-circle-info" aria-hidden="true"></i><?php echo esc_html( 'Fits ' . $vehicle . ' on aftermarket wheels' ); ?></span>
             <?php else : ?>
-            <span class="rtg-tp-chip rtg-tp-chip-vehicle"><i class="fa-solid fa-car" aria-hidden="true"></i><?php echo esc_html( 'Fits ' . $vehicle ); ?></span>
+            <span class="rtg-tp-chip rtg-tp-chip-vehicle"><i class="fa-solid fa-check" aria-hidden="true"></i><?php echo esc_html( 'Fits ' . $vehicle ); ?></span>
             <?php endif; ?>
             <?php endforeach; ?>
           </span>
@@ -572,20 +599,24 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
   .rtg-tp .rtg-tp-img {
     flex: 0 0 380px; max-width: 100%; min-height: 320px; align-self: stretch;
     position: relative;
-    background: #fff; border: 1px solid var(--rtg-tp-border);
+    background: #e4e1db; border: 1px solid var(--rtg-tp-border);
     border-radius: 12px; overflow: hidden;
     transition: border-color 0.15s ease;
   }
   .rtg-tp .rtg-tp-img:hover { border-color: color-mix(in srgb, var(--rtg-tp-accent) 35%, var(--rtg-tp-border)); }
   /* Absolutely positioned so the photo's own height never sets the row:
      the box is as tall as the info column, and the photo fits inside it. */
-  .rtg-tp .rtg-tp-img img { position: absolute; inset: 20px; width: calc(100% - 40px); height: calc(100% - 40px); object-fit: contain; margin: 0; display: block; }
+  .rtg-tp .rtg-tp-img img { position: absolute; inset: 20px; width: calc(100% - 40px); height: calc(100% - 40px); object-fit: contain; margin: 0; display: block; mix-blend-mode: multiply; }
+  /* Product shots are white-backed: in dark mode they sit on a light plate
+     (multiply melts the white into it) instead of glaring as a white box. */
+  html[data-rt-theme="light"] .rtg-tp .rtg-tp-img,
+  html[data-rt-theme="light"] .rtg-tp .rtg-tp-related-img { background: #fff; }
   .rtg-tp .rtg-tp-info { flex: 1 1 420px; min-width: 280px; display: flex; flex-direction: column; gap: 12px; }
   .rtg-tp .rtg-tp-brand { font-size: 13px; font-weight: 700; color: var(--rtg-tp-accent);margin: 0; }
   .rtg-tp h1.rtg-tp-title { font-size: 34px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.15; color: var(--rtg-tp-heading); margin: -6px 0 0; padding: 0; }
   .rtg-tp .rtg-tp-glance { font-size: 15px; line-height: 1.55; color: var(--rtg-tp-text); margin: 0; max-width: 640px; }
   .rtg-tp .rtg-tp-glance strong { color: var(--rtg-tp-heading); font-weight: 600; }
-  .rtg-tp .rtg-tp-glance .rtg-tp-glance-eff { color: #60a5fa; font-weight: 600; }
+  .rtg-tp .rtg-tp-glance .rtg-tp-glance-eff { color: var(--rtg-tp-heading); font-weight: 600; }
 
   .rtg-tp .rtg-tp-rating { display: flex; align-items: center; gap: 8px; margin: 0; flex-wrap: wrap; }
   /* Empty stars: the empty color lifted toward muted text, so they read on the card (same mix as the guide). */
@@ -602,22 +633,19 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
     display: inline-flex; align-items: center; gap: 6px;
     height: 30px; font-size: 12px; font-weight: 600; line-height: 1;
     padding: 0 12px; border-radius: 20px; white-space: nowrap;
-    color: var(--rtg-tp-text);
-    background: color-mix(in srgb, var(--rtg-tp-accent) 12%, var(--rtg-tp-deep));
-    border: 1px solid color-mix(in srgb, var(--rtg-tp-accent) 25%, transparent);
+    color: #ece9e4;
+    background: #1f2228;
+    border: 1px solid transparent;
   }
-  .rtg-tp .rtg-tp-chip i { font-size: 11px; line-height: 1; color: var(--rtg-tp-accent); }
+  .rtg-tp .rtg-tp-chip i { font-size: 11px; line-height: 1; color: #a6a39c; }
   .rtg-tp .rtg-tp-chip-size { background: var(--rtg-tp-deep); border-color: var(--rtg-tp-border); color: var(--rtg-tp-heading); font-family: var(--rtg-tp-mono); }
-  .rtg-tp .rtg-tp-chip-fit { background: color-mix(in srgb, #4ade80 12%, var(--rtg-tp-deep)); border-color: color-mix(in srgb, #4ade80 35%, transparent); }
-  .rtg-tp .rtg-tp-chip-fit i { color: #4ade80; }
+  /* Fit: one quiet tag everywhere, the icon carries the meaning. */
+  .rtg-tp .rtg-tp-chip-fit i,
+  .rtg-tp .rtg-tp-chip-vehicle i { color: #4ade80; }
   .rtg-tp .rtg-tp-chip-fit-bad { background: color-mix(in srgb, #ef4444 12%, var(--rtg-tp-deep)); border-color: color-mix(in srgb, #ef4444 40%, transparent); }
   .rtg-tp .rtg-tp-chip-fit-bad i { color: #ef4444; }
   /* Fits, but only on 3rd-party wheels: lavender, so it reads as "different, not dangerous" beside a red load warning. */
-  .rtg-tp .rtg-tp-chip-fit-3p { background: color-mix(in srgb, #a78bfa 12%, var(--rtg-tp-deep)); border-color: color-mix(in srgb, #a78bfa 40%, transparent); }
   .rtg-tp .rtg-tp-chip-fit-3p i { color: #a78bfa; }
-  .rtg-tp .rtg-tp-chip-3pms { background: color-mix(in srgb, #60a5fa 14%, var(--rtg-tp-deep)); border-color: color-mix(in srgb, #60a5fa 40%, transparent); }
-  .rtg-tp .rtg-tp-chip-3pms i { color: #60a5fa; }
-  .rtg-tp .rtg-tp-chip-vehicle { background: color-mix(in srgb, var(--rtg-tp-accent) 22%, var(--rtg-tp-deep)); border-color: color-mix(in srgb, var(--rtg-tp-accent) 55%, transparent); color: var(--rtg-tp-heading); }
 
   .rtg-tp .rtg-tp-fitment-warning {
     display: flex; align-items: flex-start; gap: 10px;
@@ -650,15 +678,17 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
     cursor: pointer; border-radius: 50%;
     display: inline-flex; align-items: center; justify-content: center;
     transition: color 0.15s ease;
+    position: relative;
   }
+  /* A 40px tap area around the small icon. */
+  .rtg-tp .info-tooltip-trigger::after { content: ''; position: absolute; inset: -12px; }
   .rtg-tp .info-tooltip-trigger:hover { color: var(--rtg-tp-accent); }
   .rtg-tp .info-tooltip-trigger:focus-visible { outline: 2px solid var(--rtg-tp-accent); outline-offset: 2px; }
   .rtg-tp .rtg-tp-stat-value { font-size: 20px; font-weight: 600; line-height: 1.2; color: var(--rtg-tp-heading); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
   .rtg-tp .rtg-tp-stat-meta { font-size: 12px; color: var(--rtg-tp-muted); margin-top: 2px; }
   .rtg-tp .rtg-tp-stat-note { font-size: 12px; color: var(--rtg-tp-muted); margin-top: 2px; }
   .rtg-tp .rtg-tp-stat-note.is-stale { color: #f0b429; font-weight: 600; }
-  .rtg-tp .rtg-tp-stat-roamer .rtg-tp-stat-value { color: #60a5fa; }
-  .rtg-tp .rtg-tp-stat-roamer.is-limited .rtg-tp-stat-value { color: color-mix(in srgb, #60a5fa 55%, var(--rtg-tp-muted)); }
+  .rtg-tp .rtg-tp-stat-roamer.is-limited .rtg-tp-stat-value { color: var(--rtg-tp-muted); }
   .rtg-tp .rtg-tp-stat.is-empty .rtg-tp-stat-value { color: var(--rtg-tp-muted); }
   .rtg-tp .rtg-tp-stat.is-warning { border-color: color-mix(in srgb, #ef4444 45%, transparent); }
   .rtg-tp .rtg-tp-stat.is-warning .rtg-tp-stat-value { color: #f87171; }
@@ -704,11 +734,11 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
     background: var(--rtg-tp-deep);
     font-size: 14px; font-weight: 700; color: var(--rtg-tp-heading);
   }
-  .rtg-tp .rtg-tp-spec-head i { color: var(--rtg-tp-accent); font-size: 14px; }
   .rtg-tp .rtg-tp-spec-row { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 12px; padding: 9px 18px; border-bottom: 1px solid var(--rtg-tp-divider); }
   .rtg-tp .rtg-tp-spec-group:last-child .rtg-tp-spec-row:last-child { border-bottom: none; }
   .rtg-tp .rtg-tp-spec-label { color: var(--rtg-tp-muted); font-size: 14px; display: inline-flex; align-items: center; gap: 5px; }
   .rtg-tp .rtg-tp-spec-value { color: var(--rtg-tp-text); font-size: 14px; font-weight: 500; font-family: var(--rtg-tp-mono); }
+  .rtg-tp .rtg-tp-spec-value.is-word { font-family: inherit; }
 
   /* --- Related tires (other sizes / similar in this size) --- */
   .rtg-tp .rtg-tp-related-list { display: flex; flex-direction: column; gap: 10px; margin: 0 0 24px; }
@@ -720,14 +750,14 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
     transition: border-color 0.15s ease;
   }
   .rtg-tp .rtg-tp-related:hover { border-color: color-mix(in srgb, var(--rtg-tp-accent) 45%, var(--rtg-tp-border)); color: var(--rtg-tp-text); }
-  .rtg-tp .rtg-tp-related-img { flex: 0 0 52px; width: 52px; height: 52px; border-radius: 8px; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 4px; }
-  .rtg-tp .rtg-tp-related-img img { width: 100%; height: 100%; object-fit: contain; margin: 0; }
+  .rtg-tp .rtg-tp-related-img { flex: 0 0 52px; width: 52px; height: 52px; border-radius: 8px; background: #e4e1db; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 4px; }
+  .rtg-tp .rtg-tp-related-img img { width: 100%; height: 100%; object-fit: contain; margin: 0; mix-blend-mode: multiply; }
   .rtg-tp .rtg-tp-related-img i { color: var(--rtg-tp-border); font-size: 20px; }
   .rtg-tp .rtg-tp-related-body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
   .rtg-tp .rtg-tp-related-name { font-size: 14px; font-weight: 600; color: var(--rtg-tp-heading); line-height: 1.3; }
   .rtg-tp .rtg-tp-related-name .rtg-tp-related-brand { color: var(--rtg-tp-accent); }
   .rtg-tp .rtg-tp-related-meta { font-size: 12px; color: var(--rtg-tp-muted); font-variant-numeric: tabular-nums; }
-  .rtg-tp .rtg-tp-related-meta .rtg-tp-related-eff { color: #60a5fa; font-weight: 600; }
+  .rtg-tp .rtg-tp-related-meta .rtg-tp-related-eff { color: var(--rtg-tp-text); font-weight: 600; }
   .rtg-tp .rtg-tp-related-fits { display: flex; gap: 6px; flex-shrink: 0; }
 
   /* --- Reviews --- */
@@ -750,7 +780,7 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
   .rtg-tp .rtg-tp-review-author { font-weight: 600; color: var(--rtg-tp-heading); font-size: 14px; }
   .rtg-tp a.rtg-tp-review-author { color: var(--rtg-tp-heading); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--rtg-tp-heading) 30%, transparent); text-underline-offset: 3px; transition: color 0.15s ease, text-decoration-color 0.15s ease; }
   .rtg-tp a.rtg-tp-review-author:hover { color: var(--rtg-tp-accent); text-decoration-color: var(--rtg-tp-accent); }
-  .rtg-tp .rtg-tp-review-date { font-size: 12px; color: var(--rtg-tp-muted); }
+  .rtg-tp .rtg-tp-review-date { font-size: 12px; color: var(--rtg-tp-muted); font-family: var(--rtg-tp-mono); }
   .rtg-tp .rtg-tp-review-meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 6px; }
   .rtg-tp .rtg-tp-review-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; line-height: 1; padding: 5px 9px; border-radius: 20px; color: var(--rtg-tp-muted); background: var(--rtg-tp-deep); border: 1px solid var(--rtg-tp-divider); }
   .rtg-tp .rtg-tp-review-owner { color: var(--rtg-tp-text); background: color-mix(in srgb, #34d399 12%, var(--rtg-tp-deep)); border-color: color-mix(in srgb, #34d399 35%, transparent); }
@@ -981,21 +1011,23 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
           }
           ?>
         <div class="rtg-tp-spec-group">
-          <div class="rtg-tp-spec-head">
-            <i class="fa-solid <?php echo esc_attr( $group['icon'] ); ?>" aria-hidden="true"></i>
-            <?php echo esc_html( $group['title'] ); ?>
-          </div>
+          <div class="rtg-tp-spec-head"><?php echo esc_html( $group['title'] ); ?></div>
           <?php foreach ( $group_rows as $label => $value ) : ?>
+          <?php
+          // Labels read in sentence case; the tooltip table keeps its keys.
+          $rtg_tp_tip  = array( 'Load index' => 'Load Index', '3PMS rated' => '3PMS Rated', 'UTQG' => 'UTQG' );
+          $rtg_tp_word = in_array( $label, array( 'Category', '3PMS rated' ), true );
+          ?>
           <div class="rtg-tp-spec-row">
             <span class="rtg-tp-spec-label">
               <?php echo esc_html( $label ); ?>
-              <?php if ( in_array( $label, array( 'Load Index', '3PMS Rated', 'UTQG' ), true ) ) : ?>
-              <button type="button" class="info-tooltip-trigger" data-tooltip-key="<?php echo esc_attr( $label ); ?>" aria-label="More info about <?php echo esc_attr( $label ); ?>">
+              <?php if ( isset( $rtg_tp_tip[ $label ] ) ) : ?>
+              <button type="button" class="info-tooltip-trigger" data-tooltip-key="<?php echo esc_attr( $rtg_tp_tip[ $label ] ); ?>" aria-label="More info about <?php echo esc_attr( strtolower( $label ) ); ?>">
                 <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
               </button>
               <?php endif; ?>
             </span>
-            <span class="rtg-tp-spec-value"><?php echo esc_html( $value ); ?></span>
+            <span class="rtg-tp-spec-value<?php echo $rtg_tp_word ? ' is-word' : ''; ?>"><?php echo esc_html( $value ); ?></span>
           </div>
           <?php endforeach; ?>
         </div>
@@ -1008,7 +1040,7 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
       <div class="rtg-tp-section-head"><h2 class="rtg-tp-section">Other sizes of this tire</h2></div>
       <div class="rtg-tp-related-list">
         <?php foreach ( $rtg_tp_other_sizes as $rtg_tp_row ) {
-            rtg_tire_page_related_row( $rtg_tp_row, $rtg_tp_vehicle_map, $rtg_tp_third_party );
+            rtg_tire_page_related_row( $rtg_tp_row, $rtg_tp_vehicle_map, $rtg_tp_third_party, $size );
         } ?>
       </div>
       <?php endif; ?>
@@ -1018,7 +1050,7 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
       <div class="rtg-tp-section-caption">Best real-world efficiency first.</div>
       <div class="rtg-tp-related-list">
         <?php foreach ( $rtg_tp_similar as $rtg_tp_row ) {
-            rtg_tire_page_related_row( $rtg_tp_row, $rtg_tp_vehicle_map, $rtg_tp_third_party );
+            rtg_tire_page_related_row( $rtg_tp_row, $rtg_tp_vehicle_map, $rtg_tp_third_party, $size );
         } ?>
       </div>
       <?php endif; ?>
@@ -1026,7 +1058,7 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
   </div>
 
   <div class="rtg-tp-section-head" id="rtg-tp-reviews">
-    <h2 class="rtg-tp-section">Owner Reviews<?php echo $rating_cnt > 0 ? ' (' . (int) $rating_cnt . ')' : ''; ?></h2>
+    <h2 class="rtg-tp-section">Owner reviews<?php echo $rating_cnt > 0 ? ' (' . (int) $rating_cnt . ')' : ''; ?></h2>
     <?php if ( ! empty( $reviews ) ) : ?>
     <div class="rtg-tp-reviews-head-tools">
       <?php if ( $review_tools ) : ?>
@@ -1064,7 +1096,7 @@ if ( ! function_exists( 'rtg_tire_page_related_row' ) ) {
           <span class="rtg-tp-review-author"><?php echo esc_html( $review['display_name'] ); ?></span>
           <?php endif; ?>
           <?php if ( ! empty( $review['created_at'] ) ) : ?>
-          <span class="rtg-tp-review-date"><?php echo esc_html( date_i18n( 'M Y', strtotime( $review['created_at'] ) ) ); ?></span>
+          <span class="rtg-tp-review-date"><?php echo esc_html( date_i18n( 'F j, Y', strtotime( $review['created_at'] ) ) ); ?></span>
           <?php endif; ?>
         </span>
         <span class="rtg-tp-review-stars"><?php echo rtg_tire_page_stars( (float) $review['rating'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static markup ?></span>

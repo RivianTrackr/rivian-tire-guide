@@ -50,7 +50,7 @@ $rtg_write_review_url = home_url( '/' . sanitize_title( $rtg_guide_settings['tir
             <div class="rtg-fopts" data-for="filterSize" role="listbox" aria-label="Tire size"></div>
             <label for="filterSize" class="screen-reader-text">Filter by tire size</label>
             <select id="filterSize" class="rtg-fselect" aria-label="Filter by tire size">
-              <option value="">All Sizes</option>
+              <option value="">All sizes</option>
             </select>
           </div>
         </div>
@@ -65,7 +65,7 @@ $rtg_write_review_url = home_url( '/' . sanitize_title( $rtg_guide_settings['tir
             <div class="rtg-fopts" data-for="filterBrand" role="listbox" aria-label="Brand"></div>
             <label for="filterBrand" class="screen-reader-text">Filter by brand</label>
             <select id="filterBrand" class="rtg-fselect" aria-label="Filter by brand">
-              <option value="">All Brands</option>
+              <option value="">All brands</option>
             </select>
           </div>
         </div>
@@ -80,7 +80,7 @@ $rtg_write_review_url = home_url( '/' . sanitize_title( $rtg_guide_settings['tir
             <div class="rtg-fopts" data-for="filterCategory" role="listbox" aria-label="Category"></div>
             <label for="filterCategory" class="screen-reader-text">Filter by category</label>
             <select id="filterCategory" class="rtg-fselect" aria-label="Filter by category">
-              <option value="">All Categories</option>
+              <option value="">All categories</option>
             </select>
           </div>
         </div>
@@ -226,14 +226,14 @@ $rtg_write_review_url = home_url( '/' . sanitize_title( $rtg_guide_settings['tir
           <i class="fa-solid fa-arrow-down-wide-short" aria-hidden="true"></i>
           <label for="sortBy" class="rtg-sort-label">Sort</label>
           <select id="sortBy" aria-label="Sort tires by">
-            <option value="roamer-efficiency" selected>Real-World Efficiency</option>
-            <option value="most-reviewed">Most Reviewed</option>
-            <option value="newest">Newest Added</option>
-            <option value="price-asc">Price: Low → High</option>
-            <option value="price-desc">Price: High → Low</option>
-            <option value="rating-desc">Rating: High → Low</option>
-            <option value="warranty-desc">Warranty: High → Low</option>
-            <option value="weight-asc">Weight: Light → Heavy</option>
+            <option value="roamer-efficiency" selected>Real-world efficiency</option>
+            <option value="most-reviewed">Most reviewed</option>
+            <option value="newest">Newest added</option>
+            <option value="price-asc">Price, low to high</option>
+            <option value="price-desc">Price, high to low</option>
+            <option value="rating-desc">Highest rated</option>
+            <option value="warranty-desc">Longest warranty</option>
+            <option value="weight-asc">Lightest first</option>
           </select>
           <i class="fa-solid fa-chevron-down rtg-sort-caret" aria-hidden="true"></i>
         </div>
@@ -249,13 +249,12 @@ if ( ! empty( $rtg_wheels ) ) :
 <div id="wheelDrawerContainer" class="rtg-wheel-callout">
   <button id="wheelDrawerTrigger" class="rtg-wheel-callout-trigger" aria-expanded="false" aria-controls="wheelDrawer">
     <span class="rtg-wheel-callout-label">
-      <i class="fa-solid fa-truck-monster" aria-hidden="true"></i>
       Not sure which tire fits your Rivian?
     </span>
     <i class="fa-solid fa-chevron-down rtg-wheel-callout-chevron" aria-hidden="true"></i>
   </button>
   <div id="wheelDrawer" class="wheel-drawer">
-    <p class="wheel-drawer-heading">Rivian Wheel Guide</p>
+    <p class="wheel-drawer-heading">Rivian wheel guide</p>
     <?php
     // Build vehicle groups from wheel data: factory wheels first, then the
     // aftermarket setups the guide lists, each under its own heading.

@@ -11,6 +11,13 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.17.0 - 2026-11-19
+
+- **Cleaner tire cards.** Every photo now shows the whole tire, and it no longer glares as a white block in dark mode.
+- **Easier to read and tap.** Labels are in plain sentence case, the save, share and compare buttons are bigger, and each card says which Rivian a tire fits just once.
+- **Search box you can see.** In light mode the search field now stands out from the panel, and on a computer every filter shows at once instead of scrolling off the edge.
+- **Tidier tire pages.** Review dates are written out in full, and "Similar tires" no longer repeats the same fit label on every row.
+
 ## 2.16.5 - 2026-11-19
 
 - **Bug fixes and improvements.**

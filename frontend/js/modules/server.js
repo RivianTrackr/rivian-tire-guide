@@ -247,7 +247,7 @@ export function fetchDropdownOptions() {
         sizeSelect.innerHTML = '';
         const defaultOpt = document.createElement("option");
         defaultOpt.value = '';
-        defaultOpt.textContent = 'All Sizes';
+        defaultOpt.textContent = 'All sizes';
         sizeSelect.appendChild(defaultOpt);
 
         const groups = {};

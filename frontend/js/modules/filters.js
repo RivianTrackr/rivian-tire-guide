@@ -907,7 +907,7 @@ export function populateSizeDropdownGrouped(id, sizesOrRows, vehicle = '') {
 
   const defaultOption = document.createElement("option");
   defaultOption.value = "";
-  defaultOption.textContent = "All Sizes";
+  defaultOption.textContent = "All sizes";
   select.appendChild(defaultOption);
 
   sortedRims.forEach(rim => {
