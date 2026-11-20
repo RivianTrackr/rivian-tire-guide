@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 - **R1/R2 switch: the active pill ran to the track's top and bottom edges.** `.rtg-vehicle-btn` had `min-height: 40px` inside a 40px track with 4px padding, so the buttons overflowed it by 4px each way while the sides kept their inset. Buttons are now 32px tall, so the inset is even on every side. Most visible in light mode, where the track is a lighter step than in dark.
+- **Footer Changelog link showed as a bordered pill.** It still carried the old `.rtg-whats-new-btn` button styles and overrode them, which left room for the button look to show through (and a focus ring after the changelog closed). It is now a standalone `.rtg-whats-new-link` text link with `appearance: none`, the unused button rules are gone, and `dialog.js` returns focus with `focusVisible: false` when the dialog was closed by mouse or touch, so only keyboard users see the ring.
 
 ## [2.17.2] - 2026-11-19
 

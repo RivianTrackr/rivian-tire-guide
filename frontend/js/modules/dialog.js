@@ -124,6 +124,9 @@ export function openDialog(opts = {}) {
   lock();
 
   let closed = false;
+  // A close by mouse or touch hands focus back without a focus ring (the
+  // reader didn't use the keyboard); Escape or Enter keeps it visible.
+  let pointerClose = false;
   function close() {
     if (closed) return;
     closed = true;
@@ -133,7 +136,7 @@ export function openDialog(opts = {}) {
     unlock();
     setTimeout(() => overlay.remove(), EXIT_MS);
     if (returnFocusTo && typeof returnFocusTo.focus === 'function' && document.contains(returnFocusTo)) {
-      returnFocusTo.focus({ preventScroll: true });
+      returnFocusTo.focus({ preventScroll: true, focusVisible: !pointerClose });
     }
     if (typeof opts.onClose === 'function') opts.onClose();
   }
@@ -162,9 +165,9 @@ export function openDialog(opts = {}) {
     }
   }
 
-  closeBtn.addEventListener('click', close);
+  closeBtn.addEventListener('click', (e) => { pointerClose = e.detail > 0; close(); });
   overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) close();
+    if (e.target === overlay) { pointerClose = true; close(); }
   });
   document.addEventListener('keydown', onKeydown);
 
