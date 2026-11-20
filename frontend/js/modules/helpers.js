@@ -96,3 +96,17 @@ export function styleButton(button) {
   button.onmouseover = () => { button.style.backgroundColor = rtgColor('accent'); button.style.color = '#15130e'; };
   button.onmouseout = () => { button.style.backgroundColor = rtgColor('bg-primary'); button.style.color = rtgColor('text-primary'); };
 }
+
+/**
+ * Sentence case for a stored label: "All-Terrain" reads "All-terrain",
+ * "EV Rated" reads "EV rated". Only plain capitalised words after the first
+ * are lowered, so acronyms and sizes (EV, 3PMS, LT, XL) stay as written.
+ */
+export function sentenceCase(text) {
+  let first = true;
+  return String(text || '').split(/(\s+|-)/).map(part => {
+    if (/^(\s+|-)$/.test(part) || part === '') return part;
+    if (first) { first = false; return part; }
+    return /^[A-Z][a-z]+$/.test(part) ? part.toLowerCase() : part;
+  }).join('');
+}

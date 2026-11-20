@@ -84,7 +84,7 @@ if ( ! empty( $guide_pages ) ) {
       <span aria-current="page">Write a review</span>
     </nav>
 
-    <h1 class="rv-title">Review a Tire</h1>
+    <h1 class="rv-title">Review a tire</h1>
     <p class="rv-subtitle" id="rvSubtitle">No account needed. Pick the tire you drove on, rate it, and it goes live after a quick check.</p>
 
     <!-- Tire search -->

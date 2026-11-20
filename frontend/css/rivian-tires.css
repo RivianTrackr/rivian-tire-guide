@@ -2654,6 +2654,20 @@ line-height: 1.1;
   object-fit: cover;
   border-bottom: 1px solid var(--rtg-border);
 }
+/* Wheel photos are light-backed: a plate behind them and multiply keep
+   them from glaring as a white block in dark mode. */
+.wheel-card-plate {
+  background: #e4e1db;
+  border-bottom: 1px solid var(--rtg-border);
+}
+.wheel-card-plate .wheel-card-img {
+  display: block;
+  border-bottom: 0;
+  mix-blend-mode: multiply;
+}
+html[data-rt-theme="light"] .wheel-card .wheel-card-plate {
+  background: #fff;
+}
 /* A card with no photo keeps the image slot, holding a muted wheel glyph so
    every card in the grid is the same height. */
 .wheel-card-img-placeholder {

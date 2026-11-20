@@ -10,6 +10,7 @@
 import { fitmentShortfalls, describeShortfalls, parseLoadIndex, thirdPartyFits } from './modules/fitment.js';
 import { formatSetPrice, formatWholePrice, priceFreshness, SET_QUANTITY } from './modules/pricing.js';
 import { rememberedVehicle } from './modules/vehicle-memory.js';
+import { sentenceCase } from './modules/helpers.js';
 
 const MAX_COMPARE = 4;
 
@@ -135,12 +136,8 @@ function renderTags(tagStr) {
   const tags = tagStr.split(/[,|]/).map(t => t.trim()).filter(t => t && !HIDDEN_TAGS.has(t.toLowerCase()));
   if (!tags.length) return "-";
   return rawHTML(`<div class="cmp-tags">${tags.map(tag => {
-    const lower = tag.toLowerCase();
-    let cls = "cmp-tag";
-    if (lower.includes("ev rated")) cls += " cmp-tag-ev";
-    else if (lower.includes("3pms") || lower.includes("3-peak")) cls += " cmp-tag-3pms";
-    else if (lower.includes("studded")) cls += " cmp-tag-studded";
-    return `<span class="${cls}">${escapeHTML(tag)}</span>`;
+    // One quiet tag style, as on the guide's cards.
+    return `<span class="cmp-tag">${escapeHTML(sentenceCase(tag))}</span>`;
   }).join("")}</div>`);
 }
 
@@ -174,13 +171,13 @@ function renderCTAs(tire) {
       isVideo = false;
     }
     const iconName = isVideo ? 'circle-play' : 'newspaper';
-    const label = isVideo ? 'Watch Official Review' : 'Read official review';
+    const label = isVideo ? 'Watch official review' : 'Read official review';
     html += `<a href="${escapeHTML(review)}" target="_blank" rel="noopener noreferrer" class="cmp-cta cmp-cta-review">
       ${label} ${rtgIcon(iconName, 14)}</a>`;
   }
   if (page) {
     html += `<a href="${escapeHTML(page)}" class="cmp-cta cmp-cta-secondary">
-      Full specs &amp; reviews</a>`;
+      Full specs and reviews</a>`;
   }
   html += '</div>';
   return rawHTML(html);
@@ -214,7 +211,7 @@ function renderSize(tire) {
   const who = fits.map(f => f.vehicle).join(' and ');
   return rawHTML(
     escapeHTML(size) +
-    `<br><span class="cmp-fitment-note">${rtgIcon('circle-info', 12)} Fits ${escapeHTML(who)} · 3rd-party wheels</span>`,
+    `<br><span class="cmp-fitment-note">${rtgIcon('circle-info', 12)} Fits ${escapeHTML(who)} on aftermarket wheels</span>`,
     size
   );
 }
@@ -269,7 +266,6 @@ function specSection(icon, title, rows, tires, best, colCount) {
 
   return `<div class="cmp-section">
     <div class="cmp-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
-      ${rtgIcon(icon, 16, 'cmp-section-icon')}
       <span class="cmp-section-title">${escapeHTML(title)}</span>
       ${rtgIcon('chevron-down', 14, 'cmp-section-chevron')}
     </div>
@@ -478,7 +474,7 @@ function renderComparison(rows, tokens) {
       <div class="cmp-tire-info">
         <div class="cmp-tire-brand">${escapeHTML(t[COL.brand])}</div>
         <div class="cmp-tire-model">${model}</div>
-        <div class="cmp-tire-size">${escapeHTML(t[COL.size])} &middot; ${escapeHTML(diameterDisplay)} &middot; ${escapeHTML(t[COL.category])}</div>
+        <div class="cmp-tire-size">${escapeHTML(t[COL.size])} &middot; ${escapeHTML(diameterDisplay)} &middot; ${escapeHTML(sentenceCase(t[COL.category]))}</div>
         <div class="cmp-tire-meta">
           <div class="cmp-tire-meta-item">
             <span class="cmp-tire-meta-label">Price</span>
@@ -490,7 +486,7 @@ function renderComparison(rows, tokens) {
             <span class="cmp-tire-meta-value">${fmtWeight(t[COL.weight])}</span>
           </div>
         </div>
-        ${page ? `<a class="cmp-tire-page-link" href="${escapeHTML(page)}">Full specs &amp; reviews</a>` : ''}
+        ${page ? `<a class="cmp-tire-page-link" href="${escapeHTML(page)}">Full specs and reviews</a>` : ''}
       </div>
     </div>`;
   });
@@ -499,63 +495,63 @@ function renderComparison(rows, tokens) {
   // --- Subtitle ---
   const subtitle = n === 1
     ? 'One tire so far. Add another below to compare them side by side.'
-    : `Comparing ${n} tires side by side. Best values are <span style="color:var(--rtg-accent);font-weight:600">highlighted</span>.`;
+    : `Comparing ${n} tires side by side. Best values are <span class="cmp-hl">highlighted</span>.`;
   html = `<p class="cmp-subtitle">${subtitle}</p>` + (n >= 2 && settings().compareSummaryRest ? '<div class="cmp-ai" id="cmpAi" hidden></div>' : '') + html;
 
   // --- Spec sections ---
 
-  html += specSection('dollar-sign', 'Price & Value', [
+  html += specSection('dollar-sign', 'Price and value', [
     ['Price', t => renderPrice(t), 'price'],
-    ['Mileage Warranty', t => fmtWarranty(t[COL.warranty]), 'warranty'],
-    ['Category', t => t[COL.category] || "-"],
+    ['Mileage warranty', t => fmtWarranty(t[COL.warranty]), 'warranty'],
+    ['Category', t => t[COL.category] ? rawHTML('<span class="cmp-word">' + escapeHTML(sentenceCase(t[COL.category])) + '</span>', NaN) : "-"],
   ], tires, best, n);
 
   html += specSection('gauge-high', 'Performance', [
-    ['Real-World Efficiency', t => {
+    ['Real-world efficiency', t => {
       const v = parseFloat(t[COL.roamerEfficiency]);
       if (!v || v === 0) return '-';
       const miPerKwh = v.toFixed(2);
       const mi = Math.round((parseFloat(t[COL.roamerTotalKm]) || 0) * 0.621371);
       const veh = parseInt(t[COL.roamerVehicleCount]) || 0;
       return rawHTML(
-        '<span style="display:inline-block;background:rgba(59,130,246,0.15);border-radius:6px;padding:2px 8px;font-weight:700;color:#60a5fa;">' + miPerKwh + ' mi/kWh</span>' +
-        '<br><span style="font-size:11px;color:#a19e97;">' + mi.toLocaleString() + ' mi tracked, ' + veh + ' vehicle' + (veh !== 1 ? 's' : '') + '</span>',
+        '<span class="cmp-eff">' + miPerKwh + ' mi/kWh</span>' +
+        '<br><span class="cmp-meta">' + mi.toLocaleString() + ' mi tracked, ' + veh + ' vehicle' + (veh !== 1 ? 's' : '') + '</span>',
         v
       );
     }, 'roamerEfficiency'],
-    ['Speed Rating', t => t[COL.speedRating] || "-"],
+    ['Speed rating', t => t[COL.speedRating] || "-"],
     ['UTQG', t => t[COL.utqg] || "None"],
-    ['3PMS Rated', t => {
+    ['3PMS rated', t => {
       const v = (t[COL.threePms] || "").toLowerCase();
-      return v === "yes" ? rawHTML('<span style="color:#4ade80;font-weight:600">' + rtgIcon('check', 14) + ' Yes</span>') : 'No';
+      return v === "yes" ? rawHTML('<span class="cmp-yes">' + rtgIcon('check', 14) + ' Yes</span>') : 'No';
     }],
   ], tires, best, n);
 
-  html += specSection('weight-hanging', 'Size & Weight', [
-    ['Tire Size', renderSize],
-    ['Rim Diameter', t => {
+  html += specSection('weight-hanging', 'Size and weight', [
+    ['Tire size', renderSize],
+    ['Rim diameter', t => {
       const d = t[COL.diameter] || "-";
       return d !== "-" && !d.includes('"') ? d + '"' : d;
     }],
     ['Weight', t => fmtWeight(t[COL.weight]), 'weight'],
-    ['Tread Depth', t => t[COL.tread] || "-"],
+    ['Tread depth', t => t[COL.tread] || "-"],
   ], tires, best, n);
 
-  html += specSection('truck', 'Load & Pressure', [
-    ['Load Index', t => renderLoadIndex(t)],
-    ['Max Load', t => fmtLoad(t[COL.maxLoad])],
-    ['Load Range', t => t[COL.loadRange] || "-"],
+  html += specSection('truck', 'Load and pressure', [
+    ['Load index', t => renderLoadIndex(t)],
+    ['Max load', t => fmtLoad(t[COL.maxLoad])],
+    ['Load range', t => t[COL.loadRange] || "-"],
     ['Max PSI', t => {
       const v = t[COL.psi];
       return v && v !== "-" ? v + " psi" : "-";
     }],
   ], tires, best, n);
 
-  html += specSection('tags', 'Tags & Features', [
+  html += specSection('tags', 'Tags and features', [
     ['Tags', t => renderTags(t[COL.tags])],
   ], tires, best, n);
 
-  html += specSection('cart-shopping', 'Where to Buy', [
+  html += specSection('cart-shopping', 'Where to buy', [
     ['Links', t => renderCTAs(t)],
   ], tires, best, n);
 
@@ -598,7 +594,7 @@ function initShareButton() {
     }
 
     if (navigator.share) {
-      navigator.share({ title: "Rivian Tire Comparison", url }).catch(() => {});
+      navigator.share({ title: "Rivian tire comparison", url }).catch(() => {});
     } else if (navigator.clipboard) {
       navigator.clipboard.writeText(url).then(showCopied);
     }

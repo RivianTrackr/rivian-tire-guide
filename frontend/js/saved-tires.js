@@ -17,7 +17,7 @@
   var compareEl = document.getElementById("rtg-saved-tires-compare");
   if (!listEl) return;
 
-  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   var tires = [];
 
   function icon(name, extra) {
@@ -39,14 +39,23 @@
     return '$' + Math.round(n).toLocaleString('en-US');
   }
 
-  // "Sep 28" or "Sep 28, 2025" from a MySQL datetime, read as text.
+  // "All-Terrain" reads "All-terrain"; acronyms stay. Same rule as the guide's cards.
+  function sentenceCase(text) {
+    var first = true;
+    return String(text || '').split(/(\s+|-)/).map(function (part) {
+      if (part === '' || /^(\s+|-)$/.test(part)) return part;
+      if (first) { first = false; return part; }
+      return /^[A-Z][a-z]+$/.test(part) ? part.toLowerCase() : part;
+    }).join('');
+  }
+
+  // "September 28, 2025" from a MySQL datetime, read as text.
   function formatDay(value) {
     var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value || ''));
     if (!m) return '';
     var month = parseInt(m[2], 10);
     if (month < 1 || month > 12) return '';
-    var thisYear = String(new Date().getFullYear());
-    return MONTHS[month - 1] + ' ' + parseInt(m[3], 10) + (m[1] === thisYear ? '' : ', ' + m[1]);
+    return MONTHS[month - 1] + ' ' + parseInt(m[3], 10) + ', ' + m[1];
   }
 
   function tireUrl(tire) {
@@ -193,8 +202,8 @@
     text.appendChild(title);
     var chips = el('div', 'st-tire-chips');
     if (tire.size) chips.appendChild(el('span', 'st-chip st-chip-size', tire.size));
-    if (tire.category) chips.appendChild(el('span', 'st-chip', tire.category));
-    if (tire.three_pms) chips.appendChild(el('span', 'st-chip', '3PMS'));
+    if (tire.category) chips.appendChild(el('span', 'st-chip', sentenceCase(tire.category)));
+    if (tire.three_pms) chips.appendChild(el('span', 'st-chip', '3PMS rated'));
     var when = formatDay(tire.saved_at);
     if (when) chips.appendChild(el('span', 'st-chip st-chip-muted', 'Saved ' + when));
     text.appendChild(chips);

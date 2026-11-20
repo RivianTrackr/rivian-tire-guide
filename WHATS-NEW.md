@@ -11,6 +11,11 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.17.1 - 2026-11-19
+
+- **The compare page matches the new cards.** Plain labels, no colored badges, photos that don't glare in dark mode, and buttons that fit on a phone.
+- **Same clean-up everywhere else.** Write a review, saved tires, your reviews and the wheel guide now use the same quiet tags, photo plates and full dates.
+
 ## 2.17.0 - 2026-11-19
 
 - **Cleaner tire cards.** Every photo now shows the whole tire, and it no longer glares as a white block in dark mode.

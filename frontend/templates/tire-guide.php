@@ -92,7 +92,7 @@ $rtg_write_review_url = home_url( '/' . sanitize_title( $rtg_guide_settings['tir
           </button>
           <div class="rtg-fpop" id="rtgPopPrice">
             <div class="rtg-fpop-head"><label for="priceMax">Max price</label><span id="priceVal" class="rtg-fpop-val">&le; $600</span></div>
-            <input id="priceMax" class="range-slider" type="range" min="0" max="600" value="600" step="10" aria-label="Maximum Price"/>
+            <input id="priceMax" class="range-slider" type="range" min="0" max="600" value="600" step="10" aria-label="Maximum price"/>
             <div class="rtg-fpresets" data-for="priceMax" data-kind="price">
               <button type="button" class="rtg-fpreset" data-value="250">Under $250</button>
               <button type="button" class="rtg-fpreset" data-value="350">Under $350</button>
@@ -320,7 +320,7 @@ if ( ! empty( $rtg_wheels ) ) :
             <span class="wheel-card-badge">3rd-party</span>
           <?php endif; ?>
           <?php if ( ! empty( $rtg_wheel['image'] ) ) : ?>
-            <img class="wheel-card-img" src="<?php echo esc_url( $rtg_wheel['image'] ); ?>" alt="<?php echo esc_attr( $rtg_wheel['name'] ); ?>" />
+            <div class="wheel-card-plate"><img class="wheel-card-img" src="<?php echo esc_url( $rtg_wheel['image'] ); ?>" alt="<?php echo esc_attr( $rtg_wheel['name'] ); ?>" /></div>
           <?php else : ?>
             <?php // No photo: a wheel glyph keeps the card the height of its neighbors without implying a product. ?>
             <div class="wheel-card-img wheel-card-img-placeholder" aria-hidden="true">

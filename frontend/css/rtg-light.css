@@ -916,6 +916,13 @@ html[data-rt-theme="light"] .wheel-card {
 html[data-rt-theme="light"] .wheel-card-img {
     border-bottom: 1px solid var(--rtg-border)
 }
+html[data-rt-theme="light"] .wheel-card-plate {
+    background: #e4e1db;
+    border-bottom: 1px solid var(--rtg-border)
+}
+html[data-rt-theme="light"][data-rt-theme="light"] .wheel-card .wheel-card-plate {
+    background: #fff
+}
 html[data-rt-theme="light"] .wheel-card-img-placeholder {
     background: var(--rtg-bg-deep);
     color: var(--rtg-text-muted)
@@ -1310,7 +1317,7 @@ html[data-rt-theme="light"] .st-tire:hover {
     border-color: color-mix(in srgb, var(--rtg-accent) 35%, var(--rtg-border))
 }
 html[data-rt-theme="light"] .st-tire-img {
-    background: #fff;
+    background: #e4e1db;
     border: 1px solid var(--rtg-border)
 }
 html[data-rt-theme="light"] .st-tire-img i {
@@ -1326,16 +1333,18 @@ html[data-rt-theme="light"] .st-root a.st-tire-name:hover {
     color: #8a5800
 }
 html[data-rt-theme="light"] .st-chip {
-    color: var(--rtg-text-primary);
-    background: var(--rtg-bg-deep);
-    border: 1px solid var(--rtg-border)
+    color: #53565c;
+    background: #eeece7;
+    border: 1px solid transparent
 }
 html[data-rt-theme="light"] .st-chip-size {
     color: var(--rtg-text-heading)
 }
 html[data-rt-theme="light"] .st-chip-fit {
-    background: color-mix(in srgb, #34d399 12%, var(--rtg-bg-deep));
-    border-color: color-mix(in srgb, #34d399 35%, transparent)
+    color: #1a1c20
+}
+html[data-rt-theme="light"] .st-chip-fit i {
+    color: #157f3c
 }
 html[data-rt-theme="light"] .st-chip-muted {
     color: var(--rtg-text-muted)
@@ -1347,7 +1356,7 @@ html[data-rt-theme="light"] .st-stat-value {
     color: var(--rtg-text-heading)
 }
 html[data-rt-theme="light"] .st-stat-value.is-eff {
-    color: var(--st-info)
+    color: var(--rtg-text-heading)
 }
 html[data-rt-theme="light"] .st-stat-value.is-muted {
     color: var(--rtg-text-muted)
@@ -1407,6 +1416,9 @@ html[data-rt-theme="light"] .st-empty-text {
     html[data-rt-theme="light"] .st-skeleton-line {
         background: color-mix(in srgb, var(--rtg-text-muted) 10%, var(--rtg-bg-card))
     }
+}
+html[data-rt-theme="light"][data-rt-theme="light"] body .st-tire-img {
+    background: #fff
 }
 /* frontend/css/tire-review.css */
 html[data-rt-theme="light"] .rv-root {
@@ -1483,7 +1495,7 @@ html[data-rt-theme="light"] .rv-dropdown-item.focused .rv-dropdown-name {
     color: #8a5800
 }
 html[data-rt-theme="light"] .rv-dropdown-thumb {
-    background: #fff;
+    background: #e4e1db;
     border: 1px solid var(--rtg-border)
 }
 html[data-rt-theme="light"] .rv-dropdown-brand {
@@ -1503,7 +1515,7 @@ html[data-rt-theme="light"] .rv-tire-card {
     border: 1px solid var(--rtg-border)
 }
 html[data-rt-theme="light"] .rv-tire-img {
-    background: #fff
+    background: #e4e1db
 }
 html[data-rt-theme="light"] .rv-tire-brand {
     color: #8a5800
@@ -1704,7 +1716,7 @@ html[data-rt-theme="light"] .rv-popular-item:focus-visible {
     outline: 2px solid var(--rtg-accent)
 }
 html[data-rt-theme="light"] .rv-popular-thumb {
-    background: #fff;
+    background: #e4e1db;
     border: 1px solid var(--rtg-border)
 }
 html[data-rt-theme="light"] .rv-popular-brand {
@@ -1735,8 +1747,8 @@ html[data-rt-theme="light"] .rv-welcome strong {
 }
 html[data-rt-theme="light"] .rv-chip {
     color: var(--rtg-text-primary);
-    background: color-mix(in srgb, var(--rtg-accent) 12%, var(--rtg-bg-deep));
-    border: 1px solid color-mix(in srgb, var(--rtg-accent) 25%, transparent)
+    background: #eeece7;
+    border: 1px solid transparent
 }
 html[data-rt-theme="light"] .rv-chip-size {
     background: var(--rtg-bg-deep);
@@ -1853,6 +1865,11 @@ html[data-rt-theme="light"] .rv-toast-info {
 html[data-rt-theme="light"] .rv-toast-info .rv-toast-icon {
     color: var(--rv-info, #1e5fb8)
 }
+html[data-rt-theme="light"][data-rt-theme="light"] body .rv-dropdown-thumb,
+html[data-rt-theme="light"][data-rt-theme="light"] body .rv-tire-img,
+html[data-rt-theme="light"][data-rt-theme="light"] body .rv-popular-thumb {
+    background: #fff
+}
 /* frontend/css/user-reviews.css */
 html[data-rt-theme="light"] .ur-root {
     --rtg-accent: #fba919;
@@ -1938,7 +1955,7 @@ html[data-rt-theme="light"] .ur-root .ur-review-tire {
     color: inherit
 }
 html[data-rt-theme="light"] .ur-review-tire-img {
-    background: #fff;
+    background: #e4e1db;
     border: 1px solid var(--rtg-border)
 }
 html[data-rt-theme="light"] .ur-review-tire-img i {
@@ -2030,6 +2047,9 @@ html[data-rt-theme="light"] .ur-pagination-info {
         background: color-mix(in srgb, var(--rtg-text-muted) 10%, var(--rtg-bg-card))
     }
 }
+html[data-rt-theme="light"][data-rt-theme="light"] body .ur-review-tire-img {
+    background: #fff
+}
 /* frontend/templates/compare.php */
 html[data-rt-theme="light"] .cmp-root {
     --rtg-accent: #fba919;
@@ -2095,6 +2115,9 @@ html[data-rt-theme="light"] .cmp-tire-header {
     border: 1px solid var(--rtg-border)
 }
 html[data-rt-theme="light"] .cmp-tire-img-wrap {
+    background: #e4e1db
+}
+html[data-rt-theme="light"][data-rt-theme="light"] .cmp-root .cmp-tire-img-wrap {
     background: #fff
 }
 html[data-rt-theme="light"] .cmp-tire-brand {
@@ -2153,9 +2176,7 @@ html[data-rt-theme="light"] .cmp-fitment-warn {
     color: #f87171
 }
 html[data-rt-theme="light"] .cmp-fitment-note {
-    color: #1a1c20;
-    background: color-mix(in srgb, #a78bfa 12%, #eeece7);
-    border: 1px solid color-mix(in srgb, #a78bfa 40%, transparent)
+    color: #53565c
 }
 html[data-rt-theme="light"] .cmp-fitment-note i {
     color: #6d3fd6
@@ -2215,9 +2236,6 @@ html[data-rt-theme="light"] .cmp-section-header {
 html[data-rt-theme="light"] .cmp-section-header:hover {
     background: #eeece7
 }
-html[data-rt-theme="light"] .cmp-section-icon {
-    color: #8a5800
-}
 html[data-rt-theme="light"] .cmp-section-title {
     color: var(--rtg-text-heading)
 }
@@ -2238,21 +2256,18 @@ html[data-rt-theme="light"] .cmp-row-value {
 html[data-rt-theme="light"] .cmp-row-value.is-best {
     color: #8a5800
 }
+html[data-rt-theme="light"] .cmp-eff {
+    color: var(--rtg-text-heading)
+}
+html[data-rt-theme="light"] .cmp-yes {
+    color: #157f3c
+}
+html[data-rt-theme="light"] .cmp-hl {
+    color: #8a5800
+}
 html[data-rt-theme="light"] .cmp-tag {
-    background: var(--rtg-border);
-    color: var(--rtg-text-light)
-}
-html[data-rt-theme="light"] .cmp-tag-ev {
-    background: #2563eb;
-    color: #121316
-}
-html[data-rt-theme="light"] .cmp-tag-3pms {
-    background: #5ec095;
-    color: #15130e
-}
-html[data-rt-theme="light"] .cmp-tag-studded {
-    background: #7c3aed;
-    color: #121316
+    background: #eeece7;
+    color: #53565c
 }
 html[data-rt-theme="light"] .cmp-cta-primary {
     background: var(--rtg-accent);

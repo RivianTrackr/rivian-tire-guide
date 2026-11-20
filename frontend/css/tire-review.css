@@ -154,7 +154,7 @@
   width: 48px;
   height: 48px;
   flex-shrink: 0;
-  background: #fff;
+  background: #e4e1db;
   border: 1px solid var(--rtg-border);
   border-radius: 8px;
   display: flex;
@@ -209,7 +209,7 @@ color: var(--rtg-accent);
   width: 110px;
   height: 110px;
   flex-shrink: 0;
-  background: #fff;
+  background: #e4e1db;
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -550,7 +550,7 @@ margin-bottom: 2px;
 .rv-popular-item:hover { border-color: color-mix(in srgb, var(--rtg-accent) 35%, var(--rtg-border)); }
 .rv-popular-item:focus-visible { outline: 2px solid var(--rtg-accent); outline-offset: 2px; }
 .rv-popular-item:active { transform: scale(0.99); }
-.rv-popular-thumb { width: 56px; height: 56px; flex-shrink: 0; background: #fff; border: 1px solid var(--rtg-border); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.rv-popular-thumb { width: 56px; height: 56px; flex-shrink: 0; background: #e4e1db; border: 1px solid var(--rtg-border); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .rv-popular-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .rv-popular-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .rv-popular-brand { font-size: 12px; font-weight: 700;color: var(--rtg-accent); line-height: 1.2; }
@@ -568,7 +568,7 @@ margin-bottom: 2px;
 
 /* The guide's chips. */
 .rv-tire-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
-.rv-chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; font-size: 12px; font-weight: 600; line-height: 1; padding: 0 12px; border-radius: 20px; white-space: nowrap; color: var(--rtg-text-primary); background: color-mix(in srgb, var(--rtg-accent) 12%, var(--rtg-bg-deep)); border: 1px solid color-mix(in srgb, var(--rtg-accent) 25%, transparent); }
+.rv-chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; font-size: 12px; font-weight: 600; line-height: 1; padding: 0 12px; border-radius: 6px; white-space: nowrap; color: var(--rtg-text-primary); background: #1f2228; border: 1px solid transparent; }
 .rv-chip:empty { display: none; }
 .rv-chip-size { background: var(--rtg-bg-deep); border-color: var(--rtg-border); color: var(--rtg-text-heading); font-family: var(--rv-mono); }
 
@@ -724,3 +724,8 @@ margin-bottom: 2px;
   .rv-toast-container, .rv-dropdown, .rv-hp, .rv-form-footer { display: none !important; }
   .rv-root { color: #000; }
 }
+
+/* Product shots are white-backed: in dark mode they sit on a light plate
+   (multiply melts the white into it) instead of a white box. */
+.rv-dropdown-thumb img, .rv-tire-img img, .rv-popular-thumb img { mix-blend-mode: multiply; }
+html[data-rt-theme="light"] body .rv-dropdown-thumb, html[data-rt-theme="light"] body .rv-tire-img, html[data-rt-theme="light"] body .rv-popular-thumb { background: #fff; }
