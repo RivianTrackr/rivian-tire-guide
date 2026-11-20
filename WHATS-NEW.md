@@ -11,6 +11,10 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.16.5 - 2026-11-19
+
+- **Bug fixes and improvements.**
+
 ## 2.16.2 - 2026-11-19
 
 - **Bug fixes and improvements.**

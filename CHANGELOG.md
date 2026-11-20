@@ -4,6 +4,11 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.16.5] - 2026-11-19
+
+### Fixed
+- **Aftermarket-wheel note said Rivian doesn't sell the R1 with 22-inch wheels.** It does, just not in every 22" size. `tire-page-content.php` now checks each vehicle's factory sizes (the vehicle size map minus its third-party sizes) for the same rim diameter. When there is one, the note reads "Rivian's 22-inch wheels for the R1 come with a different tire size." The old sentence stays for a diameter Rivian never offers on that vehicle, such as 18" on the R2.
+
 ## [2.16.4] - 2026-11-19
 
 ### Added

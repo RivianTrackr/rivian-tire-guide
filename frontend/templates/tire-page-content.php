@@ -207,12 +207,42 @@ if ( ! $rtg_tp_verdicts ) {
 $rtg_tp_3p_notice = '';
 if ( $rtg_tp_fit_3p ) {
     $rtg_tp_rim = RTG_Fitment::rim_inches( $size );
-    $rtg_tp_who = count( $rtg_tp_3p_names ) > 1
-        ? implode( ', ', array_slice( $rtg_tp_3p_names, 0, -1 ) ) . ' or ' . end( $rtg_tp_3p_names )
-        : $rtg_tp_3p_names[0];
-    $rtg_tp_3p_notice = $rtg_tp_rim
-        ? sprintf( "Rivian doesn't sell the %s with %d-inch wheels.", $rtg_tp_who, $rtg_tp_rim )
-        : sprintf( "Rivian doesn't sell the %s in this size.", $rtg_tp_who );
+    // Whether Rivian sells a factory wheel of this diameter for the vehicle
+    // decides the sentence: the R1 does come on 22s, just not in every 22"
+    // size, so "doesn't sell 22-inch wheels" would be wrong there.
+    $rtg_tp_same_rim = array();
+    $rtg_tp_no_rim   = array();
+    foreach ( $rtg_tp_3p_names as $rtg_tp_v ) {
+        $rtg_tp_factory = array_diff(
+            (array) ( $rtg_tp_vehicle_map[ $rtg_tp_v ] ?? array() ),
+            array_keys( (array) ( $rtg_tp_third_party[ $rtg_tp_v ] ?? array() ) )
+        );
+        $rtg_tp_has = false;
+        foreach ( $rtg_tp_factory as $rtg_tp_fs ) {
+            if ( $rtg_tp_rim && RTG_Fitment::rim_inches( $rtg_tp_fs ) === $rtg_tp_rim ) {
+                $rtg_tp_has = true;
+                break;
+            }
+        }
+        if ( $rtg_tp_has ) {
+            $rtg_tp_same_rim[] = $rtg_tp_v;
+        } else {
+            $rtg_tp_no_rim[] = $rtg_tp_v;
+        }
+    }
+    $rtg_tp_list = function ( $names ) {
+        return count( $names ) > 1 ? implode( ', ', array_slice( $names, 0, -1 ) ) . ' or ' . end( $names ) : (string) reset( $names );
+    };
+    $rtg_tp_parts = array();
+    if ( $rtg_tp_same_rim ) {
+        $rtg_tp_parts[] = sprintf( "Rivian's %d-inch wheels for the %s come with a different tire size.", $rtg_tp_rim, $rtg_tp_list( $rtg_tp_same_rim ) );
+    }
+    if ( $rtg_tp_no_rim ) {
+        $rtg_tp_parts[] = $rtg_tp_rim
+            ? sprintf( "Rivian doesn't sell the %s with %d-inch wheels.", $rtg_tp_list( $rtg_tp_no_rim ), $rtg_tp_rim )
+            : sprintf( "Rivian doesn't sell the %s in this size.", $rtg_tp_list( $rtg_tp_no_rim ) );
+    }
+    $rtg_tp_3p_notice = implode( ' ', $rtg_tp_parts );
     $rtg_tp_3p_notice .= " This size fits on aftermarket wheels only, and whether it clears depends on your wheel's width and offset.";
     $rtg_tp_3p_notes = array_values( array_unique( array_filter( array_column( $rtg_tp_fit_3p, 'note' ) ) ) );
     if ( $rtg_tp_3p_notes ) {
