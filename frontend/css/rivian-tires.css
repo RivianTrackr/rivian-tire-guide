@@ -97,6 +97,21 @@
   border-color: var(--rtg-accent) !important;
 }
 
+/* Light mode, by hand: the generated rule turns the input surface white,
+   which vanishes on the white card, and the photo plate goes paper. The
+   extra class outranks rtg-light.css. */
+html[data-rt-theme="light"] .search-container .search-input {
+  background-color: #eeece7 !important;
+  border: 1px solid #e3e0d9 !important;
+}
+html[data-rt-theme="light"] .search-container .search-input:focus {
+  border-color: var(--rtg-accent) !important;
+}
+html[data-rt-theme="light"] .tire-card .tire-card-image,
+html[data-rt-theme="light"] .tire-card .tire-card-image:has(.rtg-img-loaded) {
+  background: #f6f5f2;
+}
+
 /* === Vehicle Toggle === */
 .rtg-vehicle-toggle {
   display: flex;
@@ -185,53 +200,15 @@
 @media (min-width: 601px) {
   .rtg-filter-row {
     flex-wrap: nowrap;
+    align-items: flex-start;
   }
-  /* The 4px of padding and negative margin keep a chip's focus ring
-     inside the scrollport. A thin scrollbar for a mouse; none for touch,
-     where the fades and a swipe are enough. */
+  .rtg-filter-divider {
+    margin-top: 8px;
+  }
+  /* Wider screens wrap the chips onto a second line instead of scrolling
+     sideways: a scroller on a desktop hid the last chips behind a fade. */
   .rtg-filter-chips:not(.is-sheet) {
-    flex-wrap: nowrap;
-    padding: 4px;
-    margin: -4px;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: thin;
-    scrollbar-color: var(--rtg-border) transparent;
-  }
-  @media (pointer: coarse) {
-    .rtg-filter-chips:not(.is-sheet) {
-      scrollbar-width: none;
-    }
-    .rtg-filter-chips:not(.is-sheet)::-webkit-scrollbar {
-      display: none;
-    }
-  }
-  /* Edge fades: sticky flex items that ride the scrollport's edges and
-     take no room (the negative margin swallows their width and the gap).
-     filter-bar.js clears the one at an edge the row is already at. */
-  .rtg-filter-chips:not(.is-sheet)::before,
-  .rtg-filter-chips:not(.is-sheet)::after {
-    content: '';
-    position: sticky;
-    z-index: 1;
-    flex: 0 0 36px;
-    align-self: stretch;
-    pointer-events: none;
-    transition: opacity .15s ease;
-  }
-  .rtg-filter-chips:not(.is-sheet)::before {
-    left: 0;
-    margin-right: -44px;
-    background: linear-gradient(to right, var(--rtg-bg-card), transparent);
-  }
-  .rtg-filter-chips:not(.is-sheet)::after {
-    right: 0;
-    margin-left: -44px;
-    background: linear-gradient(to left, var(--rtg-bg-card), transparent);
-  }
-  .rtg-filter-chips.is-scroll-start::before,
-  .rtg-filter-chips.is-scroll-end::after {
-    opacity: 0;
+    flex-wrap: wrap;
   }
 }
 /* The sheet's header, body and footer carry the dialog shell's classes
@@ -1693,6 +1670,7 @@ color: #15130e;
 
 /* === Info Tooltip Trigger === */
 .info-tooltip-trigger {
+  position: relative;
   background: none;
   border: none;
   color: #a19e97;
@@ -1706,6 +1684,12 @@ color: #15130e;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+}
+/* The icon stays 20px; the tap area is 40px. */
+.info-tooltip-trigger::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
 }
 .info-tooltip-trigger:hover,
 .info-tooltip-trigger:focus {
@@ -1842,18 +1826,22 @@ color: #15130e;
   border-color: color-mix(in srgb, var(--rtg-accent) 50%, var(--rtg-border));
 }
 
-/* Card image */
+/* Card image: the whole tire on a light plate inset from the card edge.
+   Product shots are white-backed JPEGs; multiply melts the white into the
+   plate, so in dark mode the photo is a deliberate tile, not a white band. */
 .tire-card-image {
   position: relative;
-  background: #fff;
-  margin: 0;
-  padding: 0 20px;
+  background: #e4e1db;
+  margin: 12px 12px 0;
+  padding: 8px;
+  border-radius: 8px;
 }
 .tire-card-image img {
   display: block;
   width: 100%;
-  height: 170px;
-  object-fit: cover;
+  height: 184px;
+  object-fit: contain;
+  mix-blend-mode: multiply;
   cursor: zoom-in;
 }
 
@@ -1933,14 +1921,14 @@ line-height: 1.1;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1;
   padding: 6px 10px;
-  border-radius: 20px;
-  color: var(--rtg-text-primary);
-  background: color-mix(in srgb, var(--rtg-accent) 12%, var(--rtg-bg-deep));
-  border: 1px solid color-mix(in srgb, var(--rtg-accent) 25%, transparent);
+  border-radius: 6px;
+  color: #a6a39c;
+  background: #1f2228;
+  border: 0;
   white-space: nowrap;
 }
 
@@ -1948,28 +1936,16 @@ line-height: 1.1;
   display: inline-flex;
   line-height: 1;
 }
-/* Which Rivian it fits: the first chip, and the one that reads first. */
+/* Which Rivian it fits: the same quiet tag, a green check carries it. */
 .tire-card-chip-vehicle {
-  background: color-mix(in srgb, var(--rtg-accent) 22%, var(--rtg-bg-deep));
-  border-color: color-mix(in srgb, var(--rtg-accent) 55%, transparent);
-  color: var(--rtg-text-heading);
+  color: #ece9e4;
 }
 .tire-card-chip-vehicle .tire-card-chip-icon {
-  color: var(--rtg-accent);
-}
-/* 3PMS: snow service, in the winter blue the info tone already uses. */
-.tire-card-chip-3pms {
-  background: color-mix(in srgb, #60a5fa 14%, var(--rtg-bg-deep));
-  border-color: color-mix(in srgb, #60a5fa 40%, transparent);
-}
-.tire-card-chip-3pms .tire-card-chip-icon {
-  color: #60a5fa;
+  color: #4ade80;
 }
 
 /* Discontinued: neutral, it informs rather than sells. */
 .tire-card-chip-discontinued {
-  background: var(--rtg-bg-deep);
-  border-color: var(--rtg-border);
   color: var(--rtg-text-muted);
 }
 
@@ -1982,18 +1958,18 @@ line-height: 1.1;
 .tire-card-stat {
   flex: 1;
   min-width: 0;
-  background: var(--rtg-bg-deep);
-  border: 1px solid color-mix(in srgb, var(--rtg-border) 55%, transparent);
+  background: #1f2228;
+  border: 0;
   border-radius: 8px;
-  padding: 8px 12px;
+  padding: 10px 12px;
 }
 .tire-card-stat-label {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 12px;
-  font-weight: 600;
-color: var(--rtg-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  color: #a6a39c;
   margin-bottom: 2px;
 }
 .tire-card-stat-value {
@@ -2007,18 +1983,16 @@ color: var(--rtg-text-muted);
   font-variant-numeric: tabular-nums;
 }
 .tire-card-stat-unit {
-  font-size: 11px;
-  font-weight: 600;
-}
-.tire-card-stat-roamer .tire-card-stat-value {
-  color: #60a5fa;
+  font-size: 12px;
+  font-weight: 500;
+  color: #a6a39c;
 }
 /* A thin sample: the figure steps back, and a line says why. */
 .tire-card-stat-roamer.is-limited .tire-card-stat-value {
-  color: color-mix(in srgb, #60a5fa 55%, var(--rtg-text-muted));
+  color: #a6a39c;
 }
 .tire-card-stat-limited {
-  color: #f0b429;
+  color: #a6a39c;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -2095,8 +2069,12 @@ color: var(--rtg-text-muted);
    Lavender because red already means "won't carry the truck", green means
    factory fit, blue means winter rated, and amber is the accent. */
 .tire-card-fitment.is-third-party {
-  background: color-mix(in srgb, #a78bfa 10%, var(--rtg-bg-deep));
-  border-color: color-mix(in srgb, #a78bfa 40%, transparent);
+  background: transparent;
+  border-color: transparent;
+  padding: 0;
+  margin: 10px 0 4px;
+  font-size: 13px;
+  color: #a6a39c;
 }
 .tire-card-fitment.is-third-party .tire-card-fitment-icon {
   color: #a78bfa;
@@ -2142,9 +2120,9 @@ color: var(--rtg-text-muted);
   border-bottom: none;
 }
 .tire-card-spec-label {
-  font-weight: 600;
+  font-weight: 500;
   font-size: 13px;
-  color: var(--rtg-text-muted);
+  color: #a6a39c;
 }
 .tire-card-spec-value {
   font-weight: 500;
@@ -2199,12 +2177,12 @@ color: var(--rtg-text-muted);
   flex-shrink: 0;
 }
 .tire-card-tool {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
   border: 1px solid var(--rtg-border);
-  background: var(--rtg-bg-deep);
-  color: var(--rtg-text-primary);
+  background: transparent;
+  color: #a6a39c;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -2298,15 +2276,17 @@ color: var(--rtg-text-muted);
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--rtg-accent);
-  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--rtg-text-heading);
+  text-decoration: underline;
+  text-decoration-color: var(--rtg-accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
   transition: color 0.15s ease;
 }
 .tire-card-details-link:hover {
-  color: var(--rtg-accent-hover);
-  text-decoration: none;
+  color: var(--rtg-accent);
 }
 .tire-card-review-link {
   display: inline-flex;
@@ -3268,14 +3248,14 @@ a.rtg-review-card-title-link:hover {
 }
 /* Placeholder background while loading */
 .tire-card-image {
-  min-height: 170px;
-  background: linear-gradient(135deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  min-height: 200px;
+  background: linear-gradient(135deg, #e4e1db 25%, #dcd9d2 50%, #e4e1db 75%);
   background-size: 200% 100%;
   animation: rtg-shimmer 1.5s infinite;
 }
 .tire-card-image:has(.rtg-img-loaded) {
   animation: none;
-  background: #fff;
+  background: #e4e1db;
 }
 @keyframes rtg-shimmer {
   0% { background-position: 200% 0; }

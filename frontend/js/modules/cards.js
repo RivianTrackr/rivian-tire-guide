@@ -11,7 +11,7 @@ import { TOOLTIP_DATA, createInfoTooltip } from './tooltips.js';
 import { createRatingHTML } from './ratings.js';
 import { setupCompareCheckboxes } from './compare.js';
 import { openImageModal } from './image-modal.js';
-import { fitmentShortfalls, describeShortfalls, parseLoadIndex, loadIndexPair, describeLoadRange, thirdPartyFits, describeThirdPartyFits } from './fitment.js';
+import { fitmentShortfalls, describeShortfalls, parseLoadIndex, loadIndexPair, describeLoadRange, thirdPartyFits, describeThirdPartyFits, thirdPartyEntry } from './fitment.js';
 import { formatSetPrice, formatWholePrice, priceFreshness, stockNote, SET_QUANTITY } from './pricing.js';
 import { isLimitedSample } from './efficiency.js';
 import { createSaveTool } from './saved.js';
@@ -21,6 +21,20 @@ import { createSaveTool } from './saved.js';
  * "oem" is the corner badge; "riv" is an internal marker.
  */
 const HIDDEN_TAGS = new Set(['oem', 'riv']);
+
+/**
+ * Sentence case for a stored label: "All-Terrain" reads "All-terrain",
+ * "EV Rated" reads "EV rated". Only plain capitalised words after the first
+ * are lowered, so acronyms and sizes (EV, 3PMS, LT, XL) stay as written.
+ */
+export function sentenceCase(text) {
+  let first = true;
+  return String(text || '').split(/(\s+|-)/).map(part => {
+    if (/^(\s+|-)$/.test(part) || part === '') return part;
+    if (first) { first = false; return part; }
+    return /^[A-Z][a-z]+$/.test(part) ? part.toLowerCase() : part;
+  }).join('');
+}
 
 // IntersectionObserver for enhanced lazy loading with fade-in
 let imageObserver = null;
@@ -531,7 +545,7 @@ export function createSingleCard(row) {
 
     const priceLabel = document.createElement('div');
     priceLabel.className = 'tire-card-stat-label';
-    priceLabel.textContent = 'Avg Price';
+    priceLabel.textContent = 'Average price';
 
     const priceValue = document.createElement('div');
     priceValue.className = 'tire-card-stat-value' + (priceNum > 0 ? '' : ' tire-card-stat-value-na');
@@ -544,7 +558,7 @@ export function createSingleCard(row) {
       priceNumEl.textContent = formatWholePrice(priceNum);
       const priceUnit = document.createElement('span');
       priceUnit.className = 'tire-card-stat-unit';
-      priceUnit.textContent = 'ea';
+      priceUnit.textContent = 'each';
       priceValue.appendChild(priceNumEl);
       priceValue.appendChild(priceUnit);
 
@@ -552,7 +566,7 @@ export function createSingleCard(row) {
       // actually comparing against a budget.
       const setLine = document.createElement('div');
       setLine.className = 'tire-card-stat-meta tire-card-price-set';
-      setLine.textContent = `${formatSetPrice(priceNum)} / set of ${SET_QUANTITY}`;
+      setLine.textContent = `${formatSetPrice(priceNum)} for a set of ${SET_QUANTITY}`;
       priceStat.appendChild(setLine);
 
       // Out of stock takes the note's line over the price's age: whether
@@ -600,7 +614,7 @@ export function createSingleCard(row) {
     emptyInfoBtn.innerHTML = '' + rtgIcon('circle-info', 12) + '';
     emptyInfoBtn.className = 'info-tooltip-trigger';
     emptyInfoBtn.dataset.tooltipKey = 'Real-World Efficiency';
-    emptyInfoBtn.setAttribute('aria-label', 'More info about Real-World Efficiency');
+    emptyInfoBtn.setAttribute('aria-label', 'More info about real-world efficiency');
     emptyInfoBtn.setAttribute('type', 'button');
 
     emptyLabel.appendChild(emptyLabelText);
@@ -649,7 +663,7 @@ export function createSingleCard(row) {
     if (extraParts.length > 0) {
       roamerInfoBtn.dataset.tooltipExtra = extraParts.join(' · ');
     }
-    roamerInfoBtn.setAttribute('aria-label', 'More info about Real-World Efficiency');
+    roamerInfoBtn.setAttribute('aria-label', 'More info about real-world efficiency');
     roamerInfoBtn.setAttribute('type', 'button');
 
     roamerStatValue.appendChild(roamerNum);
@@ -666,7 +680,8 @@ export function createSingleCard(row) {
     extraParts.forEach(part => {
       const line = document.createElement('div');
       line.className = 'tire-card-stat-meta';
-      line.textContent = part;
+      // Non-breaking spaces keep "1 vehicle" whole in a narrow box.
+      line.textContent = part.replace(/ /g, '\u00a0');
       roamerStat.appendChild(line);
       lastMetaLine = line;
     });
@@ -684,7 +699,10 @@ export function createSingleCard(row) {
       }
       const note = document.createElement('span');
       note.className = 'tire-card-stat-limited';
-      note.textContent = (lastMetaLine.textContent ? ' · ' : '') + 'Limited data';
+      note.textContent = (lastMetaLine.textContent ? '· ' : '') + 'Limited data';
+      // The break opportunity sits outside the nowrap note, so the note can
+      // drop to its own line instead of splitting the line before it.
+      if (lastMetaLine.textContent) lastMetaLine.appendChild(document.createTextNode(' '));
       note.title = 'Too few vehicles or miles behind this figure to rely on it yet.';
       lastMetaLine.appendChild(note);
       roamerInfoBtn.dataset.tooltipExtra = (roamerInfoBtn.dataset.tooltipExtra ? roamerInfoBtn.dataset.tooltipExtra + ' · ' : '') + 'limited data so far';
@@ -736,25 +754,27 @@ export function createSingleCard(row) {
   // A value is a string, or a list of [text, muted] parts when one piece of
   // it should step back: the dual figure of an LT pair, the ply note.
   const sizeText = `${safeString(size)} (${safeString(diameter)}${safeString(diameter) && !safeString(diameter).includes('"') ? '"' : ''})`;
+  // [label, value, tag, tooltip key]: labels read in sentence case, the
+  // tooltip table keeps its own keys.
   const specs = [
     ['Size', sizeText, range.isLT ? 'LT' : ''],
-    ['Load Index', loadPair.single > 0
+    ['Load index', loadPair.single > 0
       ? (loadPair.dual > 0 ? [[String(loadPair.single), false], [` / ${loadPair.dual} dual`, true]] : String(loadPair.single))
-      : 'Not listed'],
-    ['Load Range', range.code ? [[range.code, false], [` \u00b7 ${range.note}`, true]] : 'Not listed'],
-    ['Mileage Warranty', warrantyNum > 0 ? `${warrantyNum.toLocaleString()} miles` : 'Not listed'],
+      : 'Not listed', '', 'Load Index'],
+    ['Load range', range.code ? [[range.code, false], [` \u00b7 ${range.note}`, true]] : 'Not listed', '', 'Load Range'],
+    ['Mileage warranty', warrantyNum > 0 ? `${warrantyNum.toLocaleString()} miles` : 'Not listed'],
     ['Weight', weightNum > 0 ? `${weightNum} lb` : 'Not listed']
   ];
 
-  specs.forEach(([label, value, tag]) => {
+  specs.forEach(([label, value, tag, key]) => {
     const specRow = document.createElement('div');
     specRow.className = 'tire-card-spec';
 
-    const hasTooltip = TOOLTIP_DATA.hasOwnProperty(label);
+    const hasTooltip = !!key && TOOLTIP_DATA.hasOwnProperty(key);
 
     let labelEl;
     if (hasTooltip) {
-      labelEl = createInfoTooltip(label, label);
+      labelEl = createInfoTooltip(label, key);
     } else {
       labelEl = document.createElement('span');
       labelEl.className = 'tire-card-spec-label';
@@ -798,27 +818,30 @@ export function createSingleCard(row) {
   }
 
   // Which Rivian takes this size: in the "All" view nothing else says so.
+  // A size that fits a vehicle only on 3rd-party wheels gets no tag: the
+  // fitment line above already says so, and two labels read as two facts.
   const sizeKey = safeString(size).trim().toLowerCase();
+  const thirdPartyMap = fitmentSettings().thirdParty;
   const sizeMap = (state.vehicleSizeMap && Object.keys(state.vehicleSizeMap).length)
     ? state.vehicleSizeMap
     : ((typeof rtgData !== 'undefined' && rtgData.settings && rtgData.settings.vehicleSizeMap) || {});
   Object.keys(sizeMap).sort().forEach(vehicle => {
     const sizes = Array.isArray(sizeMap[vehicle]) ? sizeMap[vehicle] : [];
-    if (sizes.some(v => String(v).trim().toLowerCase() === sizeKey)) {
-      chips.push({ text: `Fits ${vehicle}`, cls: 'tire-card-chip-vehicle', icon: 'car' });
+    if (sizes.some(v => String(v).trim().toLowerCase() === sizeKey) && !thirdPartyEntry(size, vehicle, thirdPartyMap)) {
+      chips.push({ text: `Fits ${vehicle}`, cls: 'tire-card-chip-vehicle', icon: 'check' });
     }
   });
 
   if (safeString(category).trim()) {
-    chips.push({ text: safeString(category).trim(), cls: '' });
+    chips.push({ text: sentenceCase(safeString(category).trim()), cls: '' });
   }
   if (safeString(tpms).toLowerCase().includes('yes')) {
-    chips.push({ text: '3PMS Rated', cls: 'tire-card-chip-3pms', icon: 'snowflake' });
+    chips.push({ text: '3PMS rated', cls: 'tire-card-chip-3pms' });
   }
   if (tags && safeString(tags).trim()) {
     safeString(tags).split(/[,|]/).map(tag => tag.trim())
       .filter(tag => tag && !HIDDEN_TAGS.has(tag.toLowerCase()))
-      .forEach(tag => chips.push({ text: safeString(tag, 30), cls: '' }));
+      .forEach(tag => chips.push({ text: sentenceCase(safeString(tag, 30)), cls: '' }));
   }
   if (chips.length > 0) {
     const chipsRow = document.createElement('div');
@@ -859,7 +882,7 @@ export function createSingleCard(row) {
     const comingSoon = document.createElement('span');
     comingSoon.className = 'tire-card-cta tire-card-cta-disabled';
     // A discontinued tire has no link because it is gone, not coming.
-    comingSoon.textContent = discontinued === '1' ? 'No longer made' : 'Coming Soon';
+    comingSoon.textContent = discontinued === '1' ? 'No longer made' : 'Coming soon';
     actionsContainer.appendChild(comingSoon);
   }
 
@@ -888,7 +911,7 @@ export function createSingleCard(row) {
     const detailsLink = document.createElement('a');
     detailsLink.className = 'tire-card-details-link';
     detailsLink.href = tirePageUrl;
-    detailsLink.innerHTML = 'Full specs &amp; reviews';
+    detailsLink.textContent = 'Full specs and reviews';
     linksRow.appendChild(detailsLink);
   }
 

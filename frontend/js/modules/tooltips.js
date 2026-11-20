@@ -10,11 +10,11 @@ import { openDialog, dialogButton } from './dialog.js';
 
 export const TOOLTIP_DATA = {
   'Load Index': {
-    title: 'Load Index',
+    title: 'Load index',
     content: 'Rivian vehicles require tires with a high enough load index to safely carry the vehicle\'s weight. R1 vehicles (R1T, R1S) require a minimum load index of 116, while R2 vehicles require a minimum of 112. Using a lower load index can affect safety, handling, and durability.'
   },
   'Load Range': {
-    title: 'Load Range',
+    title: 'Load range',
     content: 'How heavily the tire is built. SL (standard load), XL (extra load) and HL (high load) are passenger constructions; C, D, E and F are light-truck (LT) constructions with a stiffer, thicker casing, rated at 6, 8, 10 and 12 plies. The same model in the same size is often sold both ways: the LT build carries more and tows better, the passenger build usually rides softer and weighs less. Load index still decides whether the tire is safe on a Rivian; R2 owners also need XL or above.'
   },
   '3rd-party wheels': {
@@ -22,24 +22,24 @@ export const TOOLTIP_DATA = {
     content: 'Rivian doesn\'t sell this vehicle with wheels in this size. The size fits only on aftermarket wheels, and whether it clears depends on the wheel\'s width and offset, so check with the wheel maker before buying. The load-index rule still applies.'
   },
   '3PMS Rated': {
-    title: '3PMS Rating',
+    title: '3PMS rating',
     content: '3PMS (Three-Peak Mountain Snowflake) symbol indicates the tire meets winter traction requirements and is rated for severe snow service according to industry standards.'
   },
   'UTQG': {
-    title: 'UTQG Rating',
+    title: 'UTQG rating',
     content: 'UTQG (Uniform Tire Quality Grading) provides standardized ratings for treadwear, temperature resistance (A, B, C), and traction performance (AA, A, B, C) to help compare tire quality.'
   },
   '3PMS Filter': {
-    title: '3PMS Rating Filter',
+    title: '3PMS filter',
     content: '3PMS (Three-Peak Mountain Snowflake) means the tire meets winter traction requirements and is rated for severe snow service.'
   },
   'OEM Filter': {
-    title: 'OEM Tire Filter',
+    title: 'OEM filter',
     content: 'Filters for tires that come as Original Equipment from the factory on Rivian vehicles.'
   },
   'Real-World Efficiency': {
-    title: 'Real-World Efficiency (mi/kWh)',
-    content: 'This is real-world energy efficiency data collected from Rivian owners via <a href="https://rivianroamer.com/join?with=riviantrackr" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:underline;">Roamer</a>. It measures how many miles the vehicle travels per kilowatt-hour of battery energy while using these tires. <br><br> Higher values mean better range efficiency. The data is based on actual driving sessions and updates regularly.'
+    title: 'Real-world efficiency (mi/kWh)',
+    content: 'This is real-world energy efficiency data collected from Rivian owners via <a href="https://rivianroamer.com/join?with=riviantrackr" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline;">Roamer</a>. It measures how many miles the vehicle travels per kilowatt-hour of battery energy while using these tires. <br><br> Higher values mean better range efficiency. The data is based on actual driving sessions and updates regularly.'
   }
 };
 

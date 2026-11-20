@@ -39,6 +39,17 @@ html[data-rt-theme="light"] .search-input:focus {
     box-shadow: 0 0 0 2px var(--rtg-accent) !important;
     border-color: var(--rtg-accent) !important
 }
+html[data-rt-theme="light"][data-rt-theme="light"] .search-container .search-input {
+    background-color: #eeece7 !important;
+    border: 1px solid #e3e0d9 !important
+}
+html[data-rt-theme="light"][data-rt-theme="light"] .search-container .search-input:focus {
+    border-color: var(--rtg-accent) !important
+}
+html[data-rt-theme="light"][data-rt-theme="light"] .tire-card .tire-card-image,
+html[data-rt-theme="light"][data-rt-theme="light"] .tire-card .tire-card-image:has(.rtg-img-loaded) {
+    background: #f6f5f2
+}
 html[data-rt-theme="light"] .rtg-vehicle-toggle {
     background: var(--rtg-bg-deep)
 }
@@ -59,16 +70,6 @@ html[data-rt-theme="light"] .rtg-vehicle-btn.active:hover {
 }
 html[data-rt-theme="light"] .rtg-filter-divider {
     background: var(--rtg-border)
-}
-@media (min-width: 601px) {
-    html[data-rt-theme="light"] .rtg-filter-chips:not(.is-sheet)::before {
-        background: linear-gradient(to right, var(--rtg-bg-card), transparent)
-    }
-}
-@media (min-width: 601px) {
-    html[data-rt-theme="light"] .rtg-filter-chips:not(.is-sheet)::after {
-        background: linear-gradient(to left, var(--rtg-bg-card), transparent)
-    }
 }
 html[data-rt-theme="light"] .rtg-fchip {
     background: var(--rtg-bg-card);
@@ -624,7 +625,7 @@ html[data-rt-theme="light"] .tire-card:hover {
     border-color: color-mix(in srgb, var(--rtg-accent) 50%, var(--rtg-border))
 }
 html[data-rt-theme="light"] .tire-card-image {
-    background: #fff
+    background: #e4e1db
 }
 html[data-rt-theme="light"] .tire-card-badge-oem {
     background: #047857
@@ -649,48 +650,35 @@ html[data-rt-theme="light"] .tire-card-model-link:hover {
     color: #8a5800
 }
 html[data-rt-theme="light"] .tire-card-chip {
-    color: var(--rtg-text-primary);
-    background: color-mix(in srgb, var(--rtg-accent) 12%, var(--rtg-bg-deep));
-    border: 1px solid color-mix(in srgb, var(--rtg-accent) 25%, transparent)
+    color: #53565c;
+    background: #eeece7
 }
 html[data-rt-theme="light"] .tire-card-chip-vehicle {
-    background: color-mix(in srgb, var(--rtg-accent) 22%, var(--rtg-bg-deep));
-    border-color: color-mix(in srgb, var(--rtg-accent) 55%, transparent);
-    color: var(--rtg-text-heading)
+    color: #1a1c20
 }
 html[data-rt-theme="light"] .tire-card-chip-vehicle .tire-card-chip-icon {
-    color: #8a5800
-}
-html[data-rt-theme="light"] .tire-card-chip-3pms {
-    background: color-mix(in srgb, #60a5fa 14%, var(--rtg-bg-deep));
-    border-color: color-mix(in srgb, #60a5fa 40%, transparent)
-}
-html[data-rt-theme="light"] .tire-card-chip-3pms .tire-card-chip-icon {
-    color: #1e5fb8
+    color: #157f3c
 }
 html[data-rt-theme="light"] .tire-card-chip-discontinued {
-    background: var(--rtg-bg-deep);
-    border-color: var(--rtg-border);
     color: var(--rtg-text-muted)
 }
 html[data-rt-theme="light"] .tire-card-stat {
-    background: var(--rtg-bg-deep);
-    border: 1px solid color-mix(in srgb, var(--rtg-border) 55%, transparent)
+    background: #eeece7
 }
 html[data-rt-theme="light"] .tire-card-stat-label {
-    color: var(--rtg-text-muted)
+    color: #53565c
 }
 html[data-rt-theme="light"] .tire-card-stat-value {
     color: var(--rtg-text-heading)
 }
-html[data-rt-theme="light"] .tire-card-stat-roamer .tire-card-stat-value {
-    color: #1e5fb8
+html[data-rt-theme="light"] .tire-card-stat-unit {
+    color: #53565c
 }
 html[data-rt-theme="light"] .tire-card-stat-roamer.is-limited .tire-card-stat-value {
-    color: color-mix(in srgb, #1e5fb8 55%, var(--rtg-text-muted))
+    color: #53565c
 }
 html[data-rt-theme="light"] .tire-card-stat-limited {
-    color: #8a5800
+    color: #53565c
 }
 html[data-rt-theme="light"] .tire-card-stat-empty .tire-card-stat-value {
     color: var(--rtg-text-muted)
@@ -725,8 +713,9 @@ html[data-rt-theme="light"] .tire-card-fitment-icon {
     color: #c4281c
 }
 html[data-rt-theme="light"] .tire-card-fitment.is-third-party {
-    background: color-mix(in srgb, #a78bfa 10%, var(--rtg-bg-deep));
-    border-color: color-mix(in srgb, #a78bfa 40%, transparent)
+    background: transparent;
+    border-color: transparent;
+    color: #53565c
 }
 html[data-rt-theme="light"] .tire-card-fitment.is-third-party .tire-card-fitment-icon {
     color: #6d3fd6
@@ -744,7 +733,7 @@ html[data-rt-theme="light"] .tire-card-spec {
     border-bottom: 1px solid rgba(20, 18, 12, 0.08)
 }
 html[data-rt-theme="light"] .tire-card-spec-label {
-    color: var(--rtg-text-muted)
+    color: #53565c
 }
 html[data-rt-theme="light"] .tire-card-spec-value {
     color: var(--rtg-text-primary)
@@ -759,8 +748,8 @@ html[data-rt-theme="light"] .tire-card-spec-tag {
 }
 html[data-rt-theme="light"] .tire-card-tool {
     border: 1px solid var(--rtg-border);
-    background: var(--rtg-bg-deep);
-    color: var(--rtg-text-primary)
+    background: transparent;
+    color: #53565c
 }
 html[data-rt-theme="light"] .tire-card-tool:hover {
     border-color: var(--rtg-accent);
@@ -788,10 +777,11 @@ html[data-rt-theme="light"] .tire-card-tool-save.is-saved:hover {
     color: #6f4700
 }
 html[data-rt-theme="light"] .tire-card-details-link {
-    color: #8a5800
+    color: var(--rtg-text-heading);
+    text-decoration-color: var(--rtg-accent)
 }
 html[data-rt-theme="light"] .tire-card-details-link:hover {
-    color: #6f4700
+    color: #8a5800
 }
 html[data-rt-theme="light"] .tire-card-review-link {
     color: var(--rtg-text-muted)
@@ -1084,10 +1074,10 @@ html[data-rt-theme="light"] .info-tooltip-trigger:focus-visible {
     outline: 2px solid var(--rtg-accent, #fba919)
 }
 html[data-rt-theme="light"] .tire-card-image {
-    background: linear-gradient(135deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%)
+    background: linear-gradient(135deg, #e4e1db 25%, #dcd9d2 50%, #e4e1db 75%)
 }
 html[data-rt-theme="light"] .tire-card-image:has(.rtg-img-loaded) {
-    background: #fff
+    background: #e4e1db
 }
 html[data-rt-theme="light"] .rtg-skeleton-card {
     background: var(--rtg-bg-card);
@@ -2358,11 +2348,15 @@ html[data-rt-theme="light"] .rtg-tp .rtg-tp-breadcrumb span[aria-current] {
     color: var(--rtg-tp-text)
 }
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-img {
-    background: #fff;
+    background: #e4e1db;
     border: 1px solid var(--rtg-tp-border)
 }
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-img:hover {
     border-color: color-mix(in srgb, var(--rtg-tp-accent) 35%, var(--rtg-tp-border))
+}
+html[data-rt-theme="light"][data-rt-theme="light"] .rtg-tp .rtg-tp-img,
+html[data-rt-theme="light"][data-rt-theme="light"] .rtg-tp .rtg-tp-related-img {
+    background: #fff
 }
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-brand {
     color: #8a5800
@@ -2377,7 +2371,7 @@ html[data-rt-theme="light"] .rtg-tp .rtg-tp-glance strong {
     color: var(--rtg-tp-heading)
 }
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-glance .rtg-tp-glance-eff {
-    color: #1e5fb8
+    color: var(--rtg-tp-heading)
 }
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-star {
     color: color-mix(in srgb, var(--rtg-tp-star-empty) 35%, var(--rtg-tp-muted))
@@ -2399,23 +2393,20 @@ html[data-rt-theme="light"] .rtg-tp .rtg-tp-rating-meta a:hover {
     color: #8a5800
 }
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-chip {
-    color: var(--rtg-tp-text);
-    background: color-mix(in srgb, var(--rtg-tp-accent) 12%, var(--rtg-tp-deep));
-    border: 1px solid color-mix(in srgb, var(--rtg-tp-accent) 25%, transparent)
+    color: #1a1c20;
+    background: #eeece7;
+    border: 1px solid transparent
 }
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-chip i {
-    color: #8a5800
+    color: #53565c
 }
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-chip-size {
     background: var(--rtg-tp-deep);
     border-color: var(--rtg-tp-border);
     color: var(--rtg-tp-heading)
 }
-html[data-rt-theme="light"] .rtg-tp .rtg-tp-chip-fit {
-    background: color-mix(in srgb, #4ade80 12%, var(--rtg-tp-deep));
-    border-color: color-mix(in srgb, #4ade80 35%, transparent)
-}
-html[data-rt-theme="light"] .rtg-tp .rtg-tp-chip-fit i {
+html[data-rt-theme="light"] .rtg-tp .rtg-tp-chip-fit i,
+html[data-rt-theme="light"] .rtg-tp .rtg-tp-chip-vehicle i {
     color: #157f3c
 }
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-chip-fit-bad {
@@ -2425,24 +2416,8 @@ html[data-rt-theme="light"] .rtg-tp .rtg-tp-chip-fit-bad {
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-chip-fit-bad i {
     color: #c4281c
 }
-html[data-rt-theme="light"] .rtg-tp .rtg-tp-chip-fit-3p {
-    background: color-mix(in srgb, #a78bfa 12%, var(--rtg-tp-deep));
-    border-color: color-mix(in srgb, #a78bfa 40%, transparent)
-}
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-chip-fit-3p i {
     color: #6d3fd6
-}
-html[data-rt-theme="light"] .rtg-tp .rtg-tp-chip-3pms {
-    background: color-mix(in srgb, #60a5fa 14%, var(--rtg-tp-deep));
-    border-color: color-mix(in srgb, #60a5fa 40%, transparent)
-}
-html[data-rt-theme="light"] .rtg-tp .rtg-tp-chip-3pms i {
-    color: #1e5fb8
-}
-html[data-rt-theme="light"] .rtg-tp .rtg-tp-chip-vehicle {
-    background: color-mix(in srgb, var(--rtg-tp-accent) 22%, var(--rtg-tp-deep));
-    border-color: color-mix(in srgb, var(--rtg-tp-accent) 55%, transparent);
-    color: var(--rtg-tp-heading)
 }
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-fitment-warning {
     background: color-mix(in srgb, #ef4444 10%, var(--rtg-tp-deep));
@@ -2498,11 +2473,8 @@ html[data-rt-theme="light"] .rtg-tp .rtg-tp-stat-note {
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-stat-note.is-stale {
     color: #8a5800
 }
-html[data-rt-theme="light"] .rtg-tp .rtg-tp-stat-roamer .rtg-tp-stat-value {
-    color: #1e5fb8
-}
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-stat-roamer.is-limited .rtg-tp-stat-value {
-    color: color-mix(in srgb, #1e5fb8 55%, var(--rtg-tp-muted))
+    color: var(--rtg-tp-muted)
 }
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-stat.is-empty .rtg-tp-stat-value {
     color: var(--rtg-tp-muted)
@@ -2571,9 +2543,6 @@ html[data-rt-theme="light"] .rtg-tp .rtg-tp-spec-head {
     background: var(--rtg-tp-deep);
     color: var(--rtg-tp-heading)
 }
-html[data-rt-theme="light"] .rtg-tp .rtg-tp-spec-head i {
-    color: #8a5800
-}
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-spec-row {
     border-bottom: 1px solid var(--rtg-tp-divider)
 }
@@ -2593,7 +2562,7 @@ html[data-rt-theme="light"] .rtg-tp .rtg-tp-related:hover {
     color: var(--rtg-tp-text)
 }
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-related-img {
-    background: #fff
+    background: #e4e1db
 }
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-related-img i {
     color: var(--rtg-tp-border)
@@ -2608,7 +2577,7 @@ html[data-rt-theme="light"] .rtg-tp .rtg-tp-related-meta {
     color: var(--rtg-tp-muted)
 }
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-related-meta .rtg-tp-related-eff {
-    color: #1e5fb8
+    color: var(--rtg-tp-text)
 }
 html[data-rt-theme="light"] .rtg-tp .rtg-tp-owners-say {
     background: var(--rtg-tp-card);
