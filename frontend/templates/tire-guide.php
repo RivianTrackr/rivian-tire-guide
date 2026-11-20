@@ -376,7 +376,7 @@ if ( ! empty( $rtg_wheels ) ) :
 <div id="paginationControls"></div>
 <div class="rtg-guide-footer">
   <span class="rtg-guide-footer-version">Tire Guide <?php echo esc_html( RTG_VERSION ); ?> &middot;
-    <button id="rtgWhatsNew" class="rtg-whats-new-btn rtg-whats-new-link" type="button" aria-label="Changelog"><span class="rtg-whats-new-label">Changelog</span><span class="rtg-whats-new-dot" hidden></span></button>
+    <button id="rtgWhatsNew" class="rtg-whats-new-link" type="button" aria-label="Changelog"><span class="rtg-whats-new-label">Changelog</span><span class="rtg-whats-new-dot" hidden></span></button>
   </span>
   <span class="rtg-guide-footer-credit">Real-world efficiency from <a href="https://rivianroamer.com/join?with=riviantrackr" target="_blank" rel="noopener noreferrer">Roamer</a> owners</span>
 </div>
