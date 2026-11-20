@@ -370,11 +370,8 @@ export function createSingleCard(row) {
     const oemInner = document.createElement('div');
     oemInner.className = 'tire-card-badge-inner';
 
-    const oemIcon = document.createElement('span');
-    oemIcon.innerHTML = rtgIcon('certificate', 14);
-    oemIcon.style.display = 'inline-flex';
-
-    oemInner.appendChild(oemIcon);
+    // A quiet label on the photo plate, like the card's other tags.
+    oemBadge.title = 'Fitted by Rivian at the factory';
     oemInner.appendChild(document.createTextNode('OEM'));
     oemBadge.appendChild(oemInner);
     card.appendChild(oemBadge);

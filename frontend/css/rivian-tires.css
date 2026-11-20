@@ -1848,28 +1848,22 @@ color: #15130e;
 /* OEM badge */
 .tire-card-badge-oem {
   position: absolute;
-  top: 12px;
-  left: 12px;
+  top: 20px;
+  left: 20px;
   z-index: 10;
-  font-size: 12px;
-  font-weight: 700;
-padding: 2.5px;
-  border-radius: 10px;
-  background: #047857;
 }
+/* Sits on the photo plate in card color: a label, not a seal. */
 .tire-card-badge-oem .tire-card-badge-inner {
-  background: #ffffff;
-  color: #1a1a1a;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 8px;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-}
-.tire-card-badge-oem .tire-card-badge-inner i {
-  color: #047857;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #f6f4f0;
+  background: #16191e;
+  border: 1px solid #16191e;
 }
 
 /* Card body content — mobile-first */

@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - **Every other guide view follows the 2.17.0 card rules.** Compare page (`compare.js`, `compare.php`): sentence-case title, sections and row labels, no section icons, efficiency as plain heading-color text instead of a blue pill, one neutral tag style (the colored EV/3PMS/studded tags are gone), the 3rd-party note as a plain line ("on aftermarket wheels"), words out of mono (category, Yes, tags, buttons), "highlighted" through a class so light mode shows brass instead of gold text, photos on the dark-mode plate, and stacked full-width buttons on phones so a retailer name no longer clips. Write a review, saved tires and member reviews: thumbnails on the same plate, neutral chips, sentence-case category, full dates (`F j, Y`; member review dates in mono), efficiency in heading color. Wheel guide photos sit on a plate (new `.wheel-card-plate` wrapper). `sentenceCase()` moved to `helpers.js` and is shared by the cards and compare page. Small copy fixes: "Review a tire", "Very good", "Review pending", "Watch review", "Official review".
+- **OEM badge on cards.** The green-ringed seal with a certificate icon is now a quiet "OEM" label in card color on the photo plate (hairline border in light mode), with "Fitted by Rivian at the factory" as its title.
 
 ## [2.17.0] - 2026-11-19
 
