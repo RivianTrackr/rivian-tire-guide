@@ -11,6 +11,10 @@ bullets that open with a bold lead sentence. Releases with nothing an owner
 would notice are simply left out. Everything above the first heading is
 skipped. Keep it friendly: no file names, no class names, no test counts.
 
+## 2.18.0 - 2026-11-24
+
+- **Price dates are current again.** Prices the guide confirms with the retailer every day no longer show an old "as of" date.
+
 ## 2.17.3 - 2026-11-19
 
 - **Bug fixes and improvements.**

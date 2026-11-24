@@ -147,6 +147,11 @@ foreach ( $brand_counts as $brand_name => $brand_total ) {
 $dd_sizes = RTG_Admin::get_dropdown_options( 'sizes' );
 
 $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
+
+// The prices only a person can refresh: the list the monthly email sends.
+// Updating a price or confirming it takes the tire off.
+$prices_to_check = RTG_Stale_Prices::current();
+$price_outcomes  = ( $price_results && ! empty( $price_results['outcomes'] ) ) ? $price_results['outcomes'] : array();
 ?>
 
 <div class="rtg-wrap">
@@ -171,6 +176,52 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
             </button>
         </div>
     </div>
+
+    <?php if ( ! empty( $prices_to_check ) ) : ?>
+    <div class="rtg-card" id="prices-to-check">
+        <div class="rtg-card-header">
+            <h2>Prices to check <span class="rtg-tab-count is-alert" data-price-check-count><?php echo count( $prices_to_check ); ?></span></h2>
+            <p>The daily sync can't refresh these, and nobody has touched them in <?php echo esc_html( RTG_Stale_Prices::stale_days() ); ?> days. Save a new price or confirm it hasn't changed, and the tire leaves the list.</p>
+        </div>
+        <div class="rtg-card-body">
+            <div class="rtg-table-wrapper">
+            <table class="rtg-table rtg-table-compact">
+                <thead>
+                    <tr><th>Tire</th><th>Size</th><th>Last touched</th><th>Why</th><th>Price</th></tr>
+                </thead>
+                <tbody>
+                <?php foreach ( $prices_to_check as $check ) : ?>
+                    <tr data-price-check="<?php echo esc_attr( $check['tire_id'] ); ?>">
+                        <td>
+                            <a href="<?php echo esc_url( admin_url( 'admin.php?page=rtg-tire-edit&id=' . intval( $check['id'] ) ) ); ?>" class="rtg-row-title">
+                                <?php echo esc_html( trim( $check['brand'] . ' ' . $check['model'] ) ); ?>
+                            </a>
+                            <?php if ( ! empty( $check['link'] ) ) : ?>
+                                <div class="rtg-small"><a href="<?php echo esc_url( $check['link'] ); ?>" target="_blank" rel="noopener">Retailer page</a></div>
+                            <?php endif; ?>
+                        </td>
+                        <td class="rtg-mono"><?php echo esc_html( $check['size'] ); ?></td>
+                        <td class="rtg-muted rtg-small"><?php echo esc_html( human_time_diff( intval( $check['last_touch'] ), current_time( 'timestamp' ) ) ); ?> ago</td>
+                        <td class="rtg-muted rtg-small"><?php echo esc_html( RTG_Stale_Prices::reason( $check, $price_outcomes ) ); ?></td>
+                        <td>
+                            <div class="rtg-input-row">
+                                <div class="rtg-input-group">
+                                    <span class="rtg-input-group-addon">$</span>
+                                    <input type="number" class="rtg-input-tiny" step="0.01" min="0" value="<?php echo esc_attr( number_format( (float) $check['price'], 2, '.', '' ) ); ?>" aria-label="<?php echo esc_attr( 'Price for ' . trim( $check['brand'] . ' ' . $check['model'] . ' ' . $check['size'] ) ); ?>">
+                                </div>
+                                <button type="button" class="rtg-btn rtg-btn-primary rtg-btn-sm rtg-price-check" data-mode="save">Save</button>
+                                <button type="button" class="rtg-btn rtg-btn-secondary rtg-btn-sm rtg-price-check" data-mode="unchanged">Price not changed</button>
+                            </div>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+            </div>
+            <p class="rtg-help" data-price-check-done hidden>All prices checked.</p>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <div data-rtg-tabs data-default="<?php echo esc_attr( $default_tab ); ?>">
 
@@ -987,13 +1038,12 @@ $next_run = wp_next_scheduled( RTG_Catalog_Sync::CRON_HOOK );
                 </div>
                 <div class="rtg-field-row">
                     <div class="rtg-field-label-row">
-                        <label class="rtg-field-label" for="stale_price_report_enabled">Stale price report</label>
+                        <label class="rtg-field-label" for="stale_price_report_enabled">Prices to check email</label>
                     </div>
                     <p class="rtg-field-description">
-                        Covered tires re-price themselves daily. The rest update only when someone edits them,
-                        and a stale price is neither a broken link nor a failed run, so nothing else would
-                        mention it. Monthly, listing tires untouched for
-                        <?php echo esc_html( RTG_Stale_Prices::DEFAULT_STALE_DAYS ); ?>+ days, oldest first.
+                        Once a month, a list of prices the daily sync can't refresh and nobody has touched in
+                        <?php echo esc_html( RTG_Stale_Prices::stale_days() ); ?> days. The same list sits at the
+                        top of this page, where you update or confirm each one.
                     </p>
                     <label class="rtg-toggle is-small">
                         <input type="checkbox" name="stale_price_report_enabled" id="stale_price_report_enabled" value="1" <?php checked( $stale_price_report ); ?>>

@@ -40,13 +40,13 @@ class RTG_Mailer {
 
         $review_snippet = '';
         if ( ! empty( $review['review_title'] ) ) {
-            $review_snippet .= '<p style="margin: 0 0 8px 0; font-weight: 600; color: #1d1d1f;">' . esc_html( $review['review_title'] ) . '</p>';
+            $review_snippet .= '<p style="margin: 0 0 8px 0; font-weight: 600; color: #1a1c20;">' . esc_html( $review['review_title'] ) . '</p>';
         }
         if ( ! empty( $review['review_text'] ) ) {
             $text = mb_strlen( $review['review_text'] ) > 300
                 ? mb_substr( $review['review_text'], 0, 300 ) . '...'
                 : $review['review_text'];
-            $review_snippet .= '<p style="margin: 0; color: #6e6e73; font-size: 14px;">' . esc_html( $text ) . '</p>';
+            $review_snippet .= '<p style="margin: 0; color: #53565c; font-size: 14px;">' . esc_html( $text ) . '</p>';
         }
 
         $body = self::build_html_email(
@@ -92,13 +92,13 @@ class RTG_Mailer {
 
         $review_snippet = '';
         if ( ! empty( $review['review_title'] ) ) {
-            $review_snippet .= '<p style="margin: 0 0 8px 0; font-weight: 600; color: #1d1d1f;">' . esc_html( $review['review_title'] ) . '</p>';
+            $review_snippet .= '<p style="margin: 0 0 8px 0; font-weight: 600; color: #1a1c20;">' . esc_html( $review['review_title'] ) . '</p>';
         }
         if ( ! empty( $review['review_text'] ) ) {
             $text = mb_strlen( $review['review_text'] ) > 500
                 ? mb_substr( $review['review_text'], 0, 500 ) . '...'
                 : $review['review_text'];
-            $review_snippet .= '<p style="margin: 0; color: #6e6e73; font-size: 14px;">' . esc_html( $text ) . '</p>';
+            $review_snippet .= '<p style="margin: 0; color: #53565c; font-size: 14px;">' . esc_html( $text ) . '</p>';
         }
 
         $reviews_admin_url = admin_url( 'admin.php?page=rtg-reviews' );
@@ -108,37 +108,37 @@ class RTG_Mailer {
         $body = '<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
-<body style="margin: 0; padding: 0; background-color: #f5f5f7; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f7; padding: 40px 20px;">
+<body style="margin: 0; padding: 0; background-color: #f6f5f2; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f6f5f2; padding: 40px 20px;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
   <tr>
-    <td style="background-color: #1d1d1f; padding: 24px 32px; text-align: center;">
+    <td style="background-color: #121316; padding: 24px 32px; text-align: center;">
       <h1 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 600;">' . $site_name . '</h1>
     </td>
   </tr>
   <tr>
     <td style="padding: 32px;">
-      <h2 style="margin: 0 0 16px 0; color: #1d1d1f; font-size: 22px; font-weight: 600;">New guest review needs approval</h2>
-      <p style="margin: 0 0 20px 0; color: #6e6e73; font-size: 16px; line-height: 1.5;">
-        <strong style="color: #1d1d1f;">' . esc_html( $guest_name ) . '</strong> (' . esc_html( $guest_email ) . ') submitted a review for <strong style="color: #1d1d1f;">' . esc_html( $tire_name ) . '</strong>.
+      <h2 style="margin: 0 0 16px 0; color: #1a1c20; font-size: 22px; font-weight: 600;">New guest review needs approval</h2>
+      <p style="margin: 0 0 20px 0; color: #53565c; font-size: 16px; line-height: 1.5;">
+        <strong style="color: #1a1c20;">' . esc_html( $guest_name ) . '</strong> (' . esc_html( $guest_email ) . ') submitted a review for <strong style="color: #1a1c20;">' . esc_html( $tire_name ) . '</strong>.
       </p>
-      <div style="background-color: #f5f5f7; border-radius: 8px; padding: 20px; margin: 0 0 24px 0;">
+      <div style="background-color: #f6f5f2; border-radius: 8px; padding: 20px; margin: 0 0 24px 0;">
         <div style="margin-bottom: 12px;">' . $stars_html . '</div>
         ' . $review_snippet . '
       </div>
       <table width="100%" cellpadding="0" cellspacing="0">
         <tr>
           <td align="center">
-            <a href="' . esc_url( $reviews_admin_url ) . '" style="display: inline-block; background-color: #0071e3; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Review in Dashboard</a>
+            <a href="' . esc_url( $reviews_admin_url ) . '" style="display: inline-block; background-color: #fba919; color: #15130e; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Review in the dashboard</a>
           </td>
         </tr>
       </table>
     </td>
   </tr>
   <tr>
-    <td style="padding: 20px 32px; border-top: 1px solid #e5e5e5; text-align: center;">
-      <p style="margin: 0; color: #86868b; font-size: 12px;">
+    <td style="padding: 20px 32px; border-top: 1px solid #e3e0d9; text-align: center;">
+      <p style="margin: 0; color: #686b71; font-size: 12px;">
         This email was sent because a guest submitted a tire review on ' . $site_name . '.
       </p>
     </td>
@@ -187,48 +187,49 @@ class RTG_Mailer {
             $reason    = esc_html( $entry['reason'] ?? 'Unknown' );
             $status    = esc_html( $entry['status'] ?? '' );
 
+            // Tinted badges with dark text: white on amber was 2:1.
             $status_label = 'Error';
-            $status_color = '#ef4444';
+            $status_style = 'color: #c41e3a; background: #ffe5e5;';
             if ( $status === 'redirect_homepage' ) {
-                $status_label = 'Redirect to Homepage';
-                $status_color = '#f59e0b';
+                $status_label = 'Redirects to homepage';
+                $status_style = 'color: #856404; background: #fff3cd;';
             } elseif ( $status === 'http_error' ) {
-                $status_label = 'HTTP Error';
+                $status_label = 'HTTP error';
             }
 
             $rows_html .= '<tr>
-                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #1d1d1f;">' . $tire_name . '</td>
-                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">
-                    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #fff; background: ' . $status_color . ';">' . $status_label . '</span>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px; color: #1a1c20;">' . $tire_name . '</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px;">
+                    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; ' . $status_style . '">' . $status_label . '</span>
                 </td>
-                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 13px; color: #6e6e73;">' . $reason . '</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 13px; color: #53565c;">' . $reason . '</td>
             </tr>';
         }
 
         $body = '<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
-<body style="margin: 0; padding: 0; background-color: #f5f5f7; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f7; padding: 40px 20px;">
+<body style="margin: 0; padding: 0; background-color: #f6f5f2; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f6f5f2; padding: 40px 20px;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
   <tr>
-    <td style="background-color: #1d1d1f; padding: 24px 32px; text-align: center;">
+    <td style="background-color: #121316; padding: 24px 32px; text-align: center;">
       <h1 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 600;">' . $site_name . '</h1>
     </td>
   </tr>
   <tr>
     <td style="padding: 32px;">
-      <h2 style="margin: 0 0 16px 0; color: #1d1d1f; font-size: 22px; font-weight: 600;">Broken Affiliate Links Detected</h2>
-      <p style="margin: 0 0 20px 0; color: #6e6e73; font-size: 16px; line-height: 1.5;">
-        The weekly link health check found <strong style="color: #1d1d1f;">' . esc_html( $count ) . ' broken ' . ( $count === 1 ? 'link' : 'links' ) . '</strong> out of ' . esc_html( $results['total'] ?? 0 ) . ' checked. These links may be redirecting visitors to the supplier homepage instead of the product page.
+      <h2 style="margin: 0 0 16px 0; color: #1a1c20; font-size: 22px; font-weight: 600;">Broken affiliate links</h2>
+      <p style="margin: 0 0 20px 0; color: #53565c; font-size: 16px; line-height: 1.5;">
+        The weekly link health check found <strong style="color: #1a1c20;">' . esc_html( $count ) . ' broken ' . ( $count === 1 ? 'link' : 'links' ) . '</strong> out of ' . esc_html( $results['total'] ?? 0 ) . ' checked. These links may be redirecting visitors to the supplier homepage instead of the product page.
       </p>
-      <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; margin: 0 0 24px 0;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e3e0d9; border-radius: 8px; overflow: hidden; margin: 0 0 24px 0;">
         <thead>
-          <tr style="background-color: #f5f5f7;">
-            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1d1d1f; border-bottom: 1px solid #e5e5e5;">Tire</th>
-            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1d1d1f; border-bottom: 1px solid #e5e5e5;">Status</th>
-            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1d1d1f; border-bottom: 1px solid #e5e5e5;">Details</th>
+          <tr style="background-color: #f6f5f2;">
+            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1a1c20; border-bottom: 1px solid #e3e0d9;">Tire</th>
+            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1a1c20; border-bottom: 1px solid #e3e0d9;">Status</th>
+            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1a1c20; border-bottom: 1px solid #e3e0d9;">Details</th>
           </tr>
         </thead>
         <tbody>
@@ -238,15 +239,15 @@ class RTG_Mailer {
       <table width="100%" cellpadding="0" cellspacing="0">
         <tr>
           <td align="center">
-            <a href="' . esc_url( $affiliate_admin ) . '" style="display: inline-block; background-color: #0071e3; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Update Links in Dashboard</a>
+            <a href="' . esc_url( $affiliate_admin ) . '" style="display: inline-block; background-color: #fba919; color: #15130e; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Update links</a>
           </td>
         </tr>
       </table>
     </td>
   </tr>
   <tr>
-    <td style="padding: 20px 32px; border-top: 1px solid #e5e5e5; text-align: center;">
-      <p style="margin: 0; color: #86868b; font-size: 12px;">
+    <td style="padding: 20px 32px; border-top: 1px solid #e3e0d9; text-align: center;">
+      <p style="margin: 0; color: #686b71; font-size: 12px;">
         This automated check runs weekly. You can also run it manually from the Affiliate Links page in ' . $site_name . '.
       </p>
     </td>
@@ -299,23 +300,23 @@ class RTG_Mailer {
         $rows_html = '';
         foreach ( $new_ambiguous as $tire ) {
             $rows_html .= '<tr>
-                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #1d1d1f;">' . esc_html( $tire['name'] ) . '</td>
-                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">' . esc_html( $tire['size'] ) . '</td>
-                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">' . esc_html( number_format( $tire['efficiency'], 2 ) ) . '</td>
-                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">' . esc_html( number_format( floatval( $tire['total_km'] ?? 0 ) * 0.621371, 0 ) ) . ' mi</td>
-                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">
-                    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #fff; background: #f59e0b;">Ambiguous</span>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px; color: #1a1c20;">' . esc_html( $tire['name'] ) . '</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px;">' . esc_html( $tire['size'] ) . '</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px;">' . esc_html( number_format( $tire['efficiency'], 2 ) ) . '</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px;">' . esc_html( number_format( floatval( $tire['total_km'] ?? 0 ) * 0.621371, 0 ) ) . ' mi</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px;">
+                    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #856404; background: #fff3cd;">Ambiguous</span>
                 </td>
             </tr>';
         }
         foreach ( $new_unmatched as $tire ) {
             $rows_html .= '<tr>
-                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #1d1d1f;">' . esc_html( $tire['name'] ) . '</td>
-                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">' . esc_html( $tire['size'] ) . '</td>
-                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">' . esc_html( number_format( $tire['efficiency'], 2 ) ) . '</td>
-                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">' . esc_html( number_format( floatval( $tire['total_km'] ?? 0 ) * 0.621371, 0 ) ) . ' mi</td>
-                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">
-                    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #fff; background: #94a3b8;">Unmatched</span>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px; color: #1a1c20;">' . esc_html( $tire['name'] ) . '</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px;">' . esc_html( $tire['size'] ) . '</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px;">' . esc_html( number_format( $tire['efficiency'], 2 ) ) . '</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px;">' . esc_html( number_format( floatval( $tire['total_km'] ?? 0 ) * 0.621371, 0 ) ) . ' mi</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px;">
+                    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #53565c; background: #eeece7;">Unmatched</span>
                 </td>
             </tr>';
         }
@@ -323,29 +324,29 @@ class RTG_Mailer {
         $body = '<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
-<body style="margin: 0; padding: 0; background-color: #f5f5f7; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f7; padding: 40px 20px;">
+<body style="margin: 0; padding: 0; background-color: #f6f5f2; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f6f5f2; padding: 40px 20px;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
   <tr>
-    <td style="background-color: #1d1d1f; padding: 24px 32px; text-align: center;">
+    <td style="background-color: #121316; padding: 24px 32px; text-align: center;">
       <h1 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 600;">' . $site_name . '</h1>
     </td>
   </tr>
   <tr>
     <td style="padding: 32px;">
-      <h2 style="margin: 0 0 16px 0; color: #1d1d1f; font-size: 22px; font-weight: 600;">New Roamer Tires Need Attention</h2>
-      <p style="margin: 0 0 20px 0; color: #6e6e73; font-size: 16px; line-height: 1.5;">
-        The latest Roamer sync detected <strong style="color: #1d1d1f;">' . esc_html( $total_count ) . ' new ' . ( $total_count === 1 ? 'tire' : 'tires' ) . '</strong> that ' . ( $total_count === 1 ? 'needs' : 'need' ) . ' your review. Ambiguous tires matched multiple guide entries and need manual assignment. Unmatched tires have no match in your guide.
+      <h2 style="margin: 0 0 16px 0; color: #1a1c20; font-size: 22px; font-weight: 600;">New Roamer tires need attention</h2>
+      <p style="margin: 0 0 20px 0; color: #53565c; font-size: 16px; line-height: 1.5;">
+        The latest Roamer sync detected <strong style="color: #1a1c20;">' . esc_html( $total_count ) . ' new ' . ( $total_count === 1 ? 'tire' : 'tires' ) . '</strong> that ' . ( $total_count === 1 ? 'needs' : 'need' ) . ' your review. Ambiguous tires matched multiple guide entries and need manual assignment. Unmatched tires have no match in your guide.
       </p>
-      <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; margin: 0 0 24px 0;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e3e0d9; border-radius: 8px; overflow: hidden; margin: 0 0 24px 0;">
         <thead>
-          <tr style="background-color: #f5f5f7;">
-            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1d1d1f; border-bottom: 1px solid #e5e5e5;">Tire</th>
-            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1d1d1f; border-bottom: 1px solid #e5e5e5;">Size</th>
-            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1d1d1f; border-bottom: 1px solid #e5e5e5;">mi/kWh</th>
-            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1d1d1f; border-bottom: 1px solid #e5e5e5;">Distance</th>
-            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1d1d1f; border-bottom: 1px solid #e5e5e5;">Status</th>
+          <tr style="background-color: #f6f5f2;">
+            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1a1c20; border-bottom: 1px solid #e3e0d9;">Tire</th>
+            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1a1c20; border-bottom: 1px solid #e3e0d9;">Size</th>
+            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1a1c20; border-bottom: 1px solid #e3e0d9;">mi/kWh</th>
+            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1a1c20; border-bottom: 1px solid #e3e0d9;">Distance</th>
+            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1a1c20; border-bottom: 1px solid #e3e0d9;">Status</th>
           </tr>
         </thead>
         <tbody>
@@ -355,15 +356,15 @@ class RTG_Mailer {
       <table width="100%" cellpadding="0" cellspacing="0">
         <tr>
           <td align="center">
-            <a href="' . esc_url( $sync_url ) . '" style="display: inline-block; background-color: #0071e3; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Review in Dashboard</a>
+            <a href="' . esc_url( $sync_url ) . '" style="display: inline-block; background-color: #fba919; color: #15130e; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Review in the dashboard</a>
           </td>
         </tr>
       </table>
     </td>
   </tr>
   <tr>
-    <td style="padding: 20px 32px; border-top: 1px solid #e5e5e5; text-align: center;">
-      <p style="margin: 0; color: #86868b; font-size: 12px;">
+    <td style="padding: 20px 32px; border-top: 1px solid #e3e0d9; text-align: center;">
+      <p style="margin: 0; color: #686b71; font-size: 12px;">
         This notification is sent when new tires appear during a Roamer sync. You can disable it from the Roamer Sync settings in ' . $site_name . '.
       </p>
     </td>
@@ -424,42 +425,42 @@ class RTG_Mailer {
             }
 
             $rows_html .= '<tr>
-                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #1d1d1f;">' . esc_html( $name ) . '</td>
-                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">' . esc_html( $tire['size'] ?? '' ) . '</td>
-                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">' . esc_html( $fits ) . '</td>
-                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">' . esc_html( $tire['load_index'] ?? '' ) . '</td>
-                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">' . ( $price > 0 ? '$' . esc_html( number_format( $price, 2 ) ) : '&mdash;' ) . '</td>
-                <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">' . esc_html( $tire['advertiser_name'] ?? '' ) . '</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px; color: #1a1c20;">' . esc_html( $name ) . '</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px;">' . esc_html( $tire['size'] ?? '' ) . '</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px;">' . esc_html( $fits ) . '</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px;">' . esc_html( $tire['load_index'] ?? '' ) . '</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px;">' . ( $price > 0 ? '$' . esc_html( number_format( $price, 2 ) ) : '&mdash;' ) . '</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px;">' . esc_html( $tire['advertiser_name'] ?? '' ) . '</td>
             </tr>';
         }
 
         $body = '<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
-<body style="margin: 0; padding: 0; background-color: #f5f5f7; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f7; padding: 40px 20px;">
+<body style="margin: 0; padding: 0; background-color: #f6f5f2; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f6f5f2; padding: 40px 20px;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
   <tr>
-    <td style="background-color: #1d1d1f; padding: 24px 32px; text-align: center;">
+    <td style="background-color: #121316; padding: 24px 32px; text-align: center;">
       <h1 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 600;">' . $site_name . '</h1>
     </td>
   </tr>
   <tr>
     <td style="padding: 32px;">
-      <h2 style="margin: 0 0 16px 0; color: #1d1d1f; font-size: 22px; font-weight: 600;">New Tires Worth a Look</h2>
-      <p style="margin: 0 0 20px 0; color: #6e6e73; font-size: 16px; line-height: 1.5;">
-        Today\'s catalog check found <strong style="color: #1d1d1f;">' . esc_html( $count ) . ' ' . ( 1 === $count ? 'tire' : 'tires' ) . '</strong> in a Rivian fitment that ' . ( 1 === $count ? 'is' : 'are' ) . ' not in the guide yet and ' . ( 1 === $count ? 'meets' : 'meet' ) . ' the load index requirement.
+      <h2 style="margin: 0 0 16px 0; color: #1a1c20; font-size: 22px; font-weight: 600;">New tires worth a look</h2>
+      <p style="margin: 0 0 20px 0; color: #53565c; font-size: 16px; line-height: 1.5;">
+        Today\'s catalog check found <strong style="color: #1a1c20;">' . esc_html( $count ) . ' ' . ( 1 === $count ? 'tire' : 'tires' ) . '</strong> in a Rivian fitment that ' . ( 1 === $count ? 'is' : 'are' ) . ' not in the guide yet and ' . ( 1 === $count ? 'meets' : 'meet' ) . ' the load index requirement.
       </p>
-      <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; margin: 0 0 24px 0;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e3e0d9; border-radius: 8px; overflow: hidden; margin: 0 0 24px 0;">
         <thead>
-          <tr style="background-color: #f5f5f7;">
-            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1d1d1f; border-bottom: 1px solid #e5e5e5;">Tire</th>
-            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1d1d1f; border-bottom: 1px solid #e5e5e5;">Size</th>
-            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1d1d1f; border-bottom: 1px solid #e5e5e5;">Fits</th>
-            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1d1d1f; border-bottom: 1px solid #e5e5e5;">Load</th>
-            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1d1d1f; border-bottom: 1px solid #e5e5e5;">Price</th>
-            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1d1d1f; border-bottom: 1px solid #e5e5e5;">Retailer</th>
+          <tr style="background-color: #f6f5f2;">
+            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1a1c20; border-bottom: 1px solid #e3e0d9;">Tire</th>
+            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1a1c20; border-bottom: 1px solid #e3e0d9;">Size</th>
+            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1a1c20; border-bottom: 1px solid #e3e0d9;">Fits</th>
+            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1a1c20; border-bottom: 1px solid #e3e0d9;">Load</th>
+            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1a1c20; border-bottom: 1px solid #e3e0d9;">Price</th>
+            <th style="padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #1a1c20; border-bottom: 1px solid #e3e0d9;">Retailer</th>
           </tr>
         </thead>
         <tbody>
@@ -469,15 +470,15 @@ class RTG_Mailer {
       <table width="100%" cellpadding="0" cellspacing="0">
         <tr>
           <td align="center">
-            <a href="' . esc_url( $review_url ) . '" style="display: inline-block; background-color: #0071e3; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Review in Dashboard</a>
+            <a href="' . esc_url( $review_url ) . '" style="display: inline-block; background-color: #fba919; color: #15130e; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Review in the dashboard</a>
           </td>
         </tr>
       </table>
     </td>
   </tr>
   <tr>
-    <td style="padding: 20px 32px; border-top: 1px solid #e5e5e5; text-align: center;">
-      <p style="margin: 0; color: #86868b; font-size: 12px;">
+    <td style="padding: 20px 32px; border-top: 1px solid #e3e0d9; text-align: center;">
+      <p style="margin: 0; color: #686b71; font-size: 12px;">
         Sent only when a catalog check finds a qualifying tire you have not seen before. You can disable it from the Tire Discovery settings in ' . $site_name . '.
       </p>
     </td>
@@ -528,46 +529,46 @@ class RTG_Mailer {
         $body = '<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
-<body style="margin: 0; padding: 0; background-color: #f5f5f7; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f7; padding: 40px 20px;">
+<body style="margin: 0; padding: 0; background-color: #f6f5f2; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f6f5f2; padding: 40px 20px;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
   <tr>
-    <td style="background-color: #1d1d1f; padding: 24px 32px; text-align: center;">
+    <td style="background-color: #121316; padding: 24px 32px; text-align: center;">
       <h1 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 600;">' . $site_name . '</h1>
     </td>
   </tr>
   <tr>
     <td style="padding: 32px;">
-      <h2 style="margin: 0 0 16px 0; color: #1d1d1f; font-size: 22px; font-weight: 600;">Roamer Sync Failed</h2>
-      <p style="margin: 0 0 20px 0; color: #6e6e73; font-size: 16px; line-height: 1.5;">
+      <h2 style="margin: 0 0 16px 0; color: #1a1c20; font-size: 22px; font-weight: 600;">Roamer sync failed</h2>
+      <p style="margin: 0 0 20px 0; color: #53565c; font-size: 16px; line-height: 1.5;">
         The scheduled Roamer efficiency sync could not complete. Real-world efficiency data will be stale until this is resolved.
       </p>
       <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fff3f3; border: 1px solid #ffdada; border-radius: 8px; margin: 0 0 24px 0;">
         <tr>
           <td style="padding: 16px 20px;">
             <div style="font-size: 13px; font-weight: 600; color: #c41e3a; margin-bottom: 4px;">Reason</div>
-            <div style="font-family: \'SF Mono\', Monaco, monospace; font-size: 13px; color: #1d1d1f;">' . esc_html( $reason ) . '</div>
+            <div style="font-family: \'SF Mono\', Monaco, monospace; font-size: 13px; color: #1a1c20;">' . esc_html( $reason ) . '</div>
             <div style="font-size: 13px; font-weight: 600; color: #c41e3a; margin: 12px 0 4px;">Feed URL</div>
-            <div style="font-family: \'SF Mono\', Monaco, monospace; font-size: 12px; color: #6e6e73; word-break: break-all;">' . esc_html( $feed_url ) . '</div>
+            <div style="font-family: \'SF Mono\', Monaco, monospace; font-size: 12px; color: #53565c; word-break: break-all;">' . esc_html( $feed_url ) . '</div>
           </td>
         </tr>
       </table>
-      <p style="margin: 0 0 20px 0; color: #6e6e73; font-size: 14px; line-height: 1.5;">
+      <p style="margin: 0 0 20px 0; color: #53565c; font-size: 14px; line-height: 1.5;">
         Further failures with the same reason are suppressed for 12 hours so your inbox is not flooded during an extended outage.
       </p>
       <table width="100%" cellpadding="0" cellspacing="0">
         <tr>
           <td align="center">
-            <a href="' . esc_url( $sync_url ) . '" style="display: inline-block; background-color: #0071e3; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Open Roamer Sync</a>
+            <a href="' . esc_url( $sync_url ) . '" style="display: inline-block; background-color: #fba919; color: #15130e; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Open Roamer Sync</a>
           </td>
         </tr>
       </table>
     </td>
   </tr>
   <tr>
-    <td style="padding: 20px 32px; border-top: 1px solid #e5e5e5; text-align: center;">
-      <p style="margin: 0; color: #86868b; font-size: 12px;">
+    <td style="padding: 20px 32px; border-top: 1px solid #e3e0d9; text-align: center;">
+      <p style="margin: 0; color: #686b71; font-size: 12px;">
         Failure notifications can be disabled from the Roamer Sync settings in ' . $site_name . '.
       </p>
     </td>
@@ -623,7 +624,7 @@ class RTG_Mailer {
     private static function render_stars_html( $rating ) {
         $html = '';
         for ( $i = 1; $i <= 5; $i++ ) {
-            $color = $i <= $rating ? '#f59e0b' : '#d2d2d7';
+            $color = $i <= $rating ? '#f59e0b' : '#cdc9c1';
             $html .= '<span style="color: ' . $color . '; font-size: 20px;">&#9733;</span>';
         }
         return $html;
@@ -645,14 +646,14 @@ class RTG_Mailer {
         return '<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
-<body style="margin: 0; padding: 0; background-color: #f5f5f7; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f7; padding: 40px 20px;">
+<body style="margin: 0; padding: 0; background-color: #f6f5f2; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f6f5f2; padding: 40px 20px;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
 
   <!-- Header -->
   <tr>
-    <td style="background-color: #1d1d1f; padding: 24px 32px; text-align: center;">
+    <td style="background-color: #121316; padding: 24px 32px; text-align: center;">
       <h1 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 600;">' . $site_name . '</h1>
     </td>
   </tr>
@@ -660,13 +661,13 @@ class RTG_Mailer {
   <!-- Body -->
   <tr>
     <td style="padding: 32px;">
-      <h2 style="margin: 0 0 16px 0; color: #1d1d1f; font-size: 22px; font-weight: 600;">Your review has been approved!</h2>
-      <p style="margin: 0 0 20px 0; color: #6e6e73; font-size: 16px; line-height: 1.5;">
-        Hi ' . $name . ', your review for <strong style="color: #1d1d1f;">' . $tire_name . '</strong> has been reviewed and approved. It\'s now live for the community to see!
+      <h2 style="margin: 0 0 16px 0; color: #1a1c20; font-size: 22px; font-weight: 600;">Your review has been approved!</h2>
+      <p style="margin: 0 0 20px 0; color: #53565c; font-size: 16px; line-height: 1.5;">
+        Hi ' . $name . ', your review for <strong style="color: #1a1c20;">' . $tire_name . '</strong> has been reviewed and approved. It\'s now live for the community to see!
       </p>
 
       <!-- Review Card -->
-      <div style="background-color: #f5f5f7; border-radius: 8px; padding: 20px; margin: 0 0 24px 0;">
+      <div style="background-color: #f6f5f2; border-radius: 8px; padding: 20px; margin: 0 0 24px 0;">
         <div style="margin-bottom: 12px;">' . $stars_html . '</div>
         ' . $review_snippet . '
       </div>
@@ -675,7 +676,7 @@ class RTG_Mailer {
       <table width="100%" cellpadding="0" cellspacing="0">
         <tr>
           <td align="center">
-            <a href="' . $review_url . '" style="display: inline-block; background-color: #0071e3; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">View your review</a>
+            <a href="' . $review_url . '" style="display: inline-block; background-color: #fba919; color: #15130e; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">View your review</a>
           </td>
         </tr>
       </table>
@@ -684,8 +685,8 @@ class RTG_Mailer {
 
   <!-- Footer -->
   <tr>
-    <td style="padding: 20px 32px; border-top: 1px solid #e5e5e5; text-align: center;">
-      <p style="margin: 0; color: #86868b; font-size: 12px;">
+    <td style="padding: 20px 32px; border-top: 1px solid #e3e0d9; text-align: center;">
+      <p style="margin: 0; color: #686b71; font-size: 12px;">
         This email was sent because you submitted a tire review on ' . $site_name . '.
       </p>
     </td>
@@ -713,38 +714,38 @@ class RTG_Mailer {
      * @param string $cta_label  Button text.
      * @return string Full HTML document.
      */
-    private static function health_email_body( $heading, $inner_html, $cta_url, $cta_label ) {
+    private static function health_email_body( $heading, $inner_html, $cta_url, $cta_label, $footer = '' ) {
         $site_name = esc_html( get_bloginfo( 'name' ) );
 
         return '<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
-<body style="margin: 0; padding: 0; background-color: #f5f5f7; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f7; padding: 40px 20px;">
+<body style="margin: 0; padding: 0; background-color: #f6f5f2; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f6f5f2; padding: 40px 20px;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
   <tr>
-    <td style="background-color: #1d1d1f; padding: 24px 32px; text-align: center;">
+    <td style="background-color: #121316; padding: 24px 32px; text-align: center;">
       <h1 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 600;">' . $site_name . '</h1>
     </td>
   </tr>
   <tr>
     <td style="padding: 32px;">
-      <h2 style="margin: 0 0 16px 0; color: #1d1d1f; font-size: 22px; font-weight: 600;">' . esc_html( $heading ) . '</h2>
+      <h2 style="margin: 0 0 16px 0; color: #1a1c20; font-size: 22px; font-weight: 600;">' . esc_html( $heading ) . '</h2>
       ' . $inner_html . '
       <table width="100%" cellpadding="0" cellspacing="0">
         <tr>
           <td align="center">
-            <a href="' . esc_url( $cta_url ) . '" style="display: inline-block; background-color: #0071e3; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">' . esc_html( $cta_label ) . '</a>
+            <a href="' . esc_url( $cta_url ) . '" style="display: inline-block; background-color: #fba919; color: #15130e; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">' . esc_html( $cta_label ) . '</a>
           </td>
         </tr>
       </table>
     </td>
   </tr>
   <tr>
-    <td style="padding: 20px 32px; border-top: 1px solid #e5e5e5; text-align: center;">
-      <p style="margin: 0; color: #86868b; font-size: 12px;">
-        Health alerts can be disabled from the Tire Discovery settings in ' . $site_name . '. Each problem emails once when it appears and once when it clears.
+    <td style="padding: 20px 32px; border-top: 1px solid #e3e0d9; text-align: center;">
+      <p style="margin: 0; color: #686b71; font-size: 12px;">
+        ' . ( '' !== $footer ? esc_html( $footer ) : 'Health alerts can be disabled from the Tire Discovery settings in ' . $site_name . '. Each problem emails once when it appears and once when it clears.' ) . '
       </p>
     </td>
   </tr>
@@ -776,12 +777,12 @@ class RTG_Mailer {
             $items .= '<tr>
           <td style="padding: 14px 20px; border-bottom: 1px solid #ffdada;">
             <div style="font-size: 13px; font-weight: 600; color: #c41e3a; margin-bottom: 4px;">' . esc_html( str_replace( '_', ' ', $code ) ) . '</div>
-            <div style="font-size: 14px; color: #1d1d1f; line-height: 1.5;">' . esc_html( $label ) . '</div>
+            <div style="font-size: 14px; color: #1a1c20; line-height: 1.5;">' . esc_html( $label ) . '</div>
           </td>
         </tr>';
         }
 
-        $inner = '<p style="margin: 0 0 20px 0; color: #6e6e73; font-size: 16px; line-height: 1.5;">
+        $inner = '<p style="margin: 0 0 20px 0; color: #53565c; font-size: 16px; line-height: 1.5;">
         Tire discovery has stopped working properly. Pricing, retailer coverage and delisting
         detection all depend on it, so they are degrading silently until this is fixed.
       </p>
@@ -791,7 +792,7 @@ class RTG_Mailer {
             $admin_email,
             'Tire Guide: discovery needs attention',
             self::health_email_body(
-                'Discovery Needs Attention',
+                'Discovery needs attention',
                 $inner,
                 admin_url( 'admin.php?page=rtg-tire-discovery' ),
                 'Open Tire Discovery'
@@ -812,7 +813,7 @@ class RTG_Mailer {
             return false;
         }
 
-        $inner = '<p style="margin: 0 0 24px 0; color: #6e6e73; font-size: 16px; line-height: 1.5;">
+        $inner = '<p style="margin: 0 0 24px 0; color: #53565c; font-size: 16px; line-height: 1.5;">
         The problems previously reported with tire discovery have cleared. The latest run
         completed normally, so pricing, coverage and delisting detection are current again.
       </p>';
@@ -821,7 +822,7 @@ class RTG_Mailer {
             $admin_email,
             'Tire Guide: discovery recovered',
             self::health_email_body(
-                'Discovery Recovered',
+                'Discovery recovered',
                 $inner,
                 admin_url( 'admin.php?page=rtg-tire-discovery' ),
                 'Open Tire Discovery'
@@ -851,33 +852,34 @@ class RTG_Mailer {
             $name = trim( ( $row['brand'] ?? '' ) . ' ' . ( $row['model'] ?? '' ) );
 
             $items .= '<tr>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #1d1d1f;">' . esc_html( $name ) . '</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px; font-family: \'SF Mono\', Monaco, monospace;">' . esc_html( $row['size'] ?? '' ) . '</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 13px; color: #6e6e73;">' . esc_html( $row['label'] ?? '' ) . '</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px; color: #1a1c20;">' . esc_html( $name ) . '</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px; font-family: \'SF Mono\', Monaco, monospace;">' . esc_html( $row['size'] ?? '' ) . '</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 13px; color: #53565c;">' . esc_html( $row['label'] ?? '' ) . '</td>
       </tr>';
         }
 
         $count = count( $rows );
-        $inner = '<p style="margin: 0 0 20px 0; color: #6e6e73; font-size: 16px; line-height: 1.5;">
+        $inner = '<p style="margin: 0 0 20px 0; color: #53565c; font-size: 16px; line-height: 1.5;">
         ' . intval( $count ) . ' guide ' . ( 1 === $count ? 'tire was' : 'tires were' ) . ' dropped from the
         affiliate catalog. The links may still work, but these no longer earn a commission or refresh
         their price — worth raising with the retailer\'s affiliate manager.
       </p>
-      <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e5e5e5; border-radius: 8px; margin: 0 0 24px 0;">
-        <tr style="background-color: #f5f5f7;">
-          <th align="left" style="padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #6e6e73;">Tire</th>
-          <th align="left" style="padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #6e6e73;">Size</th>
-          <th align="left" style="padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #6e6e73;">Detail</th>
+      <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e3e0d9; border-radius: 8px; margin: 0 0 24px 0;">
+        <tr style="background-color: #f6f5f2;">
+          <th align="left" style="padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #53565c;">Tire</th>
+          <th align="left" style="padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #53565c;">Size</th>
+          <th align="left" style="padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #53565c;">Detail</th>
         </tr>' . $items . '</table>';
 
         return (bool) wp_mail(
             $admin_email,
             sprintf( 'Tire Guide: %d %s dropped from the affiliate catalog', $count, 1 === $count ? 'tire' : 'tires' ),
             self::health_email_body(
-                'Dropped From the Catalog',
+                'Dropped from the catalog',
                 $inner,
                 admin_url( 'admin.php?page=rtg-affiliate-links&link_filter=delisted' ),
-                'Review Delisted Tires'
+                'Review delisted tires',
+                'Sent when a retailer drops a guide tire from its affiliate catalog.'
             ),
             array( 'Content-Type: text/html; charset=UTF-8' )
         );
@@ -901,35 +903,36 @@ class RTG_Mailer {
             $name = trim( ( $tire['brand'] ?? '' ) . ' ' . ( $tire['model'] ?? '' ) );
 
             $items .= '<tr>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px; color: #1d1d1f;">' . esc_html( $name ) . '</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px; font-family: \'SF Mono\', Monaco, monospace;">' . esc_html( $tire['size'] ?? '' ) . '</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 14px;">$' . esc_html( number_format( floatval( $tire['price'] ?? 0 ), 2 ) ) . '</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; font-size: 13px; color: #6e6e73;">' . esc_html( human_time_diff( intval( $tire['last_touch'] ), $now ) ) . ' ago</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px; color: #1a1c20;">' . esc_html( $name ) . '</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px; font-family: \'SF Mono\', Monaco, monospace;">' . esc_html( $tire['size'] ?? '' ) . '</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 14px;">$' . esc_html( number_format( floatval( $tire['price'] ?? 0 ), 2 ) ) . '</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e3e0d9; font-size: 13px; color: #53565c;">' . esc_html( human_time_diff( intval( $tire['last_touch'] ), $now ) ) . ' ago</td>
       </tr>';
         }
 
         $count = count( $stale );
-        $inner = '<p style="margin: 0 0 20px 0; color: #6e6e73; font-size: 16px; line-height: 1.5;">
-        ' . intval( $count ) . ' tire ' . ( 1 === $count ? 'price' : 'prices' ) . ' can only be refreshed by hand —
-        the affiliate feed does not carry these tires — and ' . ( 1 === $count ? 'it has' : 'they have' ) . '
-        not been touched in months. Worth a pass against the retailer sites.
+        $inner = '<p style="margin: 0 0 20px 0; color: #53565c; font-size: 16px; line-height: 1.5;">
+        The daily sync can\'t refresh ' . ( 1 === $count ? 'this price' : 'these ' . intval( $count ) . ' prices' ) . ', and
+        nobody has touched ' . ( 1 === $count ? 'it' : 'them' ) . ' in months. Open the list, then save a new price
+        or press Price not changed, and the tire leaves the list.
       </p>
-      <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e5e5e5; border-radius: 8px; margin: 0 0 24px 0;">
-        <tr style="background-color: #f5f5f7;">
-          <th align="left" style="padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #6e6e73;">Tire</th>
-          <th align="left" style="padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #6e6e73;">Size</th>
-          <th align="left" style="padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #6e6e73;">Price</th>
-          <th align="left" style="padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #6e6e73;">Last touched</th>
+      <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e3e0d9; border-radius: 8px; margin: 0 0 24px 0;">
+        <tr style="background-color: #f6f5f2;">
+          <th align="left" style="padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #53565c;">Tire</th>
+          <th align="left" style="padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #53565c;">Size</th>
+          <th align="left" style="padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #53565c;">Price</th>
+          <th align="left" style="padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #53565c;">Last touched</th>
         </tr>' . $items . '</table>';
 
         return (bool) wp_mail(
             $admin_email,
-            sprintf( 'Tire Guide: %d price%s worth a manual check', $count, 1 === $count ? '' : 's' ),
+            sprintf( 'Tire Guide: %d price%s to check', $count, 1 === $count ? '' : 's' ),
             self::health_email_body(
-                'Prices Going Stale',
+                'Prices to check',
                 $inner,
-                admin_url( 'admin.php?page=rtg-tire-discovery' ),
-                'Open Tire Discovery'
+                admin_url( 'admin.php?page=rtg-tire-discovery#prices-to-check' ),
+                'Check prices',
+                'Sent once a month, only when a price needs you. You can turn it off in the Tire Discovery settings.'
             ),
             array( 'Content-Type: text/html; charset=UTF-8' )
         );

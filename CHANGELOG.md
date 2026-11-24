@@ -4,6 +4,16 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.18.0] - 2026-11-24
+
+### Changed
+- **Prices to check, where you can act on them.** The monthly "prices worth a manual check" email linked to the review queue, and the tires it listed sat in a collapsed table on the Coverage tab with nothing to press. Tire Discovery now opens with a "Prices to check" card (only when the list has rows): tire, size, age, why the sync can't refresh it (`RTG_Stale_Prices::reason()`, from the last price run's outcome), a link to the retailer page, and a price field with Save and Price not changed. Either takes the tire off the list (new `rtg_price_check` AJAX action, `manage_options` + admin nonce). A new price goes through `update_tire()`; Price not changed, or the same price saved, calls `RTG_Database::mark_price_checked()`, which bumps `updated_at` on purpose since the table only bumps it when a value changes. The email and the card share `RTG_Stale_Prices::current()`, so they list the same tires; the email button now opens `#prices-to-check`.
+- **Admin emails follow the paper-and-ink palette.** Every email in `RTG_Mailer` (admin alerts and the reviewer approval email) moves from the blue button and cool grays to the gold button with ink text and the warm neutrals, sentence-case headings and buttons, and tinted status badges (white on amber was about 2:1). The delisting and price emails no longer end with the health-alert footer; `health_email_body()` takes an optional footer.
+
+### Fixed
+- **22 of 31 tires on the price list were false alarms.** When the daily price sync found a covered tire's price already current it wrote nothing, so the price looked untouched since it was first synced (July and August on the live site) and landed on the stale list, and shoppers saw an old "as of" date. `RTG_Price_Sync::run()` now stamps `price_synced_at` on an `unchanged` outcome through `RTG_Database::mark_price_synced()`, which holds `updated_at`.
+- Tests: two for `RTG_Stale_Prices::reason()` in `tests/test-stale-prices.php`.
+
 ## [2.17.3] - 2026-11-19
 
 ### Fixed

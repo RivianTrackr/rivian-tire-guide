@@ -151,6 +151,7 @@ class RTG_Ajax {
         add_action( 'wp_ajax_rtg_fetch_tire_image', array( $this, 'fetch_tire_image' ) );
         add_action( 'wp_ajax_rtg_upload_tire_image', array( $this, 'upload_tire_image' ) );
         add_action( 'wp_ajax_rtg_adopt_model_alias', array( $this, 'adopt_model_alias' ) );
+        add_action( 'wp_ajax_rtg_price_check', array( $this, 'price_check' ) );
         add_action( 'wp_ajax_rtg_candidate_bulk', array( $this, 'candidate_bulk' ) );
     }
 
@@ -1252,6 +1253,44 @@ class RTG_Ajax {
         wp_send_json_success( array(
             'message' => sprintf( '"%s" will now match this tire on the next run.', $alias ),
         ) );
+    }
+
+    /**
+     * Clear a tire from "Prices to check": save a new price, or confirm the
+     * current one. Either way a person looked, so the tire leaves the list.
+     */
+    public function price_check() {
+        check_ajax_referer( 'rtg_admin_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized.' );
+        }
+
+        $tire_id = sanitize_text_field( wp_unslash( $_POST['tire_id'] ?? '' ) );
+        $mode    = sanitize_key( wp_unslash( $_POST['mode'] ?? '' ) );
+
+        $tire = '' === $tire_id ? null : RTG_Database::get_tire( $tire_id );
+        if ( ! $tire ) {
+            wp_send_json_error( 'Unknown tire.' );
+        }
+
+        if ( 'save' === $mode ) {
+            $price = round( floatval( wp_unslash( $_POST['price'] ?? 0 ) ), 2 );
+            if ( $price <= 0 || $price > 10000 ) {
+                wp_send_json_error( 'Enter a price between $0.01 and $10,000.' );
+            }
+
+            if ( (int) round( $price * 100 ) !== (int) round( floatval( $tire['price'] ) * 100 ) ) {
+                RTG_Database::update_tire( $tire_id, array( 'price' => $price ) );
+                wp_send_json_success( array( 'message' => 'Price saved.' ) );
+            }
+            // The same price typed back in is a confirmation, not an edit.
+        } elseif ( 'unchanged' !== $mode ) {
+            wp_send_json_error( 'Unknown action.' );
+        }
+
+        RTG_Database::mark_price_checked( $tire_id );
+        wp_send_json_success( array( 'message' => 'Marked as checked.' ) );
     }
 
     /**

@@ -237,6 +237,44 @@
     });
   });
 
+  // Prices to check: save a new price or confirm it, and the row leaves.
+  $(document).on('click', '.rtg-price-check', function () {
+    var $btn = $(this);
+    var $row = $btn.closest('tr');
+    var $buttons = $row.find('.rtg-price-check');
+
+    $buttons.prop('disabled', true);
+
+    $.post(rtgAdmin.ajaxurl, {
+      action: 'rtg_price_check',
+      nonce: rtgAdmin.nonce,
+      tire_id: $row.data('price-check'),
+      mode: $btn.data('mode'),
+      price: $row.find('input[type="number"]').val()
+    }, function (response) {
+      if (!response.success) {
+        $buttons.prop('disabled', false);
+        window.alert((response.data && typeof response.data === 'string') ? response.data : 'Could not save that price.');
+        return;
+      }
+
+      $row.fadeOut(200, function () {
+        var $card = $('#prices-to-check');
+        $(this).remove();
+
+        var left = $card.find('tr[data-price-check]').length;
+        $card.find('[data-price-check-count]').text(left);
+        if (left === 0) {
+          $card.find('.rtg-table-wrapper, [data-price-check-count]').remove();
+          $card.find('[data-price-check-done]').prop('hidden', false);
+        }
+      });
+    }).fail(function () {
+      $buttons.prop('disabled', false);
+      window.alert('Network error while saving the price.');
+    });
+  });
+
   // Dismiss / Restore a candidate.
   $(document).on('click', '.rtg-candidate-action', function () {
     var $btn = $(this);

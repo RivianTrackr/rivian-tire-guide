@@ -148,6 +148,42 @@ class RTG_Stale_Prices {
     }
 
     /**
+     * Why the daily sync couldn't refresh this price, in a line.
+     *
+     * Pure: the tire and the last price run's outcomes come in. A tire the
+     * run never priced has no retailer match at all.
+     *
+     * @param array      $tire     Guide tire row.
+     * @param array|null $outcomes RTG_Price_Sync results 'outcomes', keyed by tire_id.
+     * @return string
+     */
+    public static function reason( $tire, $outcomes ) {
+        $outcome = $outcomes[ (string) ( $tire['tire_id'] ?? '' ) ] ?? null;
+
+        if ( ! $outcome || empty( $outcome['label'] ) ) {
+            return 'No retailer feed lists this tire';
+        }
+
+        return (string) $outcome['label'];
+    }
+
+    /**
+     * The prices to check right now: the same list the monthly email sends
+     * and the Tire Discovery page shows, so the two never disagree.
+     *
+     * @return array[] Stale guide tires, oldest first.
+     */
+    public static function current() {
+        return self::find_stale(
+            array_filter( RTG_Database::get_all_tires(), function ( $tire ) {
+                return ! RTG_Database::is_discontinued( $tire );
+            } ),
+            current_time( 'timestamp' ),
+            self::stale_days()
+        );
+    }
+
+    /**
      * Run the monthly report.
      *
      * @return array Statistics for the run.
@@ -159,13 +195,7 @@ class RTG_Stale_Prices {
             return array( 'status' => 'disabled' );
         }
 
-        $stale = self::find_stale(
-            array_filter( RTG_Database::get_all_tires(), function ( $tire ) {
-                return ! RTG_Database::is_discontinued( $tire );
-            } ),
-            current_time( 'timestamp' ),
-            self::stale_days()
-        );
+        $stale = self::current();
 
         if ( ! empty( $stale ) ) {
             RTG_Mailer::send_stale_price_report( $stale );

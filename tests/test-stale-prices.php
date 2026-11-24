@@ -137,4 +137,15 @@ class Test_RTG_Stale_Prices extends WP_UnitTestCase {
         $this->assertSame( RTG_Stale_Prices::DEFAULT_STALE_DAYS, RTG_Stale_Prices::stale_days(), 'a zero threshold falls back' );
         remove_all_filters( 'rtg_stale_price_days' );
     }
+    public function test_reason_without_a_price_run_says_no_feed_lists_it() {
+        $this->assertSame( 'No retailer feed lists this tire', RTG_Stale_Prices::reason( $this->tire(), array() ) );
+        $this->assertSame( 'No retailer feed lists this tire', RTG_Stale_Prices::reason( $this->tire(), null ) );
+    }
+
+    public function test_reason_repeats_what_the_last_price_run_decided() {
+        $outcomes = array(
+            't1' => array( 'code' => 'change_implausible', 'label' => 'Price moved from $207.00 to $337.99 (63%)' ),
+        );
+        $this->assertSame( 'Price moved from $207.00 to $337.99 (63%)', RTG_Stale_Prices::reason( $this->tire(), $outcomes ) );
+    }
 }
