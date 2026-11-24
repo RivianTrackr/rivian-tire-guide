@@ -63,6 +63,10 @@ $guide_key_index = RTG_Catalog_Sync::build_guide_index();
 $covered_tires   = array();
 $uncovered_tires = array();
 foreach ( $guide_tires as $guide_tire ) {
+    // A discontinued tire isn't expected to be carried or priced.
+    if ( RTG_Database::is_discontinued( $guide_tire ) ) {
+        continue;
+    }
     if ( ! empty( $retailer_coverage[ $guide_tire['tire_id'] ] ) ) {
         $covered_tires[] = $guide_tire;
     } else {

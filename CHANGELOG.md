@@ -4,6 +4,14 @@ All notable changes to the Rivian Tire Guide plugin will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.18.1] - 2026-11-24
+
+Nothing visible to owners.
+
+### Fixed
+- **Discontinued tires stay out of the admin checks.** The weekly broken link check (and the manual run) still checked the links of discontinued tires, five of which keep a link on the live site, so a retailer pulling the page would have landed them in the broken links email. `RTG_Link_Checker::get_linkable_tires()` now skips them (`get_tires_for_link_management()` selects `discontinued` for that). The Retailer coverage tab no longer lists discontinued tires as "no retailer is carrying" or counts them. Already skipped before this: price sync, stock sync, link sync, Prices to check, delisting alerts and the possibly-discontinued watch.
+- Tests: `tests/test-link-checker.php`.
+
 ## [2.18.0] - 2026-11-24
 
 ### Changed

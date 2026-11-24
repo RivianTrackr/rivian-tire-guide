@@ -2518,14 +2518,14 @@ class RTG_Database {
         if ( ! empty( $values ) ) {
             $results = $wpdb->get_results(
                 $wpdb->prepare(
-                    "SELECT id, tire_id, brand, model, size, category, link, bundle_link, review_link FROM {$table} WHERE {$where_sql} ORDER BY brand ASC, model ASC",
+                    "SELECT id, tire_id, brand, model, size, category, link, bundle_link, review_link, discontinued FROM {$table} WHERE {$where_sql} ORDER BY brand ASC, model ASC",
                     ...$values
                 ),
                 ARRAY_A
             );
         } else {
             $results = $wpdb->get_results(
-                "SELECT id, tire_id, brand, model, size, category, link, bundle_link, review_link FROM {$table} WHERE {$where_sql} ORDER BY brand ASC, model ASC",
+                "SELECT id, tire_id, brand, model, size, category, link, bundle_link, review_link, discontinued FROM {$table} WHERE {$where_sql} ORDER BY brand ASC, model ASC",
                 ARRAY_A
             );
         }
