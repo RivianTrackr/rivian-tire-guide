@@ -159,7 +159,8 @@ class RTG_Link_Checker {
         $linkable = array();
 
         foreach ( $tires as $tire ) {
-            if ( ! empty( $tire['link'] ) ) {
+            // A discontinued tire can't be bought, so a dead link is expected.
+            if ( ! empty( $tire['link'] ) && ! RTG_Database::is_discontinued( $tire ) ) {
                 $linkable[] = array(
                     'tire_id' => $tire['tire_id'],
                     'brand'   => $tire['brand'],
