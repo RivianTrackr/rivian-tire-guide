@@ -369,6 +369,8 @@ class RTG_Price_Sync {
             'outcomes' => array(),
         );
 
+        $confirmed = 0;
+
         foreach ( RTG_Database::get_all_tires() as $tire ) {
             if ( RTG_Database::is_discontinued( $tire ) ) {
                 continue;
@@ -396,6 +398,12 @@ class RTG_Price_Sync {
                 ), false );
                 $results['updated']++;
             } else {
+                if ( 'unchanged' === $decision['code'] ) {
+                    // Confirmed current is a check too, so the stale price
+                    // list doesn't flag a tire the feed priced this morning.
+                    RTG_Database::mark_price_synced( $tire_id, current_time( 'mysql' ) );
+                    $confirmed++;
+                }
                 $results['skipped']++;
             }
 
@@ -411,7 +419,7 @@ class RTG_Price_Sync {
             );
         }
 
-        if ( $results['updated'] > 0 ) {
+        if ( $results['updated'] > 0 || $confirmed > 0 ) {
             RTG_Database::flush_cache();
         }
 

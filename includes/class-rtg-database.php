@@ -778,6 +778,46 @@ class RTG_Database {
     }
 
     /**
+     * Record that the price sync found this tire's price already current.
+     *
+     * A confirmed price is as fresh as a changed one, but writing nothing
+     * left it looking untouched, so tires the feed checks every day landed
+     * on the monthly "prices to check" list. Not an edit: updated_at holds.
+     * Does not flush; the sync flushes once after its loop.
+     *
+     * @param string $tire_id Tire identifier.
+     * @param string $time    MySQL datetime of the check.
+     * @return int|false Rows updated, or false on error.
+     */
+    public static function mark_price_synced( $tire_id, $time ) {
+        global $wpdb;
+        $table = self::tires_table();
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from tires_table().
+        return $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET price_synced_at = %s, updated_at = updated_at WHERE tire_id = %s", $time, $tire_id ) );
+    }
+
+    /**
+     * Record that a person checked this tire's price and it has not changed.
+     *
+     * The table bumps updated_at only when a value changes, so saving the
+     * same price would leave the tire on the list. This bumps it on purpose:
+     * a person looked, which is what the list asks for.
+     *
+     * @param string $tire_id Tire identifier.
+     * @return int|false Rows updated, or false on error.
+     */
+    public static function mark_price_checked( $tire_id ) {
+        global $wpdb;
+        $table = self::tires_table();
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from tires_table().
+        $result = $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET updated_at = CURRENT_TIMESTAMP WHERE tire_id = %s", $tire_id ) );
+        self::flush_cache();
+        return $result;
+    }
+
+    /**
      * Delete a tire and its associated ratings.
      *
      * @param string $tire_id Tire identifier.
